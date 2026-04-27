@@ -1,0 +1,57 @@
+import logging
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
+
+from updaters.price_updater import update_daily_ohlcv
+from updaters.signal_updater import update_signals
+from updaters.news_updater import update_news
+from updaters.fundamental_updater import update_fundamentals
+
+logger = logging.getLogger(__name__)
+
+# JKT Timezone
+jkt_tz = pytz.timezone('Asia/Jakarta')
+
+scheduler = BackgroundScheduler(timezone=jkt_tz)
+
+def init_scheduler():
+    """Configure and start the background scheduler."""
+    logger.info("Initializing APScheduler...")
+    
+    # Run price updates at 16:30 every weekday (Mon-Fri)
+    scheduler.add_job(
+        update_daily_ohlcv,
+        trigger=CronTrigger(day_of_week='mon-fri', hour=16, minute=30, timezone=jkt_tz),
+        id="daily_price_update",
+        replace_existing=True
+    )
+    
+    # Run signal calculation every 30 minutes during market hours
+    # Market hours: 09:00 - 16:00
+    scheduler.add_job(
+        update_signals,
+        trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz),
+        id="intraday_signal_update",
+        replace_existing=True
+    )
+    
+    # Fetch news every 30 minutes from 07:00 to 20:00 every day
+    scheduler.add_job(
+        update_news,
+        trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz),
+        id="news_update",
+        replace_existing=True
+    )
+    
+    # Update fundamental data daily at 02:00 AM
+    scheduler.add_job(
+        update_fundamentals,
+        trigger=CronTrigger(hour=2, minute=0, timezone=jkt_tz),
+        id="fundamental_update",
+        replace_existing=True
+    )
+    
+    scheduler.start()
+    logger.info("APScheduler started successfully.")
+    return scheduler

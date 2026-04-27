@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwingAQ — Trading Dashboard</title>
+  <meta name="description" content="Professional IDX Stock Scanner and Trading Dashboard">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js for small charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- TradingView Lightweight Charts for stock detail -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <i data-lucide="candlestick-chart"></i>
+        <span>SwingAQ</span>
+      </div>
+      <div class="search-box">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" placeholder="Search ticker or company...">
+        <span class="search-hint">⌘K</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="market-status">
+        <span class="status-indicator open"></span>
+        <span class="status-text">OPEN</span>
+      </div>
+      <div class="idx-mini-display">
+        <span class="idx-label">IHSG</span>
+        <span class="idx-val">7,284</span>
+        <span class="idx-change positive">+0.42%</span>
+      </div>
+      <button class="icon-btn" aria-label="Notifications" title="Notifications">
+        <i data-lucide="bell"></i>
+      </button>
+      <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle Theme" title="Toggle Theme">
+        <i data-lucide="moon"></i>
+      </button>
+      <div class="user-avatar">AQ</div>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-view="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#market" class="nav-item" data-view="market">
+          <i data-lucide="bar-chart-2"></i>
+          <span>Market Overview</span>
+        </a>
+        <a href="#watchlist" class="nav-item" data-view="watchlist">
+          <i data-lucide="eye"></i>
+          <span>Watchlist</span>
+        </a>
+        <a href="#screener" class="nav-item" data-view="screener">
+          <i data-lucide="filter"></i>
+          <span>Stock Screener</span>
+        </a>
+        <a href="#portfolio" class="nav-item" data-view="portfolio">
+          <i data-lucide="pie-chart"></i>
+          <span>Portfolio</span>
+        </a>
+        <a href="#news" class="nav-item" data-view="news">
+          <i data-lucide="newspaper"></i>
+          <span>News & Analysis</span>
+        </a>
+        
+        <div class="nav-divider"></div>
+        
+        <a href="#settings" class="nav-item" data-view="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </a>
+        <a href="#help" class="nav-item" data-view="help">
+          <i data-lucide="help-circle"></i>
+          <span>Help</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" id="app-root">
+      <!-- Views will be injected here via JS -->
+    </main>
+  </div>
+
+  <!-- Main App Entry -->
+  <script type="module" src="js/main.js"></script>
+  <!-- Initialize Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
