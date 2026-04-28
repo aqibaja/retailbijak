@@ -2,10 +2,7 @@ export function initTheme() {
     const themeToggleBtn = document.getElementById('theme-toggle');
     const htmlEl = document.documentElement;
 
-    // Default to system preference or saved
     let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    // (If using localStorage was allowed, we'd check it here, but specs said JS variable only. 
-    // However, JS variable resets on reload, so system default is best.)
 
     function applyTheme() {
         if (isDark) {
@@ -27,8 +24,33 @@ export function initTheme() {
 
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
-            isDark = !isDark;
-            applyTheme();
+            // Rotate animation
+            if (typeof gsap !== 'undefined') {
+                gsap.to(themeToggleBtn, {
+                    rotation: '+=180',
+                    scale: 0.8,
+                    duration: 0.2,
+                    ease: 'power2.in',
+                    onComplete: () => {
+                        isDark = !isDark;
+                        applyTheme();
+                        gsap.to(themeToggleBtn, {
+                            scale: 1,
+                            duration: 0.2,
+                            ease: 'back.out(1.7)'
+                        });
+                    }
+                });
+            } else {
+                isDark = !isDark;
+                applyTheme();
+            }
         });
     }
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        isDark = e.matches;
+        applyTheme();
+    });
 }

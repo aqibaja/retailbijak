@@ -16,7 +16,29 @@ export function handleRoute(hash) {
     const navItem = document.querySelector(`.sidebar-nav .nav-item[data-view="${baseRoute}"]`);
     if (navItem) navItem.classList.add('active');
 
-    // Routing logic
+    // Page transition animation
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (!prefersReducedMotion && typeof gsap !== 'undefined') {
+        // Fade out
+        gsap.to(root, {
+            opacity: 0,
+            duration: 0.15,
+            onComplete: () => {
+                renderView(root, path);
+                // Fade in
+                gsap.fromTo(root,
+                    { opacity: 0 },
+                    { opacity: 1, duration: 0.2, ease: 'power2.out' }
+                );
+            }
+        });
+    } else {
+        renderView(root, path);
+    }
+}
+
+function renderView(root, path) {
     if (path === '' || path === 'dashboard') {
         renderDashboard(root);
     } else if (path.startsWith('stock/')) {
@@ -25,12 +47,12 @@ export function handleRoute(hash) {
     } else if (path === 'screener') {
         renderScreener(root);
     } else if (path === 'portfolio' || path === 'watchlist') {
-        renderPortfolio(root, path); // pass 'portfolio' or 'watchlist' as active tab
+        renderPortfolio(root, path);
     } else {
         root.innerHTML = `
-            <div style="text-align:center; padding: 60px;">
+            <div style="text-align:center; padding:60px;">
                 <h2>Page Not Found</h2>
-                <p style="color:var(--color-text-muted)">The view "${path}" is under construction.</p>
+                <p style="color:var(--color-text-muted); margin-top:8px;">The view "${path}" is under construction.</p>
             </div>
         `;
     }

@@ -1,11 +1,13 @@
-import { fetchFundamental, fetchTechnical, fetchChartData, fetchNews } from '../api.js';
+import { fetchFundamental, fetchTechnical, fetchChartData } from '../api.js';
+import { animateCards } from '../main.js';
 
 export async function renderStockDetail(root, ticker) {
-    // Scaffold UI with skeletons
     root.innerHTML = `
         <div class="stock-header">
             <div>
-                <button onclick="window.history.back()" class="btn btn-outline mb-4" style="padding:4px 8px"><i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Back</button>
+                <button onclick="window.history.back()" class="btn btn-outline mb-4" style="padding:4px 8px" aria-label="Go back">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Back
+                </button>
                 <div class="ticker-title">${ticker}</div>
                 <div class="company-name" id="stock-name">Loading...</div>
                 <div class="mt-2" id="stock-badges">
@@ -16,8 +18,8 @@ export async function renderStockDetail(root, ticker) {
                 <div class="current-price" id="stock-price"><span class="skeleton skeleton-text" style="width:120px; display:inline-block"></span></div>
                 <div id="stock-change"></div>
                 <div class="mt-4 flex-between" style="gap:12px; justify-content:flex-end;">
-                    <button class="btn btn-outline" title="Watchlist"><i data-lucide="star"></i></button>
-                    <button class="btn btn-outline" style="color:var(--color-danger); border-color:var(--color-danger)">Sell</button>
+                    <button class="btn btn-outline" title="Add to Watchlist" aria-label="Add to Watchlist"><i data-lucide="star"></i></button>
+                    <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger)">Sell</button>
                     <button class="btn btn-primary">Buy</button>
                 </div>
             </div>
@@ -25,12 +27,12 @@ export async function renderStockDetail(root, ticker) {
 
         <div class="split-row">
             <div class="card" style="padding:0; overflow:hidden;">
-                <div style="padding:16px; border-bottom:1px solid var(--color-border); display:flex; gap:16px;">
-                    <span style="font-weight:600">1D</span>
-                    <span style="color:var(--color-text-muted)">1W</span>
-                    <span style="color:var(--color-text-muted)">1M</span>
-                    <span style="color:var(--color-text-muted)">3M</span>
-                    <span style="color:var(--color-text-muted)">YTD</span>
+                <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:16px;">
+                    <span style="font-weight:600; color:var(--primary);">1D</span>
+                    <span style="color:var(--text-muted); cursor:pointer;">1W</span>
+                    <span style="color:var(--text-muted); cursor:pointer;">1M</span>
+                    <span style="color:var(--text-muted); cursor:pointer;">3M</span>
+                    <span style="color:var(--text-muted); cursor:pointer;">YTD</span>
                 </div>
                 <div id="tvchart" class="chart-container" style="border:none; border-radius:0;"></div>
             </div>
@@ -49,8 +51,8 @@ export async function renderStockDetail(root, ticker) {
         </div>
     `;
     lucide.createIcons();
+    animateCards('.card');
 
-    // Fetch Data concurrently
     const [fundData, techData, chartData] = await Promise.all([
         fetchFundamental(ticker),
         fetchTechnical(ticker),
@@ -58,95 +60,81 @@ export async function renderStockDetail(root, ticker) {
     ]);
 
     // Update Header
-    let latestPrice = 0;
     if (chartData && chartData.data.length > 0) {
         const last = chartData.data[chartData.data.length - 1];
         const prev = chartData.data[chartData.data.length - 2] || last;
-        latestPrice = last.close;
+        const latestPrice = last.close;
         const change = latestPrice - prev.close;
         const pct = ((change / prev.close) * 100).toFixed(2);
         const isPos = change >= 0;
         
-        document.getElementById('stock-price').innerHTML = `Rp ${latestPrice.toLocaleString()}`;
+        document.getElementById('stock-price').innerHTML = `<span style="font-variant-numeric:tabular-nums;">Rp ${latestPrice.toLocaleString()}</span>`;
         document.getElementById('stock-change').innerHTML = `
             <span class="chip ${isPos ? 'success' : 'danger'}" style="font-size:14px;">
-                ${isPos ? '▲' : '▼'} ${Math.abs(change)} (${Math.abs(pct)}%)
+                ${isPos ? '▲' : '▼'} ${Math.abs(change).toLocaleString()} (${Math.abs(pct)}%)
             </span>
         `;
     }
     
-    document.getElementById('stock-name').innerText = fundData && fundData.data.revenue ? `${ticker} - Indonesian Stock Exchange` : `Indonesian Stock Exchange`;
-    document.getElementById('stock-badges').innerHTML = `
-        <span class="chip neutral">IDX</span>
-    `;
+    document.getElementById('stock-name').innerText = `${ticker} — Indonesian Stock Exchange`;
+    document.getElementById('stock-badges').innerHTML = `<span class="chip neutral">IDX</span>`;
 
-    // Render Chart
     renderLightweightChart(chartData);
-
-    // Render Technical
     renderTechnicalPanel(techData);
-
-    // Render Fundamental
     renderFundamentalPanel(fundData);
 }
 
 function renderLightweightChart(chartData) {
     const container = document.getElementById('tvchart');
-    container.innerHTML = ''; // clear skeleton
+    container.innerHTML = '';
     if (!chartData || !chartData.data || chartData.data.length === 0) {
-        container.innerHTML = '<div style="padding:40px; text-align:center;">No chart data available.</div>';
+        container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">No chart data available.</div>';
         return;
     }
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     
-    const chartOptions = {
+    const chart = LightweightCharts.createChart(container, {
         layout: {
-            textColor: isDark ? '#E8F5EC' : '#111C15',
+            textColor: isDark ? '#e2faea' : '#111827',
             background: { type: 'solid', color: 'transparent' }
         },
         grid: {
-            vertLines: { color: isDark ? '#1E2B22' : '#D0E5D4' },
-            horzLines: { color: isDark ? '#1E2B22' : '#D0E5D4' }
+            vertLines: { color: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(22,163,74,0.06)' },
+            horzLines: { color: isDark ? 'rgba(74,222,128,0.06)' : 'rgba(22,163,74,0.06)' }
         },
-        timeScale: {
-            timeVisible: true,
-            secondsVisible: false,
-        }
-    };
+        timeScale: { timeVisible: true, secondsVisible: false }
+    });
     
-    const chart = LightweightCharts.createChart(container, chartOptions);
     const candlestickSeries = chart.addCandlestickSeries({
-        upColor: '#18A058',
-        downColor: '#C53030',
+        upColor: isDark ? '#4ade80' : '#16a34a',
+        downColor: isDark ? '#f87171' : '#dc2626',
         borderVisible: false,
-        wickUpColor: '#18A058',
-        wickDownColor: '#C53030'
+        wickUpColor: isDark ? '#4ade80' : '#16a34a',
+        wickDownColor: isDark ? '#f87171' : '#dc2626'
     });
 
-    const formattedData = chartData.data.map(d => ({
-        time: d.date, // YYYY-MM-DD
+    candlestickSeries.setData(chartData.data.map(d => ({
+        time: d.date,
         open: d.open,
         high: d.high,
         low: d.low,
         close: d.close
-    }));
-
-    candlestickSeries.setData(formattedData);
+    })));
+    
     chart.timeScale().fitContent();
     
-    // Handle resize
     new ResizeObserver(entries => {
         if (entries.length === 0 || entries[0].target !== container) return;
-        const newRect = entries[0].contentRect;
-        chart.applyOptions({ height: newRect.height, width: newRect.width });
+        const { height, width } = entries[0].contentRect;
+        chart.applyOptions({ height, width });
     }).observe(container);
 }
 
 function renderTechnicalPanel(techData) {
     const panel = document.getElementById('technical-panel');
     if (!techData || techData.status === 'no_data') {
-        panel.innerHTML = '<p class="mono">No technical data available.</p>';
+        panel.innerHTML = '<p style="color:var(--text-muted);">No technical data available.</p>';
         return;
     }
     
@@ -154,20 +142,20 @@ function renderTechnicalPanel(techData) {
     panel.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:12px;">
             <div class="flex-between">
-                <span>Trend (SMA)</span>
+                <span style="color:var(--text-muted);">Trend (SMA)</span>
                 <span class="chip ${ind.trend.status.includes('Up') ? 'success' : 'danger'}">${ind.trend.status}</span>
             </div>
             <div class="flex-between">
-                <span>RSI (14)</span>
+                <span style="color:var(--text-muted);">RSI (14)</span>
                 <span style="display:flex; align-items:center; gap:8px;">
-                    <span class="mono">${ind.rsi.value}</span>
+                    <span class="mono" style="font-variant-numeric:tabular-nums;">${ind.rsi.value}</span>
                     <span class="chip neutral">${ind.rsi.status}</span>
                 </span>
             </div>
             <div class="flex-between">
-                <span>MACD</span>
+                <span style="color:var(--text-muted);">MACD</span>
                 <span style="display:flex; align-items:center; gap:8px;">
-                    <span class="mono">${ind.macd.macd_line}</span>
+                    <span class="mono" style="font-variant-numeric:tabular-nums;">${ind.macd.macd_line}</span>
                     <span class="chip ${ind.macd.status.includes('Bullish') ? 'success' : 'danger'}">${ind.macd.status}</span>
                 </span>
             </div>
@@ -178,35 +166,29 @@ function renderTechnicalPanel(techData) {
 function renderFundamentalPanel(fundData) {
     const panel = document.getElementById('fundamental-panel');
     if (!fundData || !fundData.data) {
-        panel.innerHTML = '<p class="mono">No fundamental data available.</p>';
+        panel.innerHTML = '<p style="color:var(--text-muted);">No fundamental data available.</p>';
         return;
     }
     
     const d = fundData.data;
+    const items = [
+        ['P/E (Trailing)', d.trailing_pe ? d.trailing_pe.toFixed(2) : '-'],
+        ['P/B Ratio', d.price_to_book ? d.price_to_book.toFixed(2) : '-'],
+        ['EPS', d.trailing_eps ? d.trailing_eps.toFixed(2) : '-'],
+        ['Div Yield', d.dividend_yield ? (d.dividend_yield * 100).toFixed(2) + '%' : '-'],
+        ['ROE', d.roe ? (d.roe * 100).toFixed(2) + '%' : '-'],
+    ];
+    
     panel.innerHTML = `
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-            <div>
-                <div style="font-size:11px; color:var(--color-text-muted)">P/E (Trailing)</div>
-                <div class="mono" style="font-size:14px; font-weight:600">${d.trailing_pe ? d.trailing_pe.toFixed(2) : '-'}</div>
-            </div>
-            <div>
-                <div style="font-size:11px; color:var(--color-text-muted)">P/B Ratio</div>
-                <div class="mono" style="font-size:14px; font-weight:600">${d.price_to_book ? d.price_to_book.toFixed(2) : '-'}</div>
-            </div>
-            <div>
-                <div style="font-size:11px; color:var(--color-text-muted)">EPS</div>
-                <div class="mono" style="font-size:14px; font-weight:600">${d.trailing_eps ? d.trailing_eps.toFixed(2) : '-'}</div>
-            </div>
-            <div>
-                <div style="font-size:11px; color:var(--color-text-muted)">Div Yield</div>
-                <div class="mono" style="font-size:14px; font-weight:600">${d.dividend_yield ? (d.dividend_yield * 100).toFixed(2) + '%' : '-'}</div>
-            </div>
-            <div>
-                <div style="font-size:11px; color:var(--color-text-muted)">ROE</div>
-                <div class="mono" style="font-size:14px; font-weight:600">${d.roe ? (d.roe * 100).toFixed(2) + '%' : '-'}</div>
-            </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            ${items.map(([label, val]) => `
+                <div>
+                    <div style="font-size:11px; color:var(--text-muted);">${label}</div>
+                    <div class="mono" style="font-size:14px; font-weight:600; font-variant-numeric:tabular-nums;">${val}</div>
+                </div>
+            `).join('')}
         </div>
-        <div style="font-size:10px; color:var(--color-text-faint); margin-top:16px;">
+        <div style="font-size:10px; color:var(--text-faint); margin-top:16px;">
             Updated: ${new Date(d.updated_at).toLocaleDateString()}
         </div>
     `;

@@ -1,10 +1,11 @@
 import { fetchNews } from '../api.js';
+import { animateCards, animateCountUp, animateSparklines, animateTableRows } from '../main.js';
 
 export async function renderDashboard(root) {
     root.innerHTML = `
         <div class="dashboard-header flex-between mb-4">
             <h1>Dashboard Overview</h1>
-            <div class="date-display" style="color:var(--color-text-muted); font-size:14px;">
+            <div class="date-display" style="color:var(--text-muted); font-size:14px;">
                 ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
         </div>
@@ -12,10 +13,10 @@ export async function renderDashboard(root) {
         <div class="dashboard-grid">
             <!-- ROW 1: KPIs -->
             <div class="kpi-row">
-                ${renderKPICard('IHSG', '7,284.52', '+0.42', true)}
-                ${renderKPICard('LQ45', '1,043.18', '-0.18', false)}
-                ${renderKPICard('IDX30', '512.76', '+0.65', true)}
-                ${renderKPICard('KOMPAS100', '1,189.33', '+0.21', true)}
+                ${renderKPICard('IHSG', 7284.52, '+0.42', true)}
+                ${renderKPICard('LQ45', 1043.18, '-0.18', false)}
+                ${renderKPICard('IDX30', 512.76, '+0.65', true)}
+                ${renderKPICard('KOMPAS100', 1189.33, '+0.21', true)}
             </div>
 
             <!-- ROW 2: Chart & Movers -->
@@ -25,7 +26,7 @@ export async function renderDashboard(root) {
                         <h2 style="margin:0">IHSG (Jakarta Composite Index)</h2>
                         <div class="chip neutral">1D</div>
                     </div>
-                    <div style="position: relative; height: 250px; width: 100%;">
+                    <div style="position:relative; height:250px; width:100%;">
                         <canvas id="ihsgChart"></canvas>
                     </div>
                 </div>
@@ -47,7 +48,7 @@ export async function renderDashboard(root) {
                 <div class="card">
                     <div class="flex-between mb-4">
                         <h2 style="margin:0">Watchlist</h2>
-                        <button class="icon-btn" title="Add to Watchlist"><i data-lucide="plus"></i></button>
+                        <button class="icon-btn" aria-label="Add to Watchlist" title="Add to Watchlist"><i data-lucide="plus"></i></button>
                     </div>
                     <div class="watchlist-mini">
                         ${renderWatchlistRow('BBRI', '4,850', '-1.20', false)}
@@ -59,8 +60,8 @@ export async function renderDashboard(root) {
                 
                 <div class="card" style="text-align:center;">
                     <h2 style="text-align:left; margin-bottom:16px;">Portfolio Summary</h2>
-                    <div style="font-size:12px; color:var(--color-text-muted)">Total Value</div>
-                    <div class="price positive" style="font-size:32px; font-weight:700; margin:4px 0;">Rp 145.2M</div>
+                    <div style="font-size:12px; color:var(--text-muted)">Total Value</div>
+                    <div class="price positive" style="font-size:32px; font-weight:700; margin:4px 0; font-variant-numeric:tabular-nums;">Rp 145.2M</div>
                     <div class="chip success mb-4">+ Rp 2.4M (1.68%) Today</div>
                     
                     <div style="height:150px; position:relative; width:150px; margin:0 auto;">
@@ -84,33 +85,31 @@ export async function renderDashboard(root) {
             <!-- ROW 4: Sector Heatmap -->
             <div class="card">
                 <h2>Sector Heatmap</h2>
-                <div class="heatmap-grid" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-top:16px; height: 120px;">
-                    <div style="background:var(--color-success); border-radius:8px; padding:12px; color:white;">
-                        <div style="font-size:12px;">Finance</div>
-                        <div class="mono" style="font-size:16px; font-weight:bold;">+1.2%</div>
-                    </div>
-                    <div style="background:var(--color-danger); border-radius:8px; padding:12px; color:white;">
-                        <div style="font-size:12px;">Tech</div>
-                        <div class="mono" style="font-size:16px; font-weight:bold;">-2.4%</div>
-                    </div>
-                    <div style="background:var(--color-primary-highlight); border-radius:8px; padding:12px; color:var(--color-primary-active);">
-                        <div style="font-size:12px;">Consumer</div>
-                        <div class="mono" style="font-size:16px; font-weight:bold;">+0.3%</div>
-                    </div>
-                    <div style="background:var(--color-danger-bg); border-radius:8px; padding:12px; color:var(--color-danger);">
-                        <div style="font-size:12px;">Property</div>
-                        <div class="mono" style="font-size:16px; font-weight:bold;">-0.8%</div>
-                    </div>
-                    <div style="background:var(--color-success); border-radius:8px; padding:12px; color:white;">
-                        <div style="font-size:12px;">Energy</div>
-                        <div class="mono" style="font-size:16px; font-weight:bold;">+1.8%</div>
-                    </div>
+                <div class="heatmap-grid" style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:16px;">
+                    ${renderHeatmapTile('Finance', '+1.2', true)}
+                    ${renderHeatmapTile('Tech', '-2.4', false)}
+                    ${renderHeatmapTile('Consumer', '+0.3', true)}
+                    ${renderHeatmapTile('Property', '-0.8', false)}
+                    ${renderHeatmapTile('Energy', '+1.8', true)}
                 </div>
             </div>
         </div>
     `;
 
     lucide.createIcons();
+    
+    // Animations
+    animateCards('.card');
+    animateSparklines();
+    
+    // CountUp for KPI values
+    document.querySelectorAll('[data-countup]').forEach(el => {
+        const val = parseFloat(el.dataset.countup);
+        const prefix = el.dataset.prefix || '';
+        const suffix = el.dataset.suffix || '';
+        animateCountUp(el, val, prefix, suffix);
+    });
+    
     initDashboardCharts();
     loadNews();
 }
@@ -118,16 +117,16 @@ export async function renderDashboard(root) {
 function renderKPICard(title, val, change, isPositive) {
     const colorClass = isPositive ? 'success' : 'danger';
     const icon = isPositive ? '▲' : '▼';
+    const sparkD = isPositive ? 'M0,25 Q15,10 30,20 T60,5' : 'M0,5 Q15,20 30,10 T60,25';
     return `
         <div class="card kpi-card">
             <div class="kpi-title">${title}</div>
-            <div class="kpi-value">${val}</div>
+            <div class="kpi-value" data-countup="${val}">0</div>
             <div class="kpi-change ${colorClass}">
                 ${icon} ${change}%
             </div>
-            <!-- Fake sparkline -->
             <svg class="kpi-sparkline" viewBox="0 0 60 30" preserveAspectRatio="none">
-                <path d="${isPositive ? 'M0,25 Q15,10 30,20 T60,5' : 'M0,5 Q15,20 30,10 T60,25'}" 
+                <path class="sparkline-path" d="${sparkD}" 
                       fill="none" stroke="var(--color-${colorClass})" stroke-width="2" stroke-linecap="round"/>
             </svg>
         </div>
@@ -142,7 +141,7 @@ function renderMoverRow(ticker, name, price, change) {
                 <div class="chip neutral" style="width:48px; justify-content:center;">${ticker}</div>
                 <div>
                     <div style="font-weight:500;">${name}</div>
-                    <div class="mono price" style="font-size:12px; color:var(--color-text-muted)">Rp ${price}</div>
+                    <div class="mono price" style="font-size:12px; color:var(--text-muted)">Rp ${price}</div>
                 </div>
             </div>
             <div class="chip ${isPositive ? 'success' : 'danger'}">${change}%</div>
@@ -152,7 +151,7 @@ function renderMoverRow(ticker, name, price, change) {
 
 function renderWatchlistRow(ticker, price, change, isPositive) {
     return `
-        <div class="flex-between" style="padding:12px 0; border-bottom:1px solid var(--color-divider);">
+        <div class="flex-between" style="padding:12px 0; border-bottom:1px solid var(--border);">
             <div>
                 <a href="#stock/${ticker}" style="font-weight:600; text-decoration:none;" class="mono">${ticker}</a>
             </div>
@@ -164,32 +163,43 @@ function renderWatchlistRow(ticker, price, change, isPositive) {
     `;
 }
 
+function renderHeatmapTile(sector, change, isPositive) {
+    return `
+        <div class="heatmap-tile" style="background:var(--color-${isPositive ? 'success' : 'danger'}${isPositive ? '' : '-bg'}); border-radius:var(--radius-lg); padding:12px; color:${isPositive ? 'white' : 'var(--color-danger)'};">
+            <div style="font-size:12px;">${sector}</div>
+            <div class="mono" style="font-size:16px; font-weight:bold; font-variant-numeric:tabular-nums;">${change}%</div>
+        </div>
+    `;
+}
+
 async function loadNews() {
     const container = document.getElementById('news-container');
     if (!container) return;
     
     const res = await fetchNews(5);
     if (!res || res.data.length === 0) {
-        container.innerHTML = '<p style="color:var(--color-text-muted)">No recent news available.</p>';
+        container.innerHTML = '<p style="color:var(--text-muted)">No recent news available.</p>';
         return;
     }
     
     container.innerHTML = res.data.map(n => {
         const date = n.published_at ? new Date(n.published_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
         return `
-            <a href="${n.link}" target="_blank" style="display:block;">
-                <div style="font-size:11px; color:var(--color-text-faint); margin-bottom:4px;">${n.source} • ${date}</div>
-                <div style="font-weight:500; font-size:13px; line-height:1.4; color:var(--color-text)">${n.title}</div>
+            <a href="${n.link}" target="_blank" rel="noopener noreferrer" style="display:block;">
+                <div style="font-size:11px; color:var(--text-faint); margin-bottom:4px;">${n.source} • ${date}</div>
+                <div style="font-weight:500; font-size:13px; line-height:1.4; color:var(--text)">${n.title}</div>
             </a>
         `;
-    }).join('<div style="height:1px; background:var(--color-divider)"></div>');
+    }).join('<div style="height:1px; background:var(--border)"></div>');
 }
 
 function initDashboardCharts() {
-    // Check if Chart is available (loaded via CDN)
     if (typeof Chart === 'undefined') return;
 
-    // Line Chart
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const primaryColor = isDark ? '#4ade80' : '#16a34a';
+    const gridColor = isDark ? 'rgba(74,222,128,0.08)' : 'rgba(22,163,74,0.08)';
+
     const ctxIHSG = document.getElementById('ihsgChart');
     if (ctxIHSG) {
         new Chart(ctxIHSG, {
@@ -199,8 +209,8 @@ function initDashboardCharts() {
                 datasets: [{
                     label: 'IHSG',
                     data: [7250, 7265, 7240, 7270, 7280, 7284.52],
-                    borderColor: '#0F7B43',
-                    backgroundColor: 'rgba(15, 123, 67, 0.1)',
+                    borderColor: primaryColor,
+                    backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(22,163,74,0.08)',
                     fill: true,
                     tension: 0.4,
                     pointRadius: 0,
@@ -213,13 +223,12 @@ function initDashboardCharts() {
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { position: 'right', grid: { color: 'rgba(200,200,200,0.1)' } }
+                    y: { position: 'right', grid: { color: gridColor } }
                 }
             }
         });
     }
 
-    // Donut Chart
     const ctxDonut = document.getElementById('portfolioDonut');
     if (ctxDonut) {
         new Chart(ctxDonut, {
@@ -228,7 +237,7 @@ function initDashboardCharts() {
                 labels: ['Banking', 'Tech', 'Consumer', 'Mining'],
                 datasets: [{
                     data: [45, 25, 20, 10],
-                    backgroundColor: ['#0F7B43', '#18A058', '#3DD68C', '#C8E6D3'],
+                    backgroundColor: [primaryColor, isDark ? '#22c55e' : '#15803d', isDark ? '#86efac' : '#dcfce7', isDark ? '#4a7a56' : '#9ca3af'],
                     borderWidth: 0
                 }]
             },
