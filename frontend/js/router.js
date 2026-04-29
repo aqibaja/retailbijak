@@ -4,8 +4,6 @@ import { renderScreener } from './views/screener.js';
 import { renderPortfolio } from './views/portfolio.js';
 import { renderMarket } from './views/market.js';
 import { renderNews } from './views/news.js';
-import { renderSettings } from './views/settings.js';
-import { renderHelp } from './views/help.js';
 
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');
@@ -14,33 +12,42 @@ export function handleRoute(hash) {
     const path = hash.replace(/^#\/?/, '') || 'dashboard';
     const baseRoute = path.split('/')[0];
 
-    // Update Sidebar Navigation
-    document.querySelectorAll('.nav-item').forEach(el => {
+    // Update active state in desktop and mobile nav
+    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
         const view = el.getAttribute('data-view');
-        el.classList.toggle('active', view === baseRoute);
+        if (view) el.classList.toggle('active', view === baseRoute);
     });
 
-    // Simple transition
-    root.style.opacity = '0';
+    // Fade out transition
+    root.classList.add('page-loading');
     
     setTimeout(() => {
-        renderView(root, path);
-        root.style.opacity = '1';
-        window.scrollTo(0, 0);
-    }, 100);
-}
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        
+        const segments = path.split('/');
+        const view = segments[0];
 
-function renderView(root, path) {
-    const segments = path.split('/');
-    const view = segments[0];
+        try {
+            if (view === 'dashboard') renderDashboard(root);
+            else if (view === 'stock' && segments[1]) renderStockDetail(root, segments[1]);
+            else if (view === 'market') renderMarket(root);
+            else if (view === 'screener') renderScreener(root);
+            else if (view === 'portfolio' || view === 'watchlist') renderPortfolio(root, view);
+            else if (view === 'news') renderNews(root);
+            else renderDashboard(root); // Fallback
+            
+            // Re-initialize icons for newly injected HTML
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+        } catch (e) {
+            console.error("Routing error:", e);
+            root.innerHTML = `<div class="p-4 text-down">Error loading view.</div>`;
+        }
 
-    if (view === 'dashboard') renderDashboard(root);
-    else if (view === 'stock' && segments[1]) renderStockDetail(root, segments[1]);
-    else if (view === 'market') renderMarket(root);
-    else if (view === 'screener') renderScreener(root);
-    else if (view === 'portfolio' || view === 'watchlist') renderPortfolio(root, view);
-    else if (view === 'news') renderNews(root);
-    else if (view === 'settings') renderSettings(root);
-    else if (view === 'help') renderHelp(root);
-    else renderDashboard(root); // Default fallback
+        // Fade in
+        requestAnimationFrame(() => {
+            root.classList.remove('page-loading');
+        });
+        
+    }, 200); // Wait for fade out
 }

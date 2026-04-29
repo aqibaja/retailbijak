@@ -1,67 +1,78 @@
 import { fetchFundamental, fetchTechnical, fetchChartData } from '../api.js';
-import { animateCards } from '../main.js';
+import { observeElements, flashUpdate } from '../main.js';
 
 export async function renderStockDetail(root, ticker) {
     root.innerHTML = `
-        <section class="reveal">
-            <!-- Summary Header -->
-            <div class="card mb-6">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-4">
-                       <a href="#dashboard" class="btn" style="padding:8px; border:none; background:rgba(255,255,255,0.03);"><i data-lucide="chevron-left"></i></a>
-                       <div>
-                          <div class="flex items-center gap-3">
-                            <h1 class="mono strong" style="font-size:28px; margin:0;">${ticker}</h1>
-                            <div id="stock-badges" class="flex gap-2"></div>
-                          </div>
-                          <div class="text-muted mt-1" id="stock-name" style="font-size:14px;">Institutional Intelligence</div>
-                       </div>
-                    </div>
-                    <div style="text-align:right">
-                        <div id="stock-price" class="mono strong" style="font-size:28px;">---</div>
-                        <div id="stock-change" class="mono mt-1" style="font-size:14px; font-weight:700;">0.00%</div>
-                    </div>
+      <section class="grid grid-cols-12 stagger-reveal">
+        <!-- Header -->
+        <div class="col-span-12 panel flex-col mb-2" style="padding:16px 24px;">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                   <a href="#dashboard" class="btn btn-icon" style="border:none;"><i data-lucide="arrow-left" style="width:20px;"></i></a>
+                   <div>
+                      <div class="flex items-center gap-3 mb-1">
+                        <h1 class="mono text-2xl strong m-0">${ticker}</h1>
+                        <span class="badge badge-primary">EQ</span>
+                        <span class="badge badge-up">LIVE</span>
+                      </div>
+                      <div class="text-xs text-muted" id="stock-name">Loading issuer data...</div>
+                   </div>
+                </div>
+                <div class="flex-col items-end">
+                    <div class="mono text-3xl strong" id="stock-price" style="letter-spacing:-1px;">---</div>
+                    <div class="mono text-sm mt-1" id="stock-change">0.00%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chart -->
+        <div class="col-span-8 panel flex-col" style="padding:0; overflow:hidden; min-height:480px;">
+            <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border-subtle);">
+                <div class="flex gap-2">
+                    ${['1D','1W','1M','3M','1Y'].map(t=>`<button class="btn ${t==='1D'?'':'text-muted'}" style="padding:4px 10px; font-size:11px; background:${t==='1D'?'var(--bg-elevated)':'transparent'}; border-color:${t==='1D'?'var(--border-strong)':'transparent'};">${t}</button>`).join('')}
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="status-dot live"></span>
+                    <span class="mono text-xs text-dim">CANDLESTICK</span>
+                </div>
+            </div>
+            <div id="tvchart" style="flex:1; width:100%;"></div>
+        </div>
+        
+        <!-- Sidebar Intel -->
+        <div class="col-span-4 flex-col gap-4">
+            <!-- Technicals -->
+            <div class="panel flex-col">
+                <h3 class="text-xs uppercase text-muted strong mb-4" style="border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">Technical Rating</h3>
+                <div id="technical-panel" class="flex-col gap-3">
+                    <div class="skeleton skel-text"></div>
+                    <div class="skeleton skel-text"></div>
+                </div>
+            </div>
+            
+            <!-- Fundamentals -->
+            <div class="panel flex-col" style="flex:1;">
+                <h3 class="text-xs uppercase text-muted strong mb-4" style="border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">Key Statistics</h3>
+                <div id="fundamental-panel" class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2 skeleton skel-text"></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-12">
-                <!-- Chart Module -->
-                <div class="span-8 card" style="display:flex; flex-direction:column; padding:0; overflow:hidden; min-height:500px;">
-                    <div class="flex justify-between items-center" style="padding:16px 24px; border-bottom:1px solid var(--border);">
-                        <div class="flex gap-2">
-                            ${['1D','1W','1M','3M','1Y'].map(t=>`<button class="chip ${t==='1D'?'chip-up':''}">${t}</button>`).join('')}
-                        </div>
-                        <div class="text-dim mono" style="font-size:10px; letter-spacing:1px;">CANDLESTICK • ANALYTICS</div>
-                    </div>
-                    <div id="tvchart" style="flex:1; width:100%;"></div>
-                </div>
-                
-                <!-- Side Intel -->
-                <div class="span-4 flex" style="flex-direction:column; gap:24px;">
-                    <div class="card">
-                        <h3 class="strong mb-4" style="font-size:12px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Technical Rating</h3>
-                        <div id="technical-panel" class="flex" style="flex-direction:column; gap:16px;">
-                            <div class="text-dim">Analysing indicators...</div>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <h3 class="strong mb-4" style="font-size:12px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Key Statistics</h3>
-                        <div id="fundamental-panel" class="grid grid-cols-12">
-                            <div class="span-12 text-dim">Aggregating stats...</div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-2">
-                        <button class="btn" style="background:rgba(255,255,255,0.03);">WATCHLIST</button>
-                        <button class="btn btn-primary">TRADE</button>
-                    </div>
+            <!-- Execution -->
+            <div class="panel flex-col" style="border-color:var(--primary-color); background:rgba(59,130,246,0.05);">
+                <h3 class="text-xs uppercase text-primary strong mb-2">Order Execution</h3>
+                <p class="text-xs text-muted mb-4">Route order to institutional broker.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="btn" style="border-color:var(--border-focus);">WATCHLIST</button>
+                    <button class="btn btn-primary">BUY / SELL</button>
                 </div>
             </div>
-        </section>
+        </div>
+      </section>
     `;
-    lucide.createIcons();
-    animateCards('.card');
+    
+    observeElements();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     const [fundData, techData, chartData] = await Promise.all([
         fetchFundamental(ticker),
@@ -78,14 +89,16 @@ export async function renderStockDetail(root, ticker) {
         const pct = ((change / prev.close) * 100).toFixed(2);
         const isPos = change >= 0;
 
-        document.getElementById('stock-price').textContent = `Rp ${price.toLocaleString()}`;
+        const priceEl = document.getElementById('stock-price');
+        priceEl.textContent = `Rp ${price.toLocaleString()}`;
+        flashUpdate(priceEl, isPos);
+
         const chEl = document.getElementById('stock-change');
         chEl.textContent = `${isPos ? '+' : ''}${change.toLocaleString()} (${pct}%)`;
-        chEl.className = `mono mt-1 ${isPos ? 'text-up' : 'text-down'}`;
+        chEl.className = `mono text-sm mt-1 ${isPos ? 'text-up' : 'text-down'} strong`;
     }
     
     document.getElementById('stock-name').textContent = fundData?.data?.name || `Indonesian Stock Exchange`;
-    document.getElementById('stock-badges').innerHTML = `<span class="chip chip-up">LQ45</span><span class="chip">MAIN BOARD</span>`;
 
     if (typeof LightweightCharts !== 'undefined') renderLightweightChart(chartData);
     renderTechnicalPanel(techData);
@@ -98,15 +111,16 @@ function renderLightweightChart(chartData) {
     container.innerHTML = '';
     
     const chart = LightweightCharts.createChart(container, {
-        layout: { textColor: '#94a3b8', background: { type: 'solid', color: 'transparent' } },
-        grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
-        timeScale: { borderVisible: false },
-        rightPriceScale: { borderVisible: false }
+        layout: { textColor: '#6e7681', background: { type: 'solid', color: 'transparent' }, fontFamily: "'JetBrains Mono', monospace" },
+        grid: { vertLines: { color: 'rgba(255,255,255,0.03)' }, horzLines: { color: 'rgba(255,255,255,0.03)' } },
+        timeScale: { borderVisible: false, tickMarkFormatter: (time) => new Date(time).toLocaleDateString(undefined, {month:'short', day:'numeric'}) },
+        rightPriceScale: { borderVisible: false },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
     });
     
     const series = chart.addCandlestickSeries({
-        upColor: '#10b981', downColor: '#f43f5e', borderVisible: false,
-        wickUpColor: '#10b981', wickDownColor: '#f43f5e'
+        upColor: '#10b981', downColor: '#ef4444', borderVisible: false,
+        wickUpColor: '#10b981', wickDownColor: '#ef4444'
     });
 
     series.setData(chartData.data.map(d => ({
@@ -123,10 +137,10 @@ function renderTechnicalPanel(techData) {
     
     const row = (label, val, status, isPos) => `
         <div class="flex justify-between items-center">
-            <span class="text-muted" style="font-size:12px;">${label}</span>
-            <div style="text-align:right">
-                <span class="mono strong" style="font-size:13px;">${val}</span>
-                <div class="${isPos ? 'text-up' : 'text-down'}" style="font-size:10px; font-weight:800; margin-top:2px;">${status}</div>
+            <span class="text-xs text-dim uppercase">${label}</span>
+            <div class="text-right">
+                <span class="mono strong text-sm">${val}</span>
+                <div class="${isPos ? 'text-up' : 'text-down'} text-xs strong mt-1">${status}</div>
             </div>
         </div>`;
 
@@ -141,7 +155,7 @@ function renderTechnicalPanel(techData) {
 function renderFundamentalPanel(fundData) {
     const panel = document.getElementById('fundamental-panel');
     const d = fundData?.data;
-    const item = (l, v) => `<div class="span-6 mb-4"><div class="text-dim mb-1" style="font-size:10px; text-transform:uppercase;">${l}</div><div class="mono strong" style="font-size:14px;">${v}</div></div>`;
+    const item = (l, v) => `<div><div class="text-xs text-dim uppercase mb-1">${l}</div><div class="mono strong text-base">${v}</div></div>`;
     
     if (!d) {
         panel.innerHTML = item('P/E Ratio', '18.4x') + item('P/B Ratio', '2.1x') + item('Div Yield', '3.2%') + item('ROE', '17.9%');
