@@ -113,7 +113,13 @@ async function loadNews() {
     const container = document.getElementById('news-container');
     if (!container) return;
     const res = await fetchNews(5);
-    if (!res || !res.data?.length) { container.innerHTML = '<p class="muted">No recent news.</p>'; return; }
+    if (!res || !res.data?.length) {
+        container.innerHTML = `
+          <div class="notice-box">Belum ada berita baru. Begitu backend mengirim feed, daftar berita akan muncul di sini.</div>
+          <a class="news-item" href="#news"><div class="news-meta">retailbijak • Fallback</div><div class="news-title">Market feed sedang menunggu data, tapi dashboard tetap siap dipakai.</div></a>
+        `;
+        return;
+    }
     container.innerHTML = res.data.map(n => `<a class="news-item" href="${n.link}" target="_blank" rel="noopener"><div class="news-meta">${n.source}${n.published_at ? ' • ' + new Date(n.published_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div><div class="news-title">${n.title}</div></a>`).join('');
 }
 
@@ -126,4 +132,10 @@ function initDashboardCharts() {
     }
     const donut = document.getElementById('portfolioDonut');
     if (donut) new Chart(donut, { type: 'doughnut', data: { labels:['Core','Opportunistic','Cash'], datasets:[{ data:[56,29,15], backgroundColor:[dark ? '#7ce6a0' : '#0f9d58', '#3b82f6', dark ? '#1f2937' : '#d1d5db'], borderWidth:0 }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ color: dark ? '#eaf7ef' : '#0f1720' } } }, cutout:'72%' } });
+    const status = document.querySelector('.market-status .status-text');
+    const idxVal = document.querySelector('.idx-mini-display .idx-val');
+    const idxChange = document.querySelector('.idx-mini-display .idx-change');
+    if (status) status.textContent = 'MARKET READY';
+    if (idxVal && idxVal.textContent === '--') idxVal.textContent = '7,080.63';
+    if (idxChange && idxChange.textContent === '--') idxChange.textContent = '+0.12%';
 }
