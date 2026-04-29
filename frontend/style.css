@@ -183,6 +183,48 @@ button, input, select { font-family: inherit; border: none; background: none; co
   animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
+.scanner-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 40px; height: 100%; text-align: center;
+}
+.scanner-empty-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(59,130,246,0.1); color: var(--primary-color);
+  margin-bottom: 24px; position: relative;
+}
+.scanner-empty-icon::after {
+  content: ''; position: absolute; inset: -8px; border-radius: 50%;
+  border: 1px solid rgba(59,130,246,0.4);
+  animation: radar-pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes radar-pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.scanner-row {
+  height: 56px; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; justify-content: space-between;
+  transition: all 0.15s var(--ease-out); text-decoration: none; color: inherit;
+}
+.scanner-row:hover {
+  background: rgba(255,255,255,0.03); transform: translateX(4px);
+}
+
+.skeleton-shimmer {
+  position: relative; overflow: hidden; background: #0f172a;
+}
+.skeleton-shimmer::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  animation: skeleton-shimmer 1.5s infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ================= UTILITIES ================= */
 .flex { display: flex; }
 .flex-col { display: flex; flex-direction: column; }
