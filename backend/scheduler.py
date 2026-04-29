@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import pytz
@@ -53,5 +54,17 @@ def init_scheduler():
     )
     
     scheduler.start()
+
+    # Ensure data is refreshed immediately when service starts during market hours.
+    now = datetime.now(jkt_tz)
+    if now.weekday() < 5 and 9 <= now.hour <= 16:
+        logger.info("Queueing immediate OHLCV refresh on startup (market hours).")
+        scheduler.add_job(
+            update_daily_ohlcv,
+            id="startup_ohlcv_refresh",
+            replace_existing=True,
+            next_run_time=now,
+        )
+
     logger.info("APScheduler started successfully.")
     return scheduler
