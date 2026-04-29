@@ -118,6 +118,18 @@ button, input, select { font: inherit; }
   color: var(--text); cursor:pointer; transition: transform var(--transition), border-color var(--transition), background var(--transition);
 }
 .icon-btn:hover { transform: translateY(-1px); border-color: var(--border-strong); background: rgba(124,230,160,0.08); }
+.topbar-more-wrap { position: relative; }
+.topbar-more-menu {
+  position: absolute; right: 0; top: calc(100% + 10px); min-width: 250px; padding: 8px;
+  border-radius: 18px; border: 1px solid var(--border-strong); background: rgba(6, 12, 8, 0.98);
+  box-shadow: var(--shadow-lg); display: none; z-index: 120;
+}
+.topbar-more-wrap.open .topbar-more-menu { display: grid; gap: 6px; }
+.topbar-more-item {
+  width: 100%; display:flex; align-items:center; gap:10px; padding: 12px 12px; border-radius: 12px;
+  border: 1px solid transparent; background: transparent; color: var(--text); text-align:left; cursor:pointer;
+}
+.topbar-more-item:hover { background: rgba(124,230,160,0.08); border-color: var(--border); }
 .user-avatar {
   width: 42px; height: 42px; border-radius: 50%; display:grid; place-items:center;
   font-weight: 800; color: var(--primary);

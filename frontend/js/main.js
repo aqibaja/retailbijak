@@ -93,6 +93,36 @@ function clearAppCacheAndReload() {
     window.location.reload(true);
 }
 
+function setupTopbarMoreMenu() {
+    const wrap = document.querySelector('.topbar-more-wrap');
+    const btn = document.getElementById('topbar-more-btn');
+    const menu = document.getElementById('topbar-more-menu');
+    if (!wrap || !btn || !menu) return;
+    const setOpen = (open) => {
+        wrap.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+    };
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(!wrap.classList.contains('open'));
+    });
+    menu.addEventListener('click', (e) => {
+        const action = e.target.closest('[data-action]')?.dataset.action;
+        if (!action) return;
+        if (action === 'clear-cache') clearAppCacheAndReload();
+        else if (action === 'go-watchlist') window.location.hash = '#watchlist';
+        else if (action === 'go-news') window.location.hash = '#news';
+        else if (action === 'go-settings') window.location.hash = '#settings';
+        else if (action === 'go-help') window.location.hash = '#help';
+        setOpen(false);
+    });
+    document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) setOpen(false);
+    });
+    window.addEventListener('hashchange', () => setOpen(false));
+}
+
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
 if (!window.location.hash) window.location.hash = '#dashboard';
 else handleRoute(window.location.hash);
@@ -150,6 +180,7 @@ async function refreshTopbarMarket() {
 initTheme();
 lucide.createIcons();
 setupMobileDrawer();
+setupTopbarMoreMenu();
 refreshTopbarMarket();
 setInterval(refreshTopbarMarket, 60000);
 const refreshBtn = document.getElementById('refresh-app-btn');
