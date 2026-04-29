@@ -79,12 +79,18 @@ function setupMobileDrawer() {
     if (!drawer) return;
     const openers = document.querySelectorAll('[data-open-drawer]');
     const closers = drawer.querySelectorAll('[data-close-drawer]');
-    const openDrawer = () => drawer.classList.add('open');
-    const closeDrawer = () => drawer.classList.remove('open');
+    const setState = (open) => {
+        drawer.classList.toggle('open', open);
+        drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+        document.body.classList.toggle('drawer-open', open);
+    };
+    const openDrawer = () => setState(true);
+    const closeDrawer = () => setState(false);
     openers.forEach(btn => btn.addEventListener('click', openDrawer));
     closers.forEach(btn => btn.addEventListener('click', closeDrawer));
     drawer.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', closeDrawer));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+    window.addEventListener('hashchange', closeDrawer);
 }
 
 async function refreshTopbarMarket() {
