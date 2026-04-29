@@ -106,7 +106,7 @@ export async function renderDashboard(root) {
 const row = (ticker, price, change) => `
   <a href="#stock/${ticker}" class="flex items-center justify-between p-3" style="background:transparent; border:1px solid transparent; border-bottom: 1px solid var(--border-subtle); border-radius:0; transition:background 0.2s;">
     <div class="flex items-center gap-3">
-      <div style="width:32px; height:32px; background:rgba(99,102,241,0.1); border-radius:8px; display:grid; place-items:center; font-size:10px; font-weight:800; color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${ticker.substring(0,2)}</div>
+      <div style="width:32px; height:32px; background:var(--accent-glow); border-radius:8px; display:grid; place-items:center; font-size:10px; font-weight:800; color:var(--accent-indigo); border:1px solid rgba(99,102,241,0.2);">${ticker.substring(0,2)}</div>
       <div><div class="mono strong text-main">${ticker}</div><div class="text-xs text-dim strong">EQ</div></div>
     </div>
     <div style="text-align:right">
@@ -142,13 +142,13 @@ async function loadNews() {
         return `
             <a href="${n.link}" target="_blank" class="news-card" style="border-radius:12px; background:var(--bg-elevated); border:1px solid var(--border-subtle); display:flex; flex-direction:column;">
                 <div class="news-image-wrap" style="height:140px; display:flex; align-items:center; justify-content:center; background:rgba(99,102,241,0.05);">
-                    ${imageUrl ? imageElement : '<i data-lucide="newspaper" style="width:40px; color:rgba(99,102,241,0.4);"></i>'}
+                    ${imageUrl ? imageElement : '<i data-lucide="newspaper" style="width:40px; color:var(--text-dim);"></i>'}
                     <div class="news-image-fallback" style="${imageUrl ? 'display:none;' : 'display:flex;'} align-items:center; justify-content:center; height:100%; width:100%;">
-                       <i data-lucide="newspaper" style="width:40px; color:rgba(99,102,241,0.4);"></i>
+                       <i data-lucide="newspaper" style="width:40px; color:var(--text-dim);"></i>
                     </div>
                 </div>
                 <div class="news-content" style="padding:16px; flex:1;">
-                    <span class="news-badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; margin-bottom:8px; display:inline-block;">${n.source || 'MARKET'}</span>
+                    <span class="news-badge" style="background:var(--accent-glow); color:var(--accent-indigo); font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; margin-bottom:8px; display:inline-block;">${n.source || 'MARKET'}</span>
                     <h3 class="news-title" style="font-size:14px; font-weight:600; color:var(--text-main); line-height:1.4;">${n.title}</h3>
                 </div>
             </a>`;

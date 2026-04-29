@@ -5,7 +5,7 @@ export function initTheme() {
     const langToggleBtn = document.getElementById('lang-toggle');
     const htmlEl = document.documentElement;
 
-    let isDark = localStorage.getItem('retail-theme') !== 'light';
+    let isDark = localStorage.getItem('retail-theme') === 'dark' || localStorage.getItem('retail-theme') === null;
     let currentLang = localStorage.getItem('retail-lang') || 'en';
 
     function applyTheme() {
