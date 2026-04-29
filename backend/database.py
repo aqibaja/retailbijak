@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, create_engine, ForeignKey, Boolean
+from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./swingaq.db"
@@ -101,6 +101,14 @@ class News(Base):
     published_at = Column(DateTime, index=True)
     source = Column(String)
     summary = Column(String)
+
+
+class UserSetting(Base):
+    __tablename__ = "user_settings"
+
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # Dependency for FastAPI

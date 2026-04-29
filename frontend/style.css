@@ -836,6 +836,12 @@ button {
   vertical-align: middle;
 }
 
+.data-table.compact-rows th,
+.data-table.compact-rows td {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
 .data-table tbody tr {
   transition: background-color var(--transition);
   cursor: pointer;

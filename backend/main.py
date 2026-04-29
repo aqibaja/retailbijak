@@ -12,6 +12,7 @@ from datetime import datetime
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from scanner import VALID_TIMEFRAMES
 from stocks import get_all_tickers, get_ticker_display
-from database import Base, engine, SessionLocal, Signal, get_db
+from database import Base, engine, SessionLocal, Signal, UserSetting, get_db
 from scheduler import init_scheduler, scheduler
 
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0")
@@ -51,6 +52,11 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 @app.get("/")
 async def root():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+
+class SettingsPayload(BaseModel):
+    compact_table_rows: bool = False
+    auto_refresh_screener: bool = False
 
 
 # --- API ---
@@ -266,6 +272,35 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
         "count": len(records),
         "data": records
     }
+
+
+@app.get("/api/settings")
+def get_settings(db: Session = Depends(get_db)):
+    compact = db.query(UserSetting).filter(UserSetting.key == "compact_table_rows").first()
+    auto_refresh = db.query(UserSetting).filter(UserSetting.key == "auto_refresh_screener").first()
+    return {
+        "compact_table_rows": compact.value == "true" if compact else False,
+        "auto_refresh_screener": auto_refresh.value == "true" if auto_refresh else False,
+    }
+
+
+@app.put("/api/settings")
+def update_settings(payload: SettingsPayload, db: Session = Depends(get_db)):
+    updates = {
+        "compact_table_rows": "true" if payload.compact_table_rows else "false",
+        "auto_refresh_screener": "true" if payload.auto_refresh_screener else "false",
+    }
+
+    for key, value in updates.items():
+        row = db.query(UserSetting).filter(UserSetting.key == key).first()
+        if row:
+            row.value = value
+        else:
+            db.add(UserSetting(key=key, value=value))
+
+    db.commit()
+    return {"ok": True, **payload.model_dump()}
+
 
 # Mount the entire frontend directory at / to serve static files (js, views, style.css)
 # MUST be at the bottom so it doesn't intercept /api routes

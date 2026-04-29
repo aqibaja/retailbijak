@@ -1,7 +1,7 @@
-import { getScanEventSourceUrl, showToast } from '../api.js';
+import { getScanEventSourceUrl, showToast, fetchSettings } from '../api.js';
 import { animateCards, animateTableRows } from '../main.js';
 
-export function renderScreener(root) {
+export async function renderScreener(root) {
     root.innerHTML = `
         <div class="flex-between mb-4">
             <h1>Stock Screener</h1>
@@ -82,7 +82,14 @@ export function renderScreener(root) {
     document.getElementById('btn-run-screener').addEventListener('click', runScreener);
     lucide.createIcons();
     animateCards('.card');
+
+    const settings = await fetchSettings();
+    if (settings.compact_table_rows) {
+        const table = root.querySelector('.data-table');
+        if (table) table.classList.add('compact-rows');
+    }
 }
+
 
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;

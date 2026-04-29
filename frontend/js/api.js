@@ -28,6 +28,19 @@ export async function fetchChartData(ticker, limit = 100) {
     return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}`);
 }
 
+export async function fetchSettings() {
+    const data = await apiFetch('/settings');
+    return data || { compact_table_rows: false, auto_refresh_screener: false };
+}
+
+export async function updateSettings(settings) {
+    return apiFetch('/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+    });
+}
+
 // ─── SSE URL (relative for production) ─────────────────
 export function getScanEventSourceUrl(timeframe) {
     return `${window.location.origin}/api/scan?timeframe=${timeframe}`;
