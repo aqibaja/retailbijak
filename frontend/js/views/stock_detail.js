@@ -60,26 +60,35 @@ export async function renderStockDetail(root, ticker) {
     ]);
 
     // Update Header
-    if (chartData && chartData.data.length > 0) {
+    if (chartData && Array.isArray(chartData.data) && chartData.data.length > 0) {
         const last = chartData.data[chartData.data.length - 1];
         const prev = chartData.data[chartData.data.length - 2] || last;
-        const latestPrice = last.close;
-        const change = latestPrice - prev.close;
-        const pct = ((change / prev.close) * 100).toFixed(2);
+        const latestPrice = Number(last.close) || 0;
+        const prevClose = Number(prev.close) || latestPrice || 1;
+        const change = latestPrice - prevClose;
+        const pct = ((change / prevClose) * 100).toFixed(2);
         const isPos = change >= 0;
-        
+
         document.getElementById('stock-price').innerHTML = `<span style="font-variant-numeric:tabular-nums;">Rp ${latestPrice.toLocaleString()}</span>`;
         document.getElementById('stock-change').innerHTML = `
             <span class="chip ${isPos ? 'success' : 'danger'}" style="font-size:14px;">
                 ${isPos ? '▲' : '▼'} ${Math.abs(change).toLocaleString()} (${Math.abs(pct)}%)
             </span>
         `;
+    } else {
+        document.getElementById('stock-price').textContent = 'Price unavailable';
+        document.getElementById('stock-change').innerHTML = '<span class="chip neutral">No latest quote</span>';
     }
-    
+
     document.getElementById('stock-name').innerText = `${ticker} — Indonesian Stock Exchange`;
     document.getElementById('stock-badges').innerHTML = `<span class="chip neutral">IDX</span>`;
 
-    renderLightweightChart(chartData);
+    try {
+        renderLightweightChart(chartData);
+    } catch (error) {
+        console.error('Failed rendering chart', error);
+        document.getElementById('tvchart').innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">Chart failed to load.</div>';
+    }
     renderTechnicalPanel(techData);
     renderFundamentalPanel(fundData);
 }
