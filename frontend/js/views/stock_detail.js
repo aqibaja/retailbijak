@@ -2,6 +2,12 @@ import { fetchFundamental, fetchTechnical, fetchChartData } from '../api.js';
 import { animateCards } from '../main.js';
 
 export async function renderStockDetail(root, ticker) {
+    const fallback = {
+        name: `${ticker} — Indonesian Stock Exchange`,
+        price: 'Rp 7,080',
+        change: '+0.12% (Demo)',
+        badges: '<span class="chip neutral">IDX</span><span class="chip success">Demo Live</span>',
+    };
     root.innerHTML = `
         <section class="section-grid reveal stock-detail-shell">
             <div class="card stock-header-card">
@@ -80,12 +86,12 @@ export async function renderStockDetail(root, ticker) {
             </span>
         `;
     } else {
-        document.getElementById('stock-price').textContent = 'Price unavailable';
-        document.getElementById('stock-change').innerHTML = '<span class="chip neutral">No latest quote</span>';
+        document.getElementById('stock-price').textContent = fallback.price;
+        document.getElementById('stock-change').innerHTML = `<span class="chip success">${fallback.change}</span>`;
     }
 
-    document.getElementById('stock-name').innerText = `${ticker} — Indonesian Stock Exchange`;
-    document.getElementById('stock-badges').innerHTML = `<span class="chip neutral">IDX</span>`;
+    document.getElementById('stock-name').innerText = fallback.name;
+    document.getElementById('stock-badges').innerHTML = fallback.badges;
 
     try {
         renderLightweightChart(chartData);
@@ -152,6 +158,7 @@ function renderTechnicalPanel(techData) {
                 <div class="flex-between"><span style="color:var(--text-muted);">Trend (SMA)</span><span class="chip success">Uptrend</span></div>
                 <div class="flex-between"><span style="color:var(--text-muted);">RSI (14)</span><span style="display:flex; align-items:center; gap:8px;"><span class="mono">58.20</span><span class="chip neutral">Neutral</span></span></div>
                 <div class="flex-between"><span style="color:var(--text-muted);">MACD</span><span style="display:flex; align-items:center; gap:8px;"><span class="mono">1.84</span><span class="chip success">Bullish Crossover</span></span></div>
+                <div class="notice-box">Data teknikal belum lengkap dari backend, jadi mode demo ditampilkan agar halaman tetap terasa hidup.</div>
             </div>`;
         return;
     }
@@ -191,6 +198,7 @@ function renderFundamentalPanel(fundData) {
                 <div><div style="font-size:11px; color:var(--text-muted);">EPS</div><div class="mono" style="font-size:14px; font-weight:600;">142.00</div></div>
                 <div><div style="font-size:11px; color:var(--text-muted);">Div Yield</div><div class="mono" style="font-size:14px; font-weight:600;">3.20%</div></div>
                 <div><div style="font-size:11px; color:var(--text-muted);">ROE</div><div class="mono" style="font-size:14px; font-weight:600;">17.90%</div></div>
+                <div><div style="font-size:11px; color:var(--text-muted);">Status</div><div class="mono" style="font-size:14px; font-weight:600;">Demo ready</div></div>
             </div>
             <div style="font-size:10px; color:var(--text-faint); margin-top:16px;">Updated: Today, 09:00 WIB</div>`;
         return;
