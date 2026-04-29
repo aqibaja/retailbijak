@@ -1,117 +1,44 @@
 import { getScanEventSourceUrl, showToast, fetchSettings } from '../api.js';
+import { animateCards } from '../main.js';
 
 let autoRefreshTimer = null;
-import { animateCards, animateTableRows } from '../main.js';
 
 export async function renderScreener(root) {
     root.innerHTML = `
-        <div class="flex-between mb-4">
-            <h1>Stock Screener</h1>
+      <section class="section-grid reveal">
+        <div class="card">
+          <div class="flex-between mb-3"><div><h1 class="mb-2">Stock Screener</h1><p class="muted">Cari setup teknikal yang layak dieksekusi. Fokus pada momentum, volume, dan validasi sinyal.</p></div><button id="btn-run-screener-mobile" class="btn btn-primary screener-mobile-sticky">Run Screener</button></div>
+          <div class="split-row screener-layout">
+            <div class="panel screener-panel">
+              <div class="field"><label>Strategy</label><select id="screener-strategy"><option>retailbijak Momentum</option><option disabled>Golden Cross (Pro)</option><option disabled>RSI Oversold (Pro)</option></select></div>
+              <div class="field"><label>Timeframe</label><select id="screener-tf"><option value="1d">Daily (1D)</option><option value="1h">1 Hour (H1)</option><option value="4h">4 Hours (H4)</option><option value="1wk">Weekly (1W)</option></select></div>
+              <div class="field"><label>Preset</label><div class="chip-row"><button class="chip active">Breakout</button><button class="chip neutral">Mean Reversion</button><button class="chip neutral">Trend</button></div></div>
+              <button id="btn-run-screener" class="btn btn-primary w-full">Run Screener</button>
+              <div id="screener-progress" class="screener-progress" style="display:none;"><div id="sp-text" class="progress-text">Scanning... 0%</div><div class="progress-bar"><div id="sp-fill" class="progress-fill"></div></div></div>
+            </div>
+            <div class="panel screener-results">
+              <div class="flex-between mb-3"><h2 class="mb-0">Results</h2><div class="chip neutral" id="screener-count">0 matches</div></div>
+              <div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Ticker</th><th>Date</th><th>Close</th><th>Magic Line</th><th>CCI</th><th>Stop Loss</th><th>SL %</th><th>Signal</th><th>Action</th></tr></thead><tbody id="screener-tbody"><tr><td colspan="9" class="empty-state">Klik <strong>Run Screener</strong> untuk mencari peluang trading.</td></tr></tbody></table></div>
+            </div>
+          </div>
         </div>
-        <div class="screener-mobile-sticky">
-            <button id="btn-run-screener-mobile" class="btn btn-primary">Run Screener</button>
-        </div>
+      </section>`;
 
-        <div class="split-row" style="grid-template-columns: 280px 1fr;">
-            <!-- FILTER PANEL -->
-            <div class="card" style="align-self:flex-start;">
-                <h3 style="margin-bottom:16px;">Screener Setup</h3>
-                
-                <div class="mb-4">
-                    <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600; color:var(--text-muted);">Strategy</label>
-                    <select style="width:100%; padding:8px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:14px;">
-                        <option>SwingAQ Custom (CCI+Magic)</option>
-                        <option disabled>Golden Cross (Pro)</option>
-                        <option disabled>RSI Oversold (Pro)</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4">
-                    <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600; color:var(--text-muted);">Timeframe</label>
-                    <select id="screener-tf" style="width:100%; padding:8px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:14px;">
-                        <option value="1d">Daily (1D)</option>
-                        <option value="1h">1 Hour (H1)</option>
-                        <option value="4h">4 Hours (H4)</option>
-                        <option value="1wk">Weekly (1W)</option>
-                    </select>
-                </div>
-                
-                <hr style="border:0; border-top:1px solid var(--border); margin:16px 0;">
-                
-                <button id="btn-run-screener" class="btn btn-primary" style="width:100%; justify-content:center;">
-                    Run Screener
-                </button>
-                
-                <div id="screener-progress" style="margin-top:16px; display:none;">
-                    <div style="font-size:11px; margin-bottom:4px; color:var(--text-muted);" id="sp-text">Scanning... 0%</div>
-                    <div style="width:100%; height:4px; background:var(--surface-2); border-radius:var(--radius-full); overflow:hidden;">
-                        <div id="sp-fill" style="width:0%; height:100%; background:var(--primary); transition:width 0.2s;"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- RESULTS TABLE -->
-            <div class="card" style="padding:0; overflow:hidden;">
-                <div style="padding:16px; border-bottom:1px solid var(--border);" class="flex-between">
-                    <h3 style="margin:0;">Results</h3>
-                    <div class="chip neutral" id="screener-count">0 matches</div>
-                </div>
-                <div class="data-table-wrapper" style="max-height:600px; overflow-y:auto;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Ticker</th>
-                                <th>Date</th>
-                                <th>Close</th>
-                                <th>Magic Line</th>
-                                <th>CCI</th>
-                                <th>Stop Loss</th>
-                                <th>SL %</th>
-                                <th>Signal</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="screener-tbody">
-                            <tr>
-                                <td colspan="9" style="text-align:center; padding:40px; color:var(--text-muted);">
-                                    Click "Run Screener" to find trading opportunities.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    const desktopRunBtn = document.getElementById('btn-run-screener');
-    const mobileRunBtn = document.getElementById('btn-run-screener-mobile');
-    desktopRunBtn.addEventListener('click', runScreener);
-    mobileRunBtn.addEventListener('click', runScreener);
     lucide.createIcons();
     animateCards('.card');
 
     const settings = await fetchSettings();
-    if (settings.compact_table_rows) {
-        const table = root.querySelector('.data-table');
-        if (table) table.classList.add('compact-rows');
-    }
+    if (settings.compact_table_rows) root.querySelector('.data-table')?.classList.add('compact-rows');
 
-    if (autoRefreshTimer) {
-        clearInterval(autoRefreshTimer);
-        autoRefreshTimer = null;
-    }
-
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     if (settings.auto_refresh_screener) {
-        autoRefreshTimer = setInterval(() => {
-            if (window.location.hash === '#screener') {
-                runScreener();
-            }
-        }, 5 * 60 * 1000);
-        showToast('Auto-refresh enabled (every 5 minutes)', 'info', 2500);
+        autoRefreshTimer = setInterval(() => window.location.hash === '#screener' && runScreener(), 5 * 60 * 1000);
+        showToast('Auto-refresh screener aktif', 'info', 2500);
     }
-}
 
+    root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
+    root.querySelector('#btn-run-screener-mobile').addEventListener('click', runScreener);
+}
 
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;
@@ -122,85 +49,39 @@ function runScreener() {
     const progText = document.getElementById('sp-text');
     const progFill = document.getElementById('sp-fill');
     const countBadge = document.getElementById('screener-count');
-    
-    btn.disabled = true;
-    btn.textContent = 'Scanning...';
-    if (btnMobile) {
-        btnMobile.disabled = true;
-        btnMobile.textContent = 'Scanning...';
-    }
+
+    [btn, btnMobile].forEach(b => { if (b) { b.disabled = true; b.textContent = 'Scanning...'; } });
     tbody.innerHTML = '';
     progBox.style.display = 'block';
     let matchCount = 0;
-    countBadge.innerText = '0 matches';
-    
+    countBadge.textContent = '0 matches';
+
     const eventSource = new EventSource(getScanEventSourceUrl(tf));
-    
-    eventSource.onmessage = function(event) {
+    eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
         if (data.type === 'progress') {
-            progText.innerText = `Scanning ${data.ticker}... ${data.percent}%`;
+            progText.textContent = `Scanning ${data.ticker}... ${data.percent}%`;
             progFill.style.width = `${data.percent}%`;
-        } 
-        else if (data.type === 'result') {
-            matchCount++;
-            countBadge.innerText = `${matchCount} match${matchCount > 1 ? 'es' : ''}`;
-            
+        } else if (data.type === 'result') {
+            matchCount += 1;
+            countBadge.textContent = `${matchCount} match${matchCount > 1 ? 'es' : ''}`;
             const r = data.data;
             const tr = document.createElement('tr');
-            tr.style.opacity = '0';
-            tr.innerHTML = `
-                <td><a href="#stock/${r.ticker}" class="mono" style="font-weight:600;">${r.ticker}</a></td>
-                <td class="mono">${r.date.split(' ')[0]}</td>
-                <td class="mono">${r.close.toLocaleString()}</td>
-                <td class="mono">${r.magic_line.toFixed(2)}</td>
-                <td class="mono">${r.cci.toFixed(2)}</td>
-                <td class="mono">${r.stop_loss.toFixed(2)}</td>
-                <td class="mono negative">${r.sl_pct.toFixed(2)}%</td>
-                <td><span class="chip success">BUY</span></td>
-                <td>
-                    <a href="#stock/${r.ticker}" class="icon-btn" style="display:inline-flex; width:28px; height:28px;" aria-label="View ${r.ticker}">
-                        <i data-lucide="eye" style="width:14px;"></i>
-                    </a>
-                </td>
-            `;
+            tr.innerHTML = `<td><a href="#stock/${r.ticker}" class="mono strong">${r.ticker}</a></td><td class="mono">${r.date.split(' ')[0]}</td><td class="mono">${r.close.toLocaleString()}</td><td class="mono">${r.magic_line.toFixed(2)}</td><td class="mono">${r.cci.toFixed(2)}</td><td class="mono">${r.stop_loss.toFixed(2)}</td><td class="mono negative">${r.sl_pct.toFixed(2)}%</td><td><span class="chip success">BUY</span></td><td><a href="#stock/${r.ticker}" class="icon-btn" aria-label="View ${r.ticker}"><i data-lucide="eye"></i></a></td>`;
             tbody.appendChild(tr);
-            lucide.createIcons({root: tr});
-            
-            // Animate row in
-            if (typeof gsap !== 'undefined') {
-                gsap.to(tr, { opacity: 1, duration: 0.3, ease: 'power1.out' });
-            } else {
-                tr.style.opacity = '1';
-            }
-        }
-        else if (data.type === 'done') {
-            progText.innerText = `Complete! Found ${data.total_signals} signals in ${data.duration_seconds}s`;
-            btn.disabled = false;
-            btn.textContent = 'Run Screener';
-            if (btnMobile) {
-                btnMobile.disabled = false;
-                btnMobile.textContent = 'Run Screener';
-            }
+            lucide.createIcons({ root: tr });
+        } else if (data.type === 'done') {
+            progText.textContent = `Complete! Found ${data.total_signals} signals in ${data.duration_seconds}s`;
+            [btn, btnMobile].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Run Screener'; } });
             eventSource.close();
-            showToast(`Scan complete: ${data.total_signals} signals found`, 'success');
-            
-            if (matchCount === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--text-muted);">No signals found for this timeframe.</td></tr>`;
-            }
+            showToast(`Scan complete: ${data.total_signals} signals`, 'success');
+            if (matchCount === 0) tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No signals found for this timeframe.</td></tr>`;
         }
     };
-    
-    eventSource.onerror = function() {
-        progText.innerText = 'Error connecting to scanner API';
+    eventSource.onerror = () => {
+        progText.textContent = 'Error connecting to scanner API';
         progFill.style.background = 'var(--danger)';
-        btn.disabled = false;
-        btn.textContent = 'Run Screener';
-        if (btnMobile) {
-            btnMobile.disabled = false;
-            btnMobile.textContent = 'Run Screener';
-        }
+        [btn, btnMobile].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Run Screener'; } });
         eventSource.close();
         showToast('Connection error. Please try again.', 'error');
     };

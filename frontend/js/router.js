@@ -10,62 +10,29 @@ import { renderHelp } from './views/help.js';
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');
     const path = hash.replace('#', '');
-    
-    // Update active nav state
-    document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => {
-        el.classList.remove('active');
-    });
-    
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
     const baseRoute = path.split('/')[0];
     const navItem = document.querySelector(`.sidebar-nav .nav-item[data-view="${baseRoute}"]`);
     if (navItem) navItem.classList.add('active');
 
-    // Page transition animation
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
+    const paint = () => renderView(root, path);
+
     if (!prefersReducedMotion && typeof gsap !== 'undefined') {
-        // Fade out
-        gsap.to(root, {
-            opacity: 0,
-            duration: 0.15,
-            onComplete: () => {
-                renderView(root, path);
-                // Fade in
-                gsap.fromTo(root,
-                    { opacity: 0 },
-                    { opacity: 1, duration: 0.2, ease: 'power2.out' }
-                );
-            }
-        });
+        gsap.to(root, { opacity: 0, duration: 0.12, onComplete: () => { paint(); gsap.fromTo(root, { opacity: 0 }, { opacity: 1, duration: 0.18 }); } });
     } else {
-        renderView(root, path);
+        paint();
     }
 }
 
 function renderView(root, path) {
-    if (path === '' || path === 'dashboard') {
-        renderDashboard(root);
-    } else if (path.startsWith('stock/')) {
-        const ticker = path.split('/')[1];
-        renderStockDetail(root, ticker);
-    } else if (path === 'market') {
-        renderMarket(root);
-    } else if (path === 'screener') {
-        renderScreener(root);
-    } else if (path === 'portfolio' || path === 'watchlist') {
-        renderPortfolio(root, path);
-    } else if (path === 'news') {
-        renderNews(root);
-    } else if (path === 'settings') {
-        renderSettings(root);
-    } else if (path === 'help') {
-        renderHelp(root);
-    } else {
-        root.innerHTML = `
-            <div style="text-align:center; padding:60px;">
-                <h2>Page Not Found</h2>
-                <p style="color:var(--color-text-muted); margin-top:8px;">The view "${path}" is under construction.</p>
-            </div>
-        `;
-    }
+    if (path === '' || path === 'dashboard') renderDashboard(root);
+    else if (path.startsWith('stock/')) renderStockDetail(root, path.split('/')[1]);
+    else if (path === 'market') renderMarket(root);
+    else if (path === 'screener') renderScreener(root);
+    else if (path === 'portfolio' || path === 'watchlist') renderPortfolio(root, path);
+    else if (path === 'news') renderNews(root);
+    else if (path === 'settings') renderSettings(root);
+    else if (path === 'help') renderHelp(root);
+    else root.innerHTML = `<div class="card"><h2>Page Not Found</h2><p class="mb-0" style="color:var(--text-muted)">View "${path}" belum tersedia.</p></div>`;
 }

@@ -1,252 +1,101 @@
 import { fetchNews } from '../api.js';
-import { animateCards, animateCountUp, animateSparklines, animateTableRows } from '../main.js';
+import { animateCards, animateCountUp, animateSparklines } from '../main.js';
 
 export async function renderDashboard(root) {
     root.innerHTML = `
-        <div class="dashboard-header flex-between mb-4">
-            <h1>Dashboard Overview</h1>
-            <div class="date-display" style="color:var(--text-muted); font-size:14px;">
-                ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      <section class="dashboard-shell reveal">
+        <div class="dashboard-hero">
+          <div class="card hero-copy">
+            <div class="chip neutral mb-3">retailbijak terminal</div>
+            <h1>Analisa market lebih cepat, lebih tajam, dan lebih profesional.</h1>
+            <p>Dashboard ini dirancang untuk stock analyst Indonesia: memindai peluang, membaca momentum, memantau portofolio, dan menjaga fokus pada keputusan yang benar.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#screener"><i data-lucide="filter"></i> Buka Screener</a>
+              <a class="btn btn-outline" href="#market"><i data-lucide="bar-chart-3"></i> Market Overview</a>
+              <a class="btn btn-outline" href="#portfolio"><i data-lucide="pie-chart"></i> Portfolio</a>
             </div>
+          </div>
+          <div class="card">
+            <div class="hero-metrics">
+              ${metric('Market Breadth', '72%', '+8% vs yesterday')}
+              ${metric('Active Signals', '148', 'last refresh 2 min ago')}
+              ${metric('Watchlist', '24', '3 new alerts')}
+            </div>
+          </div>
         </div>
 
-        <div class="dashboard-grid">
-            <!-- ROW 1: KPIs -->
-            <div class="kpi-row">
-                ${renderKPICard('IHSG', 7284.52, '+0.42', true)}
-                ${renderKPICard('LQ45', 1043.18, '-0.18', false)}
-                ${renderKPICard('IDX30', 512.76, '+0.65', true)}
-                ${renderKPICard('KOMPAS100', 1189.33, '+0.21', true)}
-            </div>
-
-            <!-- ROW 2: Chart & Movers -->
-            <div class="split-row">
-                <div class="card chart-panel">
-                    <div class="flex-between mb-4">
-                        <h2 style="margin:0">IHSG (Jakarta Composite Index)</h2>
-                        <div class="chip neutral">1D</div>
-                    </div>
-                    <div style="position:relative; height:250px; width:100%;">
-                        <canvas id="ihsgChart"></canvas>
-                    </div>
-                </div>
-                <div class="card movers-panel">
-                    <h2>Top Gainers</h2>
-                    <div class="movers-list" style="display:flex; flex-direction:column; gap:12px;">
-                        ${renderMoverRow('GOTO', 'GoTo Gojek Tokopedia', '96', '+9.09')}
-                        ${renderMoverRow('BRPT', 'Barito Pacific', '1,200', '+5.20')}
-                        ${renderMoverRow('BBCA', 'Bank Central Asia', '9,800', '+3.15')}
-                        ${renderMoverRow('TLKM', 'Telkom Indonesia', '3,420', '+2.50')}
-                        ${renderMoverRow('ASII', 'Astra International', '5,300', '+1.92')}
-                        ${renderMoverRow('ANTM', 'Aneka Tambang', '1,920', '+1.50')}
-                    </div>
-                </div>
-            </div>
-
-            <!-- ROW 3: Watchlist, Portfolio, News -->
-            <div class="three-col-row">
-                <div class="card">
-                    <div class="flex-between mb-4">
-                        <h2 style="margin:0">Watchlist</h2>
-                        <button class="icon-btn" aria-label="Add to Watchlist" title="Add to Watchlist"><i data-lucide="plus"></i></button>
-                    </div>
-                    <div class="watchlist-mini">
-                        ${renderWatchlistRow('BBRI', '4,850', '-1.20', false)}
-                        ${renderWatchlistRow('UNVR', '2,900', '+0.50', true)}
-                        ${renderWatchlistRow('PGAS', '1,350', '+2.10', true)}
-                        ${renderWatchlistRow('BUMI', '120', '-3.50', false)}
-                    </div>
-                </div>
-                
-                <div class="card" style="text-align:center;">
-                    <h2 style="text-align:left; margin-bottom:16px;">Portfolio Summary</h2>
-                    <div style="font-size:12px; color:var(--text-muted)">Total Value</div>
-                    <div class="price positive" style="font-size:32px; font-weight:700; margin:4px 0; font-variant-numeric:tabular-nums;">Rp 145.2M</div>
-                    <div class="chip success mb-4">+ Rp 2.4M (1.68%) Today</div>
-                    
-                    <div style="height:150px; position:relative; width:150px; margin:0 auto;">
-                        <canvas id="portfolioDonut"></canvas>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="flex-between mb-4">
-                        <h2 style="margin:0">Market News</h2>
-                        <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">View All</button>
-                    </div>
-                    <div id="news-container" style="display:flex; flex-direction:column; gap:16px;">
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text"></div>
-                        <div class="skeleton skeleton-text"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- ROW 4: Sector Heatmap -->
-            <div class="card">
-                <h2>Sector Heatmap</h2>
-                <div class="heatmap-grid" style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:16px;">
-                    ${renderHeatmapTile('Finance', '+1.2', true)}
-                    ${renderHeatmapTile('Tech', '-2.4', false)}
-                    ${renderHeatmapTile('Consumer', '+0.3', true)}
-                    ${renderHeatmapTile('Property', '-0.8', false)}
-                    ${renderHeatmapTile('Energy', '+1.8', true)}
-                </div>
-            </div>
+        <div class="kpi-row">
+          ${kpi('IHSG', 7284.52, '+0.42')}
+          ${kpi('LQ45', 1043.18, '-0.18')}
+          ${kpi('IDX30', 512.76, '+0.65')}
+          ${kpi('KOMPAS100', 1189.33, '+0.21')}
         </div>
-    `;
+
+        <div class="split-row">
+          <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Market Pulse</h2><span class="chip neutral">1D</span></div>
+            <div style="height:280px"><canvas id="ihsgChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Top Gainers</h2><a href="#market" class="chip neutral">See all</a></div>
+            <div class="stack-list">${['GOTO','BRPT','BBCA','TLKM','ASII','ANTM'].map((t,i)=>row(t,['GoTo Gojek Tokopedia','Barito Pacific','Bank Central Asia','Telkom Indonesia','Astra International','Aneka Tambang'][i],['96','1,200','9,800','3,420','5,300','1,920'][i],['+9.09','+5.20','+3.15','+2.50','+1.92','+1.50'][i])).join('')}</div>
+          </div>
+        </div>
+
+        <div class="three-col-row">
+          <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Watchlist</h2><a href="#watchlist" class="chip neutral">Manage</a></div>
+            ${['BBRI','UNVR','PGAS','BUMI'].map((t,i)=>watch(t,['4,850','2,900','1,350','120'][i],['-1.20','+0.50','+2.10','-3.50'][i], [false,true,true,false][i])).join('')}
+          </div>
+          <div class="card">
+            <h2 class="mb-3">Portfolio Summary</h2>
+            <div class="hero-metrics" style="grid-template-columns: 1fr;">
+              <div class="hero-metric"><div class="label">Total Value</div><div class="value">Rp 145.2M</div><div class="sub positive">+ Rp 2.4M (1.68%) today</div></div>
+              <div style="height:160px"><canvas id="portfolioDonut"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Market News</h2><a href="#news" class="chip neutral">All news</a></div>
+            <div id="news-container" class="stack-list">
+              <div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="flex-between mb-3"><h2 class="mb-0">Sector Heatmap</h2><span class="chip neutral">Relative strength</span></div>
+          <div class="heatmap-grid">${['Finance:+1.2','Tech:-2.4','Consumer:+0.3','Property:-0.8','Energy:+1.8'].map(x=>heat(...x.split(':'))).join('')}</div>
+        </div>
+      </section>`;
 
     lucide.createIcons();
-    
-    // Animations
     animateCards('.card');
     animateSparklines();
-    
-    // CountUp for KPI values
-    document.querySelectorAll('[data-countup]').forEach(el => {
-        const val = parseFloat(el.dataset.countup);
-        const prefix = el.dataset.prefix || '';
-        const suffix = el.dataset.suffix || '';
-        animateCountUp(el, val, prefix, suffix);
-    });
-    
+    document.querySelectorAll('[data-countup]').forEach(el => animateCountUp(el, parseFloat(el.dataset.countup), el.dataset.prefix || '', el.dataset.suffix || ''));
     initDashboardCharts();
     loadNews();
 }
 
-function renderKPICard(title, val, change, isPositive) {
-    const colorClass = isPositive ? 'success' : 'danger';
-    const icon = isPositive ? '▲' : '▼';
-    const sparkD = isPositive ? 'M0,25 Q15,10 30,20 T60,5' : 'M0,5 Q15,20 30,10 T60,25';
-    return `
-        <div class="card kpi-card">
-            <div class="kpi-title">${title}</div>
-            <div class="kpi-value" data-countup="${val}">0</div>
-            <div class="kpi-change ${colorClass}">
-                ${icon} ${change}%
-            </div>
-            <svg class="kpi-sparkline" viewBox="0 0 60 30" preserveAspectRatio="none">
-                <path class="sparkline-path" d="${sparkD}" 
-                      fill="none" stroke="var(--color-${colorClass})" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </div>
-    `;
-}
-
-function renderMoverRow(ticker, name, price, change) {
-    const isPositive = change.startsWith('+');
-    return `
-        <div class="flex-between" style="padding:4px 0;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div class="chip neutral" style="width:48px; justify-content:center;">${ticker}</div>
-                <div>
-                    <div style="font-weight:500;">${name}</div>
-                    <div class="mono price" style="font-size:12px; color:var(--text-muted)">Rp ${price}</div>
-                </div>
-            </div>
-            <div class="chip ${isPositive ? 'success' : 'danger'}">${change}%</div>
-        </div>
-    `;
-}
-
-function renderWatchlistRow(ticker, price, change, isPositive) {
-    return `
-        <div class="flex-between" style="padding:12px 0; border-bottom:1px solid var(--border);">
-            <div>
-                <a href="#stock/${ticker}" style="font-weight:600; text-decoration:none;" class="mono">${ticker}</a>
-            </div>
-            <div style="text-align:right;">
-                <div class="mono price">${price}</div>
-                <div class="mono change ${isPositive ? 'positive' : 'negative'}" style="font-size:12px;">${change}%</div>
-            </div>
-        </div>
-    `;
-}
-
-function renderHeatmapTile(sector, change, isPositive) {
-    return `
-        <div class="heatmap-tile" style="background:var(--color-${isPositive ? 'success' : 'danger'}${isPositive ? '' : '-bg'}); border-radius:var(--radius-lg); padding:12px; color:${isPositive ? 'white' : 'var(--color-danger)'};">
-            <div style="font-size:12px;">${sector}</div>
-            <div class="mono" style="font-size:16px; font-weight:bold; font-variant-numeric:tabular-nums;">${change}%</div>
-        </div>
-    `;
-}
+const metric = (label, value, sub) => `<div class="hero-metric"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+const kpi = (title, val, change) => `<div class="card kpi-card"><div class="kpi-title">${title}</div><div class="kpi-value" data-countup="${val}">0</div><div class="kpi-change ${String(change).startsWith('-') ? 'danger' : 'success'}">${String(change).startsWith('-') ? '▼' : '▲'} ${change}%</div><svg class="kpi-sparkline" viewBox="0 0 60 30"><path class="sparkline-path" d="M0,18 Q10,10 20,14 T40,8 T60,5" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/></svg></div>`;
+const row = (ticker, name, price, change) => `<a class="stack-item" href="#stock/${ticker}"><div><div class="stack-title mono">${ticker}</div><div class="stack-sub">${name}</div></div><div class="stack-right"><div class="mono">Rp ${price}</div><div class="chip ${change.startsWith('+') ? 'success' : 'danger'}">${change}%</div></div></a>`;
+const watch = (ticker, price, change, pos) => `<a class="stack-item" href="#stock/${ticker}"><div><div class="stack-title mono">${ticker}</div><div class="stack-sub">Watchlist</div></div><div class="stack-right"><div class="mono">${price}</div><div class="mono ${pos ? 'positive' : 'negative'}">${change}%</div></div></a>`;
+const heat = (sector, change) => `<div class="heatmap-tile ${change.startsWith('-') ? 'neg' : 'pos'}"><div>${sector}</div><strong>${change}%</strong></div>`;
 
 async function loadNews() {
     const container = document.getElementById('news-container');
     if (!container) return;
-    
     const res = await fetchNews(5);
-    if (!res || res.data.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted)">No recent news available.</p>';
-        return;
-    }
-    
-    container.innerHTML = res.data.map(n => {
-        const date = n.published_at ? new Date(n.published_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-        return `
-            <a href="${n.link}" target="_blank" rel="noopener noreferrer" style="display:block;">
-                <div style="font-size:11px; color:var(--text-faint); margin-bottom:4px;">${n.source} • ${date}</div>
-                <div style="font-weight:500; font-size:13px; line-height:1.4; color:var(--text)">${n.title}</div>
-            </a>
-        `;
-    }).join('<div style="height:1px; background:var(--border)"></div>');
+    if (!res || !res.data?.length) { container.innerHTML = '<p class="muted">No recent news.</p>'; return; }
+    container.innerHTML = res.data.map(n => `<a class="news-item" href="${n.link}" target="_blank" rel="noopener"><div class="news-meta">${n.source}${n.published_at ? ' • ' + new Date(n.published_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div><div class="news-title">${n.title}</div></a>`).join('');
 }
 
 function initDashboardCharts() {
     if (typeof Chart === 'undefined') return;
-
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const primaryColor = isDark ? '#4ade80' : '#16a34a';
-    const gridColor = isDark ? 'rgba(74,222,128,0.08)' : 'rgba(22,163,74,0.08)';
-
-    const ctxIHSG = document.getElementById('ihsgChart');
-    if (ctxIHSG) {
-        new Chart(ctxIHSG, {
-            type: 'line',
-            data: {
-                labels: ['10:00', '11:00', '13:00', '14:00', '15:00', '16:00'],
-                datasets: [{
-                    label: 'IHSG',
-                    data: [7250, 7265, 7240, 7270, 7280, 7284.52],
-                    borderColor: primaryColor,
-                    backgroundColor: isDark ? 'rgba(74,222,128,0.08)' : 'rgba(22,163,74,0.08)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { position: 'right', grid: { color: gridColor } }
-                }
-            }
-        });
-    }
-
-    const ctxDonut = document.getElementById('portfolioDonut');
-    if (ctxDonut) {
-        new Chart(ctxDonut, {
-            type: 'doughnut',
-            data: {
-                labels: ['Banking', 'Tech', 'Consumer', 'Mining'],
-                datasets: [{
-                    data: [45, 25, 20, 10],
-                    backgroundColor: [primaryColor, isDark ? '#22c55e' : '#15803d', isDark ? '#86efac' : '#dcfce7', isDark ? '#4a7a56' : '#9ca3af'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
+    const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const ctx = document.getElementById('ihsgChart');
+    if (!ctx) return;
+    new Chart(ctx, { type: 'line', data: { labels: ['10:00','11:00','13:00','14:00','15:00','16:00'], datasets: [{ data: [7250,7265,7240,7270,7280,7284.52], borderColor: dark ? '#7ce6a0' : '#0f9d58', backgroundColor: dark ? 'rgba(124,230,160,0.10)' : 'rgba(15,157,88,0.08)', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'transparent' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } }, y: { grid: { color: dark ? 'rgba(124,230,160,0.08)' : 'rgba(15,23,18,0.06)' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } } } } });
+    const donut = document.getElementById('portfolioDonut');
+    if (donut) new Chart(donut, { type: 'doughnut', data: { labels:['Core','Opportunistic','Cash'], datasets:[{ data:[56,29,15], backgroundColor:[dark ? '#7ce6a0' : '#0f9d58', '#3b82f6', dark ? '#1f2937' : '#d1d5db'], borderWidth:0 }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ color: dark ? '#eaf7ef' : '#0f1720' } } }, cutout:'72%' } });
 }

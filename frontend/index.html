@@ -1,125 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwingAQ — Trading Dashboard</title>
-  <meta name="description" content="Professional IDX Stock Scanner and Trading Dashboard">
-  
-  <!-- Fonts -->
+  <title>retailbijak — IDX Stock Intelligence</title>
+  <meta name="description" content="retailbijak adalah platform stock scanner, market dashboard, dan portfolio tracker untuk analisis saham IDX yang profesional.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  
-  <!-- CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  
-  <!-- Chart.js for small charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- TradingView Lightweight Charts for stock detail -->
   <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- GSAP for animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <!-- CountUp.js for number animations -->
   <script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.js"></script>
 </head>
 <body>
-  <!-- Skip to content for accessibility -->
-  <a href="#app-root" class="skip-to-content" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:8px 16px;background:var(--primary);color:#fff;font-weight:600;pointer-events:none;transition:left 0.2s;" onfocus="this.style.left='8px';this.style.top='8px';this.style.pointerEvents='auto'" onblur="this.style.left='-9999px'">Skip to content</a>
+  <a href="#app-root" class="skip-to-content">Lewati ke konten utama</a>
 
-  <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-left">
-      <div class="logo">
-        <i data-lucide="candlestick-chart"></i>
-        <span>SwingAQ</span>
-      </div>
+      <a href="#dashboard" class="brand">
+        <span class="brand-mark"><i data-lucide="candlestick-chart"></i></span>
+        <span class="brand-text">
+          <strong>retailbijak</strong>
+          <small>IDX Stock Intelligence</small>
+        </span>
+      </a>
       <div class="search-box">
         <i data-lucide="search" class="search-icon"></i>
-        <input type="text" placeholder="Search ticker or company...">
+        <input type="text" placeholder="Cari ticker, sektor, atau emiten...">
         <span class="search-hint">⌘K</span>
       </div>
     </div>
     <div class="topbar-right">
-      <div class="market-status">
-        <span class="status-indicator open"></span>
-        <span class="status-text">OPEN</span>
-      </div>
+      <div class="market-status" id="market-status-pill"><span class="status-indicator open"></span><span class="status-text">MARKET OPEN</span></div>
       <div class="idx-mini-display">
         <span class="idx-label">IHSG</span>
-        <span class="idx-val">7,284</span>
-        <span class="idx-change positive">+0.42%</span>
+        <span class="idx-val">--</span>
+        <span class="idx-change">--</span>
       </div>
-      <button class="icon-btn" aria-label="Notifications" title="Notifications">
-        <i data-lucide="bell"></i>
-      </button>
-      <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle Theme" title="Toggle Theme">
-        <i data-lucide="moon"></i>
-      </button>
-      <div class="user-avatar">AQ</div>
+      <button class="icon-btn" aria-label="Notifications" title="Notifications"><i data-lucide="bell"></i></button>
+      <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle Theme" title="Toggle Theme"><i data-lucide="moon"></i></button>
+      <div class="user-avatar" title="retailbijak">RB</div>
     </div>
   </header>
 
   <div class="app-container">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
+      <div class="sidebar-section-label">Navigate</div>
       <nav class="sidebar-nav">
-        <a href="#dashboard" class="nav-item active mobile-primary" data-view="dashboard">
-          <i data-lucide="layout-dashboard"></i>
-          <span class="nav-text">Dashboard</span>
-        </a>
-        <a href="#market" class="nav-item" data-view="market">
-          <i data-lucide="bar-chart-2"></i>
-          <span class="nav-text">Market Overview</span>
-        </a>
-        <a href="#watchlist" class="nav-item" data-view="watchlist">
-          <i data-lucide="eye"></i>
-          <span class="nav-text">Watchlist</span>
-        </a>
-        <a href="#screener" class="nav-item mobile-primary" data-view="screener">
-          <i data-lucide="filter"></i>
-          <span class="nav-text">Stock Screener</span>
-        </a>
-        <a href="#portfolio" class="nav-item mobile-primary" data-view="portfolio">
-          <i data-lucide="pie-chart"></i>
-          <span class="nav-text">Portfolio</span>
-        </a>
-        <a href="#news" class="nav-item" data-view="news">
-          <i data-lucide="newspaper"></i>
-          <span class="nav-text">News & Analysis</span>
-        </a>
-        
+        <a href="#dashboard" class="nav-item active mobile-primary" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span class="nav-text">Dashboard</span></a>
+        <a href="#market" class="nav-item" data-view="market"><i data-lucide="bar-chart-3"></i><span class="nav-text">Market</span></a>
+        <a href="#screener" class="nav-item mobile-primary" data-view="screener"><i data-lucide="filter"></i><span class="nav-text">Screener</span></a>
+        <a href="#portfolio" class="nav-item mobile-primary" data-view="portfolio"><i data-lucide="pie-chart"></i><span class="nav-text">Portfolio</span></a>
+        <a href="#watchlist" class="nav-item" data-view="watchlist"><i data-lucide="eye"></i><span class="nav-text">Watchlist</span></a>
+        <a href="#news" class="nav-item" data-view="news"><i data-lucide="newspaper"></i><span class="nav-text">News</span></a>
         <div class="nav-divider"></div>
-        
-        <a href="#settings" class="nav-item mobile-primary" data-view="settings">
-          <i data-lucide="settings"></i>
-          <span class="nav-text">Settings</span>
-        </a>
-        <a href="#help" class="nav-item" data-view="help">
-          <i data-lucide="help-circle"></i>
-          <span class="nav-text">Help</span>
-        </a>
+        <a href="#settings" class="nav-item mobile-primary" data-view="settings"><i data-lucide="settings"></i><span class="nav-text">Settings</span></a>
+        <a href="#help" class="nav-item" data-view="help"><i data-lucide="help-circle"></i><span class="nav-text">Help</span></a>
       </nav>
+      <div class="sidebar-footnote">
+        <span class="dot"></span>
+        <span>Powered by FastAPI + local market data</span>
+      </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="main-content" id="app-root">
-      <!-- Views will be injected here via JS -->
-    </main>
+    <main class="main-content" id="app-root"></main>
   </div>
 
-  <!-- Main App Entry -->
+  <div id="toast-container"></div>
   <script type="module" src="js/main.js"></script>
-  <!-- Initialize Icons -->
-  <script>
-    lucide.createIcons();
-  </script>
-
-  <!-- Toast container -->
-  <div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:10000;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
-
 </body>
 </html>

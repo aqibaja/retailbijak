@@ -1,6 +1,6 @@
-# SwingAQ — RetailBijak
+# retailbijak — IDX Stock Intelligence
 
-**IDX Stock Scanner & Trading Dashboard** — aplikasi web production untuk screening saham IDX, watchlist, portfolio tracker, dan analisis teknikal/fundamental.
+**retailbijak** adalah platform stock scanner, market dashboard, dan portfolio tracker untuk analisis saham IDX yang profesional.
 
 ---
 
@@ -26,25 +26,24 @@ retailbijak/
 │       └── fundamental_updater.py ← Update fundamental data
 ├── frontend/
 │   ├── index.html           ← Single-page app shell
-│   ├── style.css            ← Design system + responsive (1643 baris)
+│   ├── style.css            ← Design system + responsive
 │   └── js/
-│       ├── main.js          ← Entry: routing, GSAP animasi, topbar market
+│       ├── main.js          ← Entry: routing, animasi, topbar market
 │       ├── router.js        ← Hash-based SPA router
-│       ├── api.js           ← Fetch wrappers + toast system
-│       ├── theme.js         ← Dark/light mode
+│       ├── api.js          ← Fetch wrappers + toast system
+│       ├── theme.js        ← Dark/light mode
 │       └── views/
-│           ├── dashboard.js    ← KPI, chart, top gainers, news, heatmap
+│           ├── dashboard.js    ← KPI, chart, movers, news, heatmap
 │           ├── stock_detail.js ← Detail saham + candlestick chart + TA/FA
 │           ├── screener.js     ← SSE real-time screener + filter panel
 │           ├── portfolio.js    ← Watchlist & Portfolio CRUD (backend persistent)
-│           ├── market.js       ← Market overview (placeholder)
+│           ├── market.js       ← Market overview
 │           ├── news.js         ← News feed page
-│           ├── settings.js     ← User preferences (save ke backend)
+│           ├── settings.js     ← User preferences
 │           └── help.js         ← Help page statis
 ├── deploy/
 │   └── swingaq-backend.service  ← systemd unit untuk production
 ├── planning/                ← Dokumen perencanaan legacy
-│   ├── ARCHITECTURE.md, API_FEATURES.md, API_SPEC.md, dll
 ├── DEPLOY.md                ← Runbook deploy
 └── swingaq.db               ← SQLite database (auto-create, jangan commit)
 ```
@@ -85,23 +84,10 @@ sudo systemctl status swingaq-backend
 - **ORM**: SQLAlchemy + SQLite
 - **Scheduler**: APScheduler (BackgroundScheduler, timezone Asia/Jakarta)
 - **Provider**: Yahoo Finance (yfinance) — HANYA untuk fetch batch di scheduler, **TIDAK** dipanggil dari frontend
-- **Endpoint utama**:
-  | Method | Path | Keterangan |
-  |--------|------|------------|
-  | GET | `/api/health` | Health check |
-  | GET | `/api/market-summary` | Ringkasan IHSG dari DB lokal (no Yahoo) |
-  | GET/PUT | `/api/settings` | User preferences (compact rows, auto-refresh) |
-  | GET/POST/DELETE | `/api/watchlist` | Watchlist CRUD |
-  | GET/POST/DELETE | `/api/portfolio` | Portfolio position CRUD |
-  | GET | `/api/news?limit=N` | Berita market |
-  | GET | `/api/stocks/{ticker}/chart-data` | OHLCV + indikator untuk chart |
-  | GET | `/api/stocks/{ticker}/technical` | Summary teknikal (RSI, MACD, dll) |
-  | GET | `/api/stocks/{ticker}/fundamental` | Data fundamental |
-  | GET | `/api/scan?timeframe=X` | SSE streaming scanner |
 
 ### Frontend (Vanilla JS SPA)
 - **Routing**: Hash-based (`#dashboard`, `#screener`, `#stock/BBCA`, dll)
-- **Utils**: GSAP (animasi), Chart.js (dashboard chart), LightweightCharts (candlestick), Lucide (icons), CountUp
+- **Utils**: GSAP, Chart.js, LightweightCharts, Lucide, CountUp
 - **State**: Semua data dari API backend, **tidak ada fetch langsung ke Yahoo**
 - **Mobile**: Bottom nav bar (4 menu utama: Dashboard, Screener, Portfolio, Settings)
 
@@ -135,74 +121,45 @@ Semua timezone: **Asia/Jakarta**
 | News fetch | Daily 07:00-20:00 every 30m | `news_updater.update_news()` |
 | Fundamental | Daily 02:00 | `fundamental_updater.update_fundamentals()` |
 
-**Penting**: Service dijalankan dengan `--workers 1` untuk mencegah duplikasi job scheduler. Saat startup di jam market, scheduler langsung menjadwalkan 1x OHLCV refresh.
-
 ---
 
 ## 🎨 UI/UX Design System
 
-- **Tema**: Green design system (light/dark mode)
+- **Brand**: retailbijak
+- **Tema**: dark-first professional trading terminal
 - **Layout**:
-  - Desktop: Topbar + Sidebar (240px) + Main content
-  - Tablet (≤1024px): Sidebar collapse (64px, icon-only)
-  - Mobile (≤768px): Bottom navigation (4 menu utama), sidebar hidden
+  - Desktop: Topbar + Sidebar + Main content
+  - Mobile: Bottom navigation
 - **Komponen**: Card, KPI card, data-table, toast, skeleton loader, modal overlay, chip/badge
-- **Animasi**: GSAP (page transition, card stagger, count-up, sparkline draw)
-- **Accessibility**: Skip-to-content link, prefers-reduced-motion, keyboard shortcut ⌘K
+- **Animasi**: Halus dan fungsional
 
 ---
 
 ## 📋 Fitur (Saat Ini)
 
-| Fitur | Status | Backend | Frontend |
-|-------|--------|---------|----------|
-| Dashboard IHSG/KPI | ✅ | `/api/market-summary` (DB) | Live dari backend |
-| Screener SSE | ✅ | `/api/scan` (streaming) | Real-time table |
-| Stock Detail + Chart | ✅ | `/api/stocks/{t}/chart-data` | Candlestick (LightweightCharts) |
-| Technical Analysis | ✅ | `/api/stocks/{t}/technical` | RSI, MACD, Trend |
-| Fundamental Data | ✅ | `/api/stocks/{t}/fundamental` | P/E, P/B, EPS, dll |
-| Watchlist CRUD | ✅ | `/api/watchlist` | Persistent DB |
-| Portfolio CRUD | ✅ | `/api/portfolio` | Persistent DB |
-| User Settings | ✅ | `/api/settings` | Compact rows, auto-refresh |
-| News / Market | ✅ | `/api/news` | Feed + Market overview |
-| Help page | ✅ | - | Statis |
-| Dark/Light theme | ✅ | - | Toggle + auto-detect |
-| Responsive mobile | ✅ | - | Bottom nav, sticky controls |
-| Data ingestion | 🟡 | Scheduler dari Yahoo | Batch 2x/hari (rate-limited) |
+| Fitur | Status |
+|-------|--------|
+| Dashboard IHSG/KPI | ✅ |
+| Screener SSE | ✅ |
+| Stock Detail + Chart | ✅ |
+| Technical Analysis | ✅ |
+| Fundamental Data | ✅ |
+| Watchlist CRUD | ✅ |
+| Portfolio CRUD | ✅ |
+| User Settings | ✅ |
+| News / Market | ✅ |
+| Help page | ✅ |
+| Dark/Light theme | ✅ |
+| Responsive mobile | ✅ |
+| Data ingestion | 🟡 |
 
 ---
 
 ## 🔍 Batasan & Catatan Penting
 
-1. **Yahoo Rate Limit**: Scheduler batch OHLCV dari yfinance sering kena rate limit karena 600+ ticker IDX. Jadwal sudah diturunkan jadi 2x/hari (09:00 & 15:30) untuk mengurangi beban.
-2. **Data real-time**: Tidak ada real-time price. Harga terbaru sesuai jadwal scheduler terakhir sukses fetch.
-3. **Frontend tidak pernah fetch Yahoo langsung.** Semua data dari backend → DB lokal.
-4. **SQLite** — untuk production skala besar, migrasi ke PostgreSQL dianjurkan.
-5. **Auth**: Belum ada autentikasi. Aplikasi single-user saat ini.
-6. **Service restart non-interaktif**: Butuh privilege systemd (`systemctl restart swingaq-backend`).
-
----
-
-## Commit History (terbaru → lama)
-
-```
-a5588ae Improve mobile nav focus and screener quick-run UX
-6ab1e77 Guard scheduler lifecycle across startup/shutdown
-8da1286 Serve market summary from DB and harden topbar fallback
-3771854 Use DB-only market summary endpoint (no live Yahoo calls)
-d2fc353 Adjust OHLCV schedule to 09:00 and 15:30 weekdays
-3e6a343 Harden OHLCV refresh with chunked fetch and single-worker scheduler
-71833e7 Update OHLCV scheduler to run every 30 minutes on weekdays
-f15983a Add systemd service definition for production backend
-c90ba14 Add API E2E tests and deployment runbook
-1bdeeeb Implement persistent watchlist and portfolio end-to-end
-c81c1ff Enable screener auto-refresh from saved settings
-ef5a52f Add backend settings API and wire frontend preferences
-b37ea02 Add working routes for market, news, settings, and help
-9a5fd6d Fix stock detail loading fallback and mobile nav labels
-706d23d feat: complete UI/UX transformation — GSAP animations, green design system
-781aa89 Initial commit - SwingAQ v2 Fintech Dashboard
-```
+1. **Yahoo Rate Limit**: fetch OHLCV via yfinance bisa kena rate limit.
+2. **Data real-time**: tidak ada real-time price.
+3. **Frontend tidak pernah fetch Yahoo langsung.**
 
 ---
 
@@ -212,10 +169,9 @@ Saat melanjutkan pekerjaan di proyek ini:
 
 1. **Repo kerja**: `/home/rich27/.hermes/profiles/coder/home/retailbijak/`
 2. **Runtime publik**: `/opt/swingaq/` — sync dengan `cp` lalu restart service.
-3. **Test**: `cd /opt/swingaq/backend && ./venv/bin/pytest -q test_api_e2e.py` (5 test).
+3. **Test**: `cd /opt/swingaq/backend && ./venv/bin/pytest -q test_api_e2e.py`
 4. **Compile check**: `python -m py_compile backend/main.py backend/database.py && python -m compileall -q frontend/js`
 5. **Commit & push**: `git add ... && git commit -m "..." && git push origin main`
-6. **Restart service**: `systemctl restart swingaq-backend` (user rich27, no sudo needed jika di VPS shell).
-7. **Dokumentasi rujukan**: lihat `planning/` untuk spesifikasi awal, `DEPLOY.md` untuk runbook.
+6. **Restart service**: `systemctl restart swingaq-backend`
 
-**Prinsip**: Frontend hanya fetch dari backend. Backend fetch Yahoo hanya di scheduler, bukan di request path. Semua perubahan harus di-commit, di-push, di-deploy.
+**Prinsip**: Frontend hanya fetch dari backend. Backend fetch Yahoo hanya di scheduler, bukan di request path.
