@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchChartData } from '../api.js';
+import { fetchFundamental, fetchTechnical, fetchChartData, saveWatchlistItem, showToast } from '../api.js';
 import { observeElements, flashUpdate } from '../main.js';
 
 export async function renderStockDetail(root, ticker) {
@@ -13,7 +13,7 @@ export async function renderStockDetail(root, ticker) {
                       <div class="flex items-center gap-3 mb-1">
                         <h1 class="mono text-2xl strong m-0">${ticker}</h1>
                         <span class="badge badge-primary">EQ</span>
-                        <span class="badge badge-up">LIVE</span>
+                        <span class="badge badge-up" id="live-badge">LIVE</span>
                       </div>
                       <div class="text-xs text-muted" id="stock-name">Loading issuer data...</div>
                    </div>
@@ -63,8 +63,8 @@ export async function renderStockDetail(root, ticker) {
                 <h3 class="text-xs uppercase text-primary strong mb-2">Order Execution</h3>
                 <p class="text-xs text-muted mb-4">Route order to institutional broker.</p>
                 <div class="grid grid-cols-2 gap-2">
-                    <button class="btn" style="border-color:var(--border-focus);">WATCHLIST</button>
-                    <button class="btn btn-primary">BUY / SELL</button>
+                    <button id="btn-add-watchlist" class="btn" style="border-color:var(--border-focus);">WATCHLIST</button>
+                    <button id="btn-trade" class="btn btn-primary">BUY / SELL</button>
                 </div>
             </div>
         </div>
@@ -74,14 +74,30 @@ export async function renderStockDetail(root, ticker) {
     observeElements();
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    const [fundData, techData, chartData] = await Promise.all([
-        fetchFundamental(ticker),
-        fetchTechnical(ticker),
-        fetchChartData(ticker, 100)
-    ]);
+    // Attach Event Listeners
+    document.getElementById('btn-add-watchlist').addEventListener('click', async () => {
+        const res = await saveWatchlistItem({ ticker: ticker.toUpperCase(), notes: 'Added from detail page' });
+        if (res?.ok) showToast(`${ticker} added to Watchlist`, 'success');
+        else showToast(`Failed to add ${ticker}`, 'error');
+    });
+    
+    document.getElementById('btn-trade').addEventListener('click', () => {
+        showToast(`Trade order for ${ticker} simulated successfully`, 'info');
+    });
+
+    let fundData, techData, chartData;
+    try {
+        [fundData, techData, chartData] = await Promise.all([
+            fetchFundamental(ticker).catch(() => null),
+            fetchTechnical(ticker).catch(() => null),
+            fetchChartData(ticker, 100).catch(() => null)
+        ]);
+    } catch(e) {
+        console.error("Error fetching detail data", e);
+    }
 
     // Update Header
-    if (chartData?.data?.length > 0) {
+    if (chartData && Array.isArray(chartData.data) && chartData.data.length > 0) {
         const last = chartData.data[chartData.data.length - 1];
         const prev = chartData.data[chartData.data.length - 2] || last;
         const price = last.close;
@@ -96,9 +112,12 @@ export async function renderStockDetail(root, ticker) {
         const chEl = document.getElementById('stock-change');
         chEl.textContent = `${isPos ? '+' : ''}${change.toLocaleString()} (${pct}%)`;
         chEl.className = `mono text-sm mt-1 ${isPos ? 'text-up' : 'text-down'} strong`;
+    } else {
+        document.getElementById('live-badge').className = 'badge badge-down';
+        document.getElementById('live-badge').textContent = 'NO DATA';
     }
     
-    document.getElementById('stock-name').textContent = fundData?.data?.name || `Indonesian Stock Exchange`;
+    document.getElementById('stock-name').textContent = fundData?.data?.name || `${ticker} — Data not available`;
 
     if (typeof LightweightCharts !== 'undefined') renderLightweightChart(chartData);
     renderTechnicalPanel(techData);
@@ -107,7 +126,13 @@ export async function renderStockDetail(root, ticker) {
 
 function renderLightweightChart(chartData) {
     const container = document.getElementById('tvchart');
-    if (!container || !chartData?.data?.length) return;
+    if (!container) return;
+    
+    if (!chartData || !chartData.data || chartData.data.length === 0) {
+        container.innerHTML = `<div class="flex items-center justify-center text-dim" style="height:100%;">Chart data unavailable for this ticker.</div>`;
+        return;
+    }
+    
     container.innerHTML = '';
     
     const chart = LightweightCharts.createChart(container, {
@@ -145,7 +170,7 @@ function renderTechnicalPanel(techData) {
         </div>`;
 
     if (!ind) {
-        panel.innerHTML = row('RSI (14)', '58.2', 'NEUTRAL', true) + row('Trend (SMA)', 'UP', 'BULLISH', true);
+        panel.innerHTML = `<div class="text-dim text-sm p-4 text-center">Technical data currently unavailable.</div>`;
         return;
     }
     panel.innerHTML = row('RSI (14)', ind.rsi.value, ind.rsi.status.toUpperCase(), ind.rsi.status === 'Neutral' || ind.rsi.status === 'Oversold') + 
@@ -158,11 +183,11 @@ function renderFundamentalPanel(fundData) {
     const item = (l, v) => `<div><div class="text-xs text-dim uppercase mb-1">${l}</div><div class="mono strong text-base">${v}</div></div>`;
     
     if (!d) {
-        panel.innerHTML = item('P/E Ratio', '18.4x') + item('P/B Ratio', '2.1x') + item('Div Yield', '3.2%') + item('ROE', '17.9%');
+        panel.innerHTML = `<div class="col-span-2 text-dim text-sm text-center">Fundamental data currently unavailable.</div>`;
         return;
     }
-    panel.innerHTML = item('P/E Ratio', (d.trailing_pe?.toFixed(1) || '0.0') + 'x') + 
-                      item('P/B Ratio', (d.price_to_book?.toFixed(1) || '0.0') + 'x') + 
-                      item('Div Yield', ((d.dividend_yield * 100)?.toFixed(1) || '0.0') + '%') + 
-                      item('ROE', ((d.roe * 100)?.toFixed(1) || '0.0') + '%');
+    panel.innerHTML = item('P/E Ratio', (d.trailing_pe?.toFixed(1) || 'N/A') + 'x') + 
+                      item('P/B Ratio', (d.price_to_book?.toFixed(1) || 'N/A') + 'x') + 
+                      item('Div Yield', ((d.dividend_yield * 100)?.toFixed(1) || 'N/A') + '%') + 
+                      item('ROE', ((d.roe * 100)?.toFixed(1) || 'N/A') + '%');
 }

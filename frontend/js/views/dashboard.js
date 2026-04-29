@@ -1,7 +1,16 @@
-import { fetchNews } from '../api.js';
+import { fetchNews, fetchMarketSummary } from '../api.js';
 import { observeElements, animateValue } from '../main.js';
 
-export function renderDashboard(root) {
+export async function renderDashboard(root) {
+    // Determine if we have live data or fallback
+    let isLive = true;
+    try {
+        const summary = await fetchMarketSummary();
+        if (!summary || summary.status !== 'ok') isLive = false;
+    } catch(e) {
+        isLive = false;
+    }
+
     root.innerHTML = `
       <section class="grid grid-cols-12 stagger-reveal">
         <!-- Main Chart Panel -->
@@ -9,7 +18,7 @@ export function renderDashboard(root) {
           <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border-subtle);">
             <div class="flex items-center gap-3">
               <h2 class="text-lg strong">IHSG Composite</h2>
-              <span class="badge badge-up">LIVE</span>
+              ${isLive ? '<span class="badge badge-up">LIVE</span>' : '<span class="badge" style="background:rgba(245, 158, 11, 0.15); color:var(--warn-color); border-color:var(--warn-color);">DEMO DATA</span>'}
             </div>
             <div class="flex gap-2">
               <button class="btn btn-primary" style="padding:4px 8px; font-size:11px;">1D</button>
@@ -84,6 +93,8 @@ export function renderDashboard(root) {
     initChart();
     loadNews();
     
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
     // Animate counters
     setTimeout(() => {
         document.querySelectorAll('.val-counter').forEach(el => {
@@ -91,6 +102,7 @@ export function renderDashboard(root) {
         });
     }, 200);
 }
+
 
 const row = (ticker, price, change) => `
   <a href="#stock/${ticker}" class="flex items-center justify-between p-4" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); transition:background 0.2s;">

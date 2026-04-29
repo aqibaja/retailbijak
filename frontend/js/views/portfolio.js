@@ -63,7 +63,19 @@ async function renderWatchlistTab(el) {
         const ticker = window.prompt('Ticker (e.g. BBCA):'); if (!ticker) return;
         const notes = window.prompt('Notes:', '') || '';
         await saveWatchlistItem({ ticker: ticker.toUpperCase(), notes });
+        showToast(`${ticker} added to Watchlist`, 'success');
         renderWatchlistTab(el);
+    });
+
+    el.querySelectorAll('.delete-watchlist').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const ticker = e.currentTarget.getAttribute('data-ticker');
+            if (window.confirm(`Are you sure you want to remove ${ticker} from your Watchlist?`)) {
+                await deleteWatchlistItem(ticker);
+                showToast(`${ticker} removed from Watchlist`, 'success');
+                renderWatchlistTab(el);
+            }
+        });
     });
 }
 
@@ -104,7 +116,23 @@ async function renderPortfolioTab(el) {
         const ticker = window.prompt('Ticker:'); if (!ticker) return;
         const lots = Number(window.prompt('Lots:', '1'));
         const avgPrice = Number(window.prompt('Avg Price:', '1000'));
+        if (isNaN(lots) || isNaN(avgPrice)) {
+            showToast('Invalid lots or price', 'error');
+            return;
+        }
         await savePortfolioPosition({ ticker: ticker.toUpperCase(), lots, avg_price: avgPrice });
+        showToast(`${ticker} added to Portfolio`, 'success');
         renderPortfolioTab(el);
+    });
+
+    el.querySelectorAll('.delete-portfolio').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const ticker = e.currentTarget.getAttribute('data-ticker');
+            if (window.confirm(`Are you sure you want to remove ${ticker} from your Portfolio?`)) {
+                await deletePortfolioPosition(ticker);
+                showToast(`${ticker} removed from Portfolio`, 'success');
+                renderPortfolioTab(el);
+            }
+        });
     });
 }
