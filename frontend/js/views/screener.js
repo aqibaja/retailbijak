@@ -8,7 +8,10 @@ export async function renderScreener(root) {
         <div class="flex-between mb-4">
             <h1>Stock Screener</h1>
         </div>
-        
+        <div class="screener-mobile-sticky">
+            <button id="btn-run-screener-mobile" class="btn btn-primary">Run Screener</button>
+        </div>
+
         <div class="split-row" style="grid-template-columns: 280px 1fr;">
             <!-- FILTER PANEL -->
             <div class="card" style="align-self:flex-start;">
@@ -81,7 +84,10 @@ export async function renderScreener(root) {
         </div>
     `;
     
-    document.getElementById('btn-run-screener').addEventListener('click', runScreener);
+    const desktopRunBtn = document.getElementById('btn-run-screener');
+    const mobileRunBtn = document.getElementById('btn-run-screener-mobile');
+    desktopRunBtn.addEventListener('click', runScreener);
+    mobileRunBtn.addEventListener('click', runScreener);
     lucide.createIcons();
     animateCards('.card');
 
@@ -110,6 +116,7 @@ export async function renderScreener(root) {
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;
     const btn = document.getElementById('btn-run-screener');
+    const btnMobile = document.getElementById('btn-run-screener-mobile');
     const tbody = document.getElementById('screener-tbody');
     const progBox = document.getElementById('screener-progress');
     const progText = document.getElementById('sp-text');
@@ -118,6 +125,10 @@ function runScreener() {
     
     btn.disabled = true;
     btn.textContent = 'Scanning...';
+    if (btnMobile) {
+        btnMobile.disabled = true;
+        btnMobile.textContent = 'Scanning...';
+    }
     tbody.innerHTML = '';
     progBox.style.display = 'block';
     let matchCount = 0;
@@ -168,6 +179,10 @@ function runScreener() {
             progText.innerText = `Complete! Found ${data.total_signals} signals in ${data.duration_seconds}s`;
             btn.disabled = false;
             btn.textContent = 'Run Screener';
+            if (btnMobile) {
+                btnMobile.disabled = false;
+                btnMobile.textContent = 'Run Screener';
+            }
             eventSource.close();
             showToast(`Scan complete: ${data.total_signals} signals found`, 'success');
             
@@ -182,6 +197,10 @@ function runScreener() {
         progFill.style.background = 'var(--danger)';
         btn.disabled = false;
         btn.textContent = 'Run Screener';
+        if (btnMobile) {
+            btnMobile.disabled = false;
+            btnMobile.textContent = 'Run Screener';
+        }
         eventSource.close();
         showToast('Connection error. Please try again.', 'error');
     };
