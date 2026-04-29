@@ -45,13 +45,16 @@ app.add_middleware(
 def on_startup():
     # Initialize DB tables if they don't exist
     Base.metadata.create_all(bind=engine)
-    
-    # Start background schedulers
-    init_scheduler()
+
+    # Avoid re-initializing scheduler in repeated app lifecycles (e.g. tests).
+    if not scheduler.running:
+        init_scheduler()
+
 
 @app.on_event("shutdown")
 def on_shutdown():
-    scheduler.shutdown()
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
