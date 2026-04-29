@@ -19,11 +19,11 @@ def init_scheduler():
     """Configure and start the background scheduler."""
     logger.info("Initializing APScheduler...")
     
-    # Run price updates at 16:30 every weekday (Mon-Fri)
+    # Run OHLCV updates every 30 minutes during market hours (Mon-Fri)
     scheduler.add_job(
         update_daily_ohlcv,
-        trigger=CronTrigger(day_of_week='mon-fri', hour=16, minute=30, timezone=jkt_tz),
-        id="daily_price_update",
+        trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz),
+        id="intraday_ohlcv_update",
         replace_existing=True
     )
     
