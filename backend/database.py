@@ -111,6 +111,27 @@ class UserSetting(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class WatchlistItem(Base):
+    __tablename__ = "watchlist_items"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, unique=True, index=True, nullable=False)
+    notes = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PortfolioPosition(Base):
+    __tablename__ = "portfolio_positions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, unique=True, index=True, nullable=False)
+    lots = Column(Integer, nullable=False)
+    avg_price = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()

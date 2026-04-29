@@ -41,6 +41,38 @@ export async function updateSettings(settings) {
     });
 }
 
+export async function fetchWatchlist() {
+    return apiFetch('/watchlist') || { count: 0, data: [] };
+}
+
+export async function saveWatchlistItem(payload) {
+    return apiFetch('/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteWatchlistItem(ticker) {
+    return apiFetch(`/watchlist/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
+}
+
+export async function fetchPortfolio() {
+    return apiFetch('/portfolio') || { count: 0, data: [] };
+}
+
+export async function savePortfolioPosition(payload) {
+    return apiFetch('/portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deletePortfolioPosition(ticker) {
+    return apiFetch(`/portfolio/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
+}
+
 // ─── SSE URL (relative for production) ─────────────────
 export function getScanEventSourceUrl(timeframe) {
     return `${window.location.origin}/api/scan?timeframe=${timeframe}`;

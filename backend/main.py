@@ -12,7 +12,7 @@ from datetime import datetime
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,7 +20,16 @@ from sqlalchemy.orm import Session
 
 from scanner import VALID_TIMEFRAMES
 from stocks import get_all_tickers, get_ticker_display
-from database import Base, engine, SessionLocal, Signal, UserSetting, get_db
+from database import (
+    Base,
+    engine,
+    SessionLocal,
+    Signal,
+    UserSetting,
+    WatchlistItem,
+    PortfolioPosition,
+    get_db,
+)
 from scheduler import init_scheduler, scheduler
 
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0")
@@ -57,6 +66,17 @@ async def root():
 class SettingsPayload(BaseModel):
     compact_table_rows: bool = False
     auto_refresh_screener: bool = False
+
+
+class WatchlistPayload(BaseModel):
+    ticker: str = Field(min_length=1)
+    notes: str = ""
+
+
+class PortfolioPayload(BaseModel):
+    ticker: str = Field(min_length=1)
+    lots: int = Field(gt=0)
+    avg_price: float = Field(gt=0)
 
 
 # --- API ---
@@ -300,6 +320,96 @@ def update_settings(payload: SettingsPayload, db: Session = Depends(get_db)):
 
     db.commit()
     return {"ok": True, **payload.model_dump()}
+
+
+@app.get("/api/watchlist")
+def get_watchlist(db: Session = Depends(get_db)):
+    rows = db.query(WatchlistItem).order_by(WatchlistItem.ticker.asc()).all()
+    return {
+        "count": len(rows),
+        "data": [
+            {
+                "id": row.id,
+                "ticker": row.ticker,
+                "notes": row.notes,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ],
+    }
+
+
+@app.post("/api/watchlist")
+def add_watchlist(payload: WatchlistPayload, db: Session = Depends(get_db)):
+    ticker = payload.ticker.upper().strip()
+    existing = db.query(WatchlistItem).filter(WatchlistItem.ticker == ticker).first()
+    if existing:
+        existing.notes = payload.notes
+        db.commit()
+        db.refresh(existing)
+        return {"ok": True, "item": {"id": existing.id, "ticker": existing.ticker, "notes": existing.notes}}
+
+    row = WatchlistItem(ticker=ticker, notes=payload.notes)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"ok": True, "item": {"id": row.id, "ticker": row.ticker, "notes": row.notes}}
+
+
+@app.delete("/api/watchlist/{ticker}")
+def delete_watchlist(ticker: str, db: Session = Depends(get_db)):
+    row = db.query(WatchlistItem).filter(WatchlistItem.ticker == ticker.upper().strip()).first()
+    if not row:
+        raise HTTPException(404, "Watchlist item not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/portfolio")
+def get_portfolio(db: Session = Depends(get_db)):
+    rows = db.query(PortfolioPosition).order_by(PortfolioPosition.ticker.asc()).all()
+    return {
+        "count": len(rows),
+        "data": [
+            {
+                "id": row.id,
+                "ticker": row.ticker,
+                "lots": row.lots,
+                "avg_price": row.avg_price,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ],
+    }
+
+
+@app.post("/api/portfolio")
+def upsert_portfolio(payload: PortfolioPayload, db: Session = Depends(get_db)):
+    ticker = payload.ticker.upper().strip()
+    row = db.query(PortfolioPosition).filter(PortfolioPosition.ticker == ticker).first()
+    if row:
+        row.lots = payload.lots
+        row.avg_price = payload.avg_price
+        db.commit()
+        db.refresh(row)
+        return {"ok": True, "item": {"id": row.id, "ticker": row.ticker, "lots": row.lots, "avg_price": row.avg_price}}
+
+    row = PortfolioPosition(ticker=ticker, lots=payload.lots, avg_price=payload.avg_price)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"ok": True, "item": {"id": row.id, "ticker": row.ticker, "lots": row.lots, "avg_price": row.avg_price}}
+
+
+@app.delete("/api/portfolio/{ticker}")
+def delete_portfolio(ticker: str, db: Session = Depends(get_db)):
+    row = db.query(PortfolioPosition).filter(PortfolioPosition.ticker == ticker.upper().strip()).first()
+    if not row:
+        raise HTTPException(404, "Portfolio position not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
 
 
 # Mount the entire frontend directory at / to serve static files (js, views, style.css)
