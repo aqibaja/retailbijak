@@ -1,11 +1,11 @@
 import { fetchNews } from '../api.js';
 
 const FALLBACK_NEWS = [
-    { source: 'CNBC Indonesia', title: 'Rusia Atur Cadangan Valas Perbankan Wajib Pakai Yuan', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
-    { source: 'Bloomberg', title: 'Foreign Funds Flow Into Indonesian Banks as Rates Peak', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 240).toISOString() },
-    { source: 'Reuters', title: 'Commodity Supercycle Propels IDX Energy Sector', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 600).toISOString() },
-    { source: 'Bisnis', title: 'Volatility compresses as traders wait for next macro catalyst', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 1400).toISOString() },
-    { source: 'MarketBeat', title: 'Retail traders keep an eye on breakout patterns in consumer names', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 2800).toISOString() }
+    { source: 'CNBC Indonesia', title: 'Rusia Atur Cadangan Valas Perbankan Wajib Pakai Yuan', summary: '', link: '#', image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80', published_at: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
+    { source: 'Bloomberg', title: 'Foreign Funds Flow Into Indonesian Banks as Rates Peak', summary: '', link: '#', image_url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=800&q=80', published_at: new Date(Date.now() - 1000 * 60 * 240).toISOString() },
+    { source: 'Reuters', title: 'Commodity Supercycle Propels IDX Energy Sector', summary: '', link: '#', image_url: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?auto=format&fit=crop&w=800&q=80', published_at: new Date(Date.now() - 1000 * 60 * 600).toISOString() },
+    { source: 'Bisnis', title: 'Volatility compresses as traders wait for next macro catalyst', summary: '', link: '#', image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80', published_at: new Date(Date.now() - 1000 * 60 * 1400).toISOString() },
+    { source: 'MarketBeat', title: 'Retail traders keep an eye on breakout patterns in consumer names', summary: '', link: '#', image_url: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=800&q=80', published_at: new Date(Date.now() - 1000 * 60 * 2800).toISOString() }
 ];
 
 function timeAgo(dateString) {

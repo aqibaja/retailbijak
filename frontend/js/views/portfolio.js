@@ -64,7 +64,8 @@ async function renderWatchlistTab(el) {
         const notes = window.prompt('Notes:', '') || '';
         await saveWatchlistItem({ ticker: ticker.toUpperCase(), notes });
         showToast(`${ticker} added to Watchlist`, 'success');
-        renderWatchlistTab(el);
+        await renderWatchlistTab(el);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     });
 
     el.querySelectorAll('.delete-watchlist').forEach(btn => {
@@ -73,7 +74,8 @@ async function renderWatchlistTab(el) {
             if (window.confirm(`Are you sure you want to remove ${ticker} from your Watchlist?`)) {
                 await deleteWatchlistItem(ticker);
                 showToast(`${ticker} removed from Watchlist`, 'success');
-                renderWatchlistTab(el);
+                await renderWatchlistTab(el);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
     });
@@ -88,7 +90,7 @@ async function renderPortfolioTab(el) {
     
     el.innerHTML = `
       <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border-subtle);">
-        <h3 class="text-sm uppercase text-muted strong">Current Holdings <span class="badge ml-2">${rows.length} POSITIONS</span></h3>
+        <h3 class="text-sm uppercase text-muted strong" data-i18n="current_holdings">Current Holdings <span class="badge ml-2">${rows.length} POSITIONS</span></h3>
         <button id="add-portfolio" class="btn btn-primary" style="padding:6px 12px; font-size:11px;"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
       </div>
       <div class="table-wrapper">
@@ -122,7 +124,8 @@ async function renderPortfolioTab(el) {
         }
         await savePortfolioPosition({ ticker: ticker.toUpperCase(), lots, avg_price: avgPrice });
         showToast(`${ticker} added to Portfolio`, 'success');
-        renderPortfolioTab(el);
+        await renderPortfolioTab(el);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     });
 
     el.querySelectorAll('.delete-portfolio').forEach(btn => {
@@ -131,7 +134,8 @@ async function renderPortfolioTab(el) {
             if (window.confirm(`Are you sure you want to remove ${ticker} from your Portfolio?`)) {
                 await deletePortfolioPosition(ticker);
                 showToast(`${ticker} removed from Portfolio`, 'success');
-                renderPortfolioTab(el);
+                await renderPortfolioTab(el);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
     });

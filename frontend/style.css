@@ -52,6 +52,20 @@
   --input-bg: #1e293b;
   --input-border: rgba(255,255,255,0.08);
   --btn-primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
+  --ticker-bg: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] {
+  --bg-base: #f1f5f9;
+  --bg-panel: rgba(255, 255, 255, 0.7);
+  --bg-panel-hover: rgba(255, 255, 255, 0.9);
+  --bg-elevated: #ffffff;
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-dim: #64748b;
+  --ticker-bg: rgba(255, 255, 255, 0.5);
 }
 
 /* ================= RESET & BASE ================= */
@@ -64,6 +78,9 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   overflow-x: hidden;
+  background-image: none;
+}
+[data-theme="dark"] body {
   background-image: 
     radial-gradient(circle at 15% 0%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
     radial-gradient(circle at 85% 100%, rgba(16, 185, 129, 0.02) 0%, transparent 40%);
@@ -285,6 +302,25 @@ button, input, select { font-family: inherit; border: none; background: none; co
   transition: background var(--duration-normal) var(--ease-out);
 }
 .topbar.scrolled { background: rgba(13, 17, 23, 0.95); border-bottom-color: var(--border-strong); }
+
+/* Running Ticker */
+.ticker-wrap {
+  flex: 1; margin: 0 40px; height: 28px; background: var(--ticker-bg); 
+  border-radius: 99px; overflow: hidden; display: flex; align-items: center;
+  border: 1px solid var(--border-subtle);
+}
+.ticker-scroll {
+  display: flex; white-space: nowrap; animation: ticker-slide 30s linear infinite;
+  padding-left: 20px;
+}
+.ticker-scroll:hover { animation-play-state: paused; }
+.ticker-item {
+  display: flex; align-items: center; gap: 8px; margin-right: 32px; font-size: 11px;
+}
+@keyframes ticker-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
 
 .sidebar {
   position: fixed; top: var(--header-h); left: 0; bottom: 0; width: var(--sidebar-w);

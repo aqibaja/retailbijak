@@ -1,19 +1,15 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>retailbijak — Professional Stock Intelligence</title>
   
-  <!-- Fonts: Inter for UI, JetBrains Mono for Data -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Core Styles -->
   <link rel="stylesheet" href="style.css">
   
-  <!-- Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -29,9 +25,28 @@
         <strong style="font-size:16px; letter-spacing:-0.5px; display:none; @media(min-width:768px){display:block;}">retailbijak</strong>
       </a>
     </div>
+
+    <!-- Running Ticker -->
+    <div class="ticker-wrap" style="display:none; @media(min-width:1024px){display:flex;}">
+      <div class="ticker-scroll">
+        <div class="ticker-item"><span class="strong">GOTO</span> <span class="text-up">96 (+9.89%)</span></div>
+        <div class="ticker-item"><span class="strong">BRPT</span> <span class="text-up">1,200 (+5.20%)</span></div>
+        <div class="ticker-item"><span class="strong">BBCA</span> <span class="text-up">9,800 (+3.15%)</span></div>
+        <div class="ticker-item"><span class="strong">TLKM</span> <span class="text-up">3,420 (+2.50%)</span></div>
+        <div class="ticker-item"><span class="strong">AMMN</span> <span class="text-up">8,950 (+2.00%)</span></div>
+        <div class="ticker-item"><span class="strong">BREN</span> <span class="text-up">11,200 (+1.50%)</span></div>
+        <!-- duplicate for smooth scroll -->
+        <div class="ticker-item"><span class="strong">GOTO</span> <span class="text-up">96 (+9.89%)</span></div>
+        <div class="ticker-item"><span class="strong">BRPT</span> <span class="text-up">1,200 (+5.20%)</span></div>
+        <div class="ticker-item"><span class="strong">BBCA</span> <span class="text-up">9,800 (+3.15%)</span></div>
+        <div class="ticker-item"><span class="strong">TLKM</span> <span class="text-up">3,420 (+2.50%)</span></div>
+        <div class="ticker-item"><span class="strong">AMMN</span> <span class="text-up">8,950 (+2.00%)</span></div>
+        <div class="ticker-item"><span class="strong">BREN</span> <span class="text-up">11,200 (+1.50%)</span></div>
+      </div>
+    </div>
     
     <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2" style="display:none; @media(min-width:768px){display:flex;}">
         <span class="status-dot live"></span>
         <span class="text-xs uppercase strong text-muted" id="market-status-text">IDX OPEN</span>
       </div>
@@ -40,12 +55,18 @@
       <span class="mono text-xs text-up" id="topbar-ihsg-pct">+0.12%</span>
       <div style="width:1px; height:16px; background:var(--border-strong);"></div>
       
-      <!-- Command Palette Trigger -->
       <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Search">
         <i data-lucide="search" style="width:18px;"></i>
       </button>
+
+      <button class="btn btn-icon" id="lang-toggle" aria-label="Language">
+        <span style="font-size:12px; font-weight:700;">EN</span>
+      </button>
+
+      <button class="btn btn-icon" id="theme-toggle" aria-label="Theme">
+        <i data-lucide="moon" style="width:18px;"></i>
+      </button>
       
-      <!-- Settings/Profile -->
       <a href="#settings" class="btn btn-icon" aria-label="Settings">
         <i data-lucide="settings" style="width:18px;"></i>
       </a>
@@ -80,10 +101,10 @@
   <!-- Mobile Bottom Nav -->
   <nav class="bottom-nav">
     <a href="#dashboard" class="bottom-nav-item active" data-view="dashboard">
-      <i data-lucide="layout-grid"></i><span>Home</span>
+      <i data-lucide="layout-grid"></i><span data-i18n="dashboard">Home</span>
     </a>
     <a href="#market" class="bottom-nav-item" data-view="market">
-      <i data-lucide="globe"></i><span>Market</span>
+      <i data-lucide="globe"></i><span data-i18n="market">Market</span>
     </a>
     
     <!-- Floating Center Button for Search/Scan -->
@@ -94,10 +115,10 @@
     </div>
     
     <a href="#portfolio" class="bottom-nav-item" data-view="portfolio">
-      <i data-lucide="briefcase"></i><span>Assets</span>
+      <i data-lucide="briefcase"></i><span data-i18n="portfolio">Assets</span>
     </a>
     <a href="#news" class="bottom-nav-item" data-view="news">
-      <i data-lucide="newspaper"></i><span>News</span>
+      <i data-lucide="newspaper"></i><span data-i18n="news">News</span>
     </a>
   </nav>
 
@@ -106,7 +127,7 @@
     <div class="search-modal">
       <div class="search-input-wrap">
         <i data-lucide="search" style="color:var(--text-muted); width:20px;"></i>
-        <input type="text" id="global-search-input" placeholder="Search ticker, company, or sector... (Esc to close)">
+        <input type="text" id="global-search-input" data-i18n="search_placeholder" placeholder="Search ticker, company, or sector... (Esc to close)">
         <span class="badge">CMD+K</span>
       </div>
       <div class="p-4">
@@ -136,6 +157,8 @@
 
   <style>
     .hover-bg:hover { background: rgba(255,255,255,0.05); }
+    .ticker-wrap { display:none; }
+    @media (min-width: 1024px) { .ticker-wrap { display:flex; } }
   </style>
   
   <script type="module" src="js/main.js"></script>
