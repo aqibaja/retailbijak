@@ -5,6 +5,7 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
 ## One-time assumptions
 - nginx vhost `retailbijak.rich27.my.id` proxies to `127.0.0.1:8000`
 - Python venv exists at `/opt/swingaq/backend/venv`
+- systemd unit installed: `/etc/systemd/system/swingaq-backend.service`
 
 ## Deploy latest from GitHub clone
 1. Update repo in working clone:
