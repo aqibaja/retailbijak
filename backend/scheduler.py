@@ -1,10 +1,8 @@
 import logging
-from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import pytz
 
-from updaters.price_updater import update_daily_ohlcv
 from updaters.signal_updater import update_signals
 from updaters.news_updater import update_news
 from updaters.fundamental_updater import update_fundamentals
@@ -19,14 +17,6 @@ scheduler = BackgroundScheduler(timezone=jkt_tz)
 def init_scheduler():
     """Configure and start the background scheduler."""
     logger.info("Initializing APScheduler...")
-    
-    # Run OHLCV updates twice per trading day: market open and pre-close (Mon-Fri)
-    scheduler.add_job(
-        update_daily_ohlcv,
-        trigger=CronTrigger(day_of_week='mon-fri', hour='9,15', minute='0,30', timezone=jkt_tz),
-        id="intraday_ohlcv_update",
-        replace_existing=True
-    )
     
     # Run signal calculation every 30 minutes during market hours
     # Market hours: 09:00 - 16:00
@@ -54,17 +44,6 @@ def init_scheduler():
     )
     
     scheduler.start()
-
-    # Ensure data is refreshed immediately when service starts during market hours.
-    now = datetime.now(jkt_tz)
-    if now.weekday() < 5 and 9 <= now.hour <= 16:
-        logger.info("Queueing immediate OHLCV refresh on startup (market hours).")
-        scheduler.add_job(
-            update_daily_ohlcv,
-            id="startup_ohlcv_refresh",
-            replace_existing=True,
-            next_run_time=now,
-        )
 
     logger.info("APScheduler started successfully.")
     return scheduler
