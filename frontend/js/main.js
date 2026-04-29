@@ -1,5 +1,6 @@
 import { handleRoute } from './router.js';
 import { fetchMarketSummary } from './api.js';
+import { initTheme } from './theme.js';
 
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {
@@ -73,6 +74,14 @@ function setupSearchOverlay() {
         if (e.target === overlay) toggle(false);
     });
 
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && input.value.trim()) {
+            window.location.hash = '#stock/' + input.value.trim().toUpperCase();
+            input.value = '';
+            toggle(false);
+        }
+    });
+
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
             e.preventDefault();
@@ -144,6 +153,7 @@ async function refreshTopbarMarket() {
 
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     lucide.createIcons();
     setupSearchOverlay();
     setupScrollEffects();

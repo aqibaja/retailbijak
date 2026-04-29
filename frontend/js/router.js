@@ -4,6 +4,8 @@ import { renderScreener } from './views/screener.js';
 import { renderPortfolio } from './views/portfolio.js';
 import { renderMarket } from './views/market.js';
 import { renderNews } from './views/news.js';
+import { renderSettings } from './views/settings.js';
+import { renderHelp } from './views/help.js';
 
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');
@@ -34,6 +36,8 @@ export function handleRoute(hash) {
             else if (view === 'screener') renderScreener(root);
             else if (view === 'portfolio' || view === 'watchlist') renderPortfolio(root, view);
             else if (view === 'news') renderNews(root);
+            else if (view === 'settings') renderSettings(root);
+            else if (view === 'help') renderHelp(root);
             else renderDashboard(root); // Fallback
             
             // Re-initialize icons for newly injected HTML
