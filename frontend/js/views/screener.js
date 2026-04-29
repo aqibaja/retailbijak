@@ -1,4 +1,6 @@
 import { getScanEventSourceUrl, showToast, fetchSettings } from '../api.js';
+
+let autoRefreshTimer = null;
 import { animateCards, animateTableRows } from '../main.js';
 
 export async function renderScreener(root) {
@@ -87,6 +89,20 @@ export async function renderScreener(root) {
     if (settings.compact_table_rows) {
         const table = root.querySelector('.data-table');
         if (table) table.classList.add('compact-rows');
+    }
+
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+
+    if (settings.auto_refresh_screener) {
+        autoRefreshTimer = setInterval(() => {
+            if (window.location.hash === '#screener') {
+                runScreener();
+            }
+        }, 5 * 60 * 1000);
+        showToast('Auto-refresh enabled (every 5 minutes)', 'info', 2500);
     }
 }
 
