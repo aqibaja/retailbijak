@@ -233,19 +233,47 @@ button, input, select { font: inherit; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
-  :root { --topbar-height: 64px; --sidebar-width: 0px; }
-  .topbar { padding: 0 14px; }
+  :root { --topbar-height: 60px; --sidebar-width: 0px; }
+  .topbar {
+    padding: 0 10px;
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .topbar-left, .topbar-right { gap: 8px; }
+  .brand { min-width: 0; gap: 8px; }
+  .brand-mark { width: 36px; height: 36px; border-radius: 12px; }
+  .brand-text strong { font-size: 14px; }
+  .brand-text small { display:none; }
   .search-box { display:none; }
-  .brand { min-width: auto; }
-  .brand-text small, .sidebar-section-label, .sidebar-footnote { display:none; }
-  .sidebar { position: fixed; inset: auto 0 0 0; top: auto; width: 100%; height: 76px; padding: 8px 10px; border-right:none; border-top: 1px solid var(--border); z-index: 150; }
-  .sidebar-nav { display:grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .nav-item { justify-content:center; padding: 10px 8px; font-size: 12px; }
+  .market-status, .idx-mini-display { display:none; }
+  .icon-btn, .user-avatar { width: 36px; height: 36px; border-radius: 12px; }
+  .sidebar-section-label, .sidebar-footnote { display:none; }
+  .sidebar {
+    position: fixed; inset: auto 0 0 0; top: auto; width: 100%; height: 72px; padding: 8px 8px 10px;
+    border-right:none; border-top: 1px solid var(--border); z-index: 150; background: rgba(4,8,6,0.9);
+  }
+  .sidebar-nav {
+    display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
+  }
+  .nav-item {
+    justify-content:center; padding: 8px 6px; font-size: 11px; min-width: 0; border-radius: 12px;
+    overflow:hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .nav-item i { width: 16px; height: 16px; }
   .nav-text { display:none; }
   .nav-divider { display:none; }
-  .main-content { margin-left: 0; width: 100%; padding: 16px 14px 92px; }
-  .kpi-row { grid-template-columns: 1fr; }
+  .main-content {
+    margin-left: 0; width: 100%; padding: 14px 12px 88px;
+  }
+  .card { padding: 16px; border-radius: 18px; }
+  .kpi-row { grid-template-columns: 1fr; gap: 12px; }
   .hero-metrics { grid-template-columns: 1fr; }
+  .hero-copy h1 { font-size: 26px; }
+  .split-row, .three-col-row, .dashboard-hero { grid-template-columns: 1fr; gap: 12px; }
+  .data-table { min-width: 720px; }
+  .data-table-wrapper { margin: 0 -16px; padding: 0 16px; }
+  .btn { padding: 11px 14px; }
+  .chip { padding: 7px 10px; font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
