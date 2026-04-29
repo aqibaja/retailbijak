@@ -4,42 +4,42 @@ import { animateCards, animateCountUp, animateSparklines } from '../main.js';
 export async function renderDashboard(root) {
     root.innerHTML = `
       <section class="dashboard-shell reveal">
-        <div class="card mobile-discover-hero">
-          <div class="flex-between mb-3">
-            <div class="chip neutral">Discover</div>
-            <div class="chip success">IHSG +0.12%</div>
-          </div>
-          <h1>Discover market opportunities faster.</h1>
-          <p>Cari kode saham, baca chart intraday, dan pantau movers tanpa keluar dari satu layar.</p>
-          <div class="mobile-searchbar">
-            <i data-lucide="search"></i>
-            <input type="text" placeholder="Search by CODE or NAME" aria-label="Search by CODE or NAME">
-          </div>
-          <div class="mobile-segmented" role="tablist" aria-label="Market view">
-            <button class="active">Stock</button>
-            <button>Fund</button>
-          </div>
-        </div>
-
-        <div class="card mobile-chart-hero">
-          <div class="flex-between mb-2">
-            <div>
-              <div class="text-muted" style="font-size:12px;">IHSG</div>
-              <div class="kpi-value" style="margin:4px 0 0; font-size:32px;">7,080.63</div>
+        <div class="dashboard-hero">
+          <div class="card hero-copy">
+            <div class="chip neutral mb-3">Discover</div>
+            <h1>Market workspace yang terasa hidup.</h1>
+            <p>Analisis cepat, movers aktif, dan watchlist yang selalu terisi — bahkan saat backend belum mengirim data penuh.</p>
+            <div class="hero-actions">
+              <a href="#screener" class="btn btn-primary">Run Screener</a>
+              <a href="#market" class="btn btn-outline">Open Market</a>
+              <button id="hero-refresh-btn" class="btn btn-outline">Refresh Data</button>
             </div>
-            <div style="text-align:right;">
-              <div class="chip success">▲ 8.24</div>
-              <div class="text-muted" style="margin-top:6px; font-size:12px;">+0.12%</div>
+            <div class="hero-metrics mt-3">
+              ${metric('IHSG', '7,080.63', '<span class="positive">+0.12%</span> vs yesterday')}
+              ${metric('Advance', '328', '52.8% breadth')}
+              ${metric('Volume', '8.40T', 'regular session')}
             </div>
           </div>
-          <div class="chart-badge-row">
-            ${['1D','1W','1M','3M','1Y','3Y'].map((x,i)=>`<button class="time-chip ${i===0?'active':''}">${x}</button>`).join('')}
-          </div>
-          <div style="height:240px; margin-top:10px;"><canvas id="ihsgHeroChart"></canvas></div>
-          <div class="intraday-strip">
-            <div><span>Open</span><strong>7,096.61</strong></div>
-            <div><span>High</span><strong class="positive">7,126.06</strong></div>
-            <div><span>Low</span><strong class="negative">7,063.99</strong></div>
+          <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Today at a glance</h2><span class="chip success">Live</span></div>
+            <div class="mobile-searchbar" style="display:flex; margin:0 0 14px;">
+              <i data-lucide="search"></i>
+              <input type="text" placeholder="Cari ticker, sektor, atau emiten..." aria-label="Cari ticker, sektor, atau emiten...">
+            </div>
+            <div class="summary-scroll" style="grid-auto-columns:100%;">
+              <div class="summary-card">
+                <div class="summary-title">Market pulse</div>
+                <div class="summary-grid">
+                  <div><span>Open</span><strong>7,096.61</strong></div>
+                  <div><span>High</span><strong class="positive">7,126.06</strong></div>
+                  <div><span>Low</span><strong class="negative">7,063.99</strong></div>
+                </div>
+              </div>
+            </div>
+            <div class="chart-badge-row mt-3">
+              ${['1D','1W','1M','3M','1Y','3Y'].map((x,i)=>`<button class="time-chip ${i===0?'active':''}">${x}</button>`).join('')}
+            </div>
+            <div style="height:260px; margin-top:12px;"><canvas id="ihsgHeroChart"></canvas></div>
           </div>
         </div>
 
@@ -50,32 +50,20 @@ export async function renderDashboard(root) {
           ${kpi('KOMPAS100', 1189.33, '+0.21')}
         </div>
 
-        <div class="card mobile-summary-card">
-          <div class="flex-between mb-3"><h2 class="mb-0">Market Snapshot</h2><span class="chip neutral">Today</span></div>
-          <div class="summary-scroll">
-            ${['All Market','Regular','Nego'].map((name,i)=>`<div class="summary-card"><div class="summary-title">${name}</div><div class="summary-grid"><div><span>Value</span><strong>${['8.40T','8.06T','346B'][i]}</strong></div><div><span>Lot</span><strong>${['26.88B','26.51B','365M'][i]}</strong></div><div><span>Freq</span><strong>${['1.47M','1.47M','72K'][i]}</strong></div></div></div>`).join('')}
-          </div>
-          <div class="expand-row">Show Foreign Activity <i data-lucide="chevron-down"></i></div>
-        </div>
-
         <div class="split-row">
-          <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Market Pulse</h2><span class="chip neutral">1D</span></div>
-            <div style="height:280px"><canvas id="ihsgChart"></canvas></div>
-          </div>
           <div class="card">
             <div class="flex-between mb-3"><h2 class="mb-0">Top Gainers</h2><a href="#market" class="chip neutral">See all</a></div>
             <div class="stack-list">${['GOTO','BRPT','BBCA','TLKM','ASII','ANTM'].map((t,i)=>row(t,['GoTo Gojek Tokopedia','Barito Pacific','Bank Central Asia','Telkom Indonesia','Astra International','Aneka Tambang'][i],['96','1,200','9,800','3,420','5,300','1,920'][i],['+9.09','+5.20','+3.15','+2.50','+1.92','+1.50'][i])).join('')}</div>
           </div>
-        </div>
-
-        <div class="three-col-row">
           <div class="card">
             <div class="flex-between mb-3"><h2 class="mb-0">Watchlist</h2><a href="#watchlist" class="chip neutral">Manage</a></div>
             ${['BBRI','UNVR','PGAS','BUMI'].map((t,i)=>watch(t,['4,850','2,900','1,350','120'][i],['-1.20','+0.50','+2.10','-3.50'][i], [false,true,true,false][i])).join('')}
           </div>
+        </div>
+
+        <div class="split-row">
           <div class="card">
-            <h2 class="mb-3">Portfolio Summary</h2>
+            <div class="flex-between mb-3"><h2 class="mb-0">Portfolio Summary</h2><span class="chip neutral">Demo</span></div>
             <div class="hero-metrics" style="grid-template-columns: 1fr;">
               <div class="hero-metric"><div class="label">Total Value</div><div class="value">Rp 145.2M</div><div class="sub positive">+ Rp 2.4M (1.68%) today</div></div>
               <div style="height:160px"><canvas id="portfolioDonut"></canvas></div>

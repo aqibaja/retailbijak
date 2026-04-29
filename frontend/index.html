@@ -35,11 +35,11 @@
       </div>
     </div>
     <div class="topbar-right">
-      <div class="market-status" id="market-status-pill"><span class="status-indicator open"></span><span class="status-text">MARKET OPEN</span></div>
+      <div class="market-status" id="market-status-pill"><span class="status-indicator open"></span><span class="status-text">MARKET READY</span></div>
       <div class="idx-mini-display">
         <span class="idx-label">IHSG</span>
-        <span class="idx-val">--</span>
-        <span class="idx-change">--</span>
+        <span class="idx-val">7,080.63</span>
+        <span class="idx-change">+0.12%</span>
       </div>
       <button class="icon-btn" id="refresh-app-btn" aria-label="Refresh data" title="Refresh data"><i data-lucide="refresh-cw"></i></button>
       <button class="icon-btn" aria-label="Notifications" title="Notifications"><i data-lucide="bell"></i></button>
@@ -47,7 +47,12 @@
       <div class="topbar-more-wrap">
         <button class="icon-btn mobile-more-btn" type="button" id="topbar-more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="More" title="More"><i data-lucide="ellipsis"></i></button>
         <div class="topbar-more-menu" id="topbar-more-menu" role="menu" aria-hidden="true">
+          <div class="topbar-more-label">Quick actions</div>
           <button type="button" class="topbar-more-item" data-action="clear-cache"><i data-lucide="refresh-cw"></i><span>Refresh & Clear Cache</span></button>
+          <button type="button" class="topbar-more-item" data-action="go-dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></button>
+          <button type="button" class="topbar-more-item" data-action="go-market"><i data-lucide="bar-chart-3"></i><span>Market</span></button>
+          <button type="button" class="topbar-more-item" data-action="go-screener"><i data-lucide="filter"></i><span>Screener</span></button>
+          <button type="button" class="topbar-more-item" data-action="go-portfolio"><i data-lucide="pie-chart"></i><span>Portfolio</span></button>
           <button type="button" class="topbar-more-item" data-action="go-watchlist"><i data-lucide="eye"></i><span>Watchlist</span></button>
           <button type="button" class="topbar-more-item" data-action="go-news"><i data-lucide="newspaper"></i><span>News</span></button>
           <button type="button" class="topbar-more-item" data-action="go-settings"><i data-lucide="settings"></i><span>Settings</span></button>

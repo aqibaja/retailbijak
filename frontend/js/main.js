@@ -111,6 +111,10 @@ function setupTopbarMoreMenu() {
         const action = e.target.closest('[data-action]')?.dataset.action;
         if (!action) return;
         if (action === 'clear-cache') clearAppCacheAndReload();
+        else if (action === 'go-dashboard') window.location.hash = '#dashboard';
+        else if (action === 'go-market') window.location.hash = '#market';
+        else if (action === 'go-screener') window.location.hash = '#screener';
+        else if (action === 'go-portfolio') window.location.hash = '#portfolio';
         else if (action === 'go-watchlist') window.location.hash = '#watchlist';
         else if (action === 'go-news') window.location.hash = '#news';
         else if (action === 'go-settings') window.location.hash = '#settings';
