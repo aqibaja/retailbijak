@@ -2,7 +2,6 @@ import { fetchNews, fetchMarketSummary } from '../api.js';
 import { observeElements, animateValue } from '../main.js';
 
 export async function renderDashboard(root) {
-    // Determine if we have live data or fallback
     let isLive = true;
     try {
         const summary = await fetchMarketSummary();
@@ -121,30 +120,41 @@ async function loadNews() {
     if (!container) return;
     const res = await fetchNews(3);
     
-    // Fallback if API fails or empty
-    let items = res?.data?.length ? res.data : [
-        { source: 'CNBC Indonesia', title: 'Rusia Atur Cadangan Valas Perbankan Wajib Pakai Yuan', link: '#', image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80' },
-        { source: 'Bloomberg', title: 'Foreign Funds Flow Into Indonesian Banks as Rates Peak', link: '#', image_url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=800&q=80' },
-        { source: 'Reuters', title: 'Commodity Supercycle Propels IDX Energy Sector', link: '#', image_url: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?auto=format&fit=crop&w=800&q=80' }
-    ];
+    let items = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data : [];
 
-    container.innerHTML = items.slice(0,3).map(n => {
-        const imageUrl = n.image_url || 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80';
-        const imageElement = `<img src="${imageUrl}" alt="News thumbnail" loading="lazy" onerror="this.style.display='none'; this.parentElement.querySelector('.news-image-fallback').style.display='flex';">
-               <div class="news-image-overlay"></div>
-               <div class="news-image-fallback">📰</div>`;
+    if (items.length === 0) {
+        container.innerHTML = `<div class="text-dim text-sm">No news available.</div>`;
+        return;
+    }
+
+    container.innerHTML = items.map(n => {
+        // Extract image from summary if missing
+        let imageUrl = n.image_url || '';
+        if (!imageUrl && n.summary && n.summary.includes('<img')) {
+            const match = n.summary.match(/src="([^"]+)"/);
+            if (match) imageUrl = match[1];
+        }
+
+        const imageElement = imageUrl 
+            ? `<img src="${imageUrl}" alt="News thumbnail" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` 
+            : '';
 
         return `
-            <a href="${n.link}" target="_blank" class="news-card" style="opacity:1; transform:none; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); border-color:var(--border-subtle);">
-                <div class="news-image-wrap" style="height:120px;">
-                    ${imageElement}
+            <a href="${n.link}" target="_blank" class="news-card" style="border-radius:12px; background:var(--bg-elevated); border:1px solid var(--border-subtle); display:flex; flex-direction:column;">
+                <div class="news-image-wrap" style="height:140px; display:flex; align-items:center; justify-content:center; background:rgba(99,102,241,0.05);">
+                    ${imageUrl ? imageElement : '<i data-lucide="newspaper" style="width:40px; color:rgba(99,102,241,0.4);"></i>'}
+                    <div class="news-image-fallback" style="${imageUrl ? 'display:none;' : 'display:flex;'} align-items:center; justify-content:center; height:100%; width:100%;">
+                       <i data-lucide="newspaper" style="width:40px; color:rgba(99,102,241,0.4);"></i>
+                    </div>
                 </div>
-                <div class="news-content" style="padding:12px;">
-                    <span class="news-badge" style="font-size:10px; padding:2px 6px; margin-bottom:8px;">${n.source || 'MARKET'}</span>
-                    <h3 class="news-title" style="font-size:13px;">${n.title}</h3>
+                <div class="news-content" style="padding:16px; flex:1;">
+                    <span class="news-badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; margin-bottom:8px; display:inline-block;">${n.source || 'MARKET'}</span>
+                    <h3 class="news-title" style="font-size:14px; font-weight:600; color:var(--text-main); line-height:1.4;">${n.title}</h3>
                 </div>
             </a>`;
     }).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function initChart() {

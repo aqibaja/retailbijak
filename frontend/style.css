@@ -605,3 +605,18 @@ html[data-theme="light"] .scanner-row { border-bottom: 1px solid #f1f5f9; }
 html[data-theme="light"] .panel { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 html[data-theme="light"] .news-card { background: #ffffff; border-color: #e2e8f0; }
 html[data-theme="light"] .news-title { color: #111827; }
+
+/* Ticker Fix */
+.topbar-ticker-wrap {
+  flex: 1; margin: 0 16px; overflow: hidden; height: 32px; display: flex; align-items: center;
+}
+#running-ticker {
+  display: flex; animation: scroll-ticker 30s linear infinite; white-space: nowrap;
+}
+.ticker-card {
+  padding: 0 16px; display: flex; align-items: center; gap: 8px; font-size: 13px; border-right: 1px solid var(--border-subtle);
+}
+@keyframes scroll-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
