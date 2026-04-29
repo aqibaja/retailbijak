@@ -151,12 +151,48 @@ async function refreshTopbarMarket() {
     }
 }
 
+// Running Ticker Setup
+function setupRunningTicker() {
+    const tickerContainer = document.getElementById('running-ticker');
+    if (!tickerContainer) return;
+
+    // Realistic dummy data for the ticker to show off the UI
+    const mockData = [
+        { t: "GOTO", p: "96", c: "+9.89", up: true },
+        { t: "BRPT", p: "1,200", c: "+5.20", up: true },
+        { t: "BBCA", p: "9,800", c: "+3.15", up: true },
+        { t: "BREN", p: "11,200", c: "+1.50", up: true },
+        { t: "AMMN", p: "8,950", c: "-2.00", up: false },
+        { t: "TLKM", p: "3,420", c: "-1.50", up: false },
+        { t: "BMRI", p: "7,000", c: "+0.50", up: true },
+        { t: "ASII", p: "5,200", c: "+1.20", up: true },
+        { t: "UNVR", p: "2,800", c: "-0.80", up: false },
+        { t: "BUMI", p: "150", c: "+4.10", up: true }
+    ];
+
+    // Double the array to allow for infinite smooth scrolling
+    const tickerItems = [...mockData, ...mockData];
+
+    tickerContainer.innerHTML = tickerItems.map(item => `
+        <a href="#stock/${item.t}" class="tape-card" style="text-decoration:none;">
+            <div class="flex-col">
+                <div class="tape-pair">${item.t}</div>
+                <div class="tape-price">${item.p}</div>
+            </div>
+            <div class="flex-col items-end">
+                <div class="tape-chg ${item.up ? 'up' : 'down'}">${item.c}%</div>
+            </div>
+        </a>
+    `).join('');
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     lucide.createIcons();
     setupSearchOverlay();
     setupScrollEffects();
+    setupRunningTicker();
     refreshTopbarMarket();
     setInterval(refreshTopbarMarket, 60000);
 });

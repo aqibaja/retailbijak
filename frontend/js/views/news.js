@@ -42,82 +42,63 @@ function observeNewsCards() {
 
 export async function renderNews(root) {
     root.innerHTML = `
-      <section class="news-container">
+      <section class="news-container stagger-reveal">
         <div class="news-header">
           <div>
-            <h1 style="font-size: 24px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Market Intelligence</h1>
-            <p style="font-size: 14px; color: #64748b;">Aggregated financial news & macroeconomic updates</p>
+            <h1 style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; letter-spacing:-0.04em;">Market Intelligence</h1>
+            <p style="font-size: 15px; color: var(--text-muted);">Aggregated financial news & macroeconomic updates</p>
           </div>
-          <div style="height: 32px; background: rgba(59,130,246,0.15); color: #60a5fa; border-radius: 16px; padding: 0 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center;" id="news-count">
-            LOADING...
+          <div style="height: 36px; background: rgba(99,102,241,0.1); color: #a5b4fc; border:1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 0 16px; font-size: 12px; font-weight: 700; display: flex; align-items: center; letter-spacing:0.05em;" id="news-count">
+            ...
           </div>
         </div>
 
-        <div class="news-tabs">
-            <button class="news-tab active">All</button>
-            <button class="news-tab">Stocks</button>
-            <button class="news-tab">Macro</button>
-            <button class="news-tab">Crypto</button>
-            <button class="news-tab">Commodities</button>
-        </div>
-        
         <div id="news-list" class="news-grid">
-            ${Array(6).fill(`
-            <article class="news-card news-skeleton" style="opacity:1; transform:none; transition:none; border-color:transparent;">
-              <div class="news-image-wrap skeleton-shimmer" style="background:#1e293b;"></div>
-              <div class="news-content">
-                <div class="skeleton-shimmer" style="width: 40%; height:16px; margin-bottom: 12px; border-radius:4px; background:#1e293b;"></div>
-                <div class="skeleton-shimmer" style="width: 100%; height:20px; margin-bottom: 8px; border-radius:4px; background:#1e293b;"></div>
-                <div class="skeleton-shimmer" style="width: 80%; height:20px; border-radius:4px; background:#1e293b;"></div>
-                <div class="news-meta" style="margin-top: auto; padding-top:16px;">
-                   <div class="skeleton-shimmer" style="width: 30%; height:12px; border-radius:4px; background:#1e293b;"></div>
-                </div>
-              </div>
-            </article>`).join('')}
+            <div id="news-status" style="color:var(--text-main);">Loading news...</div>
         </div>
       </section>`;
 
-    const res = await fetchNews(20);
-    const list = document.getElementById('news-list');
-    const items = Array.isArray(res?.data) && res.data.length ? res.data : FALLBACK_NEWS;
-    
-    document.getElementById('news-count').textContent = `${items.length} ARTICLES TODAY`;
+    try {
+        const res = await fetchNews(20);
+        const list = document.getElementById('news-list');
+        const status = document.getElementById('news-status');
+        
+        const items = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data : FALLBACK_NEWS;
+        
+        document.getElementById('news-count').textContent = `${items.length} ARTICLES TODAY`;
+        status.style.display = 'none';
 
-    list.innerHTML = items.map((n) => {
-        const time = timeAgo(n.published_at);
-        const source = n.source || 'MARKET';
-        const imageUrl = n.image_url || '';
-        const imageElement = imageUrl 
-            ? `<img src="${imageUrl}" alt="News thumbnail" loading="lazy" onerror="this.style.display='none'; this.parentElement.querySelector('.news-image-fallback').style.display='flex';">
-               <div class="news-image-overlay"></div>
-               <div class="news-image-fallback">📰</div>` 
-            : `<div class="news-image-fallback" style="display:flex;">📰</div>`;
+        list.innerHTML = items.map((n) => {
+            const time = timeAgo(n.published_at);
+            const source = n.source || 'MARKET';
+            const imageUrl = n.image_url || '';
+            const imageElement = imageUrl 
+                ? `<img src="${imageUrl}" alt="News thumbnail" loading="lazy" onerror="this.style.display='none'; this.parentElement.querySelector('.news-image-fallback').style.display='flex';">
+                   <div class="news-image-overlay"></div>
+                   <div class="news-image-fallback">📰</div>` 
+                : `<div class="news-image-fallback" style="display:flex;">📰</div>`;
 
-        return `
-            <a href="${n.link}" target="_blank" class="news-card">
-                <div class="news-image-wrap">
-                    ${imageElement}
-                </div>
-                <div class="news-content">
-                    <span class="news-badge">${source}</span>
-                    <h3 class="news-title">${n.title}</h3>
-                    <div class="news-meta">
-                        <span class="news-source">${source}</span>
-                        <span class="news-dot">-</span>
-                        <span class="news-time">${time}</span>
+            return `
+                <a href="${n.link}" target="_blank" class="news-card">
+                    <div class="news-image-wrap">
+                        ${imageElement}
                     </div>
-                </div>
-            </a>
-        `;
-    }).join('');
-    
-    observeNewsCards();
-    
-    // Quick tab click effect (aesthetic only)
-    document.querySelectorAll('.news-tab').forEach(tab => {
-       tab.addEventListener('click', () => {
-          document.querySelectorAll('.news-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-       });
-    });
+                    <div class="news-content">
+                        <span class="news-badge">${source}</span>
+                        <h3 class="news-title">${n.title}</h3>
+                        <div class="news-meta">
+                            <span class="news-source">${source}</span>
+                            <span class="news-dot">-</span>
+                            <span class="news-time">${time}</span>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+        
+        observeNewsCards();
+    } catch (err) {
+        document.getElementById('news-status').textContent = 'Failed to load news: ' + err.message;
+        console.error('News rendering error:', err);
+    }
 }
