@@ -19,9 +19,24 @@ export async function renderPortfolio(root, activeTab) {
     const tbody = root.querySelector('tbody'); if (tbody) animateTableRows(tbody);
 }
 
+const FALLBACK_WATCHLIST = [
+    { ticker: 'BBCA', notes: 'Core holding, strong liquidity, defensive name.' },
+    { ticker: 'ASII', notes: 'Auto recovery + cyclical rebound watch.' },
+    { ticker: 'TLKM', notes: 'Dividend + stabilizer for portfolio balance.' },
+    { ticker: 'ANTM', notes: 'Commodity beta, watch for volume expansion.' },
+];
+
+const FALLBACK_PORTFOLIO = [
+    { ticker: 'BBRI', lots: 18, avg_price: 4710 },
+    { ticker: 'UNVR', lots: 12, avg_price: 2960 },
+    { ticker: 'PGAS', lots: 28, avg_price: 1385 },
+    { ticker: 'BMRI', lots: 10, avg_price: 6150 },
+];
+
 async function renderWatchlistTab(el) {
     const data = await fetchWatchlist();
-    el.innerHTML = `<div class="panel-head"><h3>My Watchlist (${data.count})</h3><button id="add-watchlist" class="btn btn-primary"><i data-lucide="plus"></i> Add Ticker</button></div><div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Ticker</th><th>Notes</th><th>Action</th></tr></thead><tbody>${data.data.map((row) => `<tr><td><a href="#stock/${row.ticker}" class="mono strong">${row.ticker}</a></td><td>${row.notes || '-'}</td><td><button class="icon-btn delete-watchlist" data-ticker="${row.ticker}" aria-label="Delete ${row.ticker}"><i data-lucide="trash-2"></i></button></td></tr>`).join('') || '<tr><td colspan="3" class="empty-state">No watchlist items yet.</td></tr>'}</tbody></table></div>`;
+    const rows = Array.isArray(data?.data) && data.data.length ? data.data : FALLBACK_WATCHLIST;
+    el.innerHTML = `<div class="panel-head"><h3>My Watchlist (${rows.length})</h3><button id="add-watchlist" class="btn btn-primary"><i data-lucide="plus"></i> Add Ticker</button></div><div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Ticker</th><th>Notes</th><th>Action</th></tr></thead><tbody>${rows.map((row) => `<tr><td><a href="#stock/${row.ticker}" class="mono strong">${row.ticker}</a></td><td>${row.notes || '-'}</td><td><button class="icon-btn delete-watchlist" data-ticker="${row.ticker}" aria-label="Delete ${row.ticker}"><i data-lucide="trash-2"></i></button></td></tr>`).join('')}</tbody></table></div><div class="notice-box mt-3">Ini tampilan dummy sementara supaya halaman tetap hidup saat data backend belum ada.</div>`;
     el.querySelector('#add-watchlist').addEventListener('click', async () => {
         const ticker = window.prompt('Ticker (contoh: BBCA):', 'BBCA'); if (!ticker) return;
         const notes = window.prompt('Catatan (opsional):', '') || '';
@@ -35,7 +50,8 @@ async function renderWatchlistTab(el) {
 
 async function renderPortfolioTab(el) {
     const data = await fetchPortfolio();
-    el.innerHTML = `<div class="panel-head"><h3>Current Holdings (${data.count})</h3><button id="add-portfolio" class="btn btn-primary"><i data-lucide="plus"></i> Add Position</button></div><div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Ticker</th><th>Lots</th><th>Avg Price</th><th>Action</th></tr></thead><tbody>${data.data.map((row) => `<tr><td><a href="#stock/${row.ticker}" class="mono strong">${row.ticker}</a></td><td class="mono">${row.lots}</td><td class="mono">${Number(row.avg_price).toLocaleString()}</td><td><button class="icon-btn delete-portfolio" data-ticker="${row.ticker}" aria-label="Delete ${row.ticker}"><i data-lucide="trash-2"></i></button></td></tr>`).join('') || '<tr><td colspan="4" class="empty-state">No positions yet.</td></tr>'}</tbody></table></div>`;
+    const rows = Array.isArray(data?.data) && data.data.length ? data.data : FALLBACK_PORTFOLIO;
+    el.innerHTML = `<div class="panel-head"><h3>Current Holdings (${rows.length})</h3><button id="add-portfolio" class="btn btn-primary"><i data-lucide="plus"></i> Add Position</button></div><div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Ticker</th><th>Lots</th><th>Avg Price</th><th>Action</th></tr></thead><tbody>${rows.map((row) => `<tr><td><a href="#stock/${row.ticker}" class="mono strong">${row.ticker}</a></td><td class="mono">${row.lots}</td><td class="mono">${Number(row.avg_price).toLocaleString()}</td><td><button class="icon-btn delete-portfolio" data-ticker="${row.ticker}" aria-label="Delete ${row.ticker}"><i data-lucide="trash-2"></i></button></td></tr>`).join('')}</tbody></table></div><div class="notice-box mt-3">Portfolio dummy dipakai sampai backend punya posisi nyata.</div>`;
     el.querySelector('#add-portfolio').addEventListener('click', async () => {
         const ticker = window.prompt('Ticker (contoh: BBCA):', 'BBCA'); if (!ticker) return;
         const lots = Number(window.prompt('Lots:', '1')); const avgPrice = Number(window.prompt('Average price:', '1000'));
