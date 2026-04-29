@@ -4,7 +4,12 @@ import { fetchMarketSummary } from './api.js';
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+function revealElements() {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+}
+
 function playLoadSequence() {
+    revealElements();
     if (typeof gsap === 'undefined' || prefersReducedMotion) return;
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     tl.fromTo('body', { opacity: 0 }, { opacity: 1, duration: 0.25 })

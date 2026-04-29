@@ -4,31 +4,37 @@ import { animateCards, animateCountUp, animateSparklines } from '../main.js';
 export async function renderDashboard(root) {
     root.innerHTML = `
       <section class="dashboard-shell reveal">
-        <div class="dashboard-hero">
-          <div class="card hero-copy">
-            <div class="chip neutral mb-3">retailbijak terminal</div>
-            <h1>Analisa market lebih cepat, lebih tajam, dan lebih profesional.</h1>
-            <p>Dashboard ini dirancang untuk stock analyst Indonesia: memindai peluang, membaca momentum, memantau portofolio, dan menjaga fokus pada keputusan yang benar.</p>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="#screener"><i data-lucide="filter"></i> Buka Screener</a>
-              <a class="btn btn-outline" href="#market"><i data-lucide="bar-chart-3"></i> Market Overview</a>
-              <a class="btn btn-outline" href="#portfolio"><i data-lucide="pie-chart"></i> Portfolio</a>
-            </div>
+        <div class="card dashboard-mobile-hero">
+          <div class="chip neutral mb-3">retailbijak terminal</div>
+          <h1>Analisa market lebih cepat, lebih tajam, dan lebih profesional.</h1>
+          <p>Dashboard ini dirancang untuk stock analyst Indonesia: memindai peluang, membaca momentum, memantau portofolio, dan menjaga fokus pada keputusan yang benar.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#screener"><i data-lucide="filter"></i> Buka Screener</a>
+            <a class="btn btn-outline" href="#market"><i data-lucide="bar-chart-3"></i> Market Overview</a>
+            <a class="btn btn-outline" href="#portfolio"><i data-lucide="pie-chart"></i> Portfolio</a>
           </div>
+        </div>
+
+        <div class="kpi-row kpi-row-mobile-first">
+          ${kpi('IHSG', 7284.52, '+0.42')}
+          ${kpi('LQ45', 1043.18, '-0.18')}
+          ${kpi('IDX30', 512.76, '+0.65')}
+          ${kpi('KOMPAS100', 1189.33, '+0.21')}
+        </div>
+
+        <div class="dashboard-hero">
           <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Market Breadth</h2><span class="chip neutral">72%</span></div>
             <div class="hero-metrics">
               ${metric('Market Breadth', '72%', '+8% vs yesterday')}
               ${metric('Active Signals', '148', 'last refresh 2 min ago')}
               ${metric('Watchlist', '24', '3 new alerts')}
             </div>
           </div>
-        </div>
-
-        <div class="kpi-row">
-          ${kpi('IHSG', 7284.52, '+0.42')}
-          ${kpi('LQ45', 1043.18, '-0.18')}
-          ${kpi('IDX30', 512.76, '+0.65')}
-          ${kpi('KOMPAS100', 1189.33, '+0.21')}
+          <div class="card">
+            <div class="flex-between mb-3"><h2 class="mb-0">Quick Actions</h2><span class="chip neutral">Mobile-first</span></div>
+            <div class="stack-list">${['GOTO','BBCA','TLKM'].map((t,i)=>row(t,['GoTo Gojek Tokopedia','Bank Central Asia','Telkom Indonesia'][i],['96','9,800','3,420'][i],['+9.09','+3.15','+2.50'][i])).join('')}</div>
+          </div>
         </div>
 
         <div class="split-row">
