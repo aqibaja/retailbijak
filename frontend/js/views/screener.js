@@ -1,105 +1,88 @@
-import { getScanEventSourceUrl, showToast, fetchSettings } from '../api.js';
+import { getScanEventSourceUrl, showToast } from '../api.js';
 import { animateCards, animateTableRows } from '../main.js';
-
-let autoRefreshTimer = null;
 
 export async function renderScreener(root) {
     root.innerHTML = `
-      <section class="section-grid reveal">
-        <div class="card mb-4">
-          <div class="flex-between">
+      <section class="grid grid-cols-12 reveal">
+        <div class="span-12 card mb-2">
+          <div class="flex justify-between items-center">
             <div>
-              <h1 class="mb-2">Stock Screener</h1>
-              <p class="muted">Cari setup teknikal yang layak dieksekusi. Fokus pada momentum dan volume.</p>
+              <h2 class="strong">Institutional Scanner</h2>
+              <p class="text-muted">High-precision signal detection engine</p>
             </div>
-            <button id="btn-run-screener-mobile" class="btn btn-primary">Run Screener</button>
+            <div class="flex gap-2">
+              <div class="chip">AUTO-REFRESH: OFF</div>
+              <div class="chip">SERVER: READY</div>
+            </div>
           </div>
         </div>
 
-        <div class="grid grid-1-2">
+        <div class="span-3 flex" style="flex-direction:column; gap:20px;">
           <div class="card">
-            <h3 class="mb-4">Filters</h3>
-            <div style="display:flex; flex-direction:column; gap:20px;">
+            <h3 class="strong mb-4">Parameters</h3>
+            <div class="flex" style="flex-direction:column; gap:16px;">
               <div>
-                <label class="muted" style="font-size:11px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:8px;">Strategy</label>
-                <select id="screener-strategy" class="btn btn-outline" style="width:100%; text-align:left; justify-content:space-between;">
+                <label class="text-muted" style="font-size:10px; text-transform:uppercase; display:block; margin-bottom:6px;">Algorithm</label>
+                <select id="screener-strategy" class="btn" style="width:100%; text-align:left; background:var(--bg-elevated);">
                   <option>retailbijak Momentum</option>
-                  <option disabled>Golden Cross (Pro)</option>
-                  <option disabled>RSI Oversold (Pro)</option>
+                  <option disabled>Trend Following (Pro)</option>
                 </select>
               </div>
-
               <div>
-                <label class="muted" style="font-size:11px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:8px;">Timeframe</label>
-                <select id="screener-tf" class="btn btn-outline" style="width:100%; text-align:left;">
+                <label class="text-muted" style="font-size:10px; text-transform:uppercase; display:block; margin-bottom:6px;">Timeframe</label>
+                <select id="screener-tf" class="btn" style="width:100%; text-align:left; background:var(--bg-elevated);">
                   <option value="1d">Daily (1D)</option>
                   <option value="1h">1 Hour (H1)</option>
-                  <option value="4h">4 Hours (H4)</option>
                 </select>
               </div>
-
-              <div>
-                <label class="muted" style="font-size:11px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:8px;">Preset</label>
-                <div style="display:flex; gap:8px;">
-                  <button class="chip success">Breakout</button>
-                  <button class="chip">Trend</button>
-                  <button class="chip">Reversion</button>
-                </div>
-              </div>
-
-              <button id="btn-run-screener" class="btn btn-primary" style="width:100%; margin-top:12px;">Run Full Scan</button>
-              
-              <div id="screener-progress" style="display:none; margin-top:12px;">
-                <div class="flex-between mb-2">
-                  <span id="sp-text" style="font-size:12px;">Scanning...</span>
-                  <span id="sp-percent" class="mono" style="font-size:12px;">0%</span>
-                </div>
-                <div style="height:4px; background:var(--surface-3); border-radius:99px; overflow:hidden;">
-                  <div id="sp-fill" style="height:100%; width:0%; background:var(--primary); transition:width 0.3s ease;"></div>
-                </div>
-              </div>
+              <button id="btn-run-screener" class="btn btn-primary" style="width:100%; margin-top:8px;">Execute Scan</button>
             </div>
           </div>
 
-          <div class="card">
-            <div class="flex-between mb-4">
-              <h2 class="mb-0">Results</h2>
-              <div class="chip" id="screener-count">0 matches</div>
+          <div id="screener-progress" class="card" style="display:none; padding:16px; background:var(--bg-elevated);">
+            <div class="flex justify-between mb-2">
+              <span id="sp-text" style="font-size:11px;">Scanning...</span>
+              <span id="sp-percent" class="mono" style="font-size:11px;">0%</span>
             </div>
-            
-            <div class="data-table-wrapper">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Ticker</th>
-                    <th>Price</th>
-                    <th>Magic Line</th>
-                    <th>CCI</th>
-                    <th>Stop Loss</th>
-                    <th>Signal</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="screener-tbody">
-                  <tr><td colspan="7" class="muted" style="text-align:center; padding:40px;">Select filters and run screener to see results.</td></tr>
-                </tbody>
-              </table>
+            <div style="height:2px; background:var(--border-strong); border-radius:99px; overflow:hidden;">
+              <div id="sp-fill" style="height:100%; width:0%; background:var(--up); transition:width 0.3s ease;"></div>
             </div>
+          </div>
+        </div>
+
+        <div class="span-9 card">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="strong">Scan Results</h3>
+            <div class="chip" id="screener-count">0 MATCHES</div>
+          </div>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Ticker</th>
+                  <th>Price</th>
+                  <th>Magic Line</th>
+                  <th>CCI</th>
+                  <th>Stop Loss</th>
+                  <th>SL %</th>
+                  <th>Signal</th>
+                </tr>
+              </thead>
+              <tbody id="screener-tbody">
+                <tr><td colspan="7" class="text-muted" style="text-align:center; padding:60px;">Execute scan to retrieve institutional signals.</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>`;
 
-    lucide.createIcons();
     animateCards('.card');
-
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
-    root.querySelector('#btn-run-screener-mobile').addEventListener('click', runScreener);
 }
 
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;
     const btn = document.getElementById('btn-run-screener');
-    const btnMobile = document.getElementById('btn-run-screener-mobile');
     const tbody = document.getElementById('screener-tbody');
     const progBox = document.getElementById('screener-progress');
     const progText = document.getElementById('sp-text');
@@ -107,49 +90,48 @@ function runScreener() {
     const progFill = document.getElementById('sp-fill');
     const countBadge = document.getElementById('screener-count');
 
-    [btn, btnMobile].forEach(b => { if (b) { b.disabled = true; b.textContent = 'Scanning...'; } });
+    btn.disabled = true;
+    btn.textContent = 'EXECUTING...';
     tbody.innerHTML = '';
     progBox.style.display = 'block';
     let matchCount = 0;
-    countBadge.textContent = '0 matches';
 
     const eventSource = new EventSource(getScanEventSourceUrl(tf));
     
     eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            progText.textContent = `Scanning ${data.ticker}...`;
+            progText.textContent = `Analysing ${data.ticker}...`;
             progPercent.textContent = `${data.percent}%`;
             progFill.style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
             matchCount += 1;
-            countBadge.textContent = `${matchCount} matches`;
+            countBadge.textContent = `${matchCount} MATCHES`;
             const r = data.data;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-              <td><a href="#stock/${r.ticker}" class="mono strong">${r.ticker}</a></td>
+              <td><a href="#stock/${r.ticker}" class="mono strong text-up">${r.ticker}</a></td>
               <td class="mono">Rp ${r.close.toLocaleString()}</td>
-              <td class="mono muted">${r.magic_line.toFixed(1)}</td>
-              <td class="mono muted">${r.cci.toFixed(1)}</td>
-              <td class="mono negative">${r.stop_loss.toLocaleString()}</td>
-              <td><span class="chip success">BUY</span></td>
-              <td style="text-align:right">
-                <a href="#stock/${r.ticker}" class="btn btn-outline" style="padding:4px 8px;"><i data-lucide="chevron-right"></i></a>
-              </td>`;
+              <td class="mono text-muted">${r.magic_line.toFixed(1)}</td>
+              <td class="mono text-muted">${r.cci.toFixed(1)}</td>
+              <td class="mono text-down">${r.stop_loss.toLocaleString()}</td>
+              <td class="mono text-down">${r.sl_pct.toFixed(2)}%</td>
+              <td><span class="chip chip-up">LONG</span></td>`;
             tbody.appendChild(tr);
-            lucide.createIcons({ root: tr });
         } else if (data.type === 'done') {
-            [btn, btnMobile].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Run Full Scan'; } });
+            btn.disabled = false;
+            btn.textContent = 'Execute Scan';
             eventSource.close();
             animateTableRows(tbody);
-            showToast(`Scan complete: ${matchCount} matches`, 'success');
-            if (matchCount === 0) tbody.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center; padding:40px;">No signals found for this timeframe.</td></tr>`;
+            showToast(`Scan complete: ${matchCount} signals detected`, 'success');
+            if (matchCount === 0) tbody.innerHTML = `<tr><td colspan="7" class="text-muted" style="text-align:center; padding:60px;">No institutional signals detected in this timeframe.</td></tr>`;
         }
     };
     
     eventSource.onerror = () => {
-        [btn, btnMobile].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Run Full Scan'; } });
+        btn.disabled = false;
+        btn.textContent = 'Execute Scan';
         eventSource.close();
-        showToast('Connection error', 'error');
+        showToast('Scanner connection lost', 'error');
     };
 }
