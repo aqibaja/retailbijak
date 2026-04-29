@@ -9,14 +9,15 @@ import { renderHelp } from './views/help.js';
 
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');
-    const path = hash.replace('#', '');
+    const path = hash.replace(/^#\/?/, '');
+    const normalizedPath = path || 'dashboard';
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
-    const baseRoute = path.split('/')[0];
+    const baseRoute = normalizedPath.split('/')[0];
     const navItem = document.querySelector(`.sidebar-nav .nav-item[data-view="${baseRoute}"]`);
     if (navItem) navItem.classList.add('active');
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const paint = () => renderView(root, path);
+    const paint = () => renderView(root, normalizedPath);
 
     if (!prefersReducedMotion && typeof gsap !== 'undefined') {
         gsap.to(root, { opacity: 0, duration: 0.12, onComplete: () => { paint(); gsap.fromTo(root, { opacity: 0 }, { opacity: 1, duration: 0.18 }); } });
@@ -26,13 +27,14 @@ export function handleRoute(hash) {
 }
 
 function renderView(root, path) {
-    if (path === '' || path === 'dashboard') renderDashboard(root);
-    else if (path.startsWith('stock/')) renderStockDetail(root, path.split('/')[1]);
-    else if (path === 'market') renderMarket(root);
-    else if (path === 'screener') renderScreener(root);
-    else if (path === 'portfolio' || path === 'watchlist') renderPortfolio(root, path);
-    else if (path === 'news') renderNews(root);
-    else if (path === 'settings') renderSettings(root);
-    else if (path === 'help') renderHelp(root);
-    else root.innerHTML = `<div class="card"><h2>Page Not Found</h2><p class="mb-0" style="color:var(--text-muted)">View "${path}" belum tersedia.</p></div>`;
+    const normalizedPath = (path || '').replace(/^\/+/, '');
+    if (normalizedPath === '' || normalizedPath === 'dashboard') renderDashboard(root);
+    else if (normalizedPath.startsWith('stock/')) renderStockDetail(root, normalizedPath.split('/')[1]);
+    else if (normalizedPath === 'market') renderMarket(root);
+    else if (normalizedPath === 'screener') renderScreener(root);
+    else if (normalizedPath === 'portfolio' || normalizedPath === 'watchlist') renderPortfolio(root, normalizedPath);
+    else if (normalizedPath === 'news') renderNews(root);
+    else if (normalizedPath === 'settings') renderSettings(root);
+    else if (normalizedPath === 'help') renderHelp(root);
+    else root.innerHTML = `<div class="card"><h2>Page Not Found</h2><p class="mb-0" style="color:var(--text-muted)">View "${normalizedPath}" belum tersedia.</p></div>`;
 }

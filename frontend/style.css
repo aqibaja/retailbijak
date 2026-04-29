@@ -184,8 +184,26 @@ button, input, select { font: inherit; }
 .section-grid { display:grid; gap: 18px; }
 .split-row { display:grid; grid-template-columns: 1.6fr 0.9fr; gap: 18px; }
 .three-col-row { display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.dashboard-grid-compact { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .kpi-row { display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .kpi-card { padding: 18px; }
+.size-full { width: 100%; }
+.stack-list { display:flex; flex-direction:column; gap:10px; }
+.stack-item {
+  display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 14px 16px;
+  border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,0.03);
+}
+.stack-title { font-weight: 700; }
+.stack-sub { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+.stack-right { text-align:right; display:flex; flex-direction:column; gap:4px; }
+.heatmap-grid { display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.heatmap-tile { padding: 16px; border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); }
+.heatmap-tile.pos strong { color: var(--success); }
+.heatmap-tile.neg strong { color: var(--danger); }
+.notice-box {
+  padding: 14px 16px; border-radius: 16px; border: 1px dashed var(--border-strong);
+  background: rgba(124,230,160,0.06); color: var(--text-muted);
+}
 .kpi-title { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
 .kpi-value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; margin: 12px 0 6px; }
 .kpi-change { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }

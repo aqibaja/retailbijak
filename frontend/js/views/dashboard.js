@@ -39,18 +39,11 @@ export async function renderDashboard(root) {
             <div class="chart-badge-row mt-3">
               ${['1D','1W','1M','3M','1Y','3Y'].map((x,i)=>`<button class="time-chip ${i===0?'active':''}">${x}</button>`).join('')}
             </div>
-            <div style="height:260px; margin-top:12px;"><canvas id="ihsgHeroChart"></canvas></div>
+            <div style="height:220px; margin-top:12px;"><canvas id="ihsgHeroChart"></canvas></div>
           </div>
         </div>
 
-        <div class="kpi-row kpi-row-mobile-first">
-          ${kpi('IHSG', 7080.63, '+0.12')}
-          ${kpi('LQ45', 1043.18, '-0.18')}
-          ${kpi('IDX30', 512.76, '+0.65')}
-          ${kpi('KOMPAS100', 1189.33, '+0.21')}
-        </div>
-
-        <div class="split-row">
+        <div class="dashboard-grid-compact">
           <div class="card">
             <div class="flex-between mb-3"><h2 class="mb-0">Top Gainers</h2><a href="#market" class="chip neutral">See all</a></div>
             <div class="stack-list">${['GOTO','BRPT','BBCA','TLKM','ASII','ANTM'].map((t,i)=>row(t,['GoTo Gojek Tokopedia','Barito Pacific','Bank Central Asia','Telkom Indonesia','Astra International','Aneka Tambang'][i],['96','1,200','9,800','3,420','5,300','1,920'][i],['+9.09','+5.20','+3.15','+2.50','+1.92','+1.50'][i])).join('')}</div>
@@ -59,9 +52,6 @@ export async function renderDashboard(root) {
             <div class="flex-between mb-3"><h2 class="mb-0">Watchlist</h2><a href="#watchlist" class="chip neutral">Manage</a></div>
             ${['BBRI','UNVR','PGAS','BUMI'].map((t,i)=>watch(t,['4,850','2,900','1,350','120'][i],['-1.20','+0.50','+2.10','-3.50'][i], [false,true,true,false][i])).join('')}
           </div>
-        </div>
-
-        <div class="split-row">
           <div class="card">
             <div class="flex-between mb-3"><h2 class="mb-0">Portfolio Summary</h2><span class="chip neutral">Demo</span></div>
             <div class="hero-metrics" style="grid-template-columns: 1fr;">
