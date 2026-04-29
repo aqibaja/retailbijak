@@ -10,17 +10,19 @@ const FALLBACK_NEWS = [
 
 export async function renderNews(root) {
     root.innerHTML = `
+      <section class="reveal">
         <div class="flex-between mb-4">
-            <h1>News & Analysis</h1>
-            <div class="chip neutral" id="news-count">Loading...</div>
+            <h1 class="mb-0">News & Analysis</h1>
+            <div class="chip" id="news-count">Loading...</div>
         </div>
         <div class="card">
-            <div id="news-list" style="display:flex; flex-direction:column; gap:16px;">
+            <div id="news-list" class="stack-list">
                 <div class="skeleton skeleton-text"></div>
                 <div class="skeleton skeleton-text"></div>
                 <div class="skeleton skeleton-text"></div>
             </div>
         </div>
+      </section>
     `;
 
     animateCards('.card');
@@ -31,14 +33,16 @@ export async function renderNews(root) {
     badge.textContent = `${items.length} items`;
 
     list.innerHTML = items.map((n) => {
-        const dt = n.published_at ? new Date(n.published_at).toLocaleString() : '-';
-        const summary = n.summary ? `<div style="font-size:13px; color:var(--text-muted); margin-top:6px;">${n.summary}</div>` : '';
+        const dt = n.published_at ? new Date(n.published_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+        const dateStr = n.published_at ? new Date(n.published_at).toLocaleDateString() : '';
         return `
-            <article style="padding-bottom:14px; border-bottom:1px solid var(--border);">
-                <div style="font-size:12px; color:var(--text-faint); margin-bottom:6px;">${n.source || 'Source'} • ${dt}</div>
-                <a href="${n.link}" target="_blank" rel="noopener noreferrer" style="font-weight:600; line-height:1.4;">${n.title || 'Untitled'}</a>
-                ${summary}
-            </article>
+            <a class="stack-item" href="${n.link}" target="_blank" rel="noopener" style="padding: 20px 0;">
+                <div>
+                  <div class="muted mb-2" style="font-size:11px; text-transform:uppercase; font-weight:700;">${n.source || 'Market'} • ${dateStr} ${dt}</div>
+                  <h3 style="margin:0; font-size:18px; line-height:1.4;">${n.title || 'Untitled'}</h3>
+                  ${n.summary ? `<p class="muted mt-2" style="font-size:14px; margin-bottom:0;">${n.summary}</p>` : ''}
+                </div>
+            </a>
         `;
     }).join('');
 }

@@ -9,34 +9,64 @@ function revealElements() {
 }
 
 function playLoadSequence() {
-    revealElements();
-    if (typeof gsap === 'undefined' || prefersReducedMotion) return;
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-    tl.fromTo('body', { opacity: 0 }, { opacity: 1, duration: 0.25 })
-      .fromTo('.topbar', { y: -16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, '-=0.08')
-      .fromTo('.sidebar', { x: -18, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35 }, '-=0.25')
-      .fromTo('.main-content', { opacity: 0 }, { opacity: 1, duration: 0.25 }, '-=0.18');
+    // Immediate reveal as fallback
+    const revealAll = () => {
+        document.body.style.opacity = '1';
+        revealElements();
+    };
+
+    if (typeof gsap === 'undefined' || prefersReducedMotion) {
+        revealAll();
+        return;
+    }
+
+    try {
+        const tl = gsap.timeline({ 
+            defaults: { ease: 'expo.out' },
+            onComplete: revealElements 
+        });
+        
+        tl.fromTo('body', { opacity: 0 }, { opacity: 1, duration: 0.4 })
+          .fromTo('.topbar', { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5 }, '-=0.2')
+          .fromTo('.sidebar', { x: -20, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5 }, '-=0.3')
+          .fromTo('.main-content', { opacity: 0, scale: 0.99 }, { opacity: 1, scale: 1, duration: 0.5 }, '-=0.3');
+    } catch (e) {
+        console.warn('GSAP Animation failed', e);
+        revealAll();
+    }
 }
 
 export function animateCards(selector = '.card') {
     if (typeof gsap === 'undefined' || prefersReducedMotion) return;
     const cards = document.querySelectorAll(selector);
     if (!cards.length) return;
-    gsap.fromTo(cards, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: 'power2.out' });
+    gsap.fromTo(cards, 
+        { opacity: 0, y: 15 }, 
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out', clearProps: 'all' }
+    );
 }
 
 export function animateTableRows(tbody) {
     if (typeof gsap === 'undefined' || !tbody || prefersReducedMotion) return;
-    gsap.fromTo(tbody.querySelectorAll('tr'), { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.02 });
+    gsap.fromTo(tbody.querySelectorAll('tr'), 
+        { opacity: 0, x: -5 }, 
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.02, ease: 'power1.out' }
+    );
 }
 
-export function animateCountUp(element, endVal, prefix = '', suffix = '', duration = 1.1) {
-    if (!element || typeof countUp === 'undefined') {
-        if (element) element.textContent = `${prefix}${Number(endVal).toLocaleString('id-ID')}${suffix}`;
+export function animateCountUp(element, endVal, prefix = '', suffix = '', duration = 1.5) {
+    if (!element) return;
+    if (typeof countUp === 'undefined') {
+        element.textContent = `${prefix}${Number(endVal).toLocaleString('id-ID')}${suffix}`;
         return;
     }
     const Counter = countUp.CountUp;
-    const counter = new Counter(element, endVal, { prefix, suffix, duration, separator: ',', decimal: '.', enableScrollSpy: true, scrollSpyOnce: true });
+    const counter = new Counter(element, endVal, { 
+        prefix, suffix, duration, 
+        separator: ',', decimal: '.', 
+        enableScrollSpy: true, scrollSpyOnce: true,
+        useEasing: true
+    });
     if (!counter.error) counter.start();
 }
 
@@ -44,7 +74,10 @@ export function animateSparklines() {
     if (typeof gsap === 'undefined' || prefersReducedMotion) return;
     document.querySelectorAll('.sparkline-path').forEach(path => {
         const length = path.getTotalLength();
-        gsap.fromTo(path, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: 0.75, ease: 'power2.out' });
+        gsap.fromTo(path, 
+            { strokeDasharray: length, strokeDashoffset: length }, 
+            { strokeDashoffset: 0, duration: 1, ease: 'power2.inOut' }
+        );
     });
 }
 
@@ -59,7 +92,7 @@ document.addEventListener('click', (e) => {
     ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
     ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
     btn.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 550);
+    setTimeout(() => ripple.remove(), 600);
 });
 
 document.addEventListener('keydown', (e) => {
@@ -68,63 +101,27 @@ document.addEventListener('keydown', (e) => {
         const searchInput = document.querySelector('.search-box input');
         if (searchInput) searchInput.focus();
     }
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'r') {
-        e.preventDefault();
-        clearAppCacheAndReload();
-    }
 });
-
-function clearAppCacheAndReload() {
-    try {
-        const keys = [];
-        for (let i = 0; i < localStorage.length; i += 1) keys.push(localStorage.key(i));
-        for (const key of keys) {
-            if (key && (key.startsWith('retailbijak') || key.startsWith('swingaq') || key.includes('theme'))) {
-                localStorage.removeItem(key);
-            }
-        }
-        sessionStorage.clear();
-        if ('caches' in window) {
-            caches.keys().then(names => names.forEach(name => caches.delete(name)));
-        }
-    } catch (error) {
-        console.warn('Failed clearing cache', error);
-    }
-    window.location.reload(true);
-}
 
 function setupTopbarMoreMenu() {
     const wrap = document.querySelector('.topbar-more-wrap');
     const btn = document.getElementById('topbar-more-btn');
     const menu = document.getElementById('topbar-more-menu');
     if (!wrap || !btn || !menu) return;
+    
     const setOpen = (open) => {
         wrap.classList.toggle('open', open);
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        menu.setAttribute('aria-hidden', open ? 'false' : 'true');
     };
+    
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
         setOpen(!wrap.classList.contains('open'));
     });
-    menu.addEventListener('click', (e) => {
-        const action = e.target.closest('[data-action]')?.dataset.action;
-        if (!action) return;
-        if (action === 'clear-cache') clearAppCacheAndReload();
-        else if (action === 'go-dashboard') window.location.hash = '#dashboard';
-        else if (action === 'go-market') window.location.hash = '#market';
-        else if (action === 'go-screener') window.location.hash = '#screener';
-        else if (action === 'go-portfolio') window.location.hash = '#portfolio';
-        else if (action === 'go-watchlist') window.location.hash = '#watchlist';
-        else if (action === 'go-news') window.location.hash = '#news';
-        else if (action === 'go-settings') window.location.hash = '#settings';
-        else if (action === 'go-help') window.location.hash = '#help';
-        setOpen(false);
-    });
+    
     document.addEventListener('click', (e) => {
         if (!wrap.contains(e.target)) setOpen(false);
     });
-    window.addEventListener('hashchange', () => setOpen(false));
 }
 
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
@@ -138,46 +135,30 @@ function setupMobileDrawer() {
     const closers = drawer.querySelectorAll('[data-close-drawer]');
     const setState = (open) => {
         drawer.classList.toggle('open', open);
-        drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
         document.body.classList.toggle('drawer-open', open);
     };
-    const openDrawer = () => setState(true);
-    const closeDrawer = () => setState(false);
-    openers.forEach(btn => btn.addEventListener('click', openDrawer));
-    closers.forEach(btn => btn.addEventListener('click', closeDrawer));
-    drawer.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', closeDrawer));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
-    window.addEventListener('hashchange', closeDrawer);
+    openers.forEach(btn => btn.addEventListener('click', () => setState(true)));
+    closers.forEach(btn => btn.addEventListener('click', () => setState(false)));
 }
 
 async function refreshTopbarMarket() {
-    const data = await fetchMarketSummary();
-    const label = document.querySelector('.idx-mini-display .idx-label');
-    const val = document.querySelector('.idx-mini-display .idx-val');
-    const change = document.querySelector('.idx-mini-display .idx-change');
-    const status = document.getElementById('market-status-pill');
-    const readyLabel = 'MARKET READY';
-    if (!data) {
-        if (status) status.querySelector('.status-text').textContent = readyLabel;
-        if (label) label.textContent = 'IHSG';
-        if (val && val.textContent === '--') val.textContent = '7,080.63';
-        if (change && change.textContent === '--') change.textContent = '+0.12%';
-        return;
-    }
-    if (label) label.textContent = data.symbol || 'IHSG';
-    if (val) val.textContent = data.value !== null ? Number(data.value).toLocaleString('id-ID') : '7,080.63';
-    if (change) {
-        if (data.change_pct !== null) {
-            const isPos = data.change_pct >= 0;
-            change.textContent = `${isPos ? '+' : ''}${data.change_pct.toFixed(2)}%`;
-            change.classList.toggle('positive', isPos);
-            change.classList.toggle('negative', !isPos);
-        } else {
-            change.textContent = '+0.12%';
+    try {
+        const data = await fetchMarketSummary();
+        const val = document.querySelector('.idx-mini-display .idx-val');
+        const change = document.querySelector('.idx-mini-display .idx-change');
+        const indicator = document.querySelector('.status-indicator');
+        
+        if (data) {
+            if (val) val.textContent = Number(data.value).toLocaleString('id-ID');
+            if (change) {
+                const isPos = data.change_pct >= 0;
+                change.textContent = `${isPos ? '+' : ''}${data.change_pct.toFixed(2)}%`;
+                change.className = `idx-change ${isPos ? 'positive' : 'negative'}`;
+            }
+            if (indicator) indicator.classList.toggle('open', data.status === 'ok');
         }
-    }
-    if (status) {
-        status.querySelector('.status-text').textContent = data.status === 'ok' ? 'MARKET LIVE' : readyLabel;
+    } catch (e) {
+        console.warn('Failed to refresh market status');
     }
 }
 
@@ -187,6 +168,4 @@ setupMobileDrawer();
 setupTopbarMoreMenu();
 refreshTopbarMarket();
 setInterval(refreshTopbarMarket, 60000);
-const refreshBtn = document.getElementById('refresh-app-btn');
-if (refreshBtn) refreshBtn.addEventListener('click', clearAppCacheAndReload);
 playLoadSequence();

@@ -4,116 +4,167 @@ import { animateCards, animateCountUp, animateSparklines } from '../main.js';
 export async function renderDashboard(root) {
     root.innerHTML = `
       <section class="dashboard-shell reveal">
-        <div class="dashboard-hero">
-          <div class="card hero-copy">
-            <div class="chip neutral mb-3">Discover</div>
-            <h1>Market workspace yang terasa hidup.</h1>
-            <p>Analisis cepat, movers aktif, dan watchlist yang selalu terisi — bahkan saat backend belum mengirim data penuh.</p>
-            <div class="hero-actions">
+        <div class="grid grid-2-1">
+          <div class="card">
+            <div class="chip mb-2">Market Pulse</div>
+            <h1 class="mb-2">Selamat datang kembali.</h1>
+            <p class="muted mb-4">IHSG bergerak konsolidasi hari ini. Pantau watchlist Anda untuk peluang breakout di sektor perbankan dan energi.</p>
+            
+            <div class="grid grid-3 mt-4">
+              ${metric('IHSG', '7,080.63', '<span class="positive">+0.12%</span>')}
+              ${metric('Advance', '328', 'Market Breadth')}
+              ${metric('Volume', '8.40T', 'Reg Session')}
+            </div>
+
+            <div class="hero-actions mt-4">
               <a href="#screener" class="btn btn-primary">Run Screener</a>
-              <a href="#market" class="btn btn-outline">Open Market</a>
-              <button id="hero-refresh-btn" class="btn btn-outline">Refresh Data</button>
-            </div>
-            <div class="hero-metrics mt-3">
-              ${metric('IHSG', '7,080.63', '<span class="positive">+0.12%</span> vs yesterday')}
-              ${metric('Advance', '328', '52.8% breadth')}
-              ${metric('Volume', '8.40T', 'regular session')}
+              <a href="#market" class="btn btn-outline">Market Overview</a>
             </div>
           </div>
+
           <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Today at a glance</h2><span class="chip success">Live</span></div>
-            <div class="mobile-searchbar" style="display:flex; margin:0 0 14px;">
-              <i data-lucide="search"></i>
-              <input type="text" placeholder="Cari ticker, sektor, atau emiten..." aria-label="Cari ticker, sektor, atau emiten...">
+            <div class="flex-between mb-4">
+              <h3 class="mb-0">IHSG Intraday</h3>
+              <div class="chip success">Live</div>
             </div>
-            <div class="summary-scroll" style="grid-auto-columns:100%;">
-              <div class="summary-card">
-                <div class="summary-title">Market pulse</div>
-                <div class="summary-grid">
-                  <div><span>Open</span><strong>7,096.61</strong></div>
-                  <div><span>High</span><strong class="positive">7,126.06</strong></div>
-                  <div><span>Low</span><strong class="negative">7,063.99</strong></div>
-                </div>
-              </div>
+            <div style="height:200px;"><canvas id="ihsgHeroChart"></canvas></div>
+            <div class="grid grid-3 mt-4">
+              <div><span class="muted" style="font-size:10px; text-transform:uppercase;">Open</span><div class="mono strong">7,096</div></div>
+              <div><span class="muted" style="font-size:10px; text-transform:uppercase;">High</span><div class="mono strong positive">7,126</div></div>
+              <div><span class="muted" style="font-size:10px; text-transform:uppercase;">Low</span><div class="mono strong negative">7,063</div></div>
             </div>
-            <div class="chart-badge-row mt-3">
-              ${['1D','1W','1M','3M','1Y','3Y'].map((x,i)=>`<button class="time-chip ${i===0?'active':''}">${x}</button>`).join('')}
-            </div>
-            <div style="height:220px; margin-top:12px;"><canvas id="ihsgHeroChart"></canvas></div>
           </div>
         </div>
 
-        <div class="dashboard-grid-compact">
+        <div class="grid grid-2">
           <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Top Gainers</h2><a href="#market" class="chip neutral">See all</a></div>
-            <div class="stack-list">${['GOTO','BRPT','BBCA','TLKM','ASII','ANTM'].map((t,i)=>row(t,['GoTo Gojek Tokopedia','Barito Pacific','Bank Central Asia','Telkom Indonesia','Astra International','Aneka Tambang'][i],['96','1,200','9,800','3,420','5,300','1,920'][i],['+9.09','+5.20','+3.15','+2.50','+1.92','+1.50'][i])).join('')}</div>
-          </div>
-          <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Watchlist</h2><a href="#watchlist" class="chip neutral">Manage</a></div>
-            ${['BBRI','UNVR','PGAS','BUMI'].map((t,i)=>watch(t,['4,850','2,900','1,350','120'][i],['-1.20','+0.50','+2.10','-3.50'][i], [false,true,true,false][i])).join('')}
-          </div>
-          <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Portfolio Summary</h2><span class="chip neutral">Demo</span></div>
-            <div class="hero-metrics" style="grid-template-columns: 1fr;">
-              <div class="hero-metric"><div class="label">Total Value</div><div class="value">Rp 145.2M</div><div class="sub positive">+ Rp 2.4M (1.68%) today</div></div>
-              <div style="height:160px"><canvas id="portfolioDonut"></canvas></div>
+            <div class="flex-between mb-4">
+              <h2 class="mb-0">Top Gainers</h2>
+              <a href="#market" class="chip">See all</a>
+            </div>
+            <div class="stack-list">
+              ${['GOTO','BRPT','BBCA','TLKM','ASII'].map((t,i)=>row(t,['GoTo','Barito','BCA','Telkom','Astra'][i],['96','1,200','9,800','3,420','5,300'][i],['+9.09','+5.20','+3.15','+2.50','+1.92'][i])).join('')}
             </div>
           </div>
+
           <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Market News</h2><a href="#news" class="chip neutral">All news</a></div>
+            <div class="flex-between mb-4">
+              <h2 class="mb-0">Latest News</h2>
+              <a href="#news" class="chip">All news</a>
+            </div>
             <div id="news-container" class="stack-list">
-              <div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text"></div>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="flex-between mb-3"><h2 class="mb-0">Sector Heatmap</h2><span class="chip neutral">Relative strength</span></div>
-          <div class="heatmap-grid">${['Finance:+1.2','Tech:-2.4','Consumer:+0.3','Property:-0.8','Energy:+1.8'].map(x=>heat(...x.split(':'))).join('')}</div>
+        <div class="grid grid-3">
+          <div class="card">
+             <div class="flex-between mb-4">
+              <h2 class="mb-0">Watchlist</h2>
+              <a href="#watchlist" class="chip">Manage</a>
+            </div>
+            <div class="stack-list">
+               ${['BBRI','UNVR','PGAS'].map((t,i)=>watch(t,['4,850','2,900','1,350'][i],['-1.20','+0.50','+2.10'][i], [false,true,true][i])).join('')}
+            </div>
+          </div>
+          <div class="card" style="grid-column: span 2;">
+            <div class="flex-between mb-4">
+              <h2 class="mb-0">Sector Heatmap</h2>
+              <span class="muted">Relative strength (1D)</span>
+            </div>
+            <div class="grid grid-3">
+              ${['Finance:+1.2','Tech:-2.4','Energy:+1.8','Consumer:+0.3','Property:-0.8','Basic:+0.5'].map(x=>heat(...x.split(':'))).join('')}
+            </div>
+          </div>
         </div>
       </section>`;
 
     lucide.createIcons();
     animateCards('.card');
-    animateSparklines();
-    document.querySelectorAll('[data-countup]').forEach(el => animateCountUp(el, parseFloat(el.dataset.countup), el.dataset.prefix || '', el.dataset.suffix || ''));
     initDashboardCharts();
     loadNews();
 }
 
-const metric = (label, value, sub) => `<div class="hero-metric"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
-const kpi = (title, val, change) => `<div class="card kpi-card"><div class="kpi-title">${title}</div><div class="kpi-value" data-countup="${val}">0</div><div class="kpi-change ${String(change).startsWith('-') ? 'danger' : 'success'}">${String(change).startsWith('-') ? '▼' : '▲'} ${change}%</div><svg class="kpi-sparkline" viewBox="0 0 60 30"><path class="sparkline-path" d="M0,18 Q10,10 20,14 T40,8 T60,5" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/></svg></div>`;
-const row = (ticker, name, price, change) => `<a class="stack-item" href="#stock/${ticker}"><div><div class="stack-title mono">${ticker}</div><div class="stack-sub">${name}</div></div><div class="stack-right"><div class="mono">Rp ${price}</div><div class="chip ${change.startsWith('+') ? 'success' : 'danger'}">${change}%</div></div></a>`;
-const watch = (ticker, price, change, pos) => `<a class="stack-item" href="#stock/${ticker}"><div><div class="stack-title mono">${ticker}</div><div class="stack-sub">Watchlist</div></div><div class="stack-right"><div class="mono">${price}</div><div class="mono ${pos ? 'positive' : 'negative'}">${change}%</div></div></a>`;
-const heat = (sector, change) => `<div class="heatmap-tile ${change.startsWith('-') ? 'neg' : 'pos'}"><div>${sector}</div><strong>${change}%</strong></div>`;
+const metric = (label, value, sub) => `
+  <div class="hero-metric">
+    <div class="label">${label}</div>
+    <div class="value">${value}</div>
+    <div class="muted" style="font-size: 11px; margin-top:2px;">${sub}</div>
+  </div>`;
+
+const row = (ticker, name, price, change) => `
+  <a class="stack-item" href="#stock/${ticker}">
+    <div>
+      <div class="stack-title mono">${ticker}</div>
+      <div class="stack-sub">${name}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="mono strong">Rp ${price}</div>
+      <div class="positive" style="font-size:12px; font-weight:600;">${change}%</div>
+    </div>
+  </a>`;
+
+const watch = (ticker, price, change, pos) => `
+  <a class="stack-item" href="#stock/${ticker}">
+    <div>
+      <div class="stack-title mono">${ticker}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="mono strong">${price}</div>
+      <div class="${pos ? 'positive' : 'negative'}" style="font-size:12px; font-weight:600;">${change}%</div>
+    </div>
+  </a>`;
+
+const heat = (sector, change) => `
+  <div class="card" style="padding: 12px; background: var(--surface-elevated); border-radius: var(--radius-md);">
+    <div class="muted" style="font-size: 11px; text-transform:uppercase; font-weight:700;">${sector}</div>
+    <div class="${change.startsWith('-') ? 'negative' : 'positive'} mono strong mt-2" style="font-size:16px;">${change}%</div>
+  </div>`;
 
 async function loadNews() {
     const container = document.getElementById('news-container');
     if (!container) return;
     const res = await fetchNews(5);
     if (!res || !res.data?.length) {
-        container.innerHTML = `
-          <div class="notice-box">Belum ada berita baru. Begitu backend mengirim feed, daftar berita akan muncul di sini.</div>
-          <a class="news-item" href="#news"><div class="news-meta">retailbijak • Fallback</div><div class="news-title">Market feed sedang menunggu data, tapi dashboard tetap siap dipakai.</div></a>
-        `;
+        container.innerHTML = `<p class="muted">Belum ada berita baru.</p>`;
         return;
     }
-    container.innerHTML = res.data.map(n => `<a class="news-item" href="${n.link}" target="_blank" rel="noopener"><div class="news-meta">${n.source}${n.published_at ? ' • ' + new Date(n.published_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div><div class="news-title">${n.title}</div></a>`).join('');
+    container.innerHTML = res.data.map(n => `
+      <a class="stack-item" href="${n.link}" target="_blank" rel="noopener">
+        <div>
+          <div class="stack-sub">${n.source}</div>
+          <div style="font-weight:600; font-size:14px; margin-top:2px; line-height:1.4;">${n.title}</div>
+        </div>
+      </a>`).join('');
 }
 
 function initDashboardCharts() {
     if (typeof Chart === 'undefined') return;
     const dark = document.documentElement.getAttribute('data-theme') !== 'light';
-    const ctx = document.getElementById('ihsgHeroChart') || document.getElementById('ihsgChart');
+    const ctx = document.getElementById('ihsgHeroChart');
     if (ctx) {
-      new Chart(ctx, { type: 'line', data: { labels: ['10:00','11:00','13:00','14:00','15:00','16:00'], datasets: [{ data: [7250,7265,7240,7270,7280,7284.52], borderColor: dark ? '#7ce6a0' : '#0f9d58', backgroundColor: dark ? 'rgba(124,230,160,0.10)' : 'rgba(15,157,88,0.08)', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'transparent' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } }, y: { grid: { color: dark ? 'rgba(124,230,160,0.08)' : 'rgba(15,23,18,0.06)' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } } } } });
+      new Chart(ctx, { 
+        type: 'line', 
+        data: { 
+          labels: ['10:00','11:00','13:00','14:00','15:00','16:00'], 
+          datasets: [{ 
+            data: [7250,7265,7240,7270,7280,7284], 
+            borderColor: '#10b981', 
+            backgroundColor: 'rgba(16,185,129,0.05)', 
+            fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 
+          }] 
+        }, 
+        options: { 
+          responsive: true, maintainAspectRatio: false, 
+          plugins: { legend: { display: false } }, 
+          scales: { 
+            x: { display: false }, 
+            y: { display: false } 
+          } 
+        } 
+      });
     }
-    const donut = document.getElementById('portfolioDonut');
-    if (donut) new Chart(donut, { type: 'doughnut', data: { labels:['Core','Opportunistic','Cash'], datasets:[{ data:[56,29,15], backgroundColor:[dark ? '#7ce6a0' : '#0f9d58', '#3b82f6', dark ? '#1f2937' : '#d1d5db'], borderWidth:0 }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ color: dark ? '#eaf7ef' : '#0f1720' } } }, cutout:'72%' } });
-    const status = document.querySelector('.market-status .status-text');
-    const idxVal = document.querySelector('.idx-mini-display .idx-val');
-    const idxChange = document.querySelector('.idx-mini-display .idx-change');
-    if (status) status.textContent = 'MARKET READY';
-    if (idxVal && idxVal.textContent === '--') idxVal.textContent = '7,080.63';
-    if (idxChange && idxChange.textContent === '--') idxChange.textContent = '+0.12%';
 }

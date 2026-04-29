@@ -13,62 +13,64 @@ const SECTORS = [
 
 export function renderMarket(root) {
     root.innerHTML = `
-        <section class="mb-4">
-            <div class="eyebrow">Market intelligence</div>
-            <div class="flex-between" style="gap:16px; align-items:flex-end; flex-wrap:wrap;">
-                <div>
-                    <h1>Market Overview</h1>
-                    <p class="text-muted" style="max-width:720px; margin-top:8px;">Pantau sentimen harian, pergerakan sektoral, dan breadth market untuk membaca apakah pasar sedang risk-on atau defensif.</p>
+      <section class="section-grid reveal">
+        <div class="card mb-4">
+          <h1 class="mb-2">Market Overview</h1>
+          <p class="muted">Pantau sentimen harian, pergerakan sektoral, dan breadth market secara real-time.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h3 class="mb-4">Sector Heatmap</h3>
+            <div class="grid grid-2">
+              ${SECTORS.map(([name, val, strength]) => `
+                <div class="card" style="padding:16px; background:var(--surface-elevated);">
+                  <div class="muted" style="font-size:11px; text-transform:uppercase; font-weight:700;">${name}</div>
+                  <div class="mono strong mt-2 ${val >= 0 ? 'positive' : 'negative'}" style="font-size:18px;">${val > 0 ? '+' : ''}${val.toFixed(2)}%</div>
+                  <div style="height:4px; background:var(--surface-3); border-radius:99px; margin-top:12px; overflow:hidden;">
+                    <div style="height:100%; width:${strength}%; background:${val >= 0 ? 'var(--success)' : 'var(--danger)'}; opacity:0.6;"></div>
+                  </div>
                 </div>
-                <div class="chip neutral">Live snapshot • 09:00 WIB</div>
+              `).join('')}
             </div>
-        </section>
+          </div>
 
-        <section class="card mb-4">
-            <div class="flex-between mb-3">
-                <h2 style="margin:0;">Sector Heatmap</h2>
-                <span class="text-muted mono">8 sectors</span>
-            </div>
-            <div class="responsive-grid">
-                ${SECTORS.map(([name, val, strength]) => {
-                    const pos = val >= 0;
-                    return `
-                        <article class="metric-card" style="background:${pos ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)'}; border-color:${pos ? 'rgba(22,163,74,0.24)' : 'rgba(220,38,38,0.24)'};">
-                            <div class="text-muted" style="font-size:12px;">${name}</div>
-                            <div class="mono" style="font-size:20px; font-weight:700; margin-top:6px;">${val > 0 ? '+' : ''}${val.toFixed(2)}%</div>
-                            <div class="progress-track" style="margin-top:12px;">
-                                <span class="progress-fill ${pos ? 'positive' : 'negative'}" style="width:${strength}%;"></span>
-                            </div>
-                        </article>`;
-                }).join('')}
-            </div>
-        </section>
-
-        <section class="split-row">
+          <div style="display:flex; flex-direction:column; gap:24px;">
             <div class="card">
-                <div class="flex-between mb-3">
-                    <h2 style="margin:0;">Market Breadth</h2>
-                    <span class="chip neutral">Today</span>
+              <h3 class="mb-4">Market Breadth</h3>
+              <div class="grid grid-3">
+                <div style="text-align:center">
+                  <div class="muted" style="font-size:11px;">Advancers</div>
+                  <div class="mono strong positive" style="font-size:24px;">328</div>
                 </div>
-                <div class="three-col-stats">
-                    <div class="metric-card"><div class="text-muted">Advancers</div><div class="mono" style="font-size:28px; font-weight:700; color:var(--success);">328</div></div>
-                    <div class="metric-card"><div class="text-muted">Decliners</div><div class="mono" style="font-size:28px; font-weight:700; color:var(--danger);">271</div></div>
-                    <div class="metric-card"><div class="text-muted">Unchanged</div><div class="mono" style="font-size:28px; font-weight:700;">143</div></div>
+                <div style="text-align:center">
+                  <div class="muted" style="font-size:11px;">Decliners</div>
+                  <div class="mono strong negative" style="font-size:24px;">271</div>
                 </div>
+                <div style="text-align:center">
+                  <div class="muted" style="font-size:11px;">Unchanged</div>
+                  <div class="mono strong" style="font-size:24px;">143</div>
+                </div>
+              </div>
             </div>
 
             <div class="card">
-                <div class="flex-between mb-3">
-                    <h2 style="margin:0;">Market Notes</h2>
-                    <span class="chip warning">Watchlist bias</span>
+              <h3 class="mb-4">Market Intelligence</h3>
+              <div class="stack-list">
+                <div class="stack-item">
+                  <div class="muted" style="font-size:12px; line-height:1.6;">Perbankan memimpin rotasi intraday, dengan aliran dana asing yang stabil pada saham Big Caps.</div>
                 </div>
-                <div class="stack" style="gap:12px;">
-                    <div class="notice-box">Perbankan masih memimpin rotasi intraday, tetapi momentum mulai menyebar ke energi dan material.</div>
-                    <div class="notice-box">Jika breadth bertahan di atas 55%, peluang follow-through pada indeks utama tetap terbuka.</div>
-                    <div class="notice-box">Cek saham ber-volume tinggi untuk menghindari sinyal palsu saat market mendekati penutupan.</div>
+                <div class="stack-item">
+                  <div class="muted" style="font-size:12px; line-height:1.6;">Sektor energi menunjukkan momentum setelah harga komoditas global menguat semalam.</div>
                 </div>
+                <div class="stack-item">
+                  <div class="muted" style="font-size:12px; line-height:1.6;">Waspadai volatilitas menjelang penutupan sesi 2 pada hari Jumat.</div>
+                </div>
+              </div>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
     `;
     animateCards('.card');
 }
