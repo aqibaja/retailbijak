@@ -266,10 +266,21 @@ button, input, select { font: inherit; }
     margin-left: 0; width: 100%; padding: 14px 12px 88px;
   }
   .card { padding: 16px; border-radius: 18px; }
-  .kpi-row { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard-mobile-hero { display:block; padding: 16px; }
+  .dashboard-mobile-hero h1 { font-size: 24px; line-height: 1.15; margin: 0 0 8px; }
+  .dashboard-mobile-hero p { font-size: 13px; margin: 0; color: var(--text-muted); }
+  .dashboard-mobile-hero .hero-actions { margin-top: 12px; }
+  .dashboard-mobile-hero .hero-actions .btn { flex: 1 1 calc(50% - 6px); padding: 10px 12px; }
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-card { padding: 14px; }
+  .kpi-value { font-size: 22px; margin-top: 8px; }
+  .kpi-sparkline { height: 28px; }
   .hero-metrics { grid-template-columns: 1fr; }
   .hero-copy h1 { font-size: 26px; }
   .split-row, .three-col-row, .dashboard-hero { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard-hero { display:none; }
+  .three-col-row > .card:nth-child(n+2) { display:none; }
+  .card:nth-child(n+5), .section-grid > .card:nth-child(n+5) { display:none; }
   .data-table { min-width: 720px; }
   .data-table-wrapper { margin: 0 -16px; padding: 0 16px; }
   .btn { padding: 11px 14px; }
