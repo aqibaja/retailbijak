@@ -4,16 +4,16 @@ import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio,
 export async function renderPortfolio(root, activeTab) {
     const isPort = activeTab === 'portfolio';
     root.innerHTML = `
-      <section class="section-grid reveal">
-        <div class="card mb-4">
-          <div class="flex-between">
+      <section class="reveal">
+        <div class="card mb-6">
+          <div class="flex justify-between items-center">
             <div>
-              <h1 class="mb-2">Holdings & Watchlist</h1>
-              <p class="muted">Kelola aset yang dipantau dan posisi aktif Anda.</p>
+              <h1 style="font-size: 24px; font-weight: 700;">Assets & Watchlist</h1>
+              <p style="color: var(--text-muted); font-size: 14px;">Monitor your holdings and potential opportunities</p>
             </div>
-            <div style="display:flex; gap:8px; background:var(--surface-elevated); padding:4px; border-radius:var(--radius-md);">
-              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : 'btn-outline'}" style="padding: 6px 16px; border:none;">Portfolio</a>
-              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : 'btn-outline'}" style="padding: 6px 16px; border:none;">Watchlist</a>
+            <div style="display:flex; gap:4px; background:rgba(255,255,255,0.03); padding:4px; border-radius:10px; border:1px solid var(--border);">
+              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; border-radius:8px; font-size:12px; min-width:100px; color:${isPort?'#000':'#94a3b8'};">Portfolio</a>
+              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; border-radius:8px; font-size:12px; min-width:100px; color:${!isPort?'#000':'#94a3b8'};">Watchlist</a>
             </div>
           </div>
         </div>
@@ -27,64 +27,50 @@ export async function renderPortfolio(root, activeTab) {
     animateCards('.card');
 }
 
-const FALLBACK_WATCHLIST = [
-    { ticker: 'BBCA', notes: 'Core holding, strong liquidity.' },
-    { ticker: 'ASII', notes: 'Auto recovery watch.' },
-    { ticker: 'TLKM', notes: 'Dividend play.' },
-];
-
-const FALLBACK_PORTFOLIO = [
-    { ticker: 'BBRI', lots: 18, avg_price: 4710 },
-    { ticker: 'UNVR', lots: 12, avg_price: 2960 },
-    { ticker: 'PGAS', lots: 28, avg_price: 1385 },
-];
-
 async function renderWatchlistTab(el) {
     const data = await fetchWatchlist();
-    const rows = Array.isArray(data?.data) && data.data.length ? data.data : FALLBACK_WATCHLIST;
+    const rows = data?.data || [];
     el.innerHTML = `
       <div class="card">
-        <div class="flex-between mb-4">
-          <h3 class="mb-0">My Watchlist (${rows.length})</h3>
-          <button id="add-watchlist" class="btn btn-outline" style="padding:6px 12px;"><i data-lucide="plus"></i></button>
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="strong">My Watchlist</h3>
+          <button id="add-watchlist" class="btn btn-primary" style="padding:6px 12px;"><i data-lucide="plus"></i></button>
         </div>
         <div class="data-table-wrapper">
           <table class="data-table">
             <thead>
               <tr><th>Ticker</th><th>Notes</th><th style="text-align:right">Action</th></tr>
             </thead>
-            <tbody id="watchlist-tbody">
-              ${rows.map((row) => `
+            <tbody>
+              ${rows.length ? rows.map(r => `
                 <tr>
-                  <td><a href="#stock/${row.ticker}" class="mono strong">${row.ticker}</a></td>
-                  <td class="muted">${row.notes || '-'}</td>
+                  <td class="mono strong" style="color:var(--primary);">${r.ticker}</td>
+                  <td style="color:var(--text-muted); font-size:13px;">${r.notes || '-'}</td>
                   <td style="text-align:right">
-                    <button class="btn btn-outline delete-watchlist" data-ticker="${row.ticker}" style="padding:4px 8px; color:var(--danger);"><i data-lucide="trash-2"></i></button>
+                    <button class="btn delete-watchlist" data-ticker="${r.ticker}" style="padding:4px 8px; border-color:var(--danger); color:var(--danger); background:none;"><i data-lucide="trash-2" style="width:14px;"></i></button>
                   </td>
-                </tr>`).join('')}
+                </tr>`).join('') : '<tr><td colspan="3" style="text-align:center; padding:40px; color:var(--text-dim);">Watchlist is empty.</td></tr>'}
             </tbody>
           </table>
         </div>
       </div>`;
 
     animateTableRows(el.querySelector('tbody'));
-
     el.querySelector('#add-watchlist').addEventListener('click', async () => {
-        const ticker = window.prompt('Ticker:', 'BBCA'); if (!ticker) return;
-        const notes = window.prompt('Notes:', '') || '';
-        const res = await saveWatchlistItem({ ticker, notes }); 
-        if (res?.ok) { showToast('Watchlist saved', 'success'); renderWatchlistTab(el); }
+        const ticker = window.prompt('Ticker:'); if (!ticker) return;
+        await saveWatchlistItem({ ticker, notes: '' });
+        renderWatchlistTab(el);
     });
 }
 
 async function renderPortfolioTab(el) {
     const data = await fetchPortfolio();
-    const rows = Array.isArray(data?.data) && data.data.length ? data.data : FALLBACK_PORTFOLIO;
+    const rows = data?.data || [];
     el.innerHTML = `
       <div class="card">
-        <div class="flex-between mb-4">
-          <h3 class="mb-0">Current Holdings (${rows.length})</h3>
-          <button id="add-portfolio" class="btn btn-outline" style="padding:6px 12px;"><i data-lucide="plus"></i></button>
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="strong">Current Holdings</h3>
+          <button id="add-portfolio" class="btn btn-primary" style="padding:6px 12px;"><i data-lucide="plus"></i></button>
         </div>
         <div class="data-table-wrapper">
           <table class="data-table">
@@ -92,27 +78,19 @@ async function renderPortfolioTab(el) {
               <tr><th>Ticker</th><th>Lots</th><th>Avg Price</th><th style="text-align:right">Action</th></tr>
             </thead>
             <tbody>
-              ${rows.map((row) => `
+              ${rows.length ? rows.map(r => `
                 <tr>
-                  <td><a href="#stock/${row.ticker}" class="mono strong">${row.ticker}</a></td>
-                  <td class="mono">${row.lots}</td>
-                  <td class="mono">Rp ${row.avg_price.toLocaleString()}</td>
+                  <td class="mono strong" style="color:var(--primary);">${r.ticker}</td>
+                  <td class="mono">${r.lots}</td>
+                  <td class="mono">Rp ${r.avg_price.toLocaleString()}</td>
                   <td style="text-align:right">
-                    <button class="btn btn-outline delete-portfolio" data-ticker="${row.ticker}" style="padding:4px 8px; color:var(--danger);"><i data-lucide="trash-2"></i></button>
+                    <button class="btn delete-portfolio" data-ticker="${r.ticker}" style="padding:4px 8px; border-color:var(--danger); color:var(--danger); background:none;"><i data-lucide="trash-2" style="width:14px;"></i></button>
                   </td>
-                </tr>`).join('')}
+                </tr>`).join('') : '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-dim);">No portfolio positions found.</td></tr>'}
             </tbody>
           </table>
         </div>
       </div>`;
 
     animateTableRows(el.querySelector('tbody'));
-
-    el.querySelector('#add-portfolio').addEventListener('click', async () => {
-        const ticker = window.prompt('Ticker:', 'BBCA'); if (!ticker) return;
-        const lots = Number(window.prompt('Lots:', '1'));
-        const avgPrice = Number(window.prompt('Avg Price:', '1000'));
-        const res = await savePortfolioPosition({ ticker, lots, avg_price: avgPrice });
-        if (res?.ok) { showToast('Portfolio saved', 'success'); renderPortfolioTab(el); }
-    });
 }
