@@ -24,6 +24,14 @@ export async function fetchTechnical(ticker) {
     return apiFetch(`/stocks/${ticker}/technical`);
 }
 
+export async function fetchAnalysis(ticker) {
+    return apiFetch(`/stocks/${ticker}/analysis`);
+}
+
+export async function fetchSectorSummary() {
+    return apiFetch('/sector-summary') || { count: 0, data: [] };
+}
+
 export async function fetchChartData(ticker, limit = 100) {
     return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}`);
 }

@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchChartData, saveWatchlistItem, showToast } from '../api.js';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, saveWatchlistItem, showToast } from '../api.js';
 import { observeElements, flashUpdate } from '../main.js';
 
 export async function renderStockDetail(root, ticker) {
@@ -58,6 +58,14 @@ export async function renderStockDetail(root, ticker) {
                 </div>
             </div>
 
+            <!-- Analysis -->
+            <div class="panel flex-col">
+                <h3 class="text-xs uppercase text-dim strong mb-4" style="border-bottom:1px solid var(--border-subtle); padding-bottom:12px; letter-spacing:0.08em;">Analysis Snapshot</h3>
+                <div id="analysis-panel" class="flex-col gap-3 mt-2">
+                    <div class="skeleton skel-text"></div>
+                </div>
+            </div>
+
             <!-- Execution -->
             <div class="panel flex-col accent-top" style="background:linear-gradient(135deg, rgba(99,102,241,0.05), rgba(15,23,41,0.6));">
                 <h3 class="text-xs uppercase strong mb-2" style="color:#a5b4fc; letter-spacing:0.05em;">Order Execution</h3>
@@ -85,12 +93,13 @@ export async function renderStockDetail(root, ticker) {
         showToast(`Trade order for ${ticker} simulated successfully`, 'info');
     });
 
-    let fundData, techData, chartData;
+    let fundData, techData, chartData, analysisData;
     try {
-        [fundData, techData, chartData] = await Promise.all([
+        [fundData, techData, chartData, analysisData] = await Promise.all([
             fetchFundamental(ticker).catch(() => null),
             fetchTechnical(ticker).catch(() => null),
-            fetchChartData(ticker, 100).catch(() => null)
+            fetchChartData(ticker, 100).catch(() => null),
+            fetchAnalysis(ticker).catch(() => null),
         ]);
     } catch(e) {
         console.error("Error fetching detail data", e);
@@ -122,6 +131,7 @@ export async function renderStockDetail(root, ticker) {
     if (typeof LightweightCharts !== 'undefined') renderLightweightChart(chartData);
     renderTechnicalPanel(techData);
     renderFundamentalPanel(fundData);
+    renderAnalysisPanel(analysisData);
 }
 
 function renderLightweightChart(chartData) {
@@ -190,4 +200,30 @@ function renderFundamentalPanel(fundData) {
                       item('P/B Ratio', (d.price_to_book?.toFixed(1) || 'N/A') + 'x') + 
                       item('Div Yield', ((d.dividend_yield * 100)?.toFixed(1) || 'N/A') + '%') + 
                       item('ROE', ((d.roe * 100)?.toFixed(1) || 'N/A') + '%');
+}
+
+function renderAnalysisPanel(analysisData) {
+    const panel = document.getElementById('analysis-panel');
+    const data = analysisData?.data || analysisData?.analysis || null;
+
+    if (!panel) return;
+    if (!data) {
+        panel.innerHTML = `<div class="text-dim text-sm text-center">Analysis data currently unavailable.</div>`;
+        return;
+    }
+
+    const scoreLine = (label, value, cls='text-main') => `
+      <div class="flex justify-between items-center">
+        <span class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em;">${label}</span>
+        <span class="mono strong ${cls}">${value}</span>
+      </div>`;
+
+    panel.innerHTML = `
+      ${scoreLine('Ticker', data.ticker || 'N/A')}
+      ${scoreLine('Swing Score', data.swing?.score ?? 'N/A', (data.swing?.label === 'strong' ? 'text-up' : 'text-main'))}
+      ${scoreLine('Valuation', data.valuation?.label || 'N/A')}
+      ${scoreLine('Dividend', data.dividend?.label || 'N/A')}
+      ${scoreLine('Gorengan', data.gorengan?.label || 'N/A', (data.gorengan?.score >= 60 ? 'text-down' : 'text-main'))}
+      <div class="text-xs text-dim" style="line-height:1.6;">Tags: ${(data.tags || []).join(', ') || 'none'}</div>
+    `;
 }

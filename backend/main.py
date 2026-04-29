@@ -8,6 +8,7 @@ Referensi: planning/API_SPEC.md
 from pathlib import Path
 import json
 import time
+from collections import defaultdict
 from datetime import datetime
 import asyncio
 
@@ -18,13 +19,16 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from scanner import VALID_TIMEFRAMES
+VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
 from stocks import get_all_tickers, get_ticker_display
 from database import (
     Base,
     engine,
     SessionLocal,
     Signal,
+    Stock,
+    Fundamental,
+    OHLCVDaily,
     UserSetting,
     WatchlistItem,
     PortfolioPosition,
@@ -166,24 +170,73 @@ async def scan(timeframe: str = "1d"):
     )
 
 
+def _ticker_base(ticker: str) -> str:
+    return ticker.upper().replace('.JK', '').strip()
+
+
+def _fallback_row_for_ticker(ticker: str, db: Session) -> dict:
+    base = _ticker_base(ticker)
+    stock = db.query(Stock).filter(Stock.ticker == base).first()
+    fundamental = db.query(Fundamental).filter(Fundamental.ticker == f"{base}.JK").first()
+    latest_ohlcv = (
+        db.query(OHLCVDaily)
+        .filter(OHLCVDaily.ticker == base)
+        .order_by(OHLCVDaily.date.desc())
+        .first()
+    )
+    latest_signal = (
+        db.query(Signal)
+        .filter(Signal.ticker == base)
+        .order_by(Signal.signal_date.desc())
+        .first()
+    )
+    return {
+        "ticker": base,
+        "name": stock.name if stock and stock.name else base,
+        "sector": stock.sector if stock else None,
+        "industry": stock.industry if stock else None,
+        "price": latest_ohlcv.close if latest_ohlcv else None,
+        "change_pct": None,
+        "market_cap": stock.market_cap if stock else None,
+        "per": fundamental.trailing_pe if fundamental else None,
+        "pbv": fundamental.price_to_book if fundamental else None,
+        "roe": fundamental.roe if fundamental else None,
+        "roa": fundamental.roa if fundamental else None,
+        "dividend_yield": fundamental.dividend_yield if fundamental else None,
+        "signals": [{"timeframe": latest_signal.timeframe, "signal_type": latest_signal.signal_type}] if latest_signal else [],
+    }
+
+
 @app.get("/api/stocks/{ticker}")
 def get_stock(ticker: str, db: Session = Depends(get_db)):
-    """API endpoint for debugging specific stock data"""
-    signals = db.query(Signal).filter(Signal.ticker == ticker).all()
-    if not signals:
-        return {"ticker": ticker, "message": "No signals found"}
-        
-    return {
-        "ticker": ticker,
-        "signals": [
-            {
-                "timeframe": s.timeframe,
-                "status": s.status,
-                "magic_line": s.magic_line,
-                "updated_at": s.updated_at
-            } for s in signals
-        ]
-    }
+    base = _ticker_base(ticker)
+    payload = _fallback_row_for_ticker(base, db)
+    if not payload["price"] and not payload["signals"]:
+        return {"ticker": base, "message": "No signals found", "data": payload}
+    return {"ticker": base, "data": payload}
+
+
+@app.get("/api/stocks/{ticker}/analysis")
+def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
+    from backend.services.scanner_engine import analyze_stock
+    row = _fallback_row_for_ticker(ticker, db)
+    analysis = analyze_stock({
+        "ticker": row["ticker"],
+        "name": row["name"],
+        "price": row["price"] or 0,
+        "per": row["per"],
+        "pbv": row["pbv"],
+        "roe": row["roe"],
+        "roa": row["roa"],
+        "market_cap": row["market_cap"],
+        "dividend_yield": row["dividend_yield"],
+        "volume_spike": 1,
+        "trend_score": 50,
+        "liquidity_score": 50,
+        "volatility_score": 50,
+        "breakout": False,
+    })
+    return {"ticker": row["ticker"], "status": "ok", "data": analysis}
 
 
 @app.get("/api/news")
@@ -358,6 +411,20 @@ def get_market_summary(db: Session = Depends(get_db)):
         "status": "ok",
         "coverage": len(current_closes),
     }
+
+
+@app.get("/api/sector-summary")
+def get_sector_summary(db: Session = Depends(get_db)):
+    rows = db.query(Stock).all()
+    buckets = defaultdict(lambda: {"count": 0, "market_cap": 0.0})
+    for row in rows:
+        sector = row.sector or "Unknown"
+        buckets[sector]["count"] += 1
+        buckets[sector]["market_cap"] += float(row.market_cap or 0)
+    if not rows:
+        return {"count": 0, "data": [{"sector": "Banking", "count": 0, "market_cap": 0}, {"sector": "Consumer", "count": 0, "market_cap": 0}, {"sector": "Energy", "count": 0, "market_cap": 0}]}
+    data = [{"sector": sector, "count": val["count"], "market_cap": round(val["market_cap"], 2)} for sector, val in sorted(buckets.items(), key=lambda item: item[1]["count"], reverse=True)]
+    return {"count": len(data), "data": data}
 
 
 @app.get("/api/settings")
