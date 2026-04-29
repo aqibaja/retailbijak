@@ -341,9 +341,23 @@ button, input, select { font: inherit; }
   .panel-tight { padding: 14px; }
   .screener-mobile-sticky { position: sticky; top: 70px; z-index: 5; }
   .mobile-chart-hero { display:block; }
+  .stock-detail-shell { gap: 12px; }
+  .stock-header { display:grid; grid-template-columns: 1fr; gap: 12px; }
+  .stock-price-block { text-align:left; }
+  .stock-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 12px; }
+  .timebar { display:flex; gap:8px; overflow:auto; padding: 14px 14px 0; }
+  .chart-container-large { min-height: 280px; height: 320px; }
   .data-table-wrapper { margin: 0 -16px; padding: 0 16px; }
   .btn { padding: 11px 14px; }
   .chip { padding: 7px 10px; font-size: 11px; }
+}
+@media (max-width: 480px) {
+  .topbar-right .idx-mini-display { display:none; }
+  .hero-copy h1, .mobile-discover-hero h1 { font-size: 22px; }
+  .kpi-row { grid-template-columns: 1fr; }
+  .mobile-drawer-grid { grid-template-columns: 1fr 1fr; }
+  .stack-item { min-height: 64px; }
+  .chart-container-large { height: 260px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }

@@ -3,52 +3,56 @@ import { animateCards } from '../main.js';
 
 export async function renderStockDetail(root, ticker) {
     root.innerHTML = `
-        <div class="stock-header">
-            <div>
-                <button onclick="window.history.back()" class="btn btn-outline mb-4" style="padding:4px 8px" aria-label="Go back">
-                    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Back
-                </button>
-                <div class="ticker-title">${ticker}</div>
-                <div class="company-name" id="stock-name">Loading...</div>
-                <div class="mt-2" id="stock-badges">
-                    <span class="skeleton skeleton-text" style="width:100px; display:inline-block"></span>
+        <section class="section-grid reveal stock-detail-shell">
+            <div class="card stock-header-card">
+                <div class="stock-header">
+                    <div>
+                        <button onclick="window.history.back()" class="btn btn-outline mb-4" style="padding:4px 8px" aria-label="Go back">
+                            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Back
+                        </button>
+                        <div class="ticker-title">${ticker}</div>
+                        <div class="company-name" id="stock-name">Loading...</div>
+                        <div class="mt-2" id="stock-badges">
+                            <span class="skeleton skeleton-text" style="width:100px; display:inline-block"></span>
+                        </div>
+                    </div>
+                    <div class="stock-price-block">
+                        <div class="current-price" id="stock-price"><span class="skeleton skeleton-text" style="width:120px; display:inline-block"></span></div>
+                        <div id="stock-change"></div>
+                        <div class="stock-actions">
+                            <button class="btn btn-outline" title="Add to Watchlist" aria-label="Add to Watchlist"><i data-lucide="star"></i></button>
+                            <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger)">Sell</button>
+                            <button class="btn btn-primary">Buy</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div style="text-align:right">
-                <div class="current-price" id="stock-price"><span class="skeleton skeleton-text" style="width:120px; display:inline-block"></span></div>
-                <div id="stock-change"></div>
-                <div class="mt-4 flex-between" style="gap:12px; justify-content:flex-end;">
-                    <button class="btn btn-outline" title="Add to Watchlist" aria-label="Add to Watchlist"><i data-lucide="star"></i></button>
-                    <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger)">Sell</button>
-                    <button class="btn btn-primary">Buy</button>
-                </div>
-            </div>
-        </div>
 
-        <div class="split-row">
-            <div class="card" style="padding:0; overflow:hidden;">
-                <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:16px;">
-                    <span style="font-weight:600; color:var(--primary);">1D</span>
-                    <span style="color:var(--text-muted); cursor:pointer;">1W</span>
-                    <span style="color:var(--text-muted); cursor:pointer;">1M</span>
-                    <span style="color:var(--text-muted); cursor:pointer;">3M</span>
-                    <span style="color:var(--text-muted); cursor:pointer;">YTD</span>
-                </div>
-                <div id="tvchart" class="chart-container" style="border:none; border-radius:0;"></div>
-            </div>
-            
-            <div class="card">
-                <h2>Technical Analysis</h2>
-                <div id="technical-panel">
-                    <div class="skeleton skeleton-block"></div>
+            <div class="split-row">
+                <div class="card" style="padding:0; overflow:hidden;">
+                    <div class="timebar">
+                        <button class="time-chip active">1D</button>
+                        <button class="time-chip">1W</button>
+                        <button class="time-chip">1M</button>
+                        <button class="time-chip">3M</button>
+                        <button class="time-chip">YTD</button>
+                    </div>
+                    <div id="tvchart" class="chart-container chart-container-large"></div>
                 </div>
                 
-                <h2 style="margin-top:24px;">Fundamentals</h2>
-                <div id="fundamental-panel">
-                    <div class="skeleton skeleton-block"></div>
+                <div class="card">
+                    <h2>Technical Analysis</h2>
+                    <div id="technical-panel">
+                        <div class="skeleton skeleton-block"></div>
+                    </div>
+                    
+                    <h2 style="margin-top:24px;">Fundamentals</h2>
+                    <div id="fundamental-panel">
+                        <div class="skeleton skeleton-block"></div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     `;
     lucide.createIcons();
     animateCards('.card');
