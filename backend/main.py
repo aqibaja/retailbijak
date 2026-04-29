@@ -294,6 +294,24 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
     }
 
 
+@app.get("/api/market-summary")
+def get_market_summary(db: Session = Depends(get_db)):
+    """Return market summary strictly from local DB (no live provider calls)."""
+    from database import OHLCVDaily
+
+    latest_row = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
+    if not latest_row:
+        return {"symbol": "IHSG", "value": None, "change_pct": None, "source": "db", "updated_at": None}
+
+    return {
+        "symbol": "IHSG",
+        "value": None,
+        "change_pct": None,
+        "source": "db",
+        "updated_at": latest_row.date.isoformat() if latest_row.date else None,
+    }
+
+
 @app.get("/api/settings")
 def get_settings(db: Session = Depends(get_db)):
     compact = db.query(UserSetting).filter(UserSetting.key == "compact_table_rows").first()
