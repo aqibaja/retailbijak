@@ -4,37 +4,58 @@ import { animateCards, animateCountUp, animateSparklines } from '../main.js';
 export async function renderDashboard(root) {
     root.innerHTML = `
       <section class="dashboard-shell reveal">
-        <div class="card dashboard-mobile-hero">
-          <div class="chip neutral mb-3">retailbijak terminal</div>
-          <h1>Analisa market lebih cepat, lebih tajam, dan lebih profesional.</h1>
-          <p>Dashboard ini dirancang untuk stock analyst Indonesia: memindai peluang, membaca momentum, memantau portofolio, dan menjaga fokus pada keputusan yang benar.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#screener"><i data-lucide="filter"></i> Buka Screener</a>
-            <a class="btn btn-outline" href="#market"><i data-lucide="bar-chart-3"></i> Market Overview</a>
-            <a class="btn btn-outline" href="#portfolio"><i data-lucide="pie-chart"></i> Portfolio</a>
+        <div class="card mobile-discover-hero">
+          <div class="flex-between mb-3">
+            <div class="chip neutral">Discover</div>
+            <div class="chip success">IHSG +0.12%</div>
+          </div>
+          <h1>Discover market opportunities faster.</h1>
+          <p>Cari kode saham, baca chart intraday, dan pantau movers tanpa keluar dari satu layar.</p>
+          <div class="mobile-searchbar">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Search by CODE or NAME" aria-label="Search by CODE or NAME">
+          </div>
+          <div class="mobile-segmented" role="tablist" aria-label="Market view">
+            <button class="active">Stock</button>
+            <button>Fund</button>
+          </div>
+        </div>
+
+        <div class="card mobile-chart-hero">
+          <div class="flex-between mb-2">
+            <div>
+              <div class="text-muted" style="font-size:12px;">IHSG</div>
+              <div class="kpi-value" style="margin:4px 0 0; font-size:32px;">7,080.63</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="chip success">▲ 8.24</div>
+              <div class="text-muted" style="margin-top:6px; font-size:12px;">+0.12%</div>
+            </div>
+          </div>
+          <div class="chart-badge-row">
+            ${['1D','1W','1M','3M','1Y','3Y'].map((x,i)=>`<button class="time-chip ${i===0?'active':''}">${x}</button>`).join('')}
+          </div>
+          <div style="height:240px; margin-top:10px;"><canvas id="ihsgChart"></canvas></div>
+          <div class="intraday-strip">
+            <div><span>Open</span><strong>7,096.61</strong></div>
+            <div><span>High</span><strong class="positive">7,126.06</strong></div>
+            <div><span>Low</span><strong class="negative">7,063.99</strong></div>
           </div>
         </div>
 
         <div class="kpi-row kpi-row-mobile-first">
-          ${kpi('IHSG', 7284.52, '+0.42')}
+          ${kpi('IHSG', 7080.63, '+0.12')}
           ${kpi('LQ45', 1043.18, '-0.18')}
           ${kpi('IDX30', 512.76, '+0.65')}
           ${kpi('KOMPAS100', 1189.33, '+0.21')}
         </div>
 
-        <div class="dashboard-hero">
-          <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Market Breadth</h2><span class="chip neutral">72%</span></div>
-            <div class="hero-metrics">
-              ${metric('Market Breadth', '72%', '+8% vs yesterday')}
-              ${metric('Active Signals', '148', 'last refresh 2 min ago')}
-              ${metric('Watchlist', '24', '3 new alerts')}
-            </div>
+        <div class="card mobile-summary-card">
+          <div class="flex-between mb-3"><h2 class="mb-0">Market Snapshot</h2><span class="chip neutral">Today</span></div>
+          <div class="summary-scroll">
+            ${['All Market','Regular','Nego'].map((name,i)=>`<div class="summary-card"><div class="summary-title">${name}</div><div class="summary-grid"><div><span>Value</span><strong>${['8.40T','8.06T','346B'][i]}</strong></div><div><span>Lot</span><strong>${['26.88B','26.51B','365M'][i]}</strong></div><div><span>Freq</span><strong>${['1.47M','1.47M','72K'][i]}</strong></div></div></div>`).join('')}
           </div>
-          <div class="card">
-            <div class="flex-between mb-3"><h2 class="mb-0">Quick Actions</h2><span class="chip neutral">Mobile-first</span></div>
-            <div class="stack-list">${['GOTO','BBCA','TLKM'].map((t,i)=>row(t,['GoTo Gojek Tokopedia','Bank Central Asia','Telkom Indonesia'][i],['96','9,800','3,420'][i],['+9.09','+3.15','+2.50'][i])).join('')}</div>
-          </div>
+          <div class="expand-row">Show Foreign Activity <i data-lucide="chevron-down"></i></div>
         </div>
 
         <div class="split-row">
