@@ -20,10 +20,10 @@ def init_scheduler():
     """Configure and start the background scheduler."""
     logger.info("Initializing APScheduler...")
     
-    # Run OHLCV updates every 30 minutes during market hours (Mon-Fri)
+    # Run OHLCV updates twice per trading day: market open and pre-close (Mon-Fri)
     scheduler.add_job(
         update_daily_ohlcv,
-        trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz),
+        trigger=CronTrigger(day_of_week='mon-fri', hour='9,15', minute='0,30', timezone=jkt_tz),
         id="intraday_ohlcv_update",
         replace_existing=True
     )
