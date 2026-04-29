@@ -74,6 +74,19 @@ window.addEventListener('hashchange', () => handleRoute(window.location.hash));
 if (!window.location.hash) window.location.hash = '#dashboard';
 else handleRoute(window.location.hash);
 
+function setupMobileDrawer() {
+    const drawer = document.getElementById('mobile-drawer');
+    if (!drawer) return;
+    const openers = document.querySelectorAll('[data-open-drawer]');
+    const closers = drawer.querySelectorAll('[data-close-drawer]');
+    const openDrawer = () => drawer.classList.add('open');
+    const closeDrawer = () => drawer.classList.remove('open');
+    openers.forEach(btn => btn.addEventListener('click', openDrawer));
+    closers.forEach(btn => btn.addEventListener('click', closeDrawer));
+    drawer.querySelectorAll('a[href^="#"]').forEach(link => link.addEventListener('click', closeDrawer));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+}
+
 async function refreshTopbarMarket() {
     const data = await fetchMarketSummary();
     if (!data) return;
@@ -100,6 +113,7 @@ async function refreshTopbarMarket() {
 
 initTheme();
 lucide.createIcons();
+setupMobileDrawer();
 refreshTopbarMarket();
 setInterval(refreshTopbarMarket, 60000);
 playLoadSequence();

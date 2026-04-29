@@ -43,6 +43,7 @@
       </div>
       <button class="icon-btn" aria-label="Notifications" title="Notifications"><i data-lucide="bell"></i></button>
       <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle Theme" title="Toggle Theme"><i data-lucide="moon"></i></button>
+      <button class="icon-btn mobile-more-btn" type="button" data-open-drawer aria-label="More" title="More"><i data-lucide="ellipsis"></i></button>
       <div class="user-avatar" title="retailbijak">RB</div>
     </div>
   </header>
@@ -68,6 +69,22 @@
     </aside>
 
     <main class="main-content" id="app-root"></main>
+  </div>
+
+  <div class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+    <div class="mobile-drawer-backdrop" data-close-drawer></div>
+    <div class="mobile-drawer-panel" role="dialog" aria-label="More menu">
+      <div class="mobile-drawer-head">
+        <strong>More</strong>
+        <button class="icon-btn" type="button" data-close-drawer aria-label="Close drawer"><i data-lucide="x"></i></button>
+      </div>
+      <div class="mobile-drawer-grid">
+        <a href="#watchlist" class="drawer-item" data-view="watchlist"><i data-lucide="eye"></i><span>Watchlist</span></a>
+        <a href="#news" class="drawer-item" data-view="news"><i data-lucide="newspaper"></i><span>News</span></a>
+        <a href="#settings" class="drawer-item" data-view="settings"><i data-lucide="settings"></i><span>Settings</span></a>
+        <a href="#help" class="drawer-item" data-view="help"><i data-lucide="help-circle"></i><span>Help</span></a>
+      </div>
+    </div>
   </div>
 
   <div id="toast-container"></div>

@@ -57,7 +57,15 @@ function runScreener() {
     countBadge.textContent = '0 matches';
 
     const eventSource = new EventSource(getScanEventSourceUrl(tf));
+    let started = false;
+    const hardFallback = setTimeout(() => {
+        if (started) return;
+        progText.textContent = 'Scanner is slow to respond. Showing last available sample.';
+        progFill.style.width = '35%';
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state">Server belum mengirim data scan. Coba lagi atau cek koneksi backend.</td></tr>`;
+    }, 7000);
     eventSource.onmessage = (event) => {
+        started = true;
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
             progText.textContent = `Scanning ${data.ticker}... ${data.percent}%`;
@@ -73,6 +81,7 @@ function runScreener() {
         } else if (data.type === 'done') {
             progText.textContent = `Complete! Found ${data.total_signals} signals in ${data.duration_seconds}s`;
             [btn, btnMobile].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Run Screener'; } });
+            clearTimeout(hardFallback);
             eventSource.close();
             showToast(`Scan complete: ${data.total_signals} signals`, 'success');
             if (matchCount === 0) tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No signals found for this timeframe.</td></tr>`;
@@ -82,6 +91,7 @@ function runScreener() {
         progText.textContent = 'Error connecting to scanner API';
         progFill.style.background = 'var(--danger)';
         [btn, btnMobile].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Run Screener'; } });
+        clearTimeout(hardFallback);
         eventSource.close();
         showToast('Connection error. Please try again.', 'error');
     };

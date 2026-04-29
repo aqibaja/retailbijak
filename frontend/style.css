@@ -253,7 +253,7 @@ button, input, select { font: inherit; }
     border-right:none; border-top: 1px solid var(--border); z-index: 150; background: rgba(4,8,6,0.9);
   }
   .sidebar-nav {
-    display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
+    display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
   }
   .nav-item {
     justify-content:center; padding: 8px 6px; font-size: 11px; min-width: 0; border-radius: 12px;
@@ -261,10 +261,24 @@ button, input, select { font: inherit; }
   }
   .nav-item i { width: 16px; height: 16px; }
   .nav-text { display:none; }
-  .nav-divider { display:none; }
+  .nav-divider, .sidebar .nav-item[data-view="watchlist"], .sidebar .nav-item[data-view="news"], .sidebar .nav-item[data-view="settings"], .sidebar .nav-item[data-view="help"] { display:none; }
+  .sidebar .nav-item[data-view="dashboard"], .sidebar .nav-item[data-view="market"], .sidebar .nav-item[data-view="screener"], .sidebar .nav-item[data-view="portfolio"] { display:flex; }
   .main-content {
     margin-left: 0; width: 100%; padding: 14px 12px 88px;
   }
+  .sidebar .mobile-more-btn { display:flex; }
+  .mobile-drawer {
+    position: fixed; inset: 0; display:none; z-index: 300;
+  }
+  .mobile-drawer.open { display:block; }
+  .mobile-drawer-backdrop { position:absolute; inset:0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); }
+  .mobile-drawer-panel {
+    position:absolute; left:0; right:0; bottom:0; background: var(--surface); border-top: 1px solid var(--border); border-radius: 22px 22px 0 0;
+    padding: 16px; box-shadow: var(--shadow-lg);
+  }
+  .mobile-drawer-head { display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; }
+  .mobile-drawer-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .drawer-item { display:flex; align-items:center; gap:10px; padding: 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface-2); }
   .card { padding: 16px; border-radius: 18px; }
   .mobile-discover-hero { padding: 16px; }
   .mobile-discover-hero h1 { font-size: 24px; line-height: 1.12; margin: 8px 0 8px; }
@@ -304,10 +318,29 @@ button, input, select { font: inherit; }
   .hero-metrics { grid-template-columns: 1fr; }
   .hero-copy h1 { font-size: 26px; }
   .split-row, .three-col-row, .dashboard-hero { grid-template-columns: 1fr; gap: 12px; }
-  .dashboard-hero { display:none; }
-  .three-col-row > .card:nth-child(n+2) { display:none; }
-  .card:nth-child(n+5), .section-grid > .card:nth-child(n+5) { display:none; }
-  .data-table { min-width: 720px; }
+  .dashboard-hero { display:grid; }
+  .three-col-row > .card:nth-child(n+2) { display:block; }
+  .card:nth-child(n+5), .section-grid > .card:nth-child(n+5) { display:block; }
+  .data-table { min-width: 620px; }
+  .section-grid > .card { width: 100%; }
+  .section-grid > .card:not(:first-child) { margin-top: 2px; }
+  .card, .panel { overflow: hidden; }
+  .mobile-compact-stack { display:grid; gap: 10px; }
+  .mobile-hide-on-xs { display:none !important; }
+  .mobile-show { display:block !important; }
+  .mobile-flex { display:flex !important; }
+  .mobile-drawer-panel .drawer-item { min-height: 56px; }
+  .topbar .mobile-more-btn { display:grid; }
+  .mobile-bottom-spacer { height: 12px; }
+  .mobile-card-list { display:grid; gap: 12px; }
+  .mobile-card-list .card { padding: 14px; }
+  .mobile-card-list .card h2, .mobile-card-list .card h3 { font-size: 16px; }
+  .mobile-card-list .card .muted { font-size: 13px; }
+  .mobile-stack { display:flex; flex-wrap:wrap; gap: 8px; }
+  .mobile-stack .tab { flex: 1 1 calc(50% - 8px); justify-content:center; }
+  .panel-tight { padding: 14px; }
+  .screener-mobile-sticky { position: sticky; top: 70px; z-index: 5; }
+  .mobile-chart-hero { display:block; }
   .data-table-wrapper { margin: 0 -16px; padding: 0 16px; }
   .btn { padding: 11px 14px; }
   .chip { padding: 7px 10px; font-size: 11px; }

@@ -7,8 +7,8 @@ export async function renderPortfolio(root, activeTab) {
       <section class="section-grid reveal">
         <div class="card">
           <div class="flex-between mb-3"><div><h1 class="mb-2">Holdings & Watchlist</h1><p class="muted">Kelola aset yang dipantau dan posisi aktif dalam satu workspace yang bersih.</p></div></div>
-          <div class="tab-strip"><a href="#portfolio" class="tab ${isPort ? 'active' : ''}">Portfolio</a><a href="#watchlist" class="tab ${!isPort ? 'active' : ''}">Watchlist</a></div>
-          <div id="tab-content" class="panel"></div>
+          <div class="tab-strip mobile-stack"><a href="#portfolio" class="tab ${isPort ? 'active' : ''}">Portfolio</a><a href="#watchlist" class="tab ${!isPort ? 'active' : ''}">Watchlist</a></div>
+          <div id="tab-content" class="panel panel-tight"></div>
         </div>
       </section>`;
 

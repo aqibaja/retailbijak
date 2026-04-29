@@ -35,7 +35,7 @@ export async function renderDashboard(root) {
           <div class="chart-badge-row">
             ${['1D','1W','1M','3M','1Y','3Y'].map((x,i)=>`<button class="time-chip ${i===0?'active':''}">${x}</button>`).join('')}
           </div>
-          <div style="height:240px; margin-top:10px;"><canvas id="ihsgChart"></canvas></div>
+          <div style="height:240px; margin-top:10px;"><canvas id="ihsgHeroChart"></canvas></div>
           <div class="intraday-strip">
             <div><span>Open</span><strong>7,096.61</strong></div>
             <div><span>High</span><strong class="positive">7,126.06</strong></div>
@@ -120,9 +120,10 @@ async function loadNews() {
 function initDashboardCharts() {
     if (typeof Chart === 'undefined') return;
     const dark = document.documentElement.getAttribute('data-theme') !== 'light';
-    const ctx = document.getElementById('ihsgChart');
-    if (!ctx) return;
-    new Chart(ctx, { type: 'line', data: { labels: ['10:00','11:00','13:00','14:00','15:00','16:00'], datasets: [{ data: [7250,7265,7240,7270,7280,7284.52], borderColor: dark ? '#7ce6a0' : '#0f9d58', backgroundColor: dark ? 'rgba(124,230,160,0.10)' : 'rgba(15,157,88,0.08)', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'transparent' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } }, y: { grid: { color: dark ? 'rgba(124,230,160,0.08)' : 'rgba(15,23,18,0.06)' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } } } } });
+    const ctx = document.getElementById('ihsgHeroChart') || document.getElementById('ihsgChart');
+    if (ctx) {
+      new Chart(ctx, { type: 'line', data: { labels: ['10:00','11:00','13:00','14:00','15:00','16:00'], datasets: [{ data: [7250,7265,7240,7270,7280,7284.52], borderColor: dark ? '#7ce6a0' : '#0f9d58', backgroundColor: dark ? 'rgba(124,230,160,0.10)' : 'rgba(15,157,88,0.08)', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'transparent' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } }, y: { grid: { color: dark ? 'rgba(124,230,160,0.08)' : 'rgba(15,23,18,0.06)' }, ticks: { color: dark ? '#93b8a1' : '#5c6d62' } } } } });
+    }
     const donut = document.getElementById('portfolioDonut');
     if (donut) new Chart(donut, { type: 'doughnut', data: { labels:['Core','Opportunistic','Cash'], datasets:[{ data:[56,29,15], backgroundColor:[dark ? '#7ce6a0' : '#0f9d58', '#3b82f6', dark ? '#1f2937' : '#d1d5db'], borderWidth:0 }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ color: dark ? '#eaf7ef' : '#0f1720' } } }, cutout:'72%' } });
 }
