@@ -7,6 +7,7 @@ venv/
 
 # Database
 backend/swingaq.db
+swingaq.db
 *.sqlite3
 
 # OS
