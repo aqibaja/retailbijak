@@ -1,5 +1,6 @@
 import { initTheme } from './theme.js';
 import { handleRoute } from './router.js';
+import { fetchMarketSummary } from './api.js';
 
 // ─── Initialize ────────────────────────────────────────
 lucide.createIcons();
@@ -155,6 +156,43 @@ if (!window.location.hash) {
 } else {
     handleRoute(window.location.hash);
 }
+
+async function refreshTopbarMarket() {
+    const data = await fetchMarketSummary();
+    if (!data) return;
+    const label = document.querySelector('.idx-mini-display .idx-label');
+    const val = document.querySelector('.idx-mini-display .idx-val');
+    const change = document.querySelector('.idx-mini-display .idx-change');
+
+    if (label) {
+        label.textContent = data.symbol || 'IHSG';
+        if (data.source === 'db' && data.status === 'ok') {
+            label.title = `Data lokal DB (${data.coverage || 0} saham), update ${data.updated_at || '-'}`;
+        } else if (data.source === 'db') {
+            label.title = 'Menunggu data lokal DB dari scheduler backend';
+        }
+    }
+
+    if (val) {
+        val.textContent = data.value !== null ? Number(data.value).toLocaleString('id-ID') : '--';
+    }
+
+    if (change) {
+        if (data.change_pct !== null) {
+            const isPos = data.change_pct >= 0;
+            change.textContent = `${isPos ? '+' : ''}${data.change_pct.toFixed(2)}%`;
+            change.classList.toggle('positive', isPos);
+            change.classList.toggle('negative', !isPos);
+        } else {
+            change.textContent = '--';
+            change.classList.remove('positive');
+            change.classList.remove('negative');
+        }
+    }
+}
+
+refreshTopbarMarket();
+setInterval(refreshTopbarMarket, 60 * 1000);
 
 // Play load sequence
 if (!prefersReducedMotion) {

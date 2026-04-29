@@ -28,6 +28,10 @@ export async function fetchChartData(ticker, limit = 100) {
     return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}`);
 }
 
+export async function fetchMarketSummary() {
+    return apiFetch('/market-summary') || { symbol: 'IHSG', value: null, change_pct: null };
+}
+
 export async function fetchSettings() {
     const data = await apiFetch('/settings');
     return data || { compact_table_rows: false, auto_refresh_screener: false };

@@ -301,14 +301,59 @@ def get_market_summary(db: Session = Depends(get_db)):
 
     latest_row = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
     if not latest_row:
-        return {"symbol": "IHSG", "value": None, "change_pct": None, "source": "db", "updated_at": None}
+        return {
+            "symbol": "IHSG",
+            "value": None,
+            "change_pct": None,
+            "source": "db",
+            "updated_at": None,
+            "status": "no_data",
+        }
+
+    latest_date = latest_row.date
+    latest_rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).all()
+    if not latest_rows:
+        return {
+            "symbol": "IHSG",
+            "value": None,
+            "change_pct": None,
+            "source": "db",
+            "updated_at": latest_date.isoformat() if latest_date else None,
+            "status": "no_data",
+        }
+
+    current_closes = [row.close for row in latest_rows if row.close is not None and row.close > 0]
+    if not current_closes:
+        return {
+            "symbol": "IHSG",
+            "value": None,
+            "change_pct": None,
+            "source": "db",
+            "updated_at": latest_date.isoformat() if latest_date else None,
+            "status": "no_data",
+        }
+
+    value = sum(current_closes) / len(current_closes)
+
+    prev_row = db.query(OHLCVDaily).filter(OHLCVDaily.date < latest_date).order_by(OHLCVDaily.date.desc()).first()
+    change_pct = None
+    if prev_row:
+        prev_date = prev_row.date
+        prev_rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == prev_date).all()
+        prev_closes = [row.close for row in prev_rows if row.close is not None and row.close > 0]
+        if prev_closes:
+            prev_value = sum(prev_closes) / len(prev_closes)
+            if prev_value > 0:
+                change_pct = ((value - prev_value) / prev_value) * 100
 
     return {
-        "symbol": "IHSG",
-        "value": None,
-        "change_pct": None,
+        "symbol": "IDX Composite (Proxy)",
+        "value": round(value, 2),
+        "change_pct": round(change_pct, 2) if change_pct is not None else None,
         "source": "db",
-        "updated_at": latest_row.date.isoformat() if latest_row.date else None,
+        "updated_at": latest_date.isoformat() if latest_date else None,
+        "status": "ok",
+        "coverage": len(current_closes),
     }
 
 

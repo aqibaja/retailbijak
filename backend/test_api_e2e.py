@@ -45,3 +45,15 @@ def test_portfolio_crud():
         assert 'TLKM' in tickers
         del_res = client.delete('/api/portfolio/TLKM')
         assert del_res.status_code == 200
+
+
+def test_market_summary_db_only():
+    with TestClient(app) as client:
+        # Empty DB should still return deterministic payload without provider calls.
+        res = client.get('/api/market-summary')
+        assert res.status_code == 200
+        data = res.json()
+        assert data['source'] == 'db'
+        assert data['status'] in {'ok', 'no_data'}
+        assert 'symbol' in data
+        assert 'updated_at' in data
