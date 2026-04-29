@@ -2,59 +2,101 @@ import { fetchNews } from '../api.js';
 import { observeElements } from '../main.js';
 
 const FALLBACK_NEWS = [
-    { source: 'Bloomberg', title: 'Foreign Funds Flow Into Indonesian Banks as Rates Peak', summary: 'Major foreign inflows detected in BBCA and BMRI.', link: '#', published_at: new Date().toISOString() },
-    { source: 'Reuters', title: 'Commodity Supercycle Propels IDX Energy Sector', summary: 'Coal and oil names rally on global supply constraints.', link: '#', published_at: new Date(Date.now()-3600000).toISOString() },
-    { source: 'CNBC', title: 'Tech Stocks Consolidate Following Recent Tech Sell-Off', summary: 'GOTO and BUKA find a floor as retail selling exhausts.', link: '#', published_at: new Date(Date.now()-7200000).toISOString() }
+    { source: 'CNBC Indonesia', title: 'Rusia Atur Cadangan Valas Perbankan Wajib Pakai Yuan', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
+    { source: 'Bloomberg', title: 'Foreign Funds Flow Into Indonesian Banks as Rates Peak', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 240).toISOString() },
+    { source: 'Reuters', title: 'Commodity Supercycle Propels IDX Energy Sector', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 600).toISOString() },
+    { source: 'Bisnis', title: 'Volatility compresses as traders wait for next macro catalyst', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 1400).toISOString() },
+    { source: 'MarketBeat', title: 'Retail traders keep an eye on breakout patterns in consumer names', summary: '', link: '#', published_at: new Date(Date.now() - 1000 * 60 * 2800).toISOString() }
 ];
 
+function getRelativeTime(dateStr) {
+    if (!dateStr) return 'Just now';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 1) {
+        const mins = Math.floor(diff / 60000);
+        return mins <= 1 ? 'Just now' : \`\${mins} mins ago\`;
+    }
+    if (hours < 24) return \`\${hours} hours ago\`;
+    return \`\${Math.floor(hours / 24)} days ago\`;
+}
+
 export async function renderNews(root) {
-    root.innerHTML = `
-      <section class="grid grid-cols-12 stagger-reveal">
-        <div class="col-span-12 flex justify-between items-end mb-4">
+    root.innerHTML = \`
+      <section class="news-container stagger-reveal">
+        <div class="news-header">
           <div>
-            <h1 class="text-2xl strong mb-2">Market Intelligence</h1>
-            <p class="text-muted">Aggregated financial news & macroeconomic updates</p>
+            <h1 style="font-size: 24px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Market Intelligence</h1>
+            <p style="font-size: 14px; color: #64748b;">Aggregated financial news & macroeconomic updates</p>
           </div>
-          <div class="badge badge-primary" id="news-count">LIVE FEED</div>
+          <div style="height: 32px; background: rgba(59,130,246,0.15); color: #60a5fa; border-radius: 16px; padding: 0 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center;" id="news-count">
+            LOADING...
+          </div>
+        </div>
+
+        <div class="news-tabs">
+            <button class="news-tab active">All</button>
+            <button class="news-tab">Stocks</button>
+            <button class="news-tab">Macro</button>
+            <button class="news-tab">Crypto</button>
+            <button class="news-tab">Commodities</button>
         </div>
         
-        <div class="col-span-12 panel flex-col" style="padding:0;">
-          <div id="news-list" class="flex-col">
-            <div class="p-4" style="border-bottom:1px solid var(--border-subtle);"><div class="skeleton skel-title"></div><div class="skeleton skel-text"></div></div>
-            <div class="p-4" style="border-bottom:1px solid var(--border-subtle);"><div class="skeleton skel-title"></div><div class="skeleton skel-text"></div></div>
-          </div>
+        <div id="news-list" class="news-grid">
+            \${Array(6).fill(\`
+            <article class="news-card">
+              <div class="news-image-wrap skeleton"></div>
+              <div class="news-content">
+                <div class="skeleton skel-text" style="width: 40%; margin-bottom: 10px;"></div>
+                <div class="skeleton skel-title" style="width: 100%;"></div>
+                <div class="skeleton skel-title" style="width: 80%;"></div>
+                <div class="news-meta" style="margin-top: 12px;">
+                   <div class="skeleton skel-text" style="width: 30%;"></div>
+                </div>
+              </div>
+            </article>\`).join('')}
         </div>
-      </section>`;
+      </section>\`;
 
     observeElements();
-    
+
     const res = await fetchNews(20);
     const list = document.getElementById('news-list');
     const items = Array.isArray(res?.data) && res.data.length ? res.data : FALLBACK_NEWS;
     
-    document.getElementById('news-count').textContent = `${items.length} ARTICLES`;
+    document.getElementById('news-count').textContent = \`\${items.length} ARTICLES TODAY\`;
 
-    list.innerHTML = items.map((n, i) => {
-        const time = n.published_at ? new Date(n.published_at).toLocaleTimeString([],{hour:'2-digit', minute:'2-digit'}) : '';
-        const delay = i * 50;
-        return `
-            <a href="${n.link}" target="_blank" class="p-4" style="border-bottom:1px solid var(--border-subtle); transition:background var(--duration-fast); animation: fadeUp 0.4s var(--ease-spring) ${delay}ms both;">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="badge" style="background:var(--bg-elevated); border:none; color:var(--primary-color);">${n.source || 'MARKET'}</span>
-                    <span class="text-xs text-dim mono">${time}</span>
+    list.innerHTML = items.map((n) => {
+        const time = getRelativeTime(n.published_at);
+        const source = n.source || 'MARKET';
+        const imageUrl = n.image_url || '';
+        const imageElement = imageUrl 
+            ? \`<img src="\${imageUrl}" alt="\${n.title}" loading="lazy"><div class="news-image-fallback" style="display:none">📰</div>\` 
+            : \`<div class="news-image-fallback" style="display:flex;">📰</div>\`;
+
+        return \`
+            <a href="\${n.link}" target="_blank" class="news-card">
+                <div class="news-image-wrap">
+                    \${imageElement}
                 </div>
-                <h3 class="text-lg strong mb-2" style="color:var(--text-main); line-height:1.4;">${n.title}</h3>
-                ${n.summary ? `<p class="text-muted text-sm" style="line-height:1.6; max-width:800px;">${n.summary}</p>` : ''}
+                <div class="news-content">
+                    <span class="news-badge">\${source}</span>
+                    <h3 class="news-title">\${n.title}</h3>
+                    <div class="news-meta">
+                        <span class="news-source">\${source}</span>
+                        <span class="news-dot">-</span>
+                        <span class="news-time">\${time}</span>
+                    </div>
+                </div>
             </a>
-        `;
+        \`;
     }).join('');
-}
-
-// Inject animation keyframes for news items
-if (!document.getElementById('news-keyframes')) {
-    const style = document.createElement('style');
-    style.id = 'news-keyframes';
-    style.innerHTML = `@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                       #news-list a:hover { background: rgba(255,255,255,0.02); }`;
-    document.head.appendChild(style);
+    
+    // Quick tab click effect (aesthetic only)
+    document.querySelectorAll('.news-tab').forEach(tab => {
+       tab.addEventListener('click', () => {
+          document.querySelectorAll('.news-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+       });
+    });
 }
