@@ -37,7 +37,19 @@ export async function fetchChartData(ticker, limit = 100) {
 }
 
 export async function fetchMarketSummary() {
-    return apiFetch('/market-summary') || { symbol: 'IHSG', value: null, change_pct: null };
+    return apiFetch('/market-summary') || { status: 'no_data', symbol: 'IHSG', value: null, change_pct: null, open: null, high: null, low: null };
+}
+
+export async function fetchStockDetail(ticker) {
+    return apiFetch(`/stocks/${ticker}`);
+}
+
+export async function fetchSectorSummary() {
+    return apiFetch('/sector-summary') || { count: 0, data: [] };
+}
+
+export async function fetchScan(timeframe = '1d') {
+    return apiFetch(`/scan?timeframe=${timeframe}`);
 }
 
 export async function fetchSettings() {

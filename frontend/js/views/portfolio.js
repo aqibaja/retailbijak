@@ -29,10 +29,7 @@ export async function renderPortfolio(root, activeTab) {
 
 async function renderWatchlistTab(el) {
     const data = await fetchWatchlist();
-    const rows = data?.data || [
-        { ticker: 'BBCA', notes: 'Core defensive holding.' },
-        { ticker: 'ASII', notes: 'Auto recovery cycle.' }
-    ];
+    const rows = Array.isArray(data?.data) ? data.data : [];
     
     el.innerHTML = `
       <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:rgba(15,22,41,0.8);">
@@ -86,10 +83,7 @@ async function renderWatchlistTab(el) {
 
 async function renderPortfolioTab(el) {
     const data = await fetchPortfolio();
-    const rows = data?.data || [
-        { ticker: 'BBRI', lots: 18, avg_price: 4710 },
-        { ticker: 'TLKM', lots: 50, avg_price: 3420 }
-    ];
+    const rows = Array.isArray(data?.data) ? data.data : [];
     
     el.innerHTML = `
       <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:rgba(15,22,41,0.8);">

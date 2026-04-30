@@ -61,9 +61,19 @@ export async function renderSettings(root) {
     const settings = await fetchSettings();
     const compact = document.getElementById('setting-compact');
     const refresh = document.getElementById('setting-refresh');
-    compact.checked = !!settings.compact_table_rows;
-    refresh.checked = !!settings.auto_refresh_screener;
+    compact.checked = !!settings?.compact_table_rows;
+    refresh.checked = !!settings?.auto_refresh_screener;
+    compact.disabled = false;
+    refresh.disabled = false;
+    const status = document.createElement('div');
+    status.id = 'settings-status';
+    status.className = 'text-xs text-dim mono strong';
+    status.style.cssText = 'letter-spacing:0.05em;';
+    status.textContent = 'CONNECTED TO LOCAL BACKEND';
+    root.querySelector('.col-span-8 .flex.justify-between.items-center.pt-2').prepend(status);
 
+    if (!settings) showToast('Using fallback settings state', 'info');
+    
     document.getElementById('save-settings').addEventListener('click', async () => {
         const btn = document.getElementById('save-settings');
         btn.disabled = true;

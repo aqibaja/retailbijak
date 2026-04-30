@@ -2,82 +2,87 @@ import { fetchNews, fetchMarketSummary } from '../api.js';
 import { observeElements, animateValue } from '../main.js';
 
 export async function renderDashboard(root) {
-    let isLive = true;
-    try {
-        const summary = await fetchMarketSummary();
-        if (!summary || summary.status !== 'ok') isLive = false;
-    } catch(e) {
-        isLive = false;
-    }
-
     root.innerHTML = `
-      <section class="grid grid-cols-12 stagger-reveal">
-        <!-- Main Chart Panel -->
-        <div class="col-span-8 panel flex-col justify-between" style="padding:0; overflow:hidden;">
-          <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border-subtle);">
+      <section class="grid grid-cols-12 stagger-reveal dashboard-shell">
+        <div class="col-span-12 panel dashboard-hero flex-col gap-4" style="padding:16px; overflow:hidden;">
+          <div class="flex justify-between items-center gap-3 dashboard-hero-head">
             <div class="flex items-center gap-3">
-              <h2 class="text-lg strong text-main">IHSG Composite</h2>
-              ${isLive ? '<span class="badge badge-up">LIVE</span>' : '<span class="badge" style="background:rgba(245, 158, 11, 0.15); color:var(--warn-color); border-color:var(--warn-color);">DEMO DATA</span>'}
+              <div class="hero-mark">IDX</div>
+              <div>
+                <h2 class="text-lg strong text-main" style="margin-bottom:2px;">IHSG Composite</h2>
+                <div class="text-xs text-dim strong" id="market-fold-status">Loading live snapshot...</div>
+              </div>
             </div>
-            <div class="flex gap-2">
-              <button class="btn btn-primary" style="padding:4px 8px; font-size:11px; height:24px; box-shadow:none;">1D</button>
-              <button class="btn" style="padding:4px 8px; font-size:11px; height:24px;">1W</button>
-              <button class="btn" style="padding:4px 8px; font-size:11px; height:24px;">1M</button>
-            </div>
-          </div>
-          
-          <div class="p-4 flex gap-6" style="background:var(--bg-elevated); border-bottom:1px solid var(--border-subtle);">
-            <div><div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">Open</div><div class="mono strong mt-1" style="font-size:16px;">7,096.61</div></div>
-            <div><div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">High</div><div class="mono strong text-up mt-1" style="font-size:16px;">7,126.06</div></div>
-            <div><div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">Low</div><div class="mono strong text-down mt-1" style="font-size:16px;">7,063.99</div></div>
+            <span id="market-fold-badge" class="badge">SYNC</span>
           </div>
 
-          <div style="flex:1; padding:16px; min-height: 300px;">
+          <div class="dashboard-price-row">
+            <div>
+              <div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">IHSG</div>
+              <div class="mono strong" id="ihsg-value" style="font-size:28px; line-height:1;">---</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">Change</div>
+              <div class="mono strong" id="ihsg-change" style="font-size:18px;">---</div>
+            </div>
+          </div>
+
+          <div class="dashboard-metrics">
+            <div><span class="text-dim">Open</span><strong class="mono" id="ihsg-open">---</strong></div>
+            <div><span class="text-dim">High</span><strong class="mono text-up" id="ihsg-high">---</strong></div>
+            <div><span class="text-dim">Low</span><strong class="mono text-down" id="ihsg-low">---</strong></div>
+          </div>
+
+          <div class="dashboard-chip-row">
+            <button class="btn btn-primary btn-mini">1D</button>
+            <button class="btn btn-mini">1W</button>
+            <button class="btn btn-mini">1M</button>
+            <a href="#screener" class="btn btn-mini">Scanner</a>
+          </div>
+
+          <div class="dashboard-chart-wrap">
             <canvas id="ihsgMainChart"></canvas>
           </div>
         </div>
 
-        <!-- Sidebar Widgets -->
-        <div class="col-span-4 flex-col gap-4">
-          <!-- Market Breadth Widget -->
-          <div class="panel flex-col">
-            <h3 class="text-xs uppercase text-dim mb-4 strong" style="letter-spacing:0.08em;">Market Breadth</h3>
-            <div class="grid grid-cols-3 gap-2">
-              <div class="text-center p-4" style="background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle); box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);">
-                <div class="text-xs text-dim mb-1 strong">ADV</div>
-                <div class="mono strong text-up text-lg val-counter" data-val="328">0</div>
-              </div>
-              <div class="text-center p-4" style="background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle); box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);">
-                <div class="text-xs text-dim mb-1 strong">DECL</div>
-                <div class="mono strong text-down text-lg val-counter" data-val="271">0</div>
-              </div>
-              <div class="text-center p-4" style="background:var(--bg-elevated); border-radius:var(--radius-md); border:1px solid var(--border-subtle); box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);">
-                <div class="text-xs text-dim mb-1 strong">UNC</div>
-                <div class="mono strong text-lg val-counter text-main" data-val="143">0</div>
-              </div>
-            </div>
-            <div class="flex justify-between mt-4 text-xs text-dim strong">
-              <span>Volume: <span class="mono text-main">8.4T</span></span>
-              <span>Value: <span class="mono text-main">Rp 9.2T</span></span>
-            </div>
+        <div class="col-span-12 panel dashboard-compact-grid">
+          <div class="dashboard-card-lite">
+            <div class="text-xs text-dim strong">ADV</div>
+            <div class="mono strong text-up text-lg val-counter" data-val="328">328</div>
           </div>
-
-          <!-- Top Movers Widget -->
-          <div class="panel flex-col" style="flex:1;">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Top Movers</h3>
-              <a href="#market" class="text-xs text-primary strong hover:underline">View All</a>
-            </div>
-            <div class="flex-col gap-2">
-              ${['GOTO','BRPT','BBCA','TLKM'].map((t,i)=>row(t,['96','1,200','9,800','3,420'][i],['+9.09','+5.20','+3.15','+2.50'][i])).join('')}
-            </div>
+          <div class="dashboard-card-lite">
+            <div class="text-xs text-dim strong">DECL</div>
+            <div class="mono strong text-down text-lg val-counter" data-val="271">271</div>
+          </div>
+          <div class="dashboard-card-lite">
+            <div class="text-xs text-dim strong">UNC</div>
+            <div class="mono strong text-lg val-counter text-main" data-val="143">143</div>
+          </div>
+          <div class="dashboard-card-lite dashboard-card-wide">
+            <div class="text-xs text-dim strong">VOLUME / VALUE</div>
+            <div class="mono strong" style="font-size:14px;">8.4T / Rp 9.2T</div>
           </div>
         </div>
 
-        <!-- News Widget -->
-        <div class="col-span-12 panel stagger-reveal" style="margin-top:8px;">
+        <div class="col-span-12 panel stagger-reveal dashboard-section-head" style="margin-top:8px;">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Latest Intelligence</h3>
+            <div>
+              <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Top Movers</h3>
+              <div class="text-xs text-dim">Quick look at active names</div>
+            </div>
+            <a href="#market" class="text-xs text-primary strong hover:underline">View All</a>
+          </div>
+          <div class="flex-col gap-2">
+            ${['GOTO','BRPT','BBCA','TLKM'].map((t,i)=>row(t,['96','1,200','9,800','3,420'][i],['+9.09','+5.20','+3.15','+2.50'][i])).join('')}
+          </div>
+        </div>
+
+        <div class="col-span-12 panel stagger-reveal dashboard-section-head" style="margin-top:8px;">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Latest Intelligence</h3>
+              <div class="text-xs text-dim">Fresh news and fallback content</div>
+            </div>
             <a href="#news" class="btn btn-icon"><i data-lucide="arrow-right"></i></a>
           </div>
           <div id="news-container" class="news-grid">
@@ -89,17 +94,28 @@ export async function renderDashboard(root) {
       </section>`;
 
     observeElements();
-    initChart();
+    loadMarketSummary();
     loadNews();
-    
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
-    // Animate counters
-    setTimeout(() => {
-        document.querySelectorAll('.val-counter').forEach(el => {
-            animateValue(el, 0, parseInt(el.getAttribute('data-val')), 1000);
-        });
-    }, 200);
+    setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.getAttribute('data-val')), 1000)), 200);
+}
+
+async function loadMarketSummary() {
+    const summary = await fetchMarketSummary();
+    const isLive = !!summary && summary.status !== 'no_data';
+    document.getElementById('market-fold-status').textContent = isLive ? 'Market first fold • live snapshot' : 'Market first fold • demo snapshot';
+    const badge = document.getElementById('market-fold-badge');
+    badge.textContent = isLive ? 'LIVE' : 'DEMO';
+    badge.className = isLive ? 'badge badge-up' : 'badge';
+
+    const value = summary?.value ?? summary?.close ?? '7,080.63';
+    const change = summary?.change_pct != null ? `${summary.change_pct >= 0 ? '+' : ''}${summary.change_pct}%` : '+0.12%';
+    document.getElementById('ihsg-value').textContent = typeof value === 'number' ? value.toLocaleString() : value;
+    document.getElementById('ihsg-change').textContent = change;
+    document.getElementById('ihsg-change').className = `mono strong ${String(change).startsWith('-') ? 'text-down' : 'text-up'}`;
+    document.getElementById('ihsg-open').textContent = summary?.open?.toLocaleString?.() ?? '7,096.61';
+    document.getElementById('ihsg-high').textContent = summary?.high?.toLocaleString?.() ?? '7,126.06';
+    document.getElementById('ihsg-low').textContent = summary?.low?.toLocaleString?.() ?? '7,063.99';
 }
 
 

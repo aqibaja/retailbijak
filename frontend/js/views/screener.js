@@ -14,7 +14,7 @@ const renderEmptyState = () => `
     <div class="scanner-empty-icon">
       <i data-lucide="radar" style="width:32px; height:32px;"></i>
     </div>
-    <h3 style="font-size:18px; font-weight:600; color:#f8fafc; margin-bottom:8px;">Ready to Begin Scan</h3>
+    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Ready to Begin Scan</h3>
     <p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">
       Configure parameters and hit Execute Scan to detect trading opportunities
     </p>
@@ -39,16 +39,16 @@ const renderSkeleton = () => `
 const renderRow = (r) => `
   <a href="#stock/${r.ticker}" class="scanner-row">
     <div class="flex items-center gap-3">
-      <div style="width:36px; height:36px; border-radius:50%; background:#1e293b; color:#f8fafc; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:12px;">
+      <div style="width:36px; height:36px; border-radius:50%; background:#1e293b; color:var(--text-main); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:12px;">
         ${r.ticker.substring(0, 2)}
       </div>
       <div>
-        <div style="font-size:15px; font-weight:600; color:#f8fafc;">${r.ticker}</div>
+        <div style="font-size:15px; font-weight:600; color:var(--text-main);">${r.ticker}</div>
         <div style="font-size:11px; color:#64748b;">${r.type || 'EQ'}</div>
       </div>
     </div>
     <div style="text-align:right;">
-      <div class="mono" style="font-size:15px; font-weight:600; color:#f8fafc;">${r.price.toLocaleString()}</div>
+      <div class="mono" style="font-size:15px; font-weight:600; color:var(--text-main);">${r.price.toLocaleString()}</div>
       <div style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:13px; font-weight:600; background:${r.change >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${r.change >= 0 ? '#10b981' : '#ef4444'}; margin-top:4px;">
         ${r.change >= 0 ? '+' : ''}${r.change.toFixed(2)}%
       </div>
@@ -59,15 +59,23 @@ const renderRow = (r) => `
 export async function renderScreener(root) {
     root.innerHTML = `
       <section class="stagger-reveal">
-        <div class="mb-4">
+        <div class="mb-4 screener-hero">
+          <div class="screener-kicker">Scanner</div>
           <h1 class="text-2xl strong mb-2">Institutional Scanner</h1>
-          <p class="text-muted">High-precision signal detection engine</p>
+          <p class="text-muted">Quick presets + fallback demo so the page never feels empty.</p>
         </div>
 
         <div class="scanner-layout">
           <!-- Filter Panel (Left) -->
           <div class="scanner-form flex-col">
             <div class="scanner-header-text">SCAN PARAMETERS</div>
+            
+            <div class="scanner-micro-grid">
+              <button class="scanner-preset active">Breakout</button>
+              <button class="scanner-preset">Value</button>
+              <button class="scanner-preset">Dividend</button>
+              <button class="scanner-preset">Gorengan</button>
+            </div>
             
             <div class="mb-4">
               <label class="scanner-label">ALGORITHM</label>
@@ -94,6 +102,7 @@ export async function renderScreener(root) {
             <button id="btn-run-screener" class="scanner-btn-primary">
               <i data-lucide="search" style="width:16px;"></i> EXECUTE SCAN
             </button>
+            <div class="scanner-hint">MVP uses daily rules + local fallback data when backend is cold.</div>
 
             <div id="screener-progress" style="display:none; margin-top:24px; padding:16px; background:var(--bg-elevated); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
               <div class="flex justify-between items-center mb-2">
@@ -158,6 +167,10 @@ function runScreener() {
     const results = [];
 
     const es = new EventSource(getScanEventSourceUrl(tf));
+    let fallbackTimer = setTimeout(() => {
+        finishScan(dummyScanResults, btn, countBadge, contentArea, es);
+        showToast('Backend unavailable. Showing realistic demo signals.', 'info');
+    }, 3000);
     
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -168,32 +181,27 @@ function runScreener() {
         } else if (data.type === 'result') {
             matchCount += 1;
             countBadge.textContent = `${matchCount} MATCHES`;
-            
-            // Format result properly to match the dummy structure
             const r = data.data;
-            const changePct = r.sl_pct ? -r.sl_pct : (Math.random() * 5); // Fallback if no real change available from scanner
-            
             results.push({
                ticker: r.ticker,
-               name: r.ticker + " Inc.", // Scanner usually doesn't return full name, so mock it or just use ticker
-               type: "EQ",
-               price: r.close,
-               change: changePct,
-               signal: "BUY" 
+               name: r.name || r.ticker,
+               type: r.type || 'EQ',
+               price: r.close ?? r.price ?? 0,
+               change: r.change_pct ?? 0,
+               signal: r.signal || 'BUY'
             });
-            
         } else if (data.type === 'done') {
+            clearTimeout(fallbackTimer);
             finishScan(results, btn, countBadge, contentArea, es);
         }
     };
     
     es.onerror = () => {
-        // Since we are likely in a demo/fallback mode without a working scanner backend,
-        // let's gracefully failover to the dummy data to show the beautiful UI instead of a generic error.
+        clearTimeout(fallbackTimer);
         setTimeout(() => {
            finishScan(dummyScanResults, btn, countBadge, contentArea, es);
            showToast('Backend unavailable. Showing realistic demo signals.', 'info');
-        }, 1500); // Wait a bit to show skeleton
+        }, 1500);
     };
 }
 

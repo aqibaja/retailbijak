@@ -39,7 +39,7 @@ export function renderHelp(root) {
         </div>
 
         <div class="col-span-4 panel flex-col justify-center items-center text-center" style="background:rgba(99,102,241,0.05); min-height:300px; border-color:rgba(99,102,241,0.2);">
-            <div style="width:56px; height:56px; background:linear-gradient(135deg, #6366f1, #4f46e5); border-radius:16px; display:grid; place-items:center; color:#fff; box-shadow:0 12px 32px rgba(99,102,241,0.4); margin-bottom:24px;">
+            <div style="width:56px; height:56px; background:linear-gradient(135deg, #6366f1, #4f46e5); border-radius:16px; display:grid; place-items:center; color:var(--text-main); box-shadow:0 12px 32px rgba(99,102,241,0.4); margin-bottom:24px;">
                 <i data-lucide="life-buoy" style="width:24px; height:24px;"></i>
             </div>
             <h3 class="strong text-lg mb-2 text-main">Need Support?</h3>
