@@ -11,7 +11,18 @@ def get_ohlcv_dataframe(db: Session, ticker: str, limit: int = 500) -> pd.DataFr
     """Fetch OHLCV data from the database and return as a pandas DataFrame."""
     # We query ascending by date to calculate indicators correctly, but we might 
     # only want the last N records. Easiest way is to fetch descending, limit, then reverse.
-    records = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == ticker).order_by(OHLCVDaily.date.desc()).limit(limit).all()
+    candidates = [ticker]
+    if ticker.endswith('.JK'):
+        candidates.append(ticker[:-3])
+    else:
+        candidates.append(f'{ticker}.JK')
+    records = (
+        db.query(OHLCVDaily)
+        .filter(OHLCVDaily.ticker.in_(candidates))
+        .order_by(OHLCVDaily.date.desc())
+        .limit(limit)
+        .all()
+    )
     
     if not records:
         return pd.DataFrame()
