@@ -509,14 +509,17 @@ def get_market_summary(db: Session = Depends(get_db)):
             if prev_value > 0:
                 change_pct = ((value - prev_value) / prev_value) * 100
 
+    data_date = latest_date.date().isoformat() if latest_date else None
     return {
         "symbol": "IDX Composite (Proxy)",
         "value": round(value, 2),
         "change_pct": round(change_pct, 2) if change_pct is not None else None,
         "source": "db",
         "updated_at": latest_date.isoformat() if latest_date else None,
+        "data_date": data_date,
+        "data_label": f"Data IDX tanggal {data_date}" if data_date else None,
         "status": "ok",
-        "coverage": len(current_closes),
+        "coverage": len(latest_rows),
     }
 
 

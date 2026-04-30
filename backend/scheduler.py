@@ -43,7 +43,7 @@ def init_scheduler():
     scheduler.add_job(update_signals, trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz), id="intraday_signal_update", replace_existing=True)
     scheduler.add_job(update_news, trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz), id="news_update", replace_existing=True)
     scheduler.add_job(update_fundamentals, trigger=CronTrigger(hour=2, minute=0, timezone=jkt_tz), id="fundamental_update", replace_existing=True)
-    scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=3, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
+    scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=8, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     if not scheduler.running:
         scheduler.start()
     logger.info("APScheduler started successfully.")

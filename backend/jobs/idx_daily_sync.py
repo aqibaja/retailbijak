@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.dialects.sqlite import insert
@@ -110,10 +110,20 @@ def _upsert_fundamental_from_screener(db, row: dict[str, Any]) -> bool:
     return True
 
 
-def sync_idx_stock_summary(client=None, target_date: date | None = None) -> dict:
+def _candidate_dates(target_date: date, fallback_days: int) -> list[date]:
+    return [target_date - timedelta(days=offset) for offset in range(max(fallback_days, 0) + 1)]
+
+
+def sync_idx_stock_summary(client=None, target_date: date | None = None, fallback_days: int = 7) -> dict:
     client = client or get_idx_client()
     target_date = target_date or date.today()
-    rows = client.get_stock_summary(target_date)
+    rows: list[dict[str, Any]] = []
+    data_date = target_date
+    for candidate in _candidate_dates(target_date, fallback_days):
+        rows = client.get_stock_summary(candidate)
+        if rows:
+            data_date = candidate
+            break
     db = SessionLocal()
     ok = 0
     failed = 0
@@ -133,10 +143,16 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None) -> dict
                     "market_cap": parse_idx_number(row.get("MarketCapital")),
                 },
             )
-            _upsert_ohlcv(db, ticker, row, target_date)
+            _upsert_ohlcv(db, ticker, row, data_date)
             ok += 1
         db.commit()
-        return {"ok": ok, "failed": failed, "synced_at": datetime.utcnow().isoformat(timespec="seconds")}
+        return {
+            "ok": ok,
+            "failed": failed,
+            "data_date": data_date.isoformat(),
+            "target_date": target_date.isoformat(),
+            "synced_at": datetime.utcnow().isoformat(timespec="seconds"),
+        }
     except Exception:
         db.rollback()
         logger.exception("IDX stock summary sync failed")
@@ -203,6 +219,8 @@ def run_idx_daily_sync(tickers: list[str] | None = None) -> dict:
             "failed": summary["failed"] + meta["failed"],
             "synced_at": datetime.utcnow().isoformat(timespec="seconds"),
             "source": "idx_website",
+            "data_date": summary.get("data_date"),
+            "target_date": summary.get("target_date"),
             "meta_ok": meta["ok"],
         }
 

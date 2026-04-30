@@ -1,5 +1,5 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260430i';
-import { observeElements } from '../main.js?v=20260430i';
+import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260430j';
+import { observeElements } from '../main.js?v=20260430j';
 
 export async function renderSettings(root) {
     root.innerHTML = `

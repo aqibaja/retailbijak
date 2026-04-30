@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers } from '../api.js?v=20260430i';
-import { observeElements, animateValue } from '../main.js?v=20260430i';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers } from '../api.js?v=20260430j';
+import { observeElements, animateValue } from '../main.js?v=20260430j';
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -27,7 +27,7 @@ export async function renderDashboard(root) {
         <div class="dash-actions"><a href="#screener" class="btn btn-primary">Run Scanner</a><a href="#market" class="btn">Market Overview</a></div>
       </div>
       <div class="dash-quote-card">
-        <div class="flex justify-between items-start mb-3"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div>
+        <div class="flex justify-between items-start mb-3"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div><div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
         <div class="text-xs text-dim uppercase strong">IHSG Composite</div>
         <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">7.080,63</div><div class="mono strong text-up" id="ihsg-change">+0.12%</div></div>
         <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">7.096</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">7.126</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">7.063</strong></div></div>
@@ -58,8 +58,11 @@ export async function renderDashboard(root) {
 async function loadMarketSummary(){
   const summary = await fetchMarketSummary();
   const isLive = summary && summary.status !== 'no_data' && summary.value;
-  document.getElementById('market-fold-status').textContent = isLive ? 'LIVE DATA' : 'IDX REFERENCE';
-  document.getElementById('market-fold-badge').textContent = isLive ? 'LIVE' : 'REF';
+  document.getElementById('market-fold-status').textContent = isLive ? 'DB SYNCED' : 'IDX REFERENCE';
+  document.getElementById('market-fold-badge').textContent = isLive ? 'DB' : 'REF';
+  const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
+  const dateEl = document.getElementById('market-data-date');
+  if (dateEl) dateEl.textContent = dataDate ? `Data IDX tanggal ${dataDate} · auto-sync 08:00 WIB` : 'Data IDX belum tersedia · auto-sync 08:00 WIB';
   const v = summary?.value ?? 7080.63, c = Number(summary?.change_pct ?? 0.12);
   document.getElementById('ihsg-value').textContent = nf(v, 2);
   const ch = document.getElementById('ihsg-change'); ch.textContent = pf(c); ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;

@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430i';
-import { observeElements } from '../main.js?v=20260430i';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430j';
+import { observeElements } from '../main.js?v=20260430j';
 
 const dummyScanResults = [
   { ticker: "GOTO", name: "GoTo Gojek Tokopedia", type: "EQ", price: 96, change: 9.89, signal: "STRONG_BUY" },
