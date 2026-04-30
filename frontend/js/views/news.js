@@ -1,4 +1,4 @@
-import { fetchNews } from '../api.js';
+import { fetchNews } from '../api.js?v=20260430e';
 
 export async function renderNews(root) {
     root.innerHTML = `

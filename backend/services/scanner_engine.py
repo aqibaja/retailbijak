@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.services.scoring import score_swing, score_valuation, score_gorengan, score_dividend
+try:
+    from backend.services.scoring import score_swing, score_valuation, score_gorengan, score_dividend
+except ModuleNotFoundError:
+    from services.scoring import score_swing, score_valuation, score_gorengan, score_dividend
 
 
 PRESET_RULES = {

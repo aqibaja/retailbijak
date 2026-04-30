@@ -239,7 +239,10 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
 
 @app.get("/api/stocks/{ticker}/analysis")
 def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
-    from backend.services.scanner_engine import analyze_stock
+    try:
+        from backend.services.scanner_engine import analyze_stock
+    except ModuleNotFoundError:
+        from services.scanner_engine import analyze_stock
     row = _fallback_row_for_ticker(ticker, db)
     analysis = analyze_stock({
         "ticker": row["ticker"],
@@ -315,7 +318,10 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
 @app.get("/api/stocks/{ticker}/technical")
 def get_technical_summary_api(ticker: str, db: Session = Depends(get_db)):
     """API endpoint to get technical analysis summary (RSI, MACD, etc)"""
-    from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
+    try:
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
+    except ModuleNotFoundError as exc:
+        return {"ticker": ticker if ticker.endswith('.JK') else f"{ticker}.JK", "status": "no_data", "message": str(exc)}
     
     if not ticker.endswith('.JK'):
         ticker = f"{ticker}.JK"
@@ -336,8 +342,11 @@ def get_technical_summary_api(ticker: str, db: Session = Depends(get_db)):
 @app.get("/api/stocks/{ticker}/chart-data")
 def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db)):
     """API endpoint to get OHLCV and indicators for charting"""
-    from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-    import numpy as np
+    try:
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+        import numpy as np
+    except ModuleNotFoundError as exc:
+        return {"ticker": ticker if ticker.endswith('.JK') else f"{ticker}.JK", "data": [], "status": "no_data", "message": str(exc)}
     
     if not ticker.endswith('.JK'):
         ticker = f"{ticker}.JK"

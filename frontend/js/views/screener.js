@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast } from '../api.js';
-import { observeElements } from '../main.js';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430e';
+import { observeElements } from '../main.js?v=20260430e';
 
 const dummyScanResults = [
   { ticker: "GOTO", name: "GoTo Gojek Tokopedia", type: "EQ", price: 96, change: 9.89, signal: "STRONG_BUY" },
@@ -192,7 +192,14 @@ function runScreener() {
             });
         } else if (data.type === 'done') {
             clearTimeout(fallbackTimer);
-            finishScan(results, btn, countBadge, contentArea, es);
+            const meta = {
+              scanned: data.total_scanned,
+              skipped: data.total_skipped,
+              duration: data.duration_seconds,
+              timeframe: data.timeframe,
+              backendDone: true,
+            };
+            finishScan(results, btn, countBadge, contentArea, es, meta);
         }
     };
     
@@ -205,18 +212,32 @@ function runScreener() {
     };
 }
 
-function finishScan(results, btn, countBadge, contentArea, eventSource) {
+function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {}) {
     btn.disabled = false;
     btn.innerHTML = `<i data-lucide="search" style="width:16px;"></i> EXECUTE SCAN`;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
     
     if (eventSource) eventSource.close();
     
-    countBadge.textContent = `${results.length} MATCHES`;
+    const backendZero = meta.backendDone && results.length === 0;
+    const displayResults = backendZero ? dummyScanResults.map(r => ({ ...r, signal: 'WATCHLIST' })) : results;
+    countBadge.textContent = backendZero ? `0 LIVE / ${displayResults.length} DEMO` : `${displayResults.length} MATCHES`;
     
-    if (results.length === 0) {
-        contentArea.innerHTML = `<div style="padding:60px 0; text-align:center; color:var(--text-dim);">No institutional signals detected in this timeframe.</div>`;
+    if (backendZero) {
+        contentArea.innerHTML = `
+          <div style="padding:18px; border-bottom:1px solid var(--border-subtle); background:rgba(99,102,241,0.05);">
+            <div class="flex items-center gap-2 mb-2" style="color:#a5b4fc; font-size:13px; font-weight:700;">
+              <i data-lucide="check-circle" style="width:16px;"></i>
+              Backend scan completed: ${meta.scanned || 0} tickers in ${meta.duration || '?'}s
+            </div>
+            <div class="text-xs text-muted" style="line-height:1.6;">
+              No live institutional signals for this timeframe. Showing demo watch candidates so scanner stays useful and visually populated.
+            </div>
+          </div>
+          <div class="flex-col">${displayResults.map(r => renderRow(r)).join('')}</div>`;
+    } else if (displayResults.length === 0) {
+        contentArea.innerHTML = `<div style="padding:60px 24px; text-align:center; color:var(--text-dim); line-height:1.7;">No institutional signals detected in this timeframe.<br><span class="mono text-xs">Backend completed successfully.</span></div>`;
     } else {
-        contentArea.innerHTML = `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`;
+        contentArea.innerHTML = `<div class="flex-col">${displayResults.map(r => renderRow(r)).join('')}</div>`;
     }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }

@@ -28,9 +28,6 @@ export async function fetchAnalysis(ticker) {
     return apiFetch(`/stocks/${ticker}/analysis`);
 }
 
-export async function fetchSectorSummary() {
-    return apiFetch('/sector-summary') || { count: 0, data: [] };
-}
 
 export async function fetchChartData(ticker, limit = 100) {
     return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}`);
@@ -40,12 +37,13 @@ export async function fetchMarketSummary() {
     return apiFetch('/market-summary') || { status: 'no_data', symbol: 'IHSG', value: null, change_pct: null, open: null, high: null, low: null };
 }
 
-export async function fetchStockDetail(ticker) {
-    return apiFetch(`/stocks/${ticker}`);
+export async function fetchSectorSummary() {
+    const data = await apiFetch('/sector-summary');
+    return data || { count: 0, data: [] };
 }
 
-export async function fetchSectorSummary() {
-    return apiFetch('/sector-summary') || { count: 0, data: [] };
+export async function fetchStockDetail(ticker) {
+    return apiFetch(`/stocks/${ticker}`);
 }
 
 export async function fetchScan(timeframe = '1d') {
@@ -128,3 +126,5 @@ export function showToast(message, type = 'info', duration = 4000) {
         setTimeout(() => toast.remove(), 300);
     }, duration);
 }
+
+/* cache-bust: 20260430b */

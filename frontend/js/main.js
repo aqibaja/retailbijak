@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js';
-import { fetchMarketSummary } from './api.js';
-import { initTheme } from './theme.js';
+import { handleRoute } from './router.js?v=20260430e';
+import { fetchMarketSummary } from './api.js?v=20260430e';
+import { initTheme } from './theme.js?v=20260430e';
 
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {

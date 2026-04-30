@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary } from '../api.js';
-import { observeElements, animateValue } from '../main.js';
+import { fetchNews, fetchMarketSummary } from '../api.js?v=20260430e';
+import { observeElements, animateValue } from '../main.js?v=20260430e';
 
 export async function renderDashboard(root) {
     root.innerHTML = `

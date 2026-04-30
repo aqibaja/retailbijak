@@ -1,5 +1,5 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=ed2ae72';
-import { observeElements, flashUpdate } from '../main.js?v=ed2ae72';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=20260430e';
+import { observeElements, flashUpdate } from '../main.js?v=20260430e';
 export async function renderStockDetail(root, ticker) {
     root.innerHTML = `
       <section class="grid grid-cols-12 stagger-reveal">
