@@ -46,3 +46,13 @@ def test_stock_detail_hides_invalid_zero_levels_and_uses_clean_decision_copy():
     assert 'TAHAN / WATCH' in src
     assert 'BUY PULLBACK' not in src
     assert 'Risk/reward kurang ideal' in src
+
+
+def test_stock_detail_uses_compact_layout_tokens():
+    src = STOCK_DETAIL.read_text()
+    assert 'stock-detail-compact' in src
+    assert 'grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr)' in src
+    assert 'height:320px' in src
+    assert 'compact-grid-3' in src
+    assert 'compact-notes' in src
+    assert 'max-height:100px' in src
