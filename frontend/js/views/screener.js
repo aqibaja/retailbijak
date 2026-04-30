@@ -36,13 +36,18 @@ const renderRow = (r) => `
       </div>
       <div>
         <div style="font-size:15px; font-weight:600; color:var(--text-main);">${r.ticker}</div>
-        <div style="font-size:11px; color:#64748b;">${r.type || 'EQ'}</div>
+        <div style="font-size:11px; color:#64748b;">${r.name || r.type || 'EQ'}</div>
       </div>
     </div>
-    <div style="text-align:right;">
-      <div class="mono" style="font-size:15px; font-weight:600; color:var(--text-main);">${r.price.toLocaleString()}</div>
-      <div style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:13px; font-weight:600; background:${r.change >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color:${r.change >= 0 ? '#10b981' : '#ef4444'}; margin-top:4px;">
-        ${r.change >= 0 ? '+' : ''}${r.change.toFixed(2)}%
+    <div style="text-align:right; max-width:240px;">
+      <div class="mono" style="font-size:15px; font-weight:600; color:var(--text-main);">${Number(r.price || 0).toLocaleString('id-ID')}</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${r.reason || 'OHLCV snapshot'}</div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:6px;">
+        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:none;">Entry ${Number(r.entry || r.price || 0).toLocaleString('id-ID')}</span>
+        ${r.target ? `<span class="badge" style="background:rgba(99,102,241,0.12); color:#818cf8; border:none;">Target ${Number(r.target).toLocaleString('id-ID')}</span>` : ''}
+        ${r.stop_loss ? `<span class="badge" style="background:rgba(239,68,68,0.12); color:#f87171; border:none;">SL ${Number(r.stop_loss).toLocaleString('id-ID')}</span>` : ''}
+        ${r.volume_spike != null ? `<span class="badge" style="background:rgba(14,165,233,0.12); color:#38bdf8; border:none;">Vol ${Number(r.volume_spike).toFixed(2)}x</span>` : ''}
+        ${r.magic_line != null ? `<span class="badge" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:none;">MA20 ${Number(r.magic_line).toLocaleString('id-ID')}</span>` : ''}
       </div>
     </div>
   </a>

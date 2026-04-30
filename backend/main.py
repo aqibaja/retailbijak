@@ -135,46 +135,58 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
         tickers = get_all_tickers()
         total = len(tickers)
         start_time = time.time()
-
-        # Start event
-        yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
+        yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': rule or 'SwingAQ', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
 
         signals_found = 0
         total_scanned = 0
+        total_skipped = 0
 
         for i, ticker in enumerate(tickers):
             total_scanned += 1
+            yield f"data: {json.dumps({'type': 'progress', 'current': i + 1, 'total': total, 'ticker': ticker, 'percent': round((i + 1) / total * 100, 2), 'rule': rule or 'SwingAQ'})}\n\n"
 
-            # Progress event
-            yield f"data: {json.dumps({'type': 'progress', 'current': i + 1, 'total': total, 'ticker': ticker, 'percent': round((i + 1) / total * 100, 2)})}\n\n"
+            base = ticker.replace('.JK', '')
+            latest_ohlcv = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == base).order_by(OHLCVDaily.date.desc()).limit(25).all()
+            if not latest_ohlcv:
+                total_skipped += 1
+                await asyncio.sleep(0.001)
+                continue
 
-            # Fetch latest signal from DB
-            signal = db.query(Signal).filter(
-                Signal.ticker == ticker,
-                Signal.timeframe == timeframe
-            ).order_by(Signal.signal_date.desc()).first()
+            latest = latest_ohlcv[0]
+            closes = [float(r.close or 0) for r in latest_ohlcv if r.close is not None]
+            volumes = [float(r.volume or 0) for r in latest_ohlcv if r.volume is not None]
+            close = float(latest.close or 0)
+            low = float(latest.low or close or 0)
+            ma20 = sum(closes[:min(len(closes), 20)]) / min(len(closes), 20) if closes else close
+            vol_ma20 = sum(volumes[:min(len(volumes), 20)]) / min(len(volumes), 20) if volumes else 0
+            volume = int(latest.volume or 0)
+            volume_spike = (volume / vol_ma20) if vol_ma20 else 0
 
-            if signal and signal.signal_type == 'buy':
-                signals_found += 1
-                result = {
-                    "ticker": ticker,
-                    "name": get_ticker_display(ticker),
-                    "timeframe": timeframe,
-                    "date": signal.signal_date.strftime('%Y-%m-%d %H:%M'),
-                    "close": signal.close,
-                    "magic_line": signal.magic_line,
-                    "cci": signal.cci,
-                    "stop_loss": signal.stop_loss,
-                    "sl_pct": signal.sl_pct
-                }
-                yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"
-
-            # Small delay to yield control and allow SSE to flush
+            result = {
+                'ticker': ticker,
+                'name': get_ticker_display(ticker),
+                'timeframe': timeframe,
+                'rule': rule or 'SwingAQ',
+                'reason': 'OHLCV snapshot',
+                'date': latest.date.strftime('%Y-%m-%d %H:%M'),
+                'close': round(close, 4),
+                'entry': round(close, 4),
+                'target': round(close * 1.02, 4) if close else None,
+                'rr': 1.0,
+                'magic_line': round(ma20, 4),
+                'cci': None,
+                'stop_loss': round(low * 0.98, 4) if low else None,
+                'sl_pct': 2.0,
+                'volume': volume,
+                'volume_spike': round(volume_spike, 2),
+                'ma20': round(ma20, 4),
+            }
+            signals_found += 1
+            yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"
             await asyncio.sleep(0.001)
 
         duration = round(time.time() - start_time, 1)
-        yield f"data: {json.dumps({'type': 'done', 'total_signals': signals_found, 'total_scanned': total_scanned, 'total_skipped': 0, 'duration_seconds': duration, 'timeframe': timeframe})}\n\n"
-
+        yield f"data: {json.dumps({'type': 'done', 'total_signals': signals_found, 'total_scanned': total_scanned, 'total_skipped': total_skipped, 'duration_seconds': duration, 'timeframe': timeframe, 'rule': rule or 'SwingAQ'})}\n\n"
     finally:
         db.close()
 

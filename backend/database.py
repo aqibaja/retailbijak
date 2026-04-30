@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./swingaq.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:////opt/swingaq/backend/swingaq.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
