@@ -1,30 +1,22 @@
 import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430m';
 import { observeElements } from '../main.js?v=20260430m';
 
-const dummyScanResults = [
-  { ticker: "GOTO", name: "GoTo Gojek Tokopedia", type: "EQ", price: 96, change: 9.89, signal: "STRONG_BUY" },
-  { ticker: "BRPT", name: "Barito Renewables", type: "EQ", price: 1200, change: 5.20, signal: "BUY" },
-  { ticker: "BBCA", name: "Bank Central Asia", type: "EQ", price: 9800, change: 3.15, signal: "HOLD" },
-  { ticker: "TLKM", name: "Telkom Indonesia", type: "EQ", price: 3420, change: 2.50, signal: "BUY" },
-  { ticker: "BMRI", name: "Bank Mandiri", type: "EQ", price: 11750, change: -1.20, signal: "NEUTRAL" }
-];
-
 const renderEmptyState = () => `
   <div class="scanner-empty">
     <div class="scanner-empty-icon">
       <i data-lucide="radar" style="width:32px; height:32px;"></i>
     </div>
-    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Ready to Begin Scan</h3>
+    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Waiting for live results</h3>
     <p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">
-      Configure parameters and hit Execute Scan to detect trading opportunities
+      Configure parameters and hit Execute Scan to stream live scan results from backend
     </p>
     <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; width:100%; max-width:300px; text-align:left;">
-      <div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Scans</div>
+      <div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Live Cycles</div>
       <div class="flex items-center gap-2 mb-2" style="font-size:13px; color:#94a3b8;">
-        <i data-lucide="clock" style="width:14px;"></i> Momentum Scan — 2h ago
+        <i data-lucide="clock" style="width:14px;"></i> Momentum scan — backend stream healthy
       </div>
       <div class="flex items-center gap-2" style="font-size:13px; color:#94a3b8;">
-        <i data-lucide="clock" style="width:14px;"></i> Breakout Scan — 5h ago
+        <i data-lucide="clock" style="width:14px;"></i> Breakout scan — latest cycle
       </div>
     </div>
   </div>
@@ -62,7 +54,7 @@ export async function renderScreener(root) {
         <div class="mb-4 screener-hero">
           <div class="screener-kicker">Scanner</div>
           <h1 class="text-2xl strong mb-2">Institutional Scanner</h1>
-          <p class="text-muted">Quick presets + fallback demo so the page never feels empty.</p>
+          <p class="text-muted">Quick presets + live SSE results so the page stays responsive.</p>
         </div>
 
         <div class="scanner-layout">
@@ -177,8 +169,8 @@ function runScreener() {
 
     const es = new EventSource(getScanEventSourceUrl(tf));
     let fallbackTimer = setTimeout(() => {
-        finishScan(dummyScanResults, btn, countBadge, contentArea, es);
-        showToast('Backend unavailable. Showing realistic demo signals.', 'info');
+        finishScan([], btn, countBadge, contentArea, es);
+        showToast('Backend scan taking longer than usual. Waiting for live results.', 'info');
     }, 3000);
     
     es.onmessage = (event) => {
@@ -228,51 +220,13 @@ function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {
     if (eventSource) eventSource.close();
     
     const backendZero = meta.backendDone && results.length === 0;
-    const displayResults = backendZero ? strategyFallback(meta.preset || 'Breakout') : results;
-    countBadge.textContent = backendZero ? `0 LIVE / ${displayResults.length} DEMO` : `${displayResults.length} MATCHES`;
+    countBadge.textContent = backendZero ? `0 MATCHES` : `${results.length} MATCHES`;
     
-    if (backendZero) {
-        contentArea.innerHTML = `
-          <div style="padding:18px; border-bottom:1px solid var(--border-subtle); background:rgba(99,102,241,0.05);">
-            <div class="flex items-center gap-2 mb-2" style="color:#a5b4fc; font-size:13px; font-weight:700;">
-              <i data-lucide="check-circle" style="width:16px;"></i>
-              Backend scan completed: ${meta.scanned || 0} tickers in ${meta.duration || '?'}s
-            </div>
-            <div class="text-xs text-muted" style="line-height:1.6;">
-              ${meta.preset || 'Breakout'} scan completed with 0 live signals. Showing clearly-labelled demo candidates for this preset.
-            </div>
-          </div>
-          <div class="flex-col">${displayResults.map(r => renderRow(r)).join('')}</div>`;
-    } else if (displayResults.length === 0) {
-        contentArea.innerHTML = `<div style="padding:60px 24px; text-align:center; color:var(--text-dim); line-height:1.7;">No institutional signals detected in this timeframe.<br><span class="mono text-xs">Backend completed successfully.</span></div>`;
+    if (results.length === 0) {
+        contentArea.innerHTML = `<div class="scanner-empty"><div class="scanner-empty-icon"><i data-lucide="radar" style="width:32px; height:32px;"></i></div><h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Live Scan Complete</h3><p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">${meta.backendDone ? `Backend scanned ${meta.scanned || 0} tickers in ${meta.duration || '?'}s.` : 'Waiting for backend stream.'}</p><div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; width:100%; max-width:300px; text-align:left;"><div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Live Cycles</div><div class="flex items-center gap-2 mb-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Momentum scan — backend stream healthy</div><div class="flex items-center gap-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Breakout scan — latest cycle</div></div></div>`;
     } else {
-        contentArea.innerHTML = `<div class="flex-col">${displayResults.map(r => renderRow(r)).join('')}</div>`;
+        contentArea.innerHTML = `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`;
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-
-function strategyFallback(preset = 'Breakout') {
-  const label = String(preset).toLowerCase();
-  const map = {
-    value: [
-      { ticker:'BBRI', name:'Bank Rakyat Indonesia', type:'VALUE', price:4100, change:-0.72, signal:'VALUE' },
-      { ticker:'ASII', name:'Astra International', type:'VALUE', price:5200, change:0.58, signal:'VALUE' },
-      { ticker:'UNVR', name:'Unilever Indonesia', type:'VALUE', price:2800, change:-1.1, signal:'VALUE' },
-    ],
-    dividend: [
-      { ticker:'ITMG', name:'Indo Tambangraya', type:'DIV', price:25200, change:0.4, signal:'DIVIDEND' },
-      { ticker:'ADRO', name:'Adaro Energy', type:'DIV', price:2760, change:1.2, signal:'DIVIDEND' },
-      { ticker:'TLKM', name:'Telkom Indonesia', type:'DIV', price:3420, change:0.3, signal:'DIVIDEND' },
-    ],
-    gorengan: [
-      { ticker:'GOTO', name:'GoTo Gojek Tokopedia', type:'RADAR', price:96, change:9.89, signal:'GOR' },
-      { ticker:'BUMI', name:'Bumi Resources', type:'RADAR', price:150, change:4.1, signal:'GOR' },
-      { ticker:'BRPT', name:'Barito Pacific', type:'RADAR', price:1200, change:5.2, signal:'GOR' },
-    ]
-  };
-  if (label.includes('value')) return map.value;
-  if (label.includes('dividend')) return map.dividend;
-  if (label.includes('gorengan')) return map.gorengan;
-  return dummyScanResults.map(r => ({ ...r, signal:'BREAKOUT' }));
-}

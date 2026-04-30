@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCK_DETAIL = ROOT / "frontend" / "js" / "views" / "stock_detail.js"
+SCREENER = ROOT / "frontend" / "js" / "views" / "screener.js"
 
 
 def test_stock_detail_removes_one_day_chart_range():
@@ -125,3 +126,14 @@ def test_stock_detail_chart_spacing_puts_pills_and_decision_panel_farther_apart(
     assert 'levelMin' not in src
     assert 'levelMax' not in src
     assert 'line(' not in src
+
+def test_screener_uses_real_data_terminology_not_demo_only_feel():
+    src = Path(SCREENER).read_text()
+    assert 'Institutional Scanner' in src
+    assert 'Quick presets' in src
+    assert '0 LIVE /' not in src
+    assert 'Showing clearly-labelled demo candidates' not in src
+    assert 'Ready to Begin Scan' not in src
+    assert 'Live Scan Complete' in src
+    assert 'Backend scan completed' in src or 'Waiting for backend stream' in src
+    assert 'demo candidates' not in src
