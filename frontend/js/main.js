@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260430h';
-import { fetchMarketSummary } from './api.js?v=20260430h';
-import { initTheme } from './theme.js?v=20260430h';
+import { handleRoute } from './router.js?v=20260430i';
+import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260430i';
+import { initTheme } from './theme.js?v=20260430i';
 
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {
@@ -74,9 +74,35 @@ function setupSearchOverlay() {
         if (e.target === overlay) toggle(false);
     });
 
+    const suggestions = document.getElementById('search-suggestions');
+    let searchTimer = null;
+    const renderSuggestions = (items = []) => {
+        if (!suggestions) return;
+        suggestions.innerHTML = items.map(item => `
+          <a href="#stock/${item.ticker}" class="flex justify-between items-center p-3 hover-bg search-suggestion-item" style="border-radius:8px; transition:background 0.2s;">
+            <div class="flex items-center gap-3">
+              <span class="badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">EQ</span>
+              <span class="mono strong text-main" style="font-size:15px;">${item.ticker}</span>
+              <span class="text-sm text-muted">${item.name || item.sector || 'IDX Equity'}</span>
+            </div>
+            <span class="text-xs text-dim">${item.sector || item.source || ''}</span>
+          </a>`).join('') || '<div class="text-sm text-muted p-3">Tidak ada ticker cocok.</div>';
+        suggestions.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)));
+    };
+    const refreshSuggestions = async () => {
+        const q = input.value.trim();
+        const res = await searchStocks(q, 8);
+        renderSuggestions(res?.data || []);
+    };
+    input.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(refreshSuggestions, 180);
+    });
+    input.addEventListener('focus', refreshSuggestions);
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && input.value.trim()) {
-            window.location.hash = '#stock/' + input.value.trim().toUpperCase();
+            const first = suggestions?.querySelector('a')?.getAttribute('href');
+            window.location.hash = first || ('#stock/' + input.value.trim().toUpperCase());
             input.value = '';
             toggle(false);
         }
@@ -152,40 +178,27 @@ async function refreshTopbarMarket() {
 }
 
 // Running Ticker Setup
-function setupRunningTicker() {
+async function setupRunningTicker() {
     const tickerContainer = document.getElementById('running-ticker');
     if (!tickerContainer) return;
-
-    // Realistic dummy data for the ticker to show off the UI
-    const mockData = [
-        { t: "GOTO", p: "96", c: "+9.89", up: true },
-        { t: "BRPT", p: "1,200", c: "+5.20", up: true },
-        { t: "BBCA", p: "9,800", c: "+3.15", up: true },
-        { t: "BREN", p: "11,200", c: "+1.50", up: true },
-        { t: "AMMN", p: "8,950", c: "-2.00", up: false },
-        { t: "TLKM", p: "3,420", c: "-1.50", up: false },
-        { t: "BMRI", p: "7,000", c: "+0.50", up: true },
-        { t: "ASII", p: "5,200", c: "+1.20", up: true },
-        { t: "UNVR", p: "2,800", c: "-0.80", up: false },
-        { t: "BUMI", p: "150", c: "+4.10", up: true }
-    ];
-
-    // Double the array to allow for infinite smooth scrolling
-    const tickerItems = [...mockData, ...mockData];
-
-    tickerContainer.innerHTML = tickerItems.map(item => `
-        <a href="#stock/${item.t}" class="tape-card" style="text-decoration:none;">
+    const res = await fetchTopMovers(10);
+    const rows = Array.isArray(res?.data) && res.data.length ? res.data : [];
+    const tickerItems = [...rows, ...rows];
+    tickerContainer.innerHTML = tickerItems.map(item => {
+        const change = Number(item.change_pct ?? item.change ?? 0);
+        const price = item.price == null ? '—' : Number(item.price).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+        return `
+        <a href="#stock/${item.ticker}" class="tape-card" style="text-decoration:none;">
             <div class="flex-col">
-                <div class="tape-pair">${item.t}</div>
-                <div class="tape-price">${item.p}</div>
+                <div class="tape-pair">${item.ticker}</div>
+                <div class="tape-price">${price}</div>
             </div>
             <div class="flex-col items-end">
-                <div class="tape-chg ${item.up ? 'up' : 'down'}">${item.c}%</div>
+                <div class="tape-chg ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
             </div>
-        </a>
-    `).join('');
+        </a>`;
+    }).join('');
 }
-
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();

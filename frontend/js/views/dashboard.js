@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430h';
-import { observeElements, animateValue } from '../main.js?v=20260430h';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers } from '../api.js?v=20260430i';
+import { observeElements, animateValue } from '../main.js?v=20260430i';
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -39,7 +39,7 @@ export async function renderDashboard(root) {
         <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Intraday Chart</h3><p class="text-xs text-dim">Fallback chart aktif bila data live kosong</p></div><div class="dashboard-chip-row"><button class="btn btn-primary btn-mini">1D</button><button class="btn btn-mini">1W</button><button class="btn btn-mini">1M</button></div></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
-      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2">${MOVERS.map(row).join('')}</div></div>
+      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2">Loading movers...</div></div>
     </div>
 
     <div class="dash-bottom-grid">
@@ -50,7 +50,7 @@ export async function renderDashboard(root) {
   </section>`;
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-  await Promise.all([loadMarketSummary(), loadNews(), loadIntel()]);
+  await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers()]);
   initChart();
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }
@@ -58,8 +58,8 @@ export async function renderDashboard(root) {
 async function loadMarketSummary(){
   const summary = await fetchMarketSummary();
   const isLive = summary && summary.status !== 'no_data' && summary.value;
-  document.getElementById('market-fold-status').textContent = isLive ? 'LIVE DATA' : 'DEMO SNAPSHOT';
-  document.getElementById('market-fold-badge').textContent = isLive ? 'LIVE' : 'DEMO';
+  document.getElementById('market-fold-status').textContent = isLive ? 'LIVE DATA' : 'IDX REFERENCE';
+  document.getElementById('market-fold-badge').textContent = isLive ? 'LIVE' : 'REF';
   const v = summary?.value ?? 7080.63, c = Number(summary?.change_pct ?? 0.12);
   document.getElementById('ihsg-value').textContent = nf(v, 2);
   const ch = document.getElementById('ihsg-change'); ch.textContent = pf(c); ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
@@ -78,11 +78,23 @@ async function loadIntel(){
     `Plan: prioritaskan entry bertahap, validasi volume, hindari chasing saat candle melebar.`
   ].map(x=>`<div class="intel-item">${x}</div>`).join('');
 }
+
+async function loadMovers(){
+  const res = await fetchTopMovers(5);
+  const items = Array.isArray(res?.data) && res.data.length ? res.data : MOVERS;
+  document.getElementById('movers-list').innerHTML = items.slice(0,5).map(r => row({
+    ticker: r.ticker,
+    name: r.name || r.sector || 'IDX Equity',
+    price: r.price ?? 0,
+    change: r.change_pct ?? r.change ?? 0,
+  })).join('');
+}
+
 async function loadNews(){
   const res = await fetchNews(3); const items = (Array.isArray(res?.data)&&res.data.length?res.data:FALLBACK_NEWS);
-  document.getElementById('news-container').innerHTML = items.slice(0,3).map(n=>`<a href="${n.link||'#news'}" class="intel-item"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b></a>`).join('');
+  document.getElementById('news-container').innerHTML = items.slice(0,3).map(n=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,90) : 'Buka Market Intelligence'}</small></a>`).join('');
 }
-const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row"><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div><div class="text-right"><b class="mono">${nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
+const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row"><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div><div class="text-right"><b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
 function initChart(){
   const ctx = document.getElementById('ihsgMainChart'); if(!ctx || typeof Chart==='undefined') return;
   const g = ctx.getContext('2d').createLinearGradient(0,0,0,320); g.addColorStop(0,'rgba(16,185,129,.36)'); g.addColorStop(1,'rgba(16,185,129,0)');

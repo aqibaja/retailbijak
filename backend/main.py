@@ -228,6 +228,85 @@ def _fallback_row_for_ticker(ticker: str, db: Session) -> dict:
     }
 
 
+
+COMPANY_NAMES = {
+    "GOTO": "GoTo Gojek Tokopedia Tbk.", "BBCA": "Bank Central Asia Tbk.", "BMRI": "Bank Mandiri Tbk.",
+    "BBRI": "Bank Rakyat Indonesia Tbk.", "TLKM": "Telkom Indonesia Tbk.", "ASII": "Astra International Tbk.",
+    "BRPT": "Barito Pacific Tbk.", "ADRO": "Adaro Energy Indonesia Tbk.", "ANTM": "Aneka Tambang Tbk.", "UNVR": "Unilever Indonesia Tbk.",
+    "AMMN": "Amman Mineral Internasional Tbk.", "BREN": "Barito Renewables Energy Tbk.", "BUMI": "Bumi Resources Tbk.",
+}
+SECTOR_HINTS = {
+    "BBCA":"Financials", "BMRI":"Financials", "BBRI":"Financials", "TLKM":"Infrastructure", "GOTO":"Technology",
+    "ASII":"Industrials", "BRPT":"Basic Materials", "ADRO":"Energy", "ANTM":"Basic Materials", "UNVR":"Consumer Non-Cyclicals",
+    "AMMN":"Basic Materials", "BREN":"Energy", "BUMI":"Energy",
+}
+
+def _display_ticker(t: str) -> str:
+    return _ticker_base(t)
+
+def _company_name(t: str) -> str:
+    base = _display_ticker(t)
+    return COMPANY_NAMES.get(base, get_ticker_display(base))
+
+def _stock_row_from_static(t: str, i: int = 0) -> dict:
+    base = _display_ticker(t)
+    # deterministic, clearly data-universe derived fallback when price DB is empty
+    return {"ticker": base, "name": _company_name(base), "sector": SECTOR_HINTS.get(base, "IDX Equity"), "price": None, "change_pct": None, "rank": i + 1}
+
+@app.get("/api/stocks/search")
+def search_stocks(q: str = "", limit: int = 10, db: Session = Depends(get_db)):
+    query = q.strip().upper()
+    rows = db.query(Stock).limit(1000).all()
+    data = []
+    if rows:
+        for row in rows:
+            hay = f"{row.ticker} {row.name or ''} {row.sector or ''}".upper()
+            if not query or query in hay:
+                data.append({"ticker": _display_ticker(row.ticker), "name": row.name or _company_name(row.ticker), "sector": row.sector, "source": "db"})
+    if not data:
+        for i, ticker in enumerate(get_all_tickers()):
+            base = _display_ticker(ticker)
+            hay = f"{base} {_company_name(base)} {SECTOR_HINTS.get(base,'')}".upper()
+            if not query or query in hay:
+                item = _stock_row_from_static(base, i)
+                item["source"] = "idx_universe"
+                data.append(item)
+    return {"count": len(data[:limit]), "data": data[:limit], "source": "db" if rows else "idx_universe"}
+
+@app.get("/api/top-movers")
+def top_movers(limit: int = 10, db: Session = Depends(get_db)):
+    latest = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
+    movers = []
+    if latest:
+        latest_date = latest.date
+        rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).limit(500).all()
+        for row in rows:
+            prev = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == row.ticker, OHLCVDaily.date < latest_date).order_by(OHLCVDaily.date.desc()).first()
+            chg = ((row.close - prev.close) / prev.close * 100) if prev and prev.close else 0
+            stock = db.query(Stock).filter(Stock.ticker == _display_ticker(row.ticker)).first()
+            movers.append({"ticker": _display_ticker(row.ticker), "name": stock.name if stock and stock.name else _company_name(row.ticker), "price": row.close, "change_pct": round(chg, 2), "volume": row.volume, "source": "db"})
+        movers.sort(key=lambda r: abs(r.get("change_pct") or 0), reverse=True)
+    if not movers:
+        preferred = ["GOTO", "BRPT", "BBCA", "BMRI", "TLKM", "AMMN", "BREN", "ASII", "ANTM", "ADRO"]
+        try:
+            import yfinance as yf
+            data = yf.download(" ".join([f"{t}.JK" for t in preferred]), period="5d", interval="1d", group_by="ticker", auto_adjust=True, progress=False, threads=False)
+            for i, t in enumerate(preferred):
+                try:
+                    frame = data[f"{t}.JK"].dropna()
+                    last = frame.iloc[-1]
+                    prev = frame.iloc[-2] if len(frame) > 1 else last
+                    chg = ((float(last["Close"]) - float(prev["Close"])) / float(prev["Close"]) * 100) if float(prev["Close"]) else 0
+                    movers.append({**_stock_row_from_static(t, i), "price": float(last["Close"]), "change_pct": round(chg, 2), "volume": int(last.get("Volume", 0) or 0), "source": "yfinance"})
+                except Exception:
+                    continue
+        except Exception:
+            movers = []
+    if not movers:
+        preferred = ["GOTO", "BRPT", "BBCA", "BMRI", "TLKM", "AMMN", "BREN", "ASII", "ANTM", "ADRO"]
+        movers = [{**_stock_row_from_static(t, i), "source": "idx_universe"} for i, t in enumerate(preferred)]
+    return {"count": len(movers[:limit]), "data": movers[:limit], "source": movers[0].get("source") if movers else "none"}
+
 @app.get("/api/stocks/{ticker}")
 def get_stock(ticker: str, db: Session = Depends(get_db)):
     base = _ticker_base(ticker)
@@ -265,22 +344,33 @@ def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
 
 @app.get("/api/news")
 def get_news(db: Session = Depends(get_db), limit: int = 20):
-    """API endpoint to get latest market news"""
-    from database import News
-    news = db.query(News).order_by(News.published_at.desc()).limit(limit).all()
-    return {
-        "count": len(news),
-        "data": [
-            {
-                "title": n.title,
-                "link": n.link,
-                "published_at": n.published_at.isoformat() if n.published_at else None,
-                "source": n.source,
-                "summary": n.summary
-            } for n in news
-        ]
-    }
+    """Get latest market news from DB; opportunistically refresh RSS if DB is empty."""
+    try:
+        from database import News
+    except ModuleNotFoundError:
+        from backend.database import News
 
+    news = db.query(News).order_by(News.published_at.desc()).limit(limit).all()
+    if not news:
+        try:
+            try:
+                from updaters.news_updater import update_news
+            except ModuleNotFoundError:
+                from backend.updaters.news_updater import update_news
+            update_news()
+            news = db.query(News).order_by(News.published_at.desc()).limit(limit).all()
+        except Exception:
+            news = []
+
+    fallback = [
+        {"title": "IHSG dan saham big cap jadi fokus investor hari ini", "link": "#market", "published_at": datetime.utcnow().isoformat(), "source": "RetailBijak", "summary": "Market brief internal berbasis universe IDX."},
+        {"title": "Perbankan, energi, dan teknologi masuk radar rotasi sektor", "link": "#screener", "published_at": datetime.utcnow().isoformat(), "source": "RetailBijak", "summary": "Gunakan scanner untuk validasi momentum dan risiko."},
+        {"title": "Disiplin entry: tunggu volume dan konfirmasi trend sebelum agresif", "link": "#dashboard", "published_at": datetime.utcnow().isoformat(), "source": "RetailBijak", "summary": "Risk note untuk retail trader."},
+    ]
+    data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary} for n in news]
+    if not data:
+        data = fallback[:limit]
+    return {"count": len(data), "data": data, "source": "db" if news else "fallback"}
 
 @app.get("/api/stocks/{ticker}/fundamental")
 def get_fundamental(ticker: str, db: Session = Depends(get_db)):

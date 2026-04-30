@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260430e';
-import { observeElements } from '../main.js?v=20260430e';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260430i';
+import { observeElements } from '../main.js?v=20260430i';
 
 export async function renderPortfolio(root, activeTab) {
     const isPort = activeTab === 'portfolio';

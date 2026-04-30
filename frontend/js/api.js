@@ -46,6 +46,15 @@ export async function fetchStockDetail(ticker) {
     return apiFetch(`/stocks/${ticker}`);
 }
 
+export async function searchStocks(query = '', limit = 8) {
+    const q = encodeURIComponent(query || '');
+    return apiFetch(`/stocks/search?q=${q}&limit=${limit}`) || { count: 0, data: [] };
+}
+
+export async function fetchTopMovers(limit = 10) {
+    return apiFetch(`/top-movers?limit=${limit}`) || { count: 0, data: [] };
+}
+
 export async function fetchScan(timeframe = '1d') {
     return apiFetch(`/scan?timeframe=${timeframe}`);
 }
@@ -127,4 +136,4 @@ export function showToast(message, type = 'info', duration = 4000) {
     }, duration);
 }
 
-/* cache-bust: 20260430b */
+/* cache-bust: 20260430i */
