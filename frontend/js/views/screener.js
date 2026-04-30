@@ -53,8 +53,10 @@ export async function renderScreener(root) {
       <section class="stagger-reveal">
         <div class="mb-4 screener-hero">
           <div class="screener-kicker">Scanner</div>
+          <div class="scanner-brand-pill">SwingAQ Scanner</div>
           <h1 class="text-2xl strong mb-2">Institutional Scanner</h1>
           <p class="text-muted">Quick presets + live SSE results so the page stays responsive.</p>
+          <p class="scanner-rule-note">Active mode: SwingAQ CCI + Magic Line</p>
         </div>
 
         <div class="scanner-layout">
@@ -63,7 +65,7 @@ export async function renderScreener(root) {
             <div class="scanner-header-text">SCAN PARAMETERS</div>
             
             <div class="scanner-micro-grid">
-              <button class="scanner-preset active" data-preset="Breakout" data-strategy="retailbijak Momentum">Breakout</button>
+              <button class="scanner-preset active" data-preset="Breakout" data-strategy="SwingAQ CCI + Magic Line">Breakout</button>
               <button class="scanner-preset" data-preset="Value" data-strategy="Value Reversal">Value</button>
               <button class="scanner-preset" data-preset="Dividend" data-strategy="Dividend Quality">Dividend</button>
               <button class="scanner-preset" data-preset="Gorengan" data-strategy="Gorengan Radar">Gorengan</button>
@@ -73,7 +75,7 @@ export async function renderScreener(root) {
               <label class="scanner-label">ALGORITHM</label>
               <div style="position:relative;">
                 <select id="screener-strategy" class="scanner-select">
-                  <option>retailbijak Momentum</option>
+                  <option>SwingAQ CCI + Magic Line</option>
                   <option>Value Reversal</option>
                   <option>Dividend Quality</option>
                   <option>Gorengan Radar</option>
@@ -96,7 +98,7 @@ export async function renderScreener(root) {
             <button id="btn-run-screener" class="scanner-btn-primary">
               <i data-lucide="search" style="width:16px;"></i> EXECUTE SCAN
             </button>
-            <div class="scanner-hint">MVP uses daily rules + local fallback data when backend is cold.</div>
+            <div class="scanner-hint">SwingAQ rule set for Breakout / Value / Dividend / Gorengan runs on real backend scan data.</div>
 
             <div id="screener-progress" style="display:none; margin-top:24px; padding:16px; background:var(--bg-elevated); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
               <div class="flex justify-between items-center mb-2">
@@ -208,7 +210,7 @@ function runScreener() {
         clearTimeout(fallbackTimer);
         setTimeout(() => {
            finishScan(dummyScanResults, btn, countBadge, contentArea, es);
-           showToast('Backend unavailable. Showing realistic demo signals.', 'info');
+           showToast('Backend unavailable. Waiting for live scan results.', 'info');
         }, 1500);
     };
 }
