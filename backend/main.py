@@ -470,6 +470,43 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
     }
 
 
+@app.get("/api/ihsg-chart")
+def get_ihsg_chart(period: str = "1M", db: Session = Depends(get_db)):
+    """Return IHSG chart time-series from locally stored IDX data."""
+    valid_periods = ["1D", "1W", "1M", "1Q", "1Y"]
+    if period not in valid_periods:
+        period = "1M"
+    key = f"idx_ihsg_chart_{period}"
+    setting = db.query(UserSetting).filter(UserSetting.key == key).first()
+    if setting and setting.value:
+        try:
+            data = json.loads(setting.value)
+            chart_data = data.get("ChartData", [])
+            # Convert epoch ms to ISO dates and extract close prices
+            points = []
+            for pt in chart_data:
+                ts = pt.get("Date", 0)
+                if ts:
+                    dt = datetime.fromtimestamp(ts / 1000)
+                    points.append({
+                        "date": dt.strftime("%Y-%m-%d"),
+                        "value": pt.get("Close"),
+                    })
+            return {
+                "period": period,
+                "index_code": data.get("IndexCode", "COMPOSITE"),
+                "open_price": data.get("OpenPrice"),
+                "max_price": data.get("MaxPrice"),
+                "min_price": data.get("MinPrice"),
+                "count": len(points),
+                "data": points,
+                "source": "idx_cached",
+            }
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return {"period": period, "count": 0, "data": [], "source": "idx_cached", "message": "No cached data. Run daily sync first."}
+
+
 @app.get("/api/market-summary")
 def get_market_summary(db: Session = Depends(get_db)):
     """Return market summary strictly from local DB (no live provider calls)."""

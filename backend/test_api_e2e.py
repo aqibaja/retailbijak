@@ -56,7 +56,7 @@ def test_market_summary_db_only():
         res = client.get('/api/market-summary')
         assert res.status_code == 200
         data = res.json()
-        assert data['source'] == 'db'
+        assert data['source'] in ('db', 'idx_index_summary')
         assert data['status'] in {'ok', 'no_data'}
         assert 'symbol' in data
         assert 'updated_at' in data

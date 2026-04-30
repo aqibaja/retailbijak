@@ -63,7 +63,7 @@ class EmptyThenDataClient:
 
 
 def test_sync_idx_stock_summary_bulk_upserts_stocks_and_ohlcv(isolated_db_session):
-    result = sync_idx_stock_summary(client=FakeClient(), target_date=date(2024, 2, 20))
+    result = sync_idx_stock_summary(client=FakeClient(), target_date=date(2024, 2, 20), multi_day=False)
 
     assert result["ok"] == 2
     assert result["failed"] == 0
@@ -84,7 +84,7 @@ def test_sync_idx_stock_summary_bulk_upserts_stocks_and_ohlcv(isolated_db_sessio
 def test_sync_idx_stock_summary_falls_back_to_previous_trading_day(isolated_db_session):
     client = EmptyThenDataClient()
 
-    result = sync_idx_stock_summary(client=client, target_date=date(2024, 2, 21), fallback_days=3)
+    result = sync_idx_stock_summary(client=client, target_date=date(2024, 2, 21), fallback_days=3, multi_day=False)
 
     assert result["ok"] == 1
     assert result["failed"] == 0

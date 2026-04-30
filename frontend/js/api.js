@@ -37,6 +37,10 @@ export async function fetchMarketSummary() {
     return apiFetch('/market-summary') || { status: 'no_data', symbol: 'IHSG', value: null, change_pct: null, open: null, high: null, low: null };
 }
 
+export async function fetchIhsgChart(period = '1M') {
+    return apiFetch(`/ihsg-chart?period=${period}`) || { count: 0, data: [] };
+}
+
 export async function fetchSectorSummary() {
     const data = await apiFetch('/sector-summary');
     return data || { count: 0, data: [] };
@@ -136,4 +140,4 @@ export function showToast(message, type = 'info', duration = 4000) {
     }, duration);
 }
 
-/* cache-bust: 20260430l */
+/* cache-bust: 20260430m */

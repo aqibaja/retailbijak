@@ -9,6 +9,12 @@ from urllib.parse import urljoin
 
 import requests
 
+try:
+    from curl_cffi.requests import Session as CurlSession
+    _HAS_CURL_CFFI = True
+except ImportError:
+    _HAS_CURL_CFFI = False
+
 
 IDX_WEBSITE_BASE_URL = "https://www.idx.co.id"
 
@@ -66,7 +72,7 @@ class IDXApiClient:
         self.timeout = timeout
         self.retries = retries
         self.backoff = backoff
-        self.session = session or requests.Session()
+        self.session = session or (CurlSession(impersonate="chrome") if _HAS_CURL_CFFI else requests.Session())
         self._session_ready = False
 
     def _full_url(self, path: str) -> str:
@@ -153,6 +159,27 @@ class IDXApiClient:
             return []
         data = resp.data.get("results")
         return data if isinstance(data, list) else []
+
+    def get_index_chart(self, index_code: str = "COMPOSITE", period: str = "1M") -> dict[str, Any]:
+        """Fetch IHSG/index chart time-series from IDX helper endpoint."""
+        resp = self.get_json(f"/primary/helper/GetIndexChart?indexCode={index_code}&period={period}")
+        if not resp.ok or not isinstance(resp.data, dict):
+            return {}
+        return resp.data
+
+    def get_stock_summary_multi_day(self, start_date: date, end_date: date, max_days: int = 35) -> dict[str, list[dict[str, Any]]]:
+        """Fetch stock summaries for a date range. Returns {date_str: [rows]}."""
+        from datetime import timedelta
+        result: dict[str, list[dict[str, Any]]] = {}
+        current = end_date
+        count = 0
+        while current >= start_date and count < max_days:
+            rows = self.get_stock_summary(current)
+            if rows:
+                result[current.isoformat()] = rows
+                count += 1
+            current -= timedelta(days=1)
+        return result
 
 
 _default_client: IDXApiClient | None = None

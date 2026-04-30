@@ -4,7 +4,6 @@ import json
 import logging
 from datetime import date, datetime, timedelta
 from typing import Any
-
 from sqlalchemy.dialects.sqlite import insert
 
 try:
@@ -174,9 +173,42 @@ def _candidate_dates(target_date: date, fallback_days: int) -> list[date]:
     return [target_date - timedelta(days=offset) for offset in range(max(fallback_days, 0) + 1)]
 
 
-def sync_idx_stock_summary(client=None, target_date: date | None = None, fallback_days: int = 7) -> dict:
+# ---------------------------------------------------------------------------
+# IHSG chart sync: fetches time-series from IDX GetIndexChart endpoint
+# ---------------------------------------------------------------------------
+def sync_idx_index_chart(client=None, periods: list[str] | None = None) -> dict:
+    """Fetch IHSG chart data for multiple periods and store in UserSetting."""
+    client = client or get_idx_client()
+    periods = periods or ["1M", "1Q", "1Y"]
+    stored = 0
+    db = SessionLocal()
+    try:
+        for period in periods:
+            try:
+                chart_data = client.get_index_chart("COMPOSITE", period)
+                if chart_data and chart_data.get("ChartData"):
+                    _store_setting(db, f"idx_ihsg_chart_{period}", json.dumps(chart_data))
+                    stored += 1
+            except Exception as exc:
+                logger.warning("IDX index chart fetch failed for %s: %s", period, exc)
+        db.commit()
+        return {"periods_stored": stored, "periods_requested": periods}
+    except Exception:
+        db.rollback()
+        logger.exception("IDX index chart sync failed")
+        raise
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# Multi-day stock summary sync: fetches 30 trading days of OHLCV
+# ---------------------------------------------------------------------------
+def sync_idx_stock_summary(client=None, target_date: date | None = None, fallback_days: int = 7, multi_day: bool = True) -> dict:
     client = client or get_idx_client()
     target_date = target_date or date.today()
+
+    # Always find the most recent trading day (single-day for index summary)
     rows: list[dict[str, Any]] = []
     data_date = target_date
     for candidate in _candidate_dates(target_date, fallback_days):
@@ -184,40 +216,67 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
         if rows:
             data_date = candidate
             break
+
     index_summary = None
     try:
         index_rows = client.get_index_summary(data_date) if hasattr(client, "get_index_summary") else []
         index_summary = _extract_index_summary(index_rows, data_date)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("IDX index summary fetch failed: %s", exc)
 
     db = SessionLocal()
     ok = 0
     failed = 0
+    total_days = 0
     try:
         if index_summary:
             _store_setting(db, "idx_market_summary", json.dumps(index_summary))
+
+        # Single day upsert (most recent)
         for row in rows:
             ticker = (row.get("StockCode") or "").upper().replace(".JK", "")
             if not ticker:
                 failed += 1
                 continue
-            _upsert_stock_snapshot(
-                db,
-                {
-                    "ticker": ticker,
-                    "name": row.get("StockName") or ticker,
-                    "sector": row.get("Sector"),
-                    "industry": row.get("Industry"),
-                    "market_cap": parse_idx_number(row.get("MarketCapital")),
-                },
-            )
+            _upsert_stock_snapshot(db, {
+                "ticker": ticker,
+                "name": row.get("StockName") or ticker,
+                "sector": row.get("Sector"),
+                "industry": row.get("Industry"),
+                "market_cap": parse_idx_number(row.get("MarketCapital")),
+            })
             _upsert_ohlcv(db, ticker, row, data_date)
             ok += 1
+        total_days = 1
+
+        # Multi-day backfill: loop through last 30 calendar days
+        if multi_day and ok > 0:
+            start_date = data_date - timedelta(days=35)
+            logger.info("Multi-day sync: fetching %s to %s", start_date, data_date)
+            multi = client.get_stock_summary_multi_day(start_date, data_date, max_days=30)
+            for day_str, day_rows in multi.items():
+                if day_str == data_date.isoformat():
+                    continue  # already synced above
+                day_date = date.fromisoformat(day_str)
+                for row in day_rows:
+                    ticker = (row.get("StockCode") or "").upper().replace(".JK", "")
+                    if not ticker:
+                        continue
+                    _upsert_stock_snapshot(db, {
+                        "ticker": ticker,
+                        "name": row.get("StockName") or ticker,
+                        "sector": row.get("Sector"),
+                        "industry": row.get("Industry"),
+                        "market_cap": parse_idx_number(row.get("MarketCapital")),
+                    })
+                    _upsert_ohlcv(db, ticker, row, day_date)
+                total_days += 1
+
         db.commit()
         return {
             "ok": ok,
             "failed": failed,
+            "total_days": total_days,
             "data_date": data_date.isoformat(),
             "target_date": target_date.isoformat(),
             "synced_at": datetime.utcnow().isoformat(timespec="seconds"),
@@ -243,30 +302,24 @@ def sync_idx_securities_and_fundamentals(client=None) -> dict:
             if not ticker:
                 failed += 1
                 continue
-            _upsert_stock_snapshot(
-                db,
-                {
-                    "ticker": ticker,
-                    "name": row.get("Name") or ticker,
-                    "sector": row.get("Sector"),
-                    "industry": row.get("SubSector") or row.get("Industry"),
-                    "market_cap": parse_idx_number(row.get("MarketCapital")),
-                },
-            )
+            _upsert_stock_snapshot(db, {
+                "ticker": ticker,
+                "name": row.get("Name") or ticker,
+                "sector": row.get("Sector"),
+                "industry": row.get("SubSector") or row.get("Industry"),
+                "market_cap": parse_idx_number(row.get("MarketCapital")),
+            })
             ok += 1
         for row in client.get_stock_screener():
             ticker = (row.get("stockCode") or row.get("Code") or "").upper().replace(".JK", "")
             if ticker:
-                _upsert_stock_snapshot(
-                    db,
-                    {
-                        "ticker": ticker,
-                        "name": row.get("companyName") or ticker,
-                        "sector": row.get("sector"),
-                        "industry": row.get("industry") or row.get("subIndustry"),
-                        "market_cap": parse_idx_number(row.get("marketCapital")),
-                    },
-                )
+                _upsert_stock_snapshot(db, {
+                    "ticker": ticker,
+                    "name": row.get("companyName") or ticker,
+                    "sector": row.get("sector"),
+                    "industry": row.get("industry") or row.get("subIndustry"),
+                    "market_cap": parse_idx_number(row.get("marketCapital")),
+                })
                 _upsert_fundamental_from_screener(db, row)
         db.commit()
         return {"ok": ok, "failed": failed, "synced_at": datetime.utcnow().isoformat(timespec="seconds")}
@@ -284,6 +337,8 @@ def run_idx_daily_sync(tickers: list[str] | None = None) -> dict:
     if tickers is None:
         summary = sync_idx_stock_summary()
         meta = sync_idx_securities_and_fundamentals()
+        # Also sync IHSG chart data for dashboard
+        chart = sync_idx_index_chart()
         return {
             "ok": summary["ok"],
             "failed": summary["failed"] + meta["failed"],
@@ -291,7 +346,9 @@ def run_idx_daily_sync(tickers: list[str] | None = None) -> dict:
             "source": "idx_website",
             "data_date": summary.get("data_date"),
             "target_date": summary.get("target_date"),
+            "total_days": summary.get("total_days", 1),
             "meta_ok": meta["ok"],
+            "chart_periods": chart.get("periods_stored", 0),
         }
 
     if not tickers:

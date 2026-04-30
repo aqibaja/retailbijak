@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers } from '../api.js?v=20260430l';
-import { observeElements, animateValue } from '../main.js?v=20260430l';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart } from '../api.js?v=20260430m';
+import { observeElements, animateValue } from '../main.js?v=20260430m';
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -29,14 +29,14 @@ export async function renderDashboard(root) {
       <div class="dash-quote-card">
         <div class="flex justify-between items-start mb-3"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div><div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
         <div class="text-xs text-dim uppercase strong">IHSG Composite</div>
-        <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">7.080,63</div><div class="mono strong text-up" id="ihsg-change">+0.12%</div></div>
-        <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">7.096</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">7.126</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">7.063</strong></div></div>
+        <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
+        <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">—</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
       </div>
     </div>
 
     <div class="dash-grid-pro">
       <div class="panel dash-chart-panel">
-        <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Intraday Chart</h3><p class="text-xs text-dim">Fallback chart aktif bila data live kosong</p></div><div class="dashboard-chip-row"><button class="btn btn-primary btn-mini ihsg-range" data-range="1D">1D</button><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-mini ihsg-range" data-range="1M">1M</button></div></div>
+        <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div><div class="dashboard-chip-row"><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button><button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button></div></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
       <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2">Loading movers...</div></div>
@@ -63,12 +63,12 @@ async function loadMarketSummary(){
   const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
   const dateEl = document.getElementById('market-data-date');
   if (dateEl) dateEl.textContent = dataDate ? `Data IDX tanggal ${dataDate} · auto-sync 08:00 WIB` : 'Data IDX belum tersedia · auto-sync 08:00 WIB';
-  const v = summary?.value ?? 7080.63, c = Number(summary?.change_pct ?? 0.12);
-  document.getElementById('ihsg-value').textContent = nf(v, 2);
-  const ch = document.getElementById('ihsg-change'); ch.textContent = pf(c); ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
-  document.getElementById('ihsg-open').textContent = nf(summary?.open ?? 7096.61);
-  document.getElementById('ihsg-high').textContent = nf(summary?.high ?? 7126.06);
-  document.getElementById('ihsg-low').textContent = nf(summary?.low ?? 7063.99);
+  const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
+  document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
+  const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? pf(c) : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
+  document.getElementById('ihsg-open').textContent = summary?.open != null ? nf(summary.open) : '—';
+  document.getElementById('ihsg-high').textContent = summary?.high != null ? nf(summary.high) : '—';
+  document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';
   return summary;
 }
 async function loadIntel(){
@@ -99,27 +99,77 @@ async function loadNews(){
   document.getElementById('news-container').innerHTML = items.slice(0,3).map(n=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,90) : 'Buka Market Intelligence'}</small></a>`).join('');
 }
 const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row"><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div><div class="text-right"><b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
+
 let ihsgChart;
-function buildIhsgSeries(base, range){
-  const points = range === '1M' ? 22 : range === '1W' ? 7 : 7;
-  const labels = range === '1D' ? ['09:00','10:00','11:00','13:00','14:00','15:00','16:00'] : Array.from({length:points},(_,i)=>`D-${points-1-i}`);
-  const amp = range === '1M' ? 0.018 : range === '1W' ? 0.01 : 0.004;
-  const data = labels.map((_,i)=> Number((base * (1 + Math.sin(i*1.4)*amp + (i-labels.length+1)*amp/labels.length)).toFixed(2)));
-  data[data.length-1] = Number(base.toFixed(2));
-  return { labels, data };
+const PERIOD_MAP = { '1W': '1W', '1M': '1M', '1Q': '1Q', '1Y': '1Y' };
+
+async function loadIhsgChartData(period = '1M') {
+  try {
+    const chartRes = await fetchIhsgChart(period);
+    if (chartRes && chartRes.data && chartRes.data.length > 0) {
+      return chartRes;
+    }
+  } catch (e) {
+    console.warn('IHSG chart fetch failed', e);
+  }
+  return null;
 }
-function initChart(summary){
-  const ctx = document.getElementById('ihsgMainChart'); if(!ctx || typeof Chart==='undefined') return;
-  const base = Number(summary?.value || 7080.63);
-  const render = (range='1D') => {
-    const g = ctx.getContext('2d').createLinearGradient(0,0,0,320); g.addColorStop(0,'rgba(16,185,129,.36)'); g.addColorStop(1,'rgba(16,185,129,0)');
-    const built = buildIhsgSeries(base, range);
+
+function initChart(summary) {
+  const ctx = document.getElementById('ihsgMainChart');
+  if (!ctx || typeof Chart === 'undefined') return;
+
+  const render = async (range = '1M') => {
+    const chartRes = await loadIhsgChartData(range);
+    let labels, data;
+
+    if (chartRes && chartRes.data.length > 0) {
+      // Use real IDX chart data
+      labels = chartRes.data.map(p => {
+        const d = new Date(p.date);
+        if (range === '1Q' || range === '1Y') {
+          return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
+        }
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      });
+      data = chartRes.data.map(p => p.value);
+      const sub = document.getElementById('ihsg-chart-subtitle');
+      if (sub) {
+        const first = chartRes.data[0]?.date || '';
+        const last = chartRes.data[chartRes.data.length - 1]?.date || '';
+        sub.textContent = `IDX ${chartRes.period} · ${chartRes.count} points · ${first} → ${last}`;
+      }
+    } else {
+      // Fallback: generate synthetic from current value
+      const base = Number(summary?.value || 7000);
+      const points = range === '1Q' ? 55 : range === '1W' ? 5 : 22;
+      labels = Array.from({ length: points }, (_, i) => `D-${points - 1 - i}`);
+      const amp = range === '1Q' ? 0.06 : range === '1W' ? 0.01 : 0.018;
+      data = labels.map((_, i) => Number((base * (1 + Math.sin(i * 1.4) * amp + (i - labels.length + 1) * amp / labels.length)).toFixed(2)));
+      data[data.length - 1] = Number(base.toFixed(2));
+      const sub = document.getElementById('ihsg-chart-subtitle');
+      if (sub) sub.textContent = 'Fallback synthetic — data IDX belum tersedia';
+    }
+
+    const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 320);
+    g.addColorStop(0, 'rgba(16,185,129,.36)');
+    g.addColorStop(1, 'rgba(16,185,129,0)');
     if (ihsgChart) ihsgChart.destroy();
-    ihsgChart = new Chart(ctx,{type:'line',data:{labels:built.labels,datasets:[{data:built.data,borderColor:'#10b981',backgroundColor:g,borderWidth:2,pointRadius:range==='1D'?0:2,fill:true,tension:.42}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>`IHSG ${nf(c.parsed.y,2)}`}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{position:'right',grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',callback:(v)=>nf(v,0)}}}}});
+    ihsgChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ data, borderColor: '#10b981', backgroundColor: g, borderWidth: 2, pointRadius: labels.length > 30 ? 0 : 2, fill: true, tension: .42 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `IHSG ${nf(c.parsed.y, 2)}` } } },
+        scales: { x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 10 } }, y: { position: 'right', grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', callback: (v) => nf(v, 0) } } }
+      }
+    });
   };
-  render('1D');
-  document.querySelectorAll('.ihsg-range').forEach(btn=>btn.addEventListener('click',()=>{
-    document.querySelectorAll('.ihsg-range').forEach(b=>b.classList.remove('btn-primary'));
+
+  render('1M');
+  document.querySelectorAll('.ihsg-range').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.ihsg-range').forEach(b => b.classList.remove('btn-primary'));
     btn.classList.add('btn-primary');
     render(btn.dataset.range);
   }));
