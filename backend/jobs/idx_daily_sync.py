@@ -5,10 +5,16 @@ from datetime import datetime
 
 from sqlalchemy.dialects.sqlite import insert
 
-from backend.database import SessionLocal, Stock
-from backend.services.idx_api_client import get_idx_client
-from backend.services.idx_normalizer import normalize_stock_payload
-from backend.stocks import get_all_tickers
+try:
+    from database import SessionLocal, Stock
+    from services.idx_api_client import get_idx_client
+    from services.idx_normalizer import normalize_stock_payload
+    from stocks import get_all_tickers
+except ModuleNotFoundError:
+    from backend.database import SessionLocal, Stock
+    from backend.services.idx_api_client import get_idx_client
+    from backend.services.idx_normalizer import normalize_stock_payload
+    from backend.stocks import get_all_tickers
 
 logger = logging.getLogger(__name__)
 

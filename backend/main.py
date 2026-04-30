@@ -288,22 +288,6 @@ def top_movers(limit: int = 10, db: Session = Depends(get_db)):
         movers.sort(key=lambda r: abs(r.get("change_pct") or 0), reverse=True)
     if not movers:
         preferred = ["GOTO", "BRPT", "BBCA", "BMRI", "TLKM", "AMMN", "BREN", "ASII", "ANTM", "ADRO"]
-        try:
-            import yfinance as yf
-            data = yf.download(" ".join([f"{t}.JK" for t in preferred]), period="5d", interval="1d", group_by="ticker", auto_adjust=True, progress=False, threads=False)
-            for i, t in enumerate(preferred):
-                try:
-                    frame = data[f"{t}.JK"].dropna()
-                    last = frame.iloc[-1]
-                    prev = frame.iloc[-2] if len(frame) > 1 else last
-                    chg = ((float(last["Close"]) - float(prev["Close"])) / float(prev["Close"]) * 100) if float(prev["Close"]) else 0
-                    movers.append({**_stock_row_from_static(t, i), "price": float(last["Close"]), "change_pct": round(chg, 2), "volume": int(last.get("Volume", 0) or 0), "source": "yfinance"})
-                except Exception:
-                    continue
-        except Exception:
-            movers = []
-    if not movers:
-        preferred = ["GOTO", "BRPT", "BBCA", "BMRI", "TLKM", "AMMN", "BREN", "ASII", "ANTM", "ADRO"]
         movers = [{**_stock_row_from_static(t, i), "source": "idx_universe"} for i, t in enumerate(preferred)]
     return {"count": len(movers[:limit]), "data": movers[:limit], "source": movers[0].get("source") if movers else "none"}
 
