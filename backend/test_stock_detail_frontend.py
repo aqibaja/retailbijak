@@ -81,7 +81,7 @@ def test_stock_detail_has_ai_chat_placeholder_signal_card_and_entry_line():
     assert 'Signal Score' not in src
     assert 'score-ring' not in src
     assert "line('ENTRY'" in src
-    assert 'balanced-level-label' in src
+    assert 'level-legend' in src
     assert 'compact-right-scroll' in src
 
 
@@ -102,10 +102,15 @@ def test_stock_detail_uses_tighter_stop_not_raw_deep_support():
     assert 'Math.max(rawStop, tightStop)' in src
 
 
-def test_stock_detail_chart_uses_balanced_floating_labels_and_rr_floor():
+def test_stock_detail_chart_uses_legend_chips_and_rr_floor():
     src = STOCK_DETAIL.read_text()
-    assert 'balanced-level-label' in src
+    assert 'id="level-legend"' in src
+    assert 'renderLevelLegend' in src
+    assert 'level-chip' in src
+    assert 'balanced-level-label' not in src
     assert 'minReward' in src
     assert 'rrFloor' in src
     assert 'Math.max(rawTarget, minTarget)' in src
+    assert 'levelMin' in src
+    assert 'levelMax' in src
     assert "line('ENTRY'" in src
