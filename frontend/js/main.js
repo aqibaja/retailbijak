@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260430j';
-import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260430j';
-import { initTheme } from './theme.js?v=20260430j';
+import { handleRoute } from './router.js?v=20260430l';
+import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260430l';
+import { initTheme } from './theme.js?v=20260430l';
 
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {

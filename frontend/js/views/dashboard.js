@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers } from '../api.js?v=20260430j';
-import { observeElements, animateValue } from '../main.js?v=20260430j';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers } from '../api.js?v=20260430l';
+import { observeElements, animateValue } from '../main.js?v=20260430l';
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -36,7 +36,7 @@ export async function renderDashboard(root) {
 
     <div class="dash-grid-pro">
       <div class="panel dash-chart-panel">
-        <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Intraday Chart</h3><p class="text-xs text-dim">Fallback chart aktif bila data live kosong</p></div><div class="dashboard-chip-row"><button class="btn btn-primary btn-mini">1D</button><button class="btn btn-mini">1W</button><button class="btn btn-mini">1M</button></div></div>
+        <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Intraday Chart</h3><p class="text-xs text-dim">Fallback chart aktif bila data live kosong</p></div><div class="dashboard-chip-row"><button class="btn btn-primary btn-mini ihsg-range" data-range="1D">1D</button><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-mini ihsg-range" data-range="1M">1M</button></div></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
       <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2">Loading movers...</div></div>
@@ -50,8 +50,8 @@ export async function renderDashboard(root) {
   </section>`;
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-  await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers()]);
-  initChart();
+  const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers()]);
+  initChart(market);
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }
 
@@ -69,6 +69,7 @@ async function loadMarketSummary(){
   document.getElementById('ihsg-open').textContent = nf(summary?.open ?? 7096.61);
   document.getElementById('ihsg-high').textContent = nf(summary?.high ?? 7126.06);
   document.getElementById('ihsg-low').textContent = nf(summary?.low ?? 7063.99);
+  return summary;
 }
 async function loadIntel(){
   const [m,s] = await Promise.all([fetchMarketSummary().catch(()=>null), fetchSectorSummary().catch(()=>null)]);
@@ -98,8 +99,28 @@ async function loadNews(){
   document.getElementById('news-container').innerHTML = items.slice(0,3).map(n=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,90) : 'Buka Market Intelligence'}</small></a>`).join('');
 }
 const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row"><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div><div class="text-right"><b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
-function initChart(){
+let ihsgChart;
+function buildIhsgSeries(base, range){
+  const points = range === '1M' ? 22 : range === '1W' ? 7 : 7;
+  const labels = range === '1D' ? ['09:00','10:00','11:00','13:00','14:00','15:00','16:00'] : Array.from({length:points},(_,i)=>`D-${points-1-i}`);
+  const amp = range === '1M' ? 0.018 : range === '1W' ? 0.01 : 0.004;
+  const data = labels.map((_,i)=> Number((base * (1 + Math.sin(i*1.4)*amp + (i-labels.length+1)*amp/labels.length)).toFixed(2)));
+  data[data.length-1] = Number(base.toFixed(2));
+  return { labels, data };
+}
+function initChart(summary){
   const ctx = document.getElementById('ihsgMainChart'); if(!ctx || typeof Chart==='undefined') return;
-  const g = ctx.getContext('2d').createLinearGradient(0,0,0,320); g.addColorStop(0,'rgba(16,185,129,.36)'); g.addColorStop(1,'rgba(16,185,129,0)');
-  new Chart(ctx,{type:'line',data:{labels:['09:00','10:00','11:00','13:00','14:00','15:00','16:00'],datasets:[{data:[7060,7075,7070,7088,7082,7096,7080.63],borderColor:'#10b981',backgroundColor:g,borderWidth:2,pointRadius:0,fill:true,tension:.42}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{position:'right',grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b'}}}}});
+  const base = Number(summary?.value || 7080.63);
+  const render = (range='1D') => {
+    const g = ctx.getContext('2d').createLinearGradient(0,0,0,320); g.addColorStop(0,'rgba(16,185,129,.36)'); g.addColorStop(1,'rgba(16,185,129,0)');
+    const built = buildIhsgSeries(base, range);
+    if (ihsgChart) ihsgChart.destroy();
+    ihsgChart = new Chart(ctx,{type:'line',data:{labels:built.labels,datasets:[{data:built.data,borderColor:'#10b981',backgroundColor:g,borderWidth:2,pointRadius:range==='1D'?0:2,fill:true,tension:.42}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>`IHSG ${nf(c.parsed.y,2)}`}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{position:'right',grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',callback:(v)=>nf(v,0)}}}}});
+  };
+  render('1D');
+  document.querySelectorAll('.ihsg-range').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.ihsg-range').forEach(b=>b.classList.remove('btn-primary'));
+    btn.classList.add('btn-primary');
+    render(btn.dataset.range);
+  }));
 }

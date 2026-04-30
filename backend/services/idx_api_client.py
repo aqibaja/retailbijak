@@ -125,6 +125,21 @@ class IDXApiClient:
         data = resp.data.get("data")
         return data if isinstance(data, list) else []
 
+    def get_index_summary(self, target_date: date | datetime | str | None = None, start: int = 0, length: int = 9999) -> list[dict[str, Any]]:
+        if target_date is None:
+            target_date = date.today()
+        if isinstance(target_date, datetime):
+            date_str = target_date.strftime("%Y%m%d")
+        elif isinstance(target_date, date):
+            date_str = target_date.strftime("%Y%m%d")
+        else:
+            date_str = str(target_date).replace("-", "")
+        resp = self.get_json(f"/primary/TradingSummary/GetIndexSummary?lang=id&date={date_str}&start={start}&length={length}")
+        if not resp.ok or not isinstance(resp.data, dict):
+            return []
+        data = resp.data.get("data")
+        return data if isinstance(data, list) else []
+
     def get_securities_stock(self, start: int = 0, length: int = 9999) -> list[dict[str, Any]]:
         resp = self.get_json(f"/primary/StockData/GetSecuritiesStock?start={start}&length={length}&code=&sector=&board=")
         if not resp.ok or not isinstance(resp.data, dict):

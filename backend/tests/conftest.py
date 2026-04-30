@@ -24,6 +24,25 @@ def isolated_db_session(monkeypatch, tmp_path):
 
     monkeypatch.setattr(database, "engine", engine)
     monkeypatch.setattr(database, "SessionLocal", TestingSessionLocal)
+    try:
+        import database as top_database
+        monkeypatch.setattr(top_database, "engine", engine)
+        monkeypatch.setattr(top_database, "SessionLocal", TestingSessionLocal)
+    except Exception:
+        pass
+    try:
+        import main as app_main
+        monkeypatch.setattr(app_main, "engine", engine)
+        monkeypatch.setattr(app_main, "SessionLocal", TestingSessionLocal)
+        def override_get_db():
+            db = TestingSessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
+        app_main.app.dependency_overrides[app_main.get_db] = override_get_db
+    except Exception:
+        pass
     monkeypatch.setattr(idx_daily_sync, "SessionLocal", TestingSessionLocal)
 
     return TestingSessionLocal

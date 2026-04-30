@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -7,12 +8,12 @@ from typing import Any
 from sqlalchemy.dialects.sqlite import insert
 
 try:
-    from database import Fundamental, OHLCVDaily, SessionLocal, Stock
+    from database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
     from services.idx_api_client import get_idx_client, parse_idx_number
     from services.idx_normalizer import normalize_stock_payload
     from stocks import get_all_tickers
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, SessionLocal, Stock
+    from backend.database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
     from backend.services.idx_normalizer import normalize_stock_payload
     from backend.stocks import get_all_tickers
@@ -110,6 +111,65 @@ def _upsert_fundamental_from_screener(db, row: dict[str, Any]) -> bool:
     return True
 
 
+def _idx_value(row: dict[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        value = parse_idx_number(row.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _idx_text(row: dict[str, Any], *keys: str) -> str | None:
+    for key in keys:
+        value = row.get(key)
+        if value not in (None, ""):
+            return str(value)
+    return None
+
+
+def _extract_index_summary(rows: list[dict[str, Any]], target_date: date) -> dict[str, Any] | None:
+    wanted = {"COMPOSITE", "IHSG", "IDXCOMPOSITE", "JCI"}
+    best = None
+    for row in rows or []:
+        code = (_idx_text(row, "IndexCode", "code", "Code", "Index") or "").upper().replace(" ", "")
+        if code in wanted or "COMPOSITE" in code:
+            best = row
+            break
+    if not best and rows:
+        best = rows[0]
+    if not best:
+        return None
+    close = _idx_value(best, "Close", "close", "Last", "IndexValue")
+    previous = _idx_value(best, "Previous", "previous", "Prev")
+    change = _idx_value(best, "Change", "change")
+    percent = ((change / previous) * 100) if previous and change is not None else None
+    raw_date = _idx_text(best, "Date", "date") or target_date.isoformat()
+    data_date = raw_date[:10] if "-" in raw_date else target_date.isoformat()
+    return {
+        "code": _idx_text(best, "IndexCode", "code", "Code") or "COMPOSITE",
+        "close": close,
+        "previous": previous,
+        "open": previous,
+        "high": _idx_value(best, "Highest", "high", "High") or close,
+        "low": _idx_value(best, "Lowest", "low", "Low") or close,
+        "change": change,
+        "percent": round(percent, 2) if percent is not None else None,
+        "volume": _idx_value(best, "Volume", "volume"),
+        "value": _idx_value(best, "Value", "value"),
+        "frequency": _idx_value(best, "Frequency", "frequency"),
+        "market_cap": _idx_value(best, "MarketCapital", "marketCap"),
+        "date": data_date,
+    }
+
+
+def _store_setting(db, key: str, value: str) -> None:
+    row = db.query(UserSetting).filter(UserSetting.key == key).first()
+    if row:
+        row.value = value
+    else:
+        db.add(UserSetting(key=key, value=value))
+
+
 def _candidate_dates(target_date: date, fallback_days: int) -> list[date]:
     return [target_date - timedelta(days=offset) for offset in range(max(fallback_days, 0) + 1)]
 
@@ -124,10 +184,19 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
         if rows:
             data_date = candidate
             break
+    index_summary = None
+    try:
+        index_rows = client.get_index_summary(data_date) if hasattr(client, "get_index_summary") else []
+        index_summary = _extract_index_summary(index_rows, data_date)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("IDX index summary fetch failed: %s", exc)
+
     db = SessionLocal()
     ok = 0
     failed = 0
     try:
+        if index_summary:
+            _store_setting(db, "idx_market_summary", json.dumps(index_summary))
         for row in rows:
             ticker = (row.get("StockCode") or "").upper().replace(".JK", "")
             if not ticker:
@@ -152,6 +221,7 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
             "data_date": data_date.isoformat(),
             "target_date": target_date.isoformat(),
             "synced_at": datetime.utcnow().isoformat(timespec="seconds"),
+            "index_summary": bool(index_summary),
         }
     except Exception:
         db.rollback()

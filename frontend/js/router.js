@@ -1,11 +1,11 @@
-import { renderDashboard } from './views/dashboard.js?v=20260430j';
-import { renderStockDetail } from './views/stock_detail.js?v=20260430j';
-import { renderScreener } from './views/screener.js?v=20260430j';
-import { renderPortfolio } from './views/portfolio.js?v=20260430j';
-import { renderMarket } from './views/market.js?v=20260430j';
-import { renderNews } from './views/news.js?v=20260430j';
-import { renderSettings } from './views/settings.js?v=20260430j';
-import { renderHelp } from './views/help.js?v=20260430j';
+import { renderDashboard } from './views/dashboard.js?v=20260430l';
+import { renderStockDetail } from './views/stock_detail.js?v=20260430l';
+import { renderScreener } from './views/screener.js?v=20260430l';
+import { renderPortfolio } from './views/portfolio.js?v=20260430l';
+import { renderMarket } from './views/market.js?v=20260430l';
+import { renderNews } from './views/news.js?v=20260430l';
+import { renderSettings } from './views/settings.js?v=20260430l';
+import { renderHelp } from './views/help.js?v=20260430l';
 
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');

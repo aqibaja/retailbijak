@@ -1,5 +1,5 @@
-import { fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430j';
-import { observeElements } from '../main.js?v=20260430j';
+import { fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430l';
+import { observeElements } from '../main.js?v=20260430l';
 
 const fallbackSectors = [
   { sector: 'Finance', change_pct: 1.2, total: 128 },

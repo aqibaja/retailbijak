@@ -393,16 +393,32 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
 def get_technical_summary_api(ticker: str, db: Session = Depends(get_db)):
     """API endpoint to get technical analysis summary (RSI, MACD, etc)"""
     try:
-        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary, empty_technical_summary
     except ModuleNotFoundError as exc:
-        return {"ticker": ticker if ticker.endswith('.JK') else f"{ticker}.JK", "status": "no_data", "message": str(exc)}
+        empty = {
+            "status": "no_data",
+            "summary": f"Technical engine unavailable: {exc}",
+            "rating": "NO DATA",
+            "score": 50,
+            "indicators": {
+                "rsi": {"value": None, "status": "Insufficient"},
+                "macd": {"macd_line": None, "signal": None, "histogram": None, "status": "Insufficient"},
+                "trend": {"sma_5": None, "sma_10": None, "sma_20": None, "sma_50": None, "sma_200": None, "ema_20": None, "status": "Insufficient"},
+                "bollinger_bands": {"upper": None, "middle": None, "lower": None},
+                "stochastic": {"k": None, "d": None, "status": "Insufficient"},
+                "atr": {"value": None, "status": "Insufficient"},
+                "volume": {"latest": None, "avg_20": None, "ratio": None, "status": "Insufficient"},
+                "support_resistance": {"support_20d": None, "resistance_20d": None},
+            },
+        }
+        return {"ticker": ticker if ticker.endswith('.JK') else f"{ticker}.JK", "status": "no_data", "technical": empty, "message": str(exc)}
     
     if not ticker.endswith('.JK'):
         ticker = f"{ticker}.JK"
         
     df = get_ohlcv_dataframe(db, ticker, limit=300) # Need enough data for 200 SMA
     if df.empty:
-        return {"ticker": ticker, "status": "no_data"}
+        return {"ticker": ticker, "status": "no_data", "technical": empty_technical_summary()}
         
     df_ind = calculate_all_indicators(df)
     summary = get_technical_summary(df_ind)
@@ -461,6 +477,34 @@ def get_market_summary(db: Session = Depends(get_db)):
         from database import OHLCVDaily
     except ModuleNotFoundError:
         from backend.database import OHLCVDaily
+
+    setting = db.query(UserSetting).filter(UserSetting.key == "idx_market_summary").first()
+    if setting and setting.value:
+        try:
+            payload = json.loads(setting.value)
+            close = payload.get("close")
+            previous = payload.get("previous") or payload.get("open")
+            change_pct = payload.get("percent")
+            if change_pct is None and close and previous:
+                change_pct = ((float(close) - float(previous)) / float(previous)) * 100
+            data_date = payload.get("date")
+            return {
+                "symbol": "IHSG",
+                "value": round(float(close), 2) if close is not None else None,
+                "open": round(float(previous), 2) if previous is not None else None,
+                "high": round(float(payload.get("high")), 2) if payload.get("high") is not None else None,
+                "low": round(float(payload.get("low")), 2) if payload.get("low") is not None else None,
+                "change": round(float(payload.get("change")), 2) if payload.get("change") is not None else None,
+                "change_pct": round(float(change_pct), 2) if change_pct is not None else None,
+                "source": "idx_index_summary",
+                "updated_at": data_date,
+                "data_date": data_date,
+                "data_label": f"Data IDX tanggal {data_date}" if data_date else None,
+                "status": "ok",
+                "coverage": db.query(OHLCVDaily).filter(OHLCVDaily.date == datetime.fromisoformat(data_date) if data_date else True).count() if data_date else 0,
+            }
+        except Exception:
+            pass
 
     latest_row = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
     if not latest_row:
