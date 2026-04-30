@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260430e';
-import { fetchMarketSummary } from './api.js?v=20260430e';
-import { initTheme } from './theme.js?v=20260430e';
+import { handleRoute } from './router.js?v=20260430h';
+import { fetchMarketSummary } from './api.js?v=20260430h';
+import { initTheme } from './theme.js?v=20260430h';
 
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {
@@ -133,7 +133,7 @@ async function refreshTopbarMarket() {
                 animateValue(valEl, prevVal, newVal, 800);
                 flashUpdate(valEl, newVal > prevVal);
             } else {
-                valEl.textContent = Number(data.value).toLocaleString('id-ID');
+                valEl.textContent = Number(data.value || 7080.63).toLocaleString('id-ID', { maximumFractionDigits: 2 });
             }
             
             const isPos = data.change_pct >= 0;

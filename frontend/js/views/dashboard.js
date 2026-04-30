@@ -1,218 +1,90 @@
-import { fetchNews, fetchMarketSummary } from '../api.js?v=20260430e';
-import { observeElements, animateValue } from '../main.js?v=20260430e';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430h';
+import { observeElements, animateValue } from '../main.js?v=20260430h';
+
+const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
+const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
+const FALLBACK_NEWS = [
+  { title: 'IHSG stabil, rotasi sektor mulai terlihat di perbankan dan energi', source: 'MARKET INTEL', link: '#market' },
+  { title: 'Watchlist hari ini: BBCA, BMRI, GOTO, BRPT untuk momentum intraday', source: 'IDEA', link: '#screener' },
+  { title: 'Breadth netral: tunggu konfirmasi volume sebelum entry agresif', source: 'RISK', link: '#market' },
+];
+const MOVERS = [
+  { ticker:'GOTO', name:'GoTo Gojek Tokopedia', price:96, change:9.89 },
+  { ticker:'BRPT', name:'Barito Pacific', price:1200, change:5.20 },
+  { ticker:'BBCA', name:'Bank Central Asia', price:9800, change:1.15 },
+  { ticker:'BMRI', name:'Bank Mandiri', price:11750, change:0.82 },
+  { ticker:'TLKM', name:'Telkom Indonesia', price:3420, change:-0.45 },
+];
 
 export async function renderDashboard(root) {
-    root.innerHTML = `
-      <section class="grid grid-cols-12 stagger-reveal dashboard-shell">
-        <div class="col-span-12 panel dashboard-hero flex-col gap-4" style="padding:16px; overflow:hidden;">
-          <div class="flex justify-between items-center gap-3 dashboard-hero-head">
-            <div class="flex items-center gap-3">
-              <div class="hero-mark">IDX</div>
-              <div>
-                <h2 class="text-lg strong text-main" style="margin-bottom:2px;">IHSG Composite</h2>
-                <div class="text-xs text-dim strong" id="market-fold-status">Loading live snapshot...</div>
-              </div>
-            </div>
-            <span id="market-fold-badge" class="badge">SYNC</span>
-          </div>
-
-          <div class="dashboard-price-row">
-            <div>
-              <div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">IHSG</div>
-              <div class="mono strong" id="ihsg-value" style="font-size:28px; line-height:1;">---</div>
-            </div>
-            <div class="text-right">
-              <div class="text-xs text-dim uppercase strong" style="letter-spacing:0.05em">Change</div>
-              <div class="mono strong" id="ihsg-change" style="font-size:18px;">---</div>
-            </div>
-          </div>
-
-          <div class="dashboard-metrics">
-            <div><span class="text-dim">Open</span><strong class="mono" id="ihsg-open">---</strong></div>
-            <div><span class="text-dim">High</span><strong class="mono text-up" id="ihsg-high">---</strong></div>
-            <div><span class="text-dim">Low</span><strong class="mono text-down" id="ihsg-low">---</strong></div>
-          </div>
-
-          <div class="dashboard-chip-row">
-            <button class="btn btn-primary btn-mini">1D</button>
-            <button class="btn btn-mini">1W</button>
-            <button class="btn btn-mini">1M</button>
-            <a href="#screener" class="btn btn-mini">Scanner</a>
-          </div>
-
-          <div class="dashboard-chart-wrap">
-            <canvas id="ihsgMainChart"></canvas>
-          </div>
-        </div>
-
-        <div class="col-span-12 panel dashboard-compact-grid">
-          <div class="dashboard-card-lite">
-            <div class="text-xs text-dim strong">ADV</div>
-            <div class="mono strong text-up text-lg val-counter" data-val="328">328</div>
-          </div>
-          <div class="dashboard-card-lite">
-            <div class="text-xs text-dim strong">DECL</div>
-            <div class="mono strong text-down text-lg val-counter" data-val="271">271</div>
-          </div>
-          <div class="dashboard-card-lite">
-            <div class="text-xs text-dim strong">UNC</div>
-            <div class="mono strong text-lg val-counter text-main" data-val="143">143</div>
-          </div>
-          <div class="dashboard-card-lite dashboard-card-wide">
-            <div class="text-xs text-dim strong">VOLUME / VALUE</div>
-            <div class="mono strong" style="font-size:14px;">8.4T / Rp 9.2T</div>
-          </div>
-        </div>
-
-        <div class="col-span-12 panel stagger-reveal dashboard-section-head" style="margin-top:8px;">
-          <div class="flex justify-between items-center mb-4">
-            <div>
-              <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Top Movers</h3>
-              <div class="text-xs text-dim">Quick look at active names</div>
-            </div>
-            <a href="#market" class="text-xs text-primary strong hover:underline">View All</a>
-          </div>
-          <div class="flex-col gap-2">
-            ${['GOTO','BRPT','BBCA','TLKM'].map((t,i)=>row(t,['96','1,200','9,800','3,420'][i],['+9.09','+5.20','+3.15','+2.50'][i])).join('')}
-          </div>
-        </div>
-
-        <div class="col-span-12 panel stagger-reveal dashboard-section-head" style="margin-top:8px;">
-          <div class="flex justify-between items-center mb-4">
-            <div>
-              <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Latest Intelligence</h3>
-              <div class="text-xs text-dim">Fresh news and fallback content</div>
-            </div>
-            <a href="#news" class="btn btn-icon"><i data-lucide="arrow-right"></i></a>
-          </div>
-          <div id="news-container" class="news-grid">
-            <div class="skeleton skel-title"></div>
-            <div class="skeleton skel-title"></div>
-            <div class="skeleton skel-title"></div>
-          </div>
-        </div>
-      </section>`;
-
-    observeElements();
-    loadMarketSummary();
-    loadNews();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.getAttribute('data-val')), 1000)), 200);
-}
-
-async function loadMarketSummary() {
-    const summary = await fetchMarketSummary();
-    const isLive = !!summary && summary.status !== 'no_data';
-    document.getElementById('market-fold-status').textContent = isLive ? 'Market first fold • live snapshot' : 'Market first fold • demo snapshot';
-    const badge = document.getElementById('market-fold-badge');
-    badge.textContent = isLive ? 'LIVE' : 'DEMO';
-    badge.className = isLive ? 'badge badge-up' : 'badge';
-
-    const value = summary?.value ?? summary?.close ?? '7,080.63';
-    const change = summary?.change_pct != null ? `${summary.change_pct >= 0 ? '+' : ''}${summary.change_pct}%` : '+0.12%';
-    document.getElementById('ihsg-value').textContent = typeof value === 'number' ? value.toLocaleString() : value;
-    document.getElementById('ihsg-change').textContent = change;
-    document.getElementById('ihsg-change').className = `mono strong ${String(change).startsWith('-') ? 'text-down' : 'text-up'}`;
-    document.getElementById('ihsg-open').textContent = summary?.open?.toLocaleString?.() ?? '7,096.61';
-    document.getElementById('ihsg-high').textContent = summary?.high?.toLocaleString?.() ?? '7,126.06';
-    document.getElementById('ihsg-low').textContent = summary?.low?.toLocaleString?.() ?? '7,063.99';
-}
-
-
-const row = (ticker, price, change) => `
-  <a href="#stock/${ticker}" class="flex items-center justify-between p-3" style="background:transparent; border:1px solid transparent; border-bottom: 1px solid var(--border-subtle); border-radius:0; transition:background 0.2s;">
-    <div class="flex items-center gap-3">
-      <div style="width:32px; height:32px; background:var(--accent-glow); border-radius:8px; display:grid; place-items:center; font-size:10px; font-weight:800; color:var(--accent-indigo); border:1px solid rgba(99,102,241,0.2);">${ticker.substring(0,2)}</div>
-      <div><div class="mono strong text-main">${ticker}</div><div class="text-xs text-dim strong">EQ</div></div>
+  root.innerHTML = `
+  <section class="dashboard-pro stagger-reveal">
+    <div class="dash-hero-pro panel">
+      <div class="dash-copy">
+        <div class="screener-kicker">IDX LIVE WORKSPACE</div>
+        <h1>Dashboard Market Intelligence</h1>
+        <p>Pantau IHSG, breadth, top movers, dan ide cepat dalam satu layar trading yang padat.</p>
+        <div class="dash-actions"><a href="#screener" class="btn btn-primary">Run Scanner</a><a href="#market" class="btn">Market Overview</a></div>
+      </div>
+      <div class="dash-quote-card">
+        <div class="flex justify-between items-start mb-3"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div>
+        <div class="text-xs text-dim uppercase strong">IHSG Composite</div>
+        <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">7.080,63</div><div class="mono strong text-up" id="ihsg-change">+0.12%</div></div>
+        <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">7.096</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">7.126</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">7.063</strong></div></div>
+      </div>
     </div>
-    <div style="text-align:right">
-      <div class="mono strong text-main">${price}</div>
-      <div class="${change.startsWith('+') ? 'text-up' : 'text-down'} mono text-xs strong">${change}%</div>
+
+    <div class="dash-grid-pro">
+      <div class="panel dash-chart-panel">
+        <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Intraday Chart</h3><p class="text-xs text-dim">Fallback chart aktif bila data live kosong</p></div><div class="dashboard-chip-row"><button class="btn btn-primary btn-mini">1D</button><button class="btn btn-mini">1W</button><button class="btn btn-mini">1M</button></div></div>
+        <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
+      </div>
+      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2">${MOVERS.map(row).join('')}</div></div>
     </div>
-  </a>`;
 
-async function loadNews() {
-    const container = document.getElementById('news-container');
-    if (!container) return;
-    const res = await fetchNews(3);
-    
-    let items = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data : [];
-
-    if (items.length === 0) {
-        container.innerHTML = `<div class="text-dim text-sm">No news available.</div>`;
-        return;
-    }
-
-    container.innerHTML = items.map(n => {
-        // Extract image from summary if missing
-        let imageUrl = n.image_url || '';
-        if (!imageUrl && n.summary && n.summary.includes('<img')) {
-            const match = n.summary.match(/src="([^"]+)"/);
-            if (match) imageUrl = match[1];
-        }
-
-        const imageElement = imageUrl 
-            ? `<img src="${imageUrl}" alt="News thumbnail" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` 
-            : '';
-
-        return `
-            <a href="${n.link}" target="_blank" class="news-card" style="border-radius:12px; background:var(--bg-elevated); border:1px solid var(--border-subtle); display:flex; flex-direction:column;">
-                <div class="news-image-wrap" style="height:140px; display:flex; align-items:center; justify-content:center; background:rgba(99,102,241,0.05);">
-                    ${imageUrl ? imageElement : '<i data-lucide="newspaper" style="width:40px; color:var(--text-dim);"></i>'}
-                    <div class="news-image-fallback" style="${imageUrl ? 'display:none;' : 'display:flex;'} align-items:center; justify-content:center; height:100%; width:100%;">
-                       <i data-lucide="newspaper" style="width:40px; color:var(--text-dim);"></i>
-                    </div>
-                </div>
-                <div class="news-content" style="padding:16px; flex:1;">
-                    <span class="news-badge" style="background:var(--accent-glow); color:var(--accent-indigo); font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; margin-bottom:8px; display:inline-block;">${n.source || 'MARKET'}</span>
-                    <h3 class="news-title" style="font-size:14px; font-weight:600; color:var(--text-main); line-height:1.4;">${n.title}</h3>
-                </div>
-            </a>`;
-    }).join('');
-    
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    <div class="dash-bottom-grid">
+      <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="intel-item">Loading intelligence...</div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Suggestions</h3><div class="suggestion-grid">${['BBCA','BMRI','GOTO','BRPT','TLKM','ANTM'].map(t=>`<a href="#stock/${t}" class="suggestion-pill"><span>${t}</span><small>Open detail</small></a>`).join('')}</div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Latest News</h3><div id="news-container" class="intel-list"><div class="intel-item">Loading news...</div></div></div>
+    </div>
+  </section>`;
+  observeElements();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  await Promise.all([loadMarketSummary(), loadNews(), loadIntel()]);
+  initChart();
+  setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }
 
-function initChart() {
-    const ctx = document.getElementById('ihsgMainChart');
-    if (ctx && typeof Chart !== 'undefined') {
-      const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
-      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
-      gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
-
-      new Chart(ctx, { 
-        type: 'line', 
-        data: { 
-          labels: ['09:00','10:00','11:00','13:00','14:00','15:00','16:00'], 
-          datasets: [{ 
-            data: [7060, 7075, 7070, 7085, 7080, 7095, 7080.63], 
-            borderColor: '#10b981', 
-            backgroundColor: gradient,
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#10b981',
-            fill: true, tension: 0.4
-          }] 
-        }, 
-        options: { 
-          responsive: true, maintainAspectRatio: false, 
-          interaction: { intersect: false, mode: 'index' },
-          plugins: { 
-              legend: { display: false },
-              tooltip: { 
-                  backgroundColor: 'rgba(15, 23, 41, 0.95)', 
-                  titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
-                  bodyFont: { family: "'JetBrains Mono', monospace", size: 13, weight: 'bold' },
-                  padding: 12, cornerRadius: 8, displayColors: false,
-                  borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1
-              }
-          }, 
-          scales: { 
-            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10, weight: '600' } } }, 
-            y: { position: 'right', grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#64748b', font: { size: 11, family: "'JetBrains Mono', monospace", weight: '600' } } } 
-          } 
-        } 
-      });
-    }
+async function loadMarketSummary(){
+  const summary = await fetchMarketSummary();
+  const isLive = summary && summary.status !== 'no_data' && summary.value;
+  document.getElementById('market-fold-status').textContent = isLive ? 'LIVE DATA' : 'DEMO SNAPSHOT';
+  document.getElementById('market-fold-badge').textContent = isLive ? 'LIVE' : 'DEMO';
+  const v = summary?.value ?? 7080.63, c = Number(summary?.change_pct ?? 0.12);
+  document.getElementById('ihsg-value').textContent = nf(v, 2);
+  const ch = document.getElementById('ihsg-change'); ch.textContent = pf(c); ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
+  document.getElementById('ihsg-open').textContent = nf(summary?.open ?? 7096.61);
+  document.getElementById('ihsg-high').textContent = nf(summary?.high ?? 7126.06);
+  document.getElementById('ihsg-low').textContent = nf(summary?.low ?? 7063.99);
+}
+async function loadIntel(){
+  const [m,s] = await Promise.all([fetchMarketSummary().catch(()=>null), fetchSectorSummary().catch(()=>null)]);
+  const sectors = Array.isArray(s?.data)&&s.data.length?s.data:[{sector:'Finance',change_pct:1.2},{sector:'Energy',change_pct:0.8},{sector:'Technology',change_pct:-1.5}];
+  const best = [...sectors].sort((a,b)=>Number(b.change_pct||0)-Number(a.change_pct||0))[0];
+  const adv = Number(m?.advancers ?? 328), dec = Number(m?.decliners ?? 271);
+  document.getElementById('market-intel').innerHTML = [
+    `Breadth: <b>${adv}</b> advancers vs <b>${dec}</b> decliners — bias ${adv>=dec?'positif':'hati-hati'}.`,
+    `Sector leader: <b>${best?.sector||best?.name||'Finance'}</b> (${pf(best?.change_pct ?? 1.2)}).`,
+    `Plan: prioritaskan entry bertahap, validasi volume, hindari chasing saat candle melebar.`
+  ].map(x=>`<div class="intel-item">${x}</div>`).join('');
+}
+async function loadNews(){
+  const res = await fetchNews(3); const items = (Array.isArray(res?.data)&&res.data.length?res.data:FALLBACK_NEWS);
+  document.getElementById('news-container').innerHTML = items.slice(0,3).map(n=>`<a href="${n.link||'#news'}" class="intel-item"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b></a>`).join('');
+}
+const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row"><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div><div class="text-right"><b class="mono">${nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
+function initChart(){
+  const ctx = document.getElementById('ihsgMainChart'); if(!ctx || typeof Chart==='undefined') return;
+  const g = ctx.getContext('2d').createLinearGradient(0,0,0,320); g.addColorStop(0,'rgba(16,185,129,.36)'); g.addColorStop(1,'rgba(16,185,129,0)');
+  new Chart(ctx,{type:'line',data:{labels:['09:00','10:00','11:00','13:00','14:00','15:00','16:00'],datasets:[{data:[7060,7075,7070,7088,7082,7096,7080.63],borderColor:'#10b981',backgroundColor:g,borderWidth:2,pointRadius:0,fill:true,tension:.42}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{position:'right',grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b'}}}}});
 }

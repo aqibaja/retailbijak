@@ -1,5 +1,5 @@
-import { fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430e';
-import { observeElements } from '../main.js?v=20260430e';
+import { fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430h';
+import { observeElements } from '../main.js?v=20260430h';
 
 const fallbackSectors = [
   { sector: 'Finance', change_pct: 1.2, total: 128 },
@@ -19,7 +19,8 @@ const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)
 
 function normalizeSectors(payload) {
   const rows = Array.isArray(payload?.data) ? payload.data : [];
-  if (!rows.length) return fallbackSectors.map(s => ({ ...s, source: 'DEMO' }));
+  const shouldUseFallback = !rows.length || rows.length < 5 || rows.every(r => Number(r.change_pct ?? r.avg_change_pct ?? r.change ?? 0) === 0);
+  if (shouldUseFallback) return fallbackSectors.map(s => ({ ...s, source: 'DEMO' }));
   return rows.map((r, idx) => ({
     sector: r.sector || r.name || `Sector ${idx + 1}`,
     change_pct: Number(r.change_pct ?? r.avg_change_pct ?? r.change ?? 0),

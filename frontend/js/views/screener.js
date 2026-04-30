@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430e';
-import { observeElements } from '../main.js?v=20260430e';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430h';
+import { observeElements } from '../main.js?v=20260430h';
 
 const dummyScanResults = [
   { ticker: "GOTO", name: "GoTo Gojek Tokopedia", type: "EQ", price: 96, change: 9.89, signal: "STRONG_BUY" },
@@ -71,10 +71,10 @@ export async function renderScreener(root) {
             <div class="scanner-header-text">SCAN PARAMETERS</div>
             
             <div class="scanner-micro-grid">
-              <button class="scanner-preset active">Breakout</button>
-              <button class="scanner-preset">Value</button>
-              <button class="scanner-preset">Dividend</button>
-              <button class="scanner-preset">Gorengan</button>
+              <button class="scanner-preset active" data-preset="Breakout" data-strategy="retailbijak Momentum">Breakout</button>
+              <button class="scanner-preset" data-preset="Value" data-strategy="Value Reversal">Value</button>
+              <button class="scanner-preset" data-preset="Dividend" data-strategy="Dividend Quality">Dividend</button>
+              <button class="scanner-preset" data-preset="Gorengan" data-strategy="Gorengan Radar">Gorengan</button>
             </div>
             
             <div class="mb-4">
@@ -82,7 +82,9 @@ export async function renderScreener(root) {
               <div style="position:relative;">
                 <select id="screener-strategy" class="scanner-select">
                   <option>retailbijak Momentum</option>
-                  <option disabled>Trend Following (Pro)</option>
+                  <option>Value Reversal</option>
+                  <option>Dividend Quality</option>
+                  <option>Gorengan Radar</option>
                 </select>
                 <i data-lucide="chevron-right" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); width:16px; color:#94a3b8; pointer-events:none;"></i>
               </div>
@@ -142,11 +144,18 @@ export async function renderScreener(root) {
 
     observeElements();
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    root.querySelectorAll('.scanner-preset').forEach(btn => btn.addEventListener('click', () => {
+        root.querySelectorAll('.scanner-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        root.querySelector('#screener-strategy').value = btn.dataset.strategy;
+        root.querySelector('.scanner-hint').textContent = `${btn.dataset.preset} preset aktif — klik Execute Scan untuk menjalankan.`;
+    }));
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
 }
 
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;
+    const preset = document.querySelector('.scanner-preset.active')?.dataset.preset || 'Breakout';
     const btn = document.getElementById('btn-run-screener');
     const contentArea = document.getElementById('screener-content');
     const progBox = document.getElementById('screener-progress');
@@ -175,7 +184,7 @@ function runScreener() {
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            progText.textContent = `Scanning ${data.ticker}...`;
+            progText.textContent = `${preset}: scanning ${data.ticker}...`;
             progPercent.textContent = `${data.percent}%`;
             progFill.style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
@@ -199,7 +208,7 @@ function runScreener() {
               timeframe: data.timeframe,
               backendDone: true,
             };
-            finishScan(results, btn, countBadge, contentArea, es, meta);
+            finishScan(results, btn, countBadge, contentArea, es, { ...meta, preset });
         }
     };
     
@@ -219,7 +228,7 @@ function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {
     if (eventSource) eventSource.close();
     
     const backendZero = meta.backendDone && results.length === 0;
-    const displayResults = backendZero ? dummyScanResults.map(r => ({ ...r, signal: 'WATCHLIST' })) : results;
+    const displayResults = backendZero ? strategyFallback(meta.preset || 'Breakout') : results;
     countBadge.textContent = backendZero ? `0 LIVE / ${displayResults.length} DEMO` : `${displayResults.length} MATCHES`;
     
     if (backendZero) {
@@ -230,7 +239,7 @@ function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {
               Backend scan completed: ${meta.scanned || 0} tickers in ${meta.duration || '?'}s
             </div>
             <div class="text-xs text-muted" style="line-height:1.6;">
-              No live institutional signals for this timeframe. Showing demo watch candidates so scanner stays useful and visually populated.
+              ${meta.preset || 'Breakout'} scan completed with 0 live signals. Showing clearly-labelled demo candidates for this preset.
             </div>
           </div>
           <div class="flex-col">${displayResults.map(r => renderRow(r)).join('')}</div>`;
@@ -240,4 +249,30 @@ function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {
         contentArea.innerHTML = `<div class="flex-col">${displayResults.map(r => renderRow(r)).join('')}</div>`;
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+
+function strategyFallback(preset = 'Breakout') {
+  const label = String(preset).toLowerCase();
+  const map = {
+    value: [
+      { ticker:'BBRI', name:'Bank Rakyat Indonesia', type:'VALUE', price:4100, change:-0.72, signal:'VALUE' },
+      { ticker:'ASII', name:'Astra International', type:'VALUE', price:5200, change:0.58, signal:'VALUE' },
+      { ticker:'UNVR', name:'Unilever Indonesia', type:'VALUE', price:2800, change:-1.1, signal:'VALUE' },
+    ],
+    dividend: [
+      { ticker:'ITMG', name:'Indo Tambangraya', type:'DIV', price:25200, change:0.4, signal:'DIVIDEND' },
+      { ticker:'ADRO', name:'Adaro Energy', type:'DIV', price:2760, change:1.2, signal:'DIVIDEND' },
+      { ticker:'TLKM', name:'Telkom Indonesia', type:'DIV', price:3420, change:0.3, signal:'DIVIDEND' },
+    ],
+    gorengan: [
+      { ticker:'GOTO', name:'GoTo Gojek Tokopedia', type:'RADAR', price:96, change:9.89, signal:'GOR' },
+      { ticker:'BUMI', name:'Bumi Resources', type:'RADAR', price:150, change:4.1, signal:'GOR' },
+      { ticker:'BRPT', name:'Barito Pacific', type:'RADAR', price:1200, change:5.2, signal:'GOR' },
+    ]
+  };
+  if (label.includes('value')) return map.value;
+  if (label.includes('dividend')) return map.dividend;
+  if (label.includes('gorengan')) return map.gorengan;
+  return dummyScanResults.map(r => ({ ...r, signal:'BREAKOUT' }));
 }

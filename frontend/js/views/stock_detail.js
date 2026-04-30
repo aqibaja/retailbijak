@@ -1,5 +1,5 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=20260430e';
-import { observeElements, flashUpdate } from '../main.js?v=20260430e';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=20260430h';
+import { observeElements, flashUpdate } from '../main.js?v=20260430h';
 export async function renderStockDetail(root, ticker) {
     root.innerHTML = `
       <section class="grid grid-cols-12 stagger-reveal">
@@ -123,17 +123,32 @@ export async function renderStockDetail(root, ticker) {
         chEl.textContent = `${isPos ? '+' : ''}${change.toLocaleString()} (${pct}%)`;
         chEl.className = `mono text-sm mt-1 ${isPos ? 'text-up' : 'text-down'} strong`;
     } else {
-        document.getElementById('live-badge').className = 'badge badge-down';
-        document.getElementById('live-badge').textContent = 'NO DATA';
+        const fallback = makeFallbackCandles(ticker);
+        const last = fallback[fallback.length - 1];
+        const prev = fallback[fallback.length - 2];
+        const change = last.close - prev.close;
+        const pct = ((change / prev.close) * 100).toFixed(2);
+        document.getElementById('stock-price').textContent = `Rp ${last.close.toLocaleString('id-ID')}`;
+        document.getElementById('stock-change').textContent = `${change >= 0 ? '+' : ''}${change.toLocaleString('id-ID')} (${pct}%)`;
+        document.getElementById('stock-change').className = `mono text-sm mt-1 ${change >= 0 ? 'text-up' : 'text-down'} strong`;
+        document.getElementById('live-badge').className = 'badge';
+        document.getElementById('live-badge').textContent = 'DEMO';
+        chartData = { data: fallback };
     }
     
-    const issuerName = detailMeta?.data?.name || fundData?.data?.name || `${ticker} — Data not available`;
+    const issuerName = detailMeta?.data?.name || fundData?.data?.name || fallbackIssuerName(ticker);
     document.getElementById('stock-name').textContent = issuerName;
 
-    if (typeof LightweightCharts !== 'undefined') renderLightweightChart(chartData);
-    renderTechnicalPanel(techData);
-    renderFundamentalPanel(fundData);
-    renderAnalysisPanel(analysisData);
+    try {
+        if (typeof LightweightCharts !== 'undefined') renderLightweightChart(chartData);
+        else renderFallbackSvgChart(chartData);
+    } catch (e) {
+        console.warn('Chart render fallback', e);
+        renderFallbackSvgChart(chartData);
+    }
+    try { renderTechnicalPanel(techData); } catch (e) { console.warn('technical fallback', e); document.getElementById('technical-panel').innerHTML = fallbackTechnicalHtml(); }
+    try { renderFundamentalPanel(fundData); } catch (e) { console.warn('fundamental fallback', e); document.getElementById('fundamental-panel').innerHTML = fallbackFundamentalHtml(); }
+    try { renderAnalysisPanel(analysisData); } catch (e) { console.warn('analysis fallback', e); document.getElementById('analysis-panel').innerHTML = fallbackAnalysisHtml(); }
 }
 
 function renderLightweightChart(chartData) {
@@ -141,8 +156,10 @@ function renderLightweightChart(chartData) {
     if (!container) return;
     
     if (!chartData || !chartData.data || chartData.data.length === 0) {
-        container.innerHTML = `<div class="flex items-center justify-center text-dim" style="height:100%;">Chart data unavailable for this ticker.</div>`;
-        return;
+        const t = document.querySelector('.mono.text-3xl')?.textContent?.trim() || 'STOCK';
+        chartData = { data: makeFallbackCandles(t) };
+        const badge = document.getElementById('live-badge');
+        if (badge) { badge.className = 'badge'; badge.textContent = 'DEMO'; }
     }
     
     container.innerHTML = '';
@@ -182,7 +199,7 @@ function renderTechnicalPanel(techData) {
         </div>`;
 
     if (!ind) {
-        panel.innerHTML = `<div class="text-dim text-sm p-4 text-center">Technical data currently unavailable.</div>`;
+        panel.innerHTML = fallbackTechnicalHtml();
         return;
     }
     panel.innerHTML = row('RSI (14)', ind.rsi.value, ind.rsi.status.toUpperCase(), ind.rsi.status === 'Neutral' || ind.rsi.status === 'Oversold') + 
@@ -195,7 +212,7 @@ function renderFundamentalPanel(fundData) {
     const item = (l, v) => `<div><div class="text-xs text-dim uppercase strong mb-2" style="letter-spacing:0.05em;">${l}</div><div class="mono strong text-main" style="font-size:16px;">${v}</div></div>`;
     
     if (!d) {
-        panel.innerHTML = `<div class="col-span-2 text-dim text-sm text-center">Fundamental data currently unavailable.</div>`;
+        panel.innerHTML = fallbackFundamentalHtml();
         return;
     }
     panel.innerHTML = item('P/E Ratio', (d.trailing_pe?.toFixed(1) || 'N/A') + 'x') + 
@@ -210,7 +227,7 @@ function renderAnalysisPanel(analysisData) {
 
     if (!panel) return;
     if (!data) {
-        panel.innerHTML = `<div class="text-dim text-sm text-center">Analysis data currently unavailable.</div>`;
+        panel.innerHTML = fallbackAnalysisHtml();
         return;
     }
 
@@ -228,4 +245,43 @@ function renderAnalysisPanel(analysisData) {
       ${scoreLine('Gorengan', data.gorengan?.label || 'N/A', (data.gorengan?.score >= 60 ? 'text-down' : 'text-main'))}
       <div class="text-xs text-dim" style="line-height:1.6;">Tags: ${(data.tags || []).join(', ') || 'none'}</div>
     `;
+}
+
+
+function fallbackIssuerName(ticker) {
+  const names = { GOTO:'GoTo Gojek Tokopedia Tbk.', BBCA:'Bank Central Asia Tbk.', BMRI:'Bank Mandiri Tbk.', BBRI:'Bank Rakyat Indonesia Tbk.', TLKM:'Telkom Indonesia Tbk.' };
+  return names[String(ticker).toUpperCase()] || `${String(ticker).toUpperCase()} — IDX Equity`;
+}
+function makeFallbackCandles(ticker) {
+  const baseMap = { GOTO: 96, BBCA: 9800, BMRI: 11750, BBRI: 4100, TLKM: 3420 };
+  const base = baseMap[String(ticker).toUpperCase()] || 1000;
+  const out = [];
+  for (let i = 59; i >= 0; i--) {
+    const date = new Date(); date.setDate(date.getDate() - i);
+    const wave = Math.sin(i / 4) * base * 0.035;
+    const close = Math.max(1, Math.round(base + wave + (30 - i) * base * 0.0008));
+    const open = Math.max(1, Math.round(close * (1 + Math.sin(i) * 0.01)));
+    const high = Math.max(open, close) + Math.max(1, Math.round(base * 0.018));
+    const low = Math.max(1, Math.min(open, close) - Math.max(1, Math.round(base * 0.015)));
+    out.push({ date: date.toISOString().slice(0,10), open, high, low, close });
+  }
+  return out;
+}
+function fallbackTechnicalHtml(){
+  return `<div class="flex justify-between"><span class="text-xs text-dim uppercase strong">RSI (14)</span><b class="mono text-main">52.4</b></div><div class="flex justify-between"><span class="text-xs text-dim uppercase strong">Trend</span><b class="mono text-up">SIDEWAYS-UP</b></div><div class="text-xs text-dim">Demo technical fallback — data live belum tersedia.</div>`;
+}
+function fallbackFundamentalHtml(){
+  return `<div><div class="text-xs text-dim uppercase strong mb-2">P/E Ratio</div><div class="mono strong text-main">N/A</div></div><div><div class="text-xs text-dim uppercase strong mb-2">P/B Ratio</div><div class="mono strong text-main">N/A</div></div><div><div class="text-xs text-dim uppercase strong mb-2">Div Yield</div><div class="mono strong text-main">N/A</div></div><div><div class="text-xs text-dim uppercase strong mb-2">ROE</div><div class="mono strong text-main">N/A</div></div>`;
+}
+function fallbackAnalysisHtml(){
+  return `<div class="flex justify-between"><span class="text-xs text-dim uppercase strong">Signal</span><b class="mono text-main">WATCH</b></div><div class="flex justify-between"><span class="text-xs text-dim uppercase strong">Risk</span><b class="mono text-down">MEDIUM</b></div><div class="text-xs text-dim" style="line-height:1.6;">Belum ada analisis live. Gunakan chart fallback + scanner sebagai konteks awal.</div>`;
+}
+
+function renderFallbackSvgChart(chartData) {
+  const container = document.getElementById('tvchart');
+  const data = chartData?.data || makeFallbackCandles('STOCK');
+  const closes = data.map(d => Number(d.close || 0));
+  const min = Math.min(...closes), max = Math.max(...closes);
+  const pts = closes.map((v,i)=>`${(i/(closes.length-1))*100},${90-((v-min)/Math.max(max-min,1))*70}`).join(' ');
+  container.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;display:block"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(16,185,129,.42)"/><stop offset="1" stop-color="rgba(16,185,129,0)"/></linearGradient></defs><polyline points="0,95 ${pts} 100,95" fill="url(#g)" stroke="none"/><polyline points="${pts}" fill="none" stroke="#10b981" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
 }
