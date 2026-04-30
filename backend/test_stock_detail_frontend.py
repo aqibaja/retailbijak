@@ -71,12 +71,23 @@ def test_stock_detail_fills_left_empty_space_below_chart_only():
 def test_stock_detail_has_ai_chat_placeholder_signal_card_and_entry_line():
     src = STOCK_DETAIL.read_text()
     assert 'ai-chat-placeholder' in src
+    assert 'ai-fill-panel' in src
     assert 'AI Assistant' in src
     assert 'Ask AI about this stock' in src
+    assert 'sample-prompts' in src
     assert 'signal-card' in src
     assert 'Signal' in src
     assert 'Confidence' in src
     assert 'Signal Score' not in src
     assert 'score-ring' not in src
     assert "line('ENTRY'" in src
+    assert 'balanced-level-label' in src
     assert 'compact-right-scroll' in src
+
+
+def test_stock_detail_reduces_blank_space_and_uniforms_right_tiles():
+    src = STOCK_DETAIL.read_text()
+    assert '.stock-chart-card{display:flex;flex-direction:column;' in src
+    assert 'ai-chat-placeholder{flex:1' in src
+    assert 'right-uniform-grid' in src
+    assert 'grid-template-columns:repeat(auto-fit,minmax(128px,1fr))' in src
