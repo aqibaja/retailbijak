@@ -143,12 +143,14 @@ function initChart(summary) {
       // Fallback: generate synthetic from current value
       const base = Number(summary?.value || 7000);
       const points = range === '1Q' ? 55 : range === '1W' ? 5 : 22;
-      labels = Array.from({ length: points }, (_, i) => `D-${points - 1 - i}`);
+      labels = Array.from({ length: points }, (_, i) => {
+        const d = new Date(); d.setDate(d.getDate() - (points - 1 - i));
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      });
       const amp = range === '1Q' ? 0.06 : range === '1W' ? 0.01 : 0.018;
       data = labels.map((_, i) => Number((base * (1 + Math.sin(i * 1.4) * amp + (i - labels.length + 1) * amp / labels.length)).toFixed(2)));
       data[data.length - 1] = Number(base.toFixed(2));
-      const sub = document.getElementById('ihsg-chart-subtitle');
-      if (sub) sub.textContent = 'Fallback synthetic — data IDX belum tersedia';
+      // No subtitle on synthetic fallback
     }
 
     const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 320);

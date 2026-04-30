@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 80" width="180" height="80">
+  <!-- Background: transparent -->
+  
+  <!-- Letter B - Navy Blue, bold rounded sans-serif -->
+  <g>
+    <!-- B vertical stem -->
+    <rect x="8" y="8" width="16" height="64" rx="3" fill="#1e3a5f"/>
+    <!-- B top bowl -->
+    <path d="M24,8 L48,8 Q62,8 62,20 Q62,32 48,32 L24,32 Z" fill="#1e3a5f"/>
+    <!-- B bottom bowl (slightly larger) -->
+    <path d="M24,32 L52,32 Q68,32 68,48 Q68,64 52,64 L24,64 Z" fill="#1e3a5f"/>
+    <!-- Green block inside B top counter -->
+    <rect x="28" y="12" width="14" height="8" rx="2" fill="#22c55e"/>
+  </g>
+
+  <!-- Letter R - Navy Blue, bold rounded sans-serif, connected to B -->
+  <g>
+    <!-- R vertical stem -->
+    <rect x="72" y="8" width="16" height="64" rx="3" fill="#1e3a5f"/>
+    <!-- R top bowl -->
+    <path d="M88,8 L112,8 Q128,8 128,20 Q128,32 112,32 L88,32 Z" fill="#1e3a5f"/>
+    <!-- R diagonal leg -->
+    <path d="M112,32 L140,72 L128,72 L106,40 L88,40 L88,32 Z" fill="#1e3a5f"/>
+  </g>
+
+  <!-- Green Growth Chart - overlapping/next to R -->
+  <g transform="translate(130, 14)">
+    <!-- Bar chart bars (ascending) -->
+    <rect x="0" y="32" width="6" height="16" rx="1.5" fill="#22c55e" opacity="0.85"/>
+    <rect x="9" y="24" width="6" height="24" rx="1.5" fill="#22c55e" opacity="0.9"/>
+    <rect x="18" y="14" width="6" height="34" rx="1.5" fill="#22c55e" opacity="0.95"/>
+    <rect x="27" y="6" width="6" height="42" rx="1.5" fill="#22c55e"/>
+    
+    <!-- Growth arrow line -->
+    <polyline points="3,30 12,22 21,12 30,2" 
+              fill="none" stroke="#16a34a" stroke-width="2.5" 
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Arrow head -->
+    <polygon points="30,2 24,4 28,8" fill="#16a34a"/>
+  </g>
+</svg>
