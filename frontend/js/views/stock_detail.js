@@ -12,10 +12,10 @@ export async function renderStockDetail(root, ticker) {
       <style>
         .stock-hero{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(2,6,23,.92));box-shadow:0 18px 60px rgba(0,0,0,.24)}
         .stock-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:12px;margin-top:12px}.stock-chart-card{min-height:430px}.stock-chart-wrap{height:320px;border-radius:16px;background:radial-gradient(circle at top right,rgba(16,185,129,.08),transparent 42%),rgba(2,6,23,.45);border:1px solid rgba(255,255,255,.05);overflow:hidden}.stock-side{gap:10px!important}.stock-side .panel{border:1px solid rgba(255,255,255,.08);background:rgba(15,23,42,.72);padding:12px!important}.compact-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))!important}.compact-notes{max-height:100px;overflow:auto;scrollbar-width:thin}
-        .technical-grid,.stats-grid,.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.metric-group{margin-top:8px}.metric-group-title{font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:900;letter-spacing:.08em;margin:6px 0 5px;display:flex;align-items:center;gap:6px}.decision-panel{display:grid;grid-template-columns:1fr;gap:10px}.decision-hero{padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.20);background:linear-gradient(135deg,rgba(15,23,42,.84),rgba(2,6,23,.48))}.action-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.chart-shell{position:relative}.level-overlay{position:absolute;inset:0;pointer-events:none}.level-line{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.35)}.level-line span{position:absolute;right:10px;top:-11px;font-size:10px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid rgba(255,255,255,.12)}.stat-tile{padding:8px 9px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.stat-tile span{display:block;font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:800;letter-spacing:.06em}.stat-tile strong{display:block;margin-top:3px;font-size:14px;line-height:1.15}.stat-tile small{display:inline-flex;margin-top:2px;font-size:10px;color:var(--text-muted)}
+        .technical-grid,.stats-grid,.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.metric-group{margin-top:8px}.metric-group-title{font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:900;letter-spacing:.08em;margin:6px 0 5px;display:flex;align-items:center;gap:6px}.decision-panel{display:grid;grid-template-columns:1fr;gap:10px}.below-chart-fill{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.below-chart-fill .stat-tile{min-height:72px}.decision-hero{padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.20);background:linear-gradient(135deg,rgba(15,23,42,.84),rgba(2,6,23,.48))}.action-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.chart-shell{position:relative}.level-overlay{position:absolute;inset:0;pointer-events:none}.level-line{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.35)}.level-line span{position:absolute;right:10px;top:-11px;font-size:10px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid rgba(255,255,255,.12)}.stat-tile{padding:8px 9px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.stat-tile span{display:block;font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:800;letter-spacing:.06em}.stat-tile strong{display:block;margin-top:3px;font-size:14px;line-height:1.15}.stat-tile small{display:inline-flex;margin-top:2px;font-size:10px;color:var(--text-muted)}
         .metric-good{border-color:rgba(16,185,129,.35)!important;background:linear-gradient(180deg,rgba(16,185,129,.12),rgba(16,185,129,.035))!important}.metric-good strong,.metric-good .metric-value{color:#34d399!important}.metric-bad{border-color:rgba(239,68,68,.38)!important;background:linear-gradient(180deg,rgba(239,68,68,.13),rgba(239,68,68,.035))!important}.metric-bad strong,.metric-bad .metric-value{color:#fb7185!important}.metric-warn{border-color:rgba(245,158,11,.36)!important;background:linear-gradient(180deg,rgba(245,158,11,.12),rgba(245,158,11,.03))!important}.metric-warn strong,.metric-warn .metric-value{color:#fbbf24!important}.metric-neutral strong,.metric-neutral .metric-value{color:var(--text-main)!important}
         .score-ring{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#34d399 var(--score-deg),rgba(255,255,255,.08) 0);position:relative}.score-ring:before{content:'';position:absolute;inset:6px;border-radius:50%;background:#0f172a}.score-ring strong{position:relative;font-size:16px}.signal-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;text-transform:uppercase}.pill-good{background:rgba(16,185,129,.14);color:#34d399;border:1px solid rgba(16,185,129,.32)}.pill-bad{background:rgba(239,68,68,.14);color:#fb7185;border:1px solid rgba(239,68,68,.32)}.pill-warn{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.32)}.trade-plan{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.plan-card{padding:12px;border-radius:14px;background:rgba(2,6,23,.35);border:1px solid rgba(255,255,255,.06)}
-        @media(max-width:1100px){.stock-layout{grid-template-columns:1fr}.stock-chart-wrap{height:300px}.stock-chart-card{min-height:auto}}@media(max-width:680px){.stock-hero{align-items:flex-start;gap:16px;flex-direction:column}.technical-grid,.stats-grid,.insight-grid,.trade-plan,.action-bar{grid-template-columns:1fr}}
+        @media(max-width:1100px){.stock-layout{grid-template-columns:1fr}.stock-chart-wrap{height:300px}.stock-chart-card{min-height:auto}}@media(max-width:680px){.stock-hero{align-items:flex-start;gap:16px;flex-direction:column}.technical-grid,.stats-grid,.insight-grid,.trade-plan,.action-bar,.below-chart-fill{grid-template-columns:1fr}}
       </style>
       <div class="stock-hero panel">
         <div class="flex items-center gap-4">
@@ -35,6 +35,7 @@ export async function renderStockDetail(root, ticker) {
           </div>
           <div class="chart-shell"><div id="tvchart" class="stock-chart-wrap"></div><div id="level-overlay" class="level-overlay"></div></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
+          <div id="below-chart-fill" class="below-chart-fill"></div>
         </div>
         <div class="stock-side flex-col gap-2">
           <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Technical Summary</h3><div id="technical-summary" class="intel-item">Loading technical...</div></div><div id="score-ring" class="score-ring" style="--score-deg:0deg"><strong>—</strong></div></div><div id="technical-panel" class="technical-grid mt-3"></div></div>
@@ -70,6 +71,7 @@ export async function renderStockDetail(root, ticker) {
   renderFundamentalPanel(fund?.data || detail?.data || {}, candles, technical);
   renderAnalysisPanel(analysisData, technical);
   renderDecisionPanel(candles, technical);
+  renderBelowChartFill(candles, technical);
   renderTradePlan(candles, technical);
   renderInsightCards(candles, technical, analysisData);
   renderLevelOverlay(candles, technical);
@@ -156,6 +158,22 @@ function renderFundamentalPanel(d, candles, tech){
   ];
   document.getElementById('fundamental-panel').innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
+
+function renderBelowChartFill(candles, tech){
+  const el = document.getElementById('below-chart-fill'); if (!el) return;
+  const data = candles.slice(-7); const last = candles[candles.length-1] || {}; const first = data[0] || last;
+  const highs = data.map(d=>d.high).filter(Number.isFinite), lows = data.map(d=>d.low).filter(Number.isFinite);
+  const rangePct = first?.close ? ((last.close - first.close) / first.close) * 100 : null;
+  const volumeRatio = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value; const levels = getLevels(candles, tech);
+  const cards = [
+    ['Range 7D', rangePct == null ? '—' : pf(rangePct), `${money(Math.min(...lows))} - ${money(Math.max(...highs))}`, rangePct >= 0 ? 'metric-good' : 'metric-bad'],
+    ['Volume Context', volumeRatio ? `${nf(volumeRatio,2)}x avg` : '—', volumeRatio >= 1.5 ? 'active' : 'normal', volumeRatio >= 1.5 ? 'metric-good' : 'metric-neutral'],
+    ['Level Plan', `${money(levels.stop)} / ${money(levels.target)}`, 'stop / target', 'metric-neutral'],
+    ['Quick Read', rsi >= 70 ? 'Wait pullback' : (tech.rating || 'Watch'), rsi >= 70 ? 'overbought' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
+  ];
+  el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+}
+
 function renderAnalysisPanel(data, tech){
   const noData = String(tech.rating || '').toUpperCase().includes('NO DATA');
   const rows = noData

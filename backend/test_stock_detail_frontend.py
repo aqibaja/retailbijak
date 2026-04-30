@@ -56,3 +56,13 @@ def test_stock_detail_uses_compact_layout_tokens():
     assert 'compact-grid-3' in src
     assert 'compact-notes' in src
     assert 'max-height:100px' in src
+
+
+def test_stock_detail_fills_left_empty_space_below_chart_only():
+    src = STOCK_DETAIL.read_text()
+    assert 'below-chart-fill' in src
+    assert 'renderBelowChartFill' in src
+    assert 'Range 7D' in src
+    assert 'Volume Context' in src
+    assert 'Quick Read' in src
+    assert 'id="below-chart-fill"' in src
