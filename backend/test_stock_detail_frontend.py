@@ -55,7 +55,7 @@ def test_stock_detail_uses_compact_layout_tokens():
     assert 'height:320px' in src
     assert 'compact-grid-3' in src
     assert 'compact-notes' in src
-    assert 'max-height:100px' in src
+    assert 'overflow:visible' in src
 
 
 def test_stock_detail_fills_left_empty_space_below_chart_only():
@@ -66,3 +66,17 @@ def test_stock_detail_fills_left_empty_space_below_chart_only():
     assert 'Volume Context' in src
     assert 'Quick Read' in src
     assert 'id="below-chart-fill"' in src
+
+
+def test_stock_detail_has_ai_chat_placeholder_signal_card_and_entry_line():
+    src = STOCK_DETAIL.read_text()
+    assert 'ai-chat-placeholder' in src
+    assert 'AI Assistant' in src
+    assert 'Ask AI about this stock' in src
+    assert 'signal-card' in src
+    assert 'Signal' in src
+    assert 'Confidence' in src
+    assert 'Signal Score' not in src
+    assert 'score-ring' not in src
+    assert "line('ENTRY'" in src
+    assert 'compact-right-scroll' in src
