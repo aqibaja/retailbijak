@@ -12,7 +12,7 @@ export async function renderStockDetail(root, ticker) {
       <style>
         .stock-hero{display:flex;justify-content:space-between;align-items:center;padding:22px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(2,6,23,.92));box-shadow:0 18px 60px rgba(0,0,0,.24)}
         .stock-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,.9fr);gap:18px;margin-top:18px}.stock-chart-card{min-height:560px}.stock-chart-wrap{height:470px;border-radius:16px;background:radial-gradient(circle at top right,rgba(16,185,129,.08),transparent 42%),rgba(2,6,23,.45);border:1px solid rgba(255,255,255,.05);overflow:hidden}.stock-side .panel{border:1px solid rgba(255,255,255,.08);background:rgba(15,23,42,.72)}
-        .technical-grid,.stats-grid,.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric-group{margin-top:12px}.metric-group-title{font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:900;letter-spacing:.08em;margin:10px 0 8px;display:flex;align-items:center;gap:6px}.decision-panel{display:grid;grid-template-columns:1fr;gap:10px}.decision-hero{padding:14px;border-radius:16px;border:1px solid rgba(16,185,129,.26);background:linear-gradient(135deg,rgba(16,185,129,.14),rgba(15,23,42,.55))}.action-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.chart-shell{position:relative}.level-overlay{position:absolute;inset:0;pointer-events:none}.level-line{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.35)}.level-line span{position:absolute;right:10px;top:-11px;font-size:10px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid rgba(255,255,255,.12)}.stat-tile{padding:12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.stat-tile span{display:block;font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:800;letter-spacing:.06em}.stat-tile strong{display:block;margin-top:6px;font-size:18px}.stat-tile small{display:inline-flex;margin-top:5px;font-size:11px;color:var(--text-muted)}
+        .technical-grid,.stats-grid,.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric-group{margin-top:12px}.metric-group-title{font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:900;letter-spacing:.08em;margin:10px 0 8px;display:flex;align-items:center;gap:6px}.decision-panel{display:grid;grid-template-columns:1fr;gap:10px}.decision-hero{padding:14px;border-radius:16px;border:1px solid rgba(148,163,184,.20);background:linear-gradient(135deg,rgba(15,23,42,.84),rgba(2,6,23,.48))}.action-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.chart-shell{position:relative}.level-overlay{position:absolute;inset:0;pointer-events:none}.level-line{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.35)}.level-line span{position:absolute;right:10px;top:-11px;font-size:10px;padding:2px 6px;border-radius:999px;background:#0f172a;border:1px solid rgba(255,255,255,.12)}.stat-tile{padding:12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.stat-tile span{display:block;font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:800;letter-spacing:.06em}.stat-tile strong{display:block;margin-top:6px;font-size:18px}.stat-tile small{display:inline-flex;margin-top:5px;font-size:11px;color:var(--text-muted)}
         .metric-good{border-color:rgba(16,185,129,.35)!important;background:linear-gradient(180deg,rgba(16,185,129,.12),rgba(16,185,129,.035))!important}.metric-good strong,.metric-good .metric-value{color:#34d399!important}.metric-bad{border-color:rgba(239,68,68,.38)!important;background:linear-gradient(180deg,rgba(239,68,68,.13),rgba(239,68,68,.035))!important}.metric-bad strong,.metric-bad .metric-value{color:#fb7185!important}.metric-warn{border-color:rgba(245,158,11,.36)!important;background:linear-gradient(180deg,rgba(245,158,11,.12),rgba(245,158,11,.03))!important}.metric-warn strong,.metric-warn .metric-value{color:#fbbf24!important}.metric-neutral strong,.metric-neutral .metric-value{color:var(--text-main)!important}
         .score-ring{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#34d399 var(--score-deg),rgba(255,255,255,.08) 0);position:relative}.score-ring:before{content:'';position:absolute;inset:8px;border-radius:50%;background:#0f172a}.score-ring strong{position:relative;font-size:22px}.signal-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;text-transform:uppercase}.pill-good{background:rgba(16,185,129,.14);color:#34d399;border:1px solid rgba(16,185,129,.32)}.pill-bad{background:rgba(239,68,68,.14);color:#fb7185;border:1px solid rgba(239,68,68,.32)}.pill-warn{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.32)}.trade-plan{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.plan-card{padding:12px;border-radius:14px;background:rgba(2,6,23,.35);border:1px solid rgba(255,255,255,.06)}
         @media(max-width:1100px){.stock-layout{grid-template-columns:1fr}.stock-chart-wrap{height:360px}.stock-chart-card{min-height:auto}}@media(max-width:680px){.stock-hero{align-items:flex-start;gap:16px;flex-direction:column}.technical-grid,.stats-grid,.insight-grid,.trade-plan,.action-bar{grid-template-columns:1fr}}
@@ -35,7 +35,6 @@ export async function renderStockDetail(root, ticker) {
           </div>
           <div class="chart-shell"><div id="tvchart" class="stock-chart-wrap"></div><div id="level-overlay" class="level-overlay"></div></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
-          <div id="trade-plan" class="trade-plan mt-3"></div>
         </div>
         <div class="stock-side flex-col gap-4">
           <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Technical Summary</h3><div id="technical-summary" class="intel-item">Loading technical...</div></div><div id="score-ring" class="score-ring" style="--score-deg:0deg"><strong>—</strong></div></div><div id="technical-panel" class="technical-grid mt-3"></div></div>
@@ -114,36 +113,40 @@ function sentimentClass(label, value, metric = ''){
 }
 function tile(label, value, status = '', cls = ''){ return `<div class="stat-tile ${cls || sentimentClass(status, value)}"><span>${label}</span><strong class="mono metric-value">${value}</strong>${status ? `<small>${status}</small>` : ''}</div>`; }
 function renderTechnicalPanel(t){
-  const ind = t.indicators || {}; const score = Number(t.score ?? 0); const ratingCls = sentimentClass(t.rating, score);
+  const ind = t.indicators || {}; const isNoData = String(t.rating || '').toUpperCase().includes('NO DATA'); const score = isNoData ? null : Number(t.score ?? 0); const ratingCls = isNoData ? 'metric-neutral' : sentimentClass(t.rating, score);
   document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NEUTRAL'}</span><div class="mt-2 text-sm text-muted">${t.summary || 'Technical summary belum tersedia lengkap.'}</div>`;
-  const ring = document.getElementById('score-ring'); ring.style.setProperty('--score-deg', `${Math.max(0, Math.min(100, score)) * 3.6}deg`); ring.querySelector('strong').textContent = score ? nf(score,0) : '—';
+  const ring = document.getElementById('score-ring'); ring.style.setProperty('--score-deg', `${score == null ? 0 : Math.max(0, Math.min(100, score)) * 3.6}deg`); ring.querySelector('strong').textContent = score == null ? '—' : nf(score,0);
   const groups = [
     ['Momentum', [['RSI 14', nf(ind.rsi?.value,2), ind.rsi?.status, sentimentClass(ind.rsi?.status, ind.rsi?.value, 'rsi')], ['Stoch %K', nf(ind.stochastic?.k,2), ind.stochastic?.status], ['MACD', nf(ind.macd?.histogram,2), ind.macd?.status]]],
-    ['Trend', [['SMA 20', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'no data'], ['SMA 200', nf(ind.trend?.sma_200,2), 'long']]],
-    ['Volatility', [['ATR 14', nf(ind.atr?.value,2), ind.atr?.status], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good']]],
-    ['Levels', [['Volume Ratio', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support', money(ind.support_resistance?.support_20d), 'support', 'metric-good'], ['Resistance', money(ind.support_resistance?.resistance_20d), 'resistance', 'metric-warn']]],
+    ['Trend', filterValidCards([['SMA 20', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'medium'], ['SMA 200', nf(ind.trend?.sma_200,2), 'long']])],
+    ['Volatility', filterValidCards([['ATR 14', nf(ind.atr?.value,2), ind.atr?.status], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good']])],
+    ['Levels', filterValidCards([['Volume Ratio', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support', isValidLevel(ind.support_resistance?.support_20d) ? money(ind.support_resistance.support_20d) : '—', 'support', 'metric-good'], ['Resistance', isValidLevel(ind.support_resistance?.resistance_20d) ? money(ind.support_resistance.resistance_20d) : '—', 'resistance', 'metric-warn']])],
   ];
   document.getElementById('technical-panel').innerHTML = groups.map(([title, cards]) => renderMetricGroup(title, cards)).join('');
 }
 
 function renderMetricGroup(title, cards){
+  if (!cards.length) return '';
   return `<div class="metric-group"><div class="metric-group-title">${title}</div><div class="technical-grid">${cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('')}</div></div>`;
 }
+function isValidLevel(value){ return Number.isFinite(Number(value)) && Number(value) > 0; }
+function filterValidCards(cards){ return cards.filter(([, value]) => value !== '—' && !String(value).match(/^Rp\s*0$/)); }
 function getLevels(candles, tech){
   const last = candles[candles.length-1] || {}; const sr = tech?.indicators?.support_resistance || {}; const atr = Number(tech?.indicators?.atr?.value || 0);
-  const entry = last.close; const stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : entry - (atr || entry*.08); const target = sr.resistance_20d || entry + (atr || entry*.1);
-  return { entry, stop: Math.max(0, stop), target, support: sr.support_20d, resistance: sr.resistance_20d, atr };
+  const entry = last.close; const stop = isValidLevel(sr.support_20d) ? Number(sr.support_20d) : entry - (atr || entry*.06); const target = isValidLevel(sr.resistance_20d) ? Number(sr.resistance_20d) : entry + (atr || entry*.08);
+  return { entry, stop: Math.max(1, stop), target, support: isValidLevel(sr.support_20d) ? Number(sr.support_20d) : null, resistance: isValidLevel(sr.resistance_20d) ? Number(sr.resistance_20d) : null, atr };
 }
 function renderDecisionPanel(candles, tech){
   const levels = getLevels(candles, tech); const rsi = tech?.indicators?.rsi?.value; const rating = tech?.rating || 'NEUTRAL';
-  const action = rating === 'BULLISH' && rsi >= 70 ? 'BUY PULLBACK' : rating === 'BULLISH' ? 'WATCH / ACCUMULATE' : rating === 'BEARISH' ? 'AVOID' : 'WATCH';
-  const risk = Math.max(levels.entry - levels.stop, 1), reward = Math.max(levels.target - levels.entry, 0);
-  document.getElementById('decision-panel').innerHTML = `<div class="decision-hero"><div class="text-xs text-dim uppercase strong">Decision Panel</div><div class="flex justify-between items-center mt-2"><strong class="text-main">${action}</strong><span class="signal-pill ${action.includes('AVOID') ? 'pill-bad' : action.includes('PULLBACK') ? 'pill-warn' : 'pill-good'}">R/R ${nf(reward/risk,2)}x</span></div><div class="text-sm text-muted mt-2">Entry ideal ${money(levels.entry)} ± ${nf(levels.atr || levels.entry*.03,0)} · invalid below ${money(levels.stop)} · target ${money(levels.target)}</div></div>`;
+  const risk = Math.max(levels.entry - levels.stop, 1), reward = Math.max(levels.target - levels.entry, 0); const rr = reward/risk;
+  const action = rating === 'BEARISH' ? 'HINDARI DULU' : (rsi >= 70 || rr < 1) ? 'TAHAN / WATCH' : rating === 'BULLISH' ? 'AKUMULASI BERTAHAP' : 'WATCH';
+  const caution = rr < 1 ? 'Risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.' : 'Setup boleh dipantau, tetap tunggu konfirmasi volume dan candle.';
+  document.getElementById('decision-panel').innerHTML = `<div class="decision-hero"><div class="text-xs text-dim uppercase strong">Decision Panel</div><div class="flex justify-between items-center mt-2"><strong class="text-main">${action}</strong><span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">R/R ${nf(rr,2)}x</span></div><div class="text-sm text-muted mt-2">${caution}</div><div class="text-xs text-dim mt-2">Area pantau ${money(levels.entry)} · invalid bawah ${money(levels.stop)} · target ${money(levels.target)}</div></div>`;
 }
 function renderLevelOverlay(candles, tech){
   const overlay=document.getElementById('level-overlay'); if(!overlay) return; const levels=getLevels(candles, tech); const prices=[...candles.map(c=>c.high),...candles.map(c=>c.low),levels.stop,levels.target].filter(Number.isFinite); const min=Math.min(...prices), max=Math.max(...prices);
   const line=(label,price,color)=>{ if(!price || max===min) return ''; const pct=100-((price-min)/(max-min)*100); return `<div class="level-line" style="top:${Math.max(4,Math.min(96,pct))}%;border-color:${color}"><span style="color:${color}">${label} ${money(price)}</span></div>`};
-  overlay.innerHTML = line('STOP', levels.stop, '#fb7185') + line('ENTRY', levels.entry, '#34d399') + line('TARGET', levels.target, '#fbbf24');
+  overlay.innerHTML = line('STOP', levels.stop, '#fb7185') + line('TARGET', levels.target, '#fbbf24');
 }
 
 function renderFundamentalPanel(d, candles, tech){
@@ -154,13 +157,16 @@ function renderFundamentalPanel(d, candles, tech){
   document.getElementById('fundamental-panel').innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
 function renderAnalysisPanel(data, tech){
-  const rows = [['Swing Score', data.swing?.score ?? tech.score ?? '—', tech.score >= 60 ? 'bullish' : 'watch'], ['Signal', tech.rating || data.swing?.label || 'NEUTRAL', tech.rating], ['Valuation', data.valuation?.label || 'fair', data.valuation?.label || 'fair'], ['Dividend', data.dividend?.label || 'weak', data.dividend?.label || 'weak'], ['Risk', data.gorengan?.label || 'normal', data.gorengan?.label || 'normal']];
+  const noData = String(tech.rating || '').toUpperCase().includes('NO DATA');
+  const rows = noData
+    ? [['Swing Score', '—', 'no data'], ['Signal', 'NO DATA', 'no data'], ['Valuation', '—', 'no data'], ['Quality', '—', 'no data'], ['Risk', '—', 'no data']]
+    : [['Swing Score', data.swing?.score ?? tech.score ?? '—', tech.score >= 60 ? 'bullish' : 'watch'], ['Signal', tech.rating || data.swing?.label || 'NEUTRAL', tech.rating], ['Valuation', data.valuation?.label || 'fair', data.valuation?.label || 'fair'], ['Quality', data.dividend?.label || 'weak', data.dividend?.label || 'weak'], ['Risk', data.gorengan?.label || 'normal', data.gorengan?.label || 'normal']];
   document.getElementById('analysis-panel').innerHTML = rows.map(([l,v,s]) => tile(l, v, s)).join('');
 }
 function renderTradePlan(candles, tech){
   const last = candles[candles.length-1] || {}; const sr = tech?.indicators?.support_resistance || {}; const atr = tech?.indicators?.atr?.value;
   const entry = last.close, stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : (entry - (atr || entry*.08)); const target = sr.resistance_20d || (entry + (atr || entry*.1));
-  document.getElementById('trade-plan').innerHTML = [ ['Entry Zone', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'wait pullback'], ['Stop Area', money(Math.max(0, stop)), 'risk control'], ['Target Near', money(target), 'resistance'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
+  const el = document.getElementById('trade-plan'); if (el) el.innerHTML = [ ['Entry Zone', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'wait pullback'], ['Stop Area', money(Math.max(1, stop)), 'risk control'], ['Target Near', money(target), 'resistance'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
 }
 function renderInsightCards(candles, tech, data){
   const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;

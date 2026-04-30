@@ -35,3 +35,14 @@ def test_stock_detail_has_pro_dashboard_sections():
     assert '30D' in src
     assert 'ALL' in src
     assert 'renderLevelOverlay' in src
+
+
+def test_stock_detail_hides_invalid_zero_levels_and_uses_clean_decision_copy():
+    src = STOCK_DETAIL.read_text()
+    assert 'isValidLevel' in src
+    assert 'filterValidCards' in src
+    assert 'Support', 'Resistance'
+    assert 'Rp 0' not in src
+    assert 'TAHAN / WATCH' in src
+    assert 'BUY PULLBACK' not in src
+    assert 'Risk/reward kurang ideal' in src
