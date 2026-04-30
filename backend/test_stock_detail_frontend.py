@@ -131,10 +131,11 @@ def test_screener_branding_shows_swingaq_and_keeps_other_presets():
     src = Path(SCREENER).read_text()
     assert 'SwingAQ Scanner' in src
     assert 'SwingAQ CCI + Magic Line' in src
-    assert 'Breakout' in src
+    assert 'SwingAQ' in src
     assert 'Value' in src
     assert 'Dividend' in src
     assert 'Gorengan' in src
-    assert 'retailbijak Momentum' not in src
+    assert 'Breakout</button>' not in src
     assert 'Quick presets + live SSE results' in src
     assert 'demo candidates' not in src
+    assert 'rule=' in src

@@ -63,9 +63,10 @@ export async function renderScreener(root) {
           <!-- Filter Panel (Left) -->
           <div class="scanner-form flex-col">
             <div class="scanner-header-text">SCAN PARAMETERS</div>
+            <div class="scanner-rule-label">Rule: SwingAQ CCI + Magic Line</div>
             
             <div class="scanner-micro-grid">
-              <button class="scanner-preset active" data-preset="Breakout" data-strategy="SwingAQ CCI + Magic Line">Breakout</button>
+              <button class="scanner-preset active" data-preset="SwingAQ" data-strategy="SwingAQ CCI + Magic Line">SwingAQ</button>
               <button class="scanner-preset" data-preset="Value" data-strategy="Value Reversal">Value</button>
               <button class="scanner-preset" data-preset="Dividend" data-strategy="Dividend Quality">Dividend</button>
               <button class="scanner-preset" data-preset="Gorengan" data-strategy="Gorengan Radar">Gorengan</button>
@@ -98,7 +99,7 @@ export async function renderScreener(root) {
             <button id="btn-run-screener" class="scanner-btn-primary">
               <i data-lucide="search" style="width:16px;"></i> EXECUTE SCAN
             </button>
-            <div class="scanner-hint">SwingAQ rule set for Breakout / Value / Dividend / Gorengan runs on real backend scan data.</div>
+            <div class="scanner-hint">SwingAQ rule set for SwingAQ / Value / Dividend / Gorengan runs on real backend scan data.</div>
 
             <div id="screener-progress" style="display:none; margin-top:24px; padding:16px; background:var(--bg-elevated); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
               <div class="flex justify-between items-center mb-2">
@@ -143,13 +144,15 @@ export async function renderScreener(root) {
         btn.classList.add('active');
         root.querySelector('#screener-strategy').value = btn.dataset.strategy;
         root.querySelector('.scanner-hint').textContent = `${btn.dataset.preset} preset aktif — klik Execute Scan untuk menjalankan.`;
+        root.querySelector('.scanner-rule-label').textContent = `Rule: ${btn.dataset.strategy}`;
     }));
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
 }
 
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;
-    const preset = document.querySelector('.scanner-preset.active')?.dataset.preset || 'Breakout';
+    const preset = document.querySelector('.scanner-preset.active')?.dataset.preset || 'SwingAQ';
+    const rule = document.querySelector('#screener-strategy').value;
     const btn = document.getElementById('btn-run-screener');
     const contentArea = document.getElementById('screener-content');
     const progBox = document.getElementById('screener-progress');
@@ -169,16 +172,16 @@ function runScreener() {
     let matchCount = 0;
     const results = [];
 
-    const es = new EventSource(getScanEventSourceUrl(tf));
+    const es = new EventSource(`${getScanEventSourceUrl(tf)}&rule=${encodeURIComponent(rule)}`);
     let fallbackTimer = setTimeout(() => {
         finishScan([], btn, countBadge, contentArea, es);
-        showToast('Backend scan taking longer than usual. Waiting for live results.', 'info');
+        showToast(`${preset} scan taking longer than usual. Waiting for live results.`, 'info');
     }, 3000);
     
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            progText.textContent = `${preset}: scanning ${data.ticker}...`;
+            progText.textContent = `${preset}: ${rule} scanning ${data.ticker}...`;
             progPercent.textContent = `${data.percent}%`;
             progFill.style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
@@ -210,7 +213,7 @@ function runScreener() {
         clearTimeout(fallbackTimer);
         setTimeout(() => {
            finishScan(dummyScanResults, btn, countBadge, contentArea, es);
-           showToast('Backend unavailable. Waiting for live scan results.', 'info');
+           showToast(`${preset} backend unavailable. Waiting for live scan results.`, 'info');
         }, 1500);
     };
 }
@@ -225,7 +228,7 @@ function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {
     countBadge.textContent = backendZero ? `0 MATCHES` : `${results.length} MATCHES`;
     
     if (results.length === 0) {
-        contentArea.innerHTML = `<div class="scanner-empty"><div class="scanner-empty-icon"><i data-lucide="radar" style="width:32px; height:32px;"></i></div><h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Live Scan Complete</h3><p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">${meta.backendDone ? `Backend scanned ${meta.scanned || 0} tickers in ${meta.duration || '?'}s.` : 'Waiting for backend stream.'}</p><div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; width:100%; max-width:300px; text-align:left;"><div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Live Cycles</div><div class="flex items-center gap-2 mb-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Momentum scan — backend stream healthy</div><div class="flex items-center gap-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Breakout scan — latest cycle</div></div></div>`;
+        contentArea.innerHTML = `<div class="scanner-empty"><div class="scanner-empty-icon"><i data-lucide="radar" style="width:32px; height:32px;"></i></div><h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Live Scan Complete</h3><p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">${meta.backendDone ? `Backend scanned ${meta.scanned || 0} tickers in ${meta.duration || '?'}s using ${meta.rule || 'SwingAQ CCI + Magic Line'}.` : 'Waiting for backend stream.'}</p><div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; width:100%; max-width:300px; text-align:left;"><div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Live Cycles</div><div class="flex items-center gap-2 mb-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Momentum scan — backend stream healthy</div><div class="flex items-center gap-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Breakout scan — latest cycle</div></div></div>`;
     } else {
         contentArea.innerHTML = `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`;
     }

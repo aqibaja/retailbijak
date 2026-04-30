@@ -129,7 +129,7 @@ async def stocks():
     return {"count": len(tickers), "tickers": tickers}
 
 
-async def scan_all_db_generator(timeframe: str):
+async def scan_all_db_generator(timeframe: str, rule: str | None = None):
     db = SessionLocal()
     try:
         tickers = get_all_tickers()
@@ -180,12 +180,12 @@ async def scan_all_db_generator(timeframe: str):
 
 
 @app.get("/api/scan")
-async def scan(timeframe: str = "1d"):
+async def scan(timeframe: str = "1d", rule: str | None = None):
     if timeframe not in VALID_TIMEFRAMES:
         raise HTTPException(400, f"Invalid timeframe. Valid: {VALID_TIMEFRAMES}")
 
     return StreamingResponse(
-        scan_all_db_generator(timeframe),
+        scan_all_db_generator(timeframe, rule=rule),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
