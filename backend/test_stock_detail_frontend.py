@@ -89,5 +89,14 @@ def test_stock_detail_reduces_blank_space_and_uniforms_right_tiles():
     src = STOCK_DETAIL.read_text()
     assert '.stock-chart-card{display:flex;flex-direction:column;' in src
     assert 'ai-chat-placeholder{flex:1' in src
+    assert 'ai-thread-mock' in src
     assert 'right-uniform-grid' in src
     assert 'grid-template-columns:repeat(auto-fit,minmax(128px,1fr))' in src
+    assert 'metric-group-title full-row' in src
+
+
+def test_stock_detail_uses_tighter_stop_not_raw_deep_support():
+    src = STOCK_DETAIL.read_text()
+    assert 'tightStop' in src
+    assert 'entry*.06' in src
+    assert 'Math.max(rawStop, tightStop)' in src
