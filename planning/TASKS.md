@@ -9,7 +9,9 @@
 ## 📋 Status Keseluruhan
 
 **Planning**: ✅ Selesai
-**Implementasi**: 🚀 Phase 1-8 selesai, siap digunakan
+**Implementasi**: ✅ Contract hardening + browser verification + docs sync in progress/terverifikasi
+
+> Catatan: bagian lama masih menyimpan roadmap implementasi awal SwingAQ. Untuk status terbaru RetailBijak, lihat `planning/idx-api-retailbijak-24h-plan.md`.
 
 ---
 
