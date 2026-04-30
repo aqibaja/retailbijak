@@ -112,13 +112,16 @@ def test_stock_detail_uses_tighter_stop_not_raw_deep_support():
     assert 'Math.max(rawStop, tightStop)' in src
 
 
-def test_stock_detail_chart_has_no_level_lines_or_legend():
+def test_stock_detail_chart_spacing_puts_pills_and_decision_panel_farther_apart():
     src = STOCK_DETAIL.read_text()
-    assert 'id="level-legend"' not in src
-    assert 'renderLevelLegend' not in src
-    assert 'level-chip' not in src
-    assert 'balanced-level-label' not in src
+    assert 'id="level-suggestions"' in src
+    assert 'renderLevelSuggestions' in src
+    assert 'sugg-chip' in src
+    assert 'section-gap-large' in src
+    assert 'decision-panel-gap' in src
+    assert 'chart-top-spacing' in src
     assert 'level-line' not in src
+    assert 'balanced-level-label' not in src
     assert 'levelMin' not in src
     assert 'levelMax' not in src
     assert 'line(' not in src
