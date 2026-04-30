@@ -80,9 +80,19 @@ def test_stock_detail_has_ai_chat_placeholder_signal_card_and_entry_line():
     assert 'Confidence' in src
     assert 'Signal Score' not in src
     assert 'score-ring' not in src
-    assert "line('ENTRY'" in src
-    assert 'level-legend' in src
     assert 'compact-right-scroll' in src
+
+
+def test_stock_detail_keeps_rr_floor_without_chart_lines():
+    src = STOCK_DETAIL.read_text()
+    assert 'rrFloor' in src
+    assert 'minReward' in src
+    assert 'Math.max(rawTarget, minTarget)' in src
+    assert 'renderLevelOverlay' in src
+    assert 'level-line' not in src
+    assert 'level-legend' not in src
+    assert 'balanced-level-label' not in src
+
 
 
 def test_stock_detail_reduces_blank_space_and_uniforms_right_tiles():
@@ -102,15 +112,13 @@ def test_stock_detail_uses_tighter_stop_not_raw_deep_support():
     assert 'Math.max(rawStop, tightStop)' in src
 
 
-def test_stock_detail_chart_uses_legend_chips_and_rr_floor():
+def test_stock_detail_chart_has_no_level_lines_or_legend():
     src = STOCK_DETAIL.read_text()
-    assert 'id="level-legend"' in src
-    assert 'renderLevelLegend' in src
-    assert 'level-chip' in src
+    assert 'id="level-legend"' not in src
+    assert 'renderLevelLegend' not in src
+    assert 'level-chip' not in src
     assert 'balanced-level-label' not in src
-    assert 'minReward' in src
-    assert 'rrFloor' in src
-    assert 'Math.max(rawTarget, minTarget)' in src
-    assert 'levelMin' in src
-    assert 'levelMax' in src
-    assert "line('ENTRY'" in src
+    assert 'level-line' not in src
+    assert 'levelMin' not in src
+    assert 'levelMax' not in src
+    assert 'line(' not in src
