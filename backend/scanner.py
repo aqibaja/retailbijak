@@ -14,7 +14,10 @@ import pandas as pd
 import yfinance as yf
 
 from indicators import has_active_buy_signal, MIN_BARS_REQUIRED
-from stocks import get_all_tickers, get_ticker_display
+try:
+    from stocks import get_all_tickers, get_ticker_display
+except ModuleNotFoundError:
+    from backend.stocks import get_all_tickers, get_ticker_display
 
 # Timeframe config: yfinance interval & period mapping
 TIMEFRAME_CONFIG = {

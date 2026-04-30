@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 import ta
 from sqlalchemy.orm import Session
-from database import OHLCVDaily
+try:
+    from database import OHLCVDaily
+except ModuleNotFoundError:
+    from backend.database import OHLCVDaily
 
 def get_ohlcv_dataframe(db: Session, ticker: str, limit: int = 500) -> pd.DataFrame:
     """Fetch OHLCV data from the database and return as a pandas DataFrame."""

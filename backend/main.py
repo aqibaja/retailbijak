@@ -20,21 +20,42 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
-from stocks import get_all_tickers, get_ticker_display
-from database import (
-    Base,
-    engine,
-    SessionLocal,
-    Signal,
-    Stock,
-    Fundamental,
-    OHLCVDaily,
-    UserSetting,
-    WatchlistItem,
-    PortfolioPosition,
-    get_db,
-)
-from scheduler import init_scheduler, scheduler
+try:
+    from stocks import get_all_tickers, get_ticker_display
+except ModuleNotFoundError:
+    from backend.stocks import get_all_tickers, get_ticker_display
+try:
+    from database import (
+        Base,
+        engine,
+        SessionLocal,
+        Signal,
+        Stock,
+        Fundamental,
+        OHLCVDaily,
+        UserSetting,
+        WatchlistItem,
+        PortfolioPosition,
+        get_db,
+    )
+except ModuleNotFoundError:
+    from backend.database import (
+        Base,
+        engine,
+        SessionLocal,
+        Signal,
+        Stock,
+        Fundamental,
+        OHLCVDaily,
+        UserSetting,
+        WatchlistItem,
+        PortfolioPosition,
+        get_db,
+    )
+try:
+    from scheduler import init_scheduler, scheduler
+except ModuleNotFoundError:
+    from backend.scheduler import init_scheduler, scheduler
 
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0")
 
@@ -353,7 +374,10 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
 @app.get("/api/market-summary")
 def get_market_summary(db: Session = Depends(get_db)):
     """Return market summary strictly from local DB (no live provider calls)."""
-    from database import OHLCVDaily
+    try:
+        from database import OHLCVDaily
+    except ModuleNotFoundError:
+        from backend.database import OHLCVDaily
 
     latest_row = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
     if not latest_row:
