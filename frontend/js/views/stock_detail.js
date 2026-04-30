@@ -1,30 +1,47 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=20260430m';
-import { observeElements, flashUpdate } from '../main.js?v=20260430m';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=20260430n';
+import { observeElements, flashUpdate } from '../main.js?v=20260430n';
 
 const nf = (n, d = 2) => n == null || Number.isNaN(Number(n)) ? '—' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => n == null || Number.isNaN(Number(n)) ? '—' : `${Number(n) >= 0 ? '+' : ''}${Number(n).toFixed(2)}%`;
+const money = (n) => n == null || Number.isNaN(Number(n)) ? '—' : `Rp ${nf(n, 0)}`;
 
 export async function renderStockDetail(root, ticker) {
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
   root.innerHTML = `
     <section class="stock-detail-pro stagger-reveal">
+      <style>
+        .stock-hero{display:flex;justify-content:space-between;align-items:center;padding:22px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(2,6,23,.92));box-shadow:0 18px 60px rgba(0,0,0,.24)}
+        .stock-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(360px,.9fr);gap:18px;margin-top:18px}.stock-chart-card{min-height:560px}.stock-chart-wrap{height:470px;border-radius:16px;background:radial-gradient(circle at top right,rgba(16,185,129,.08),transparent 42%),rgba(2,6,23,.45);border:1px solid rgba(255,255,255,.05);overflow:hidden}.stock-side .panel{border:1px solid rgba(255,255,255,.08);background:rgba(15,23,42,.72)}
+        .technical-grid,.stats-grid,.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat-tile{padding:12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}.stat-tile span{display:block;font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:800;letter-spacing:.06em}.stat-tile strong{display:block;margin-top:6px;font-size:18px}.stat-tile small{display:inline-flex;margin-top:5px;font-size:11px;color:var(--text-muted)}
+        .metric-good{border-color:rgba(16,185,129,.35)!important;background:linear-gradient(180deg,rgba(16,185,129,.12),rgba(16,185,129,.035))!important}.metric-good strong,.metric-good .metric-value{color:#34d399!important}.metric-bad{border-color:rgba(239,68,68,.38)!important;background:linear-gradient(180deg,rgba(239,68,68,.13),rgba(239,68,68,.035))!important}.metric-bad strong,.metric-bad .metric-value{color:#fb7185!important}.metric-warn{border-color:rgba(245,158,11,.36)!important;background:linear-gradient(180deg,rgba(245,158,11,.12),rgba(245,158,11,.03))!important}.metric-warn strong,.metric-warn .metric-value{color:#fbbf24!important}.metric-neutral strong,.metric-neutral .metric-value{color:var(--text-main)!important}
+        .score-ring{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#34d399 var(--score-deg),rgba(255,255,255,.08) 0);position:relative}.score-ring:before{content:'';position:absolute;inset:8px;border-radius:50%;background:#0f172a}.score-ring strong{position:relative;font-size:22px}.signal-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;text-transform:uppercase}.pill-good{background:rgba(16,185,129,.14);color:#34d399;border:1px solid rgba(16,185,129,.32)}.pill-bad{background:rgba(239,68,68,.14);color:#fb7185;border:1px solid rgba(239,68,68,.32)}.pill-warn{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.32)}.trade-plan{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.plan-card{padding:12px;border-radius:14px;background:rgba(2,6,23,.35);border:1px solid rgba(255,255,255,.06)}
+        @media(max-width:1100px){.stock-layout{grid-template-columns:1fr}.stock-chart-wrap{height:360px}.stock-chart-card{min-height:auto}}@media(max-width:680px){.stock-hero{align-items:flex-start;gap:16px;flex-direction:column}.technical-grid,.stats-grid,.insight-grid,.trade-plan{grid-template-columns:1fr}}
+      </style>
       <div class="stock-hero panel">
         <div class="flex items-center gap-4">
           <a href="#dashboard" class="btn btn-icon"><i data-lucide="arrow-left"></i></a>
-          <div><div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EQUITY</span><span class="badge badge-up" id="live-badge">DB</span></div><div class="text-sm text-muted" id="stock-name">Loading issuer data...</div></div>
+          <div>
+            <div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EQUITY</span><span class="badge badge-up" id="live-badge">DB</span></div>
+            <div class="text-sm text-muted" id="stock-name">Loading issuer data...</div>
+          </div>
         </div>
         <div class="text-right"><div class="mono text-3xl strong text-main" id="stock-price">—</div><div class="mono text-base mt-1" id="stock-change">—</div></div>
       </div>
       <div class="stock-layout">
         <div class="panel stock-chart-card">
-          <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Price Chart</h3><p class="text-xs text-dim" id="chart-subtitle">OHLCV dari DB lokal IDX</p></div><div class="dashboard-chip-row"><button class="btn btn-primary btn-mini stock-range" data-limit="1">1D</button><button class="btn btn-mini stock-range" data-limit="7">1W</button><button class="btn btn-mini stock-range" data-limit="30">1M</button></div></div>
+          <div class="flex justify-between items-center mb-3">
+            <div><h3 class="panel-title">Price Chart</h3><p class="text-xs text-dim" id="chart-subtitle">OHLCV dari DB lokal IDX</p></div>
+            <div class="dashboard-chip-row"><button class="btn btn-primary btn-mini stock-range" data-limit="7">1W</button><button class="btn btn-mini stock-range" data-limit="30">1M</button><button class="btn btn-mini stock-range" data-limit="120">MAX</button></div>
+          </div>
           <div id="tvchart" class="stock-chart-wrap"></div>
+          <div id="trade-plan" class="trade-plan mt-3"></div>
         </div>
         <div class="stock-side flex-col gap-4">
-          <div class="panel"><h3 class="panel-title mb-3">Technical Summary</h3><div id="technical-summary" class="intel-item">Loading technical...</div><div id="technical-panel" class="technical-grid mt-3"></div></div>
+          <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Technical Summary</h3><div id="technical-summary" class="intel-item">Loading technical...</div></div><div id="score-ring" class="score-ring" style="--score-deg:0deg"><strong>—</strong></div></div><div id="technical-panel" class="technical-grid mt-3"></div></div>
           <div class="panel"><h3 class="panel-title mb-3">Key Statistics</h3><div id="fundamental-panel" class="stats-grid"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Analysis Snapshot</h3><div id="analysis-panel" class="flex-col gap-2"></div></div>
-          <div class="panel accent-top"><button id="btn-add-watchlist" class="btn btn-primary" style="width:100%;height:42px;">Add Watchlist</button></div>
+          <div class="panel"><h3 class="panel-title mb-3">Analysis Snapshot</h3><div id="analysis-panel" class="insight-grid"></div></div>
+          <div class="panel"><h3 class="panel-title mb-3">Action Notes</h3><div id="insight-cards" class="flex-col gap-2"></div></div>
+          <div class="panel accent-top"><button id="btn-add-watchlist" class="btn btn-primary" style="width:100%;height:44px;">Add Watchlist</button></div>
         </div>
       </div>
     </section>`;
@@ -36,19 +53,23 @@ export async function renderStockDetail(root, ticker) {
   });
 
   const [detail, fund, tech, chart, analysis] = await Promise.all([
-    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 120).catch(()=>null), fetchAnalysis(symbol).catch(()=>null)
+    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol).catch(()=>null)
   ]);
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   hydrateHeader(symbol, detail, fund, candles);
-  try { renderStockChart(candles, 1); } catch (e) { console.warn('stock chart fallback', e); renderFallbackSvgChart(candles.slice(-2)); }
+  try { renderStockChart(candles, 7); } catch (e) { console.warn('stock chart fallback', e); renderFallbackSvgChart(candles.slice(-7)); }
   document.querySelectorAll('.stock-range').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('.stock-range').forEach(b => b.classList.remove('btn-primary'));
     btn.classList.add('btn-primary');
     try { renderStockChart(candles, Number(btn.dataset.limit || 30)); } catch (e) { renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); }
   }));
-  renderTechnicalPanel(tech?.technical || {});
-  renderFundamentalPanel(fund?.data || detail?.data || {}, candles);
-  renderAnalysisPanel(analysis?.data || analysis?.analysis || {}, tech?.technical || {});
+  const technical = tech?.technical || {};
+  const analysisData = analysis?.data || analysis?.analysis || {};
+  renderTechnicalPanel(technical);
+  renderFundamentalPanel(fund?.data || detail?.data || {}, candles, technical);
+  renderAnalysisPanel(analysisData, technical);
+  renderTradePlan(candles, technical);
+  renderInsightCards(candles, technical, analysisData);
 }
 
 function normalizeCandles(rows){ return rows.map(r => ({ date: r.date || r.time, open:Number(r.open ?? r.close), high:Number(r.high ?? r.close), low:Number(r.low ?? r.close), close:Number(r.close), volume:Number(r.volume || 0) })).filter(r => r.date && r.close); }
@@ -56,38 +77,71 @@ function hydrateHeader(symbol, detail, fund, candles){
   const last = candles[candles.length-1], prev = candles[candles.length-2] || last;
   const change = last.close - prev.close, pct = prev.close ? change/prev.close*100 : 0;
   document.getElementById('stock-name').textContent = detail?.data?.name || fund?.data?.name || fallbackIssuerName(symbol);
-  const priceEl = document.getElementById('stock-price'); priceEl.textContent = `Rp ${nf(last.close,0)}`; flashUpdate(priceEl, change >= 0);
+  const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
   const chEl = document.getElementById('stock-change'); chEl.textContent = `${change >= 0 ? '+' : ''}${nf(change,0)} (${pf(pct)})`; chEl.className = `mono text-base mt-1 strong ${change >= 0 ? 'text-up' : 'text-down'}`;
 }
 function renderStockChart(candles, limit){
-  const data = limit === 1 ? candles.slice(-2) : candles.slice(-limit);
+  const data = candles.slice(-Math.min(limit, candles.length));
   const container = document.getElementById('tvchart'); if (!container) return;
   document.getElementById('chart-subtitle').textContent = `${data[0]?.date || '—'} → ${data[data.length-1]?.date || '—'} · ${data.length} candle`;
   if (typeof LightweightCharts !== 'undefined') {
     container.innerHTML = '';
-    const chart = LightweightCharts.createChart(container, { layout:{ textColor:'#94a3b8', background:{ type:'solid', color:'transparent' }}, grid:{ vertLines:{ color:'rgba(255,255,255,.03)'}, horzLines:{ color:'rgba(255,255,255,.03)'}}, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false }});
+    const chart = LightweightCharts.createChart(container, { width:container.clientWidth, height:container.clientHeight, layout:{ textColor:'#94a3b8', background:{ type:'solid', color:'transparent' }}, grid:{ vertLines:{ color:'rgba(255,255,255,.035)'}, horzLines:{ color:'rgba(255,255,255,.035)'}}, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:false }});
     const series = chart.addCandlestickSeries({ upColor:'#10b981', downColor:'#ef4444', borderVisible:false, wickUpColor:'#10b981', wickDownColor:'#ef4444' });
     series.setData(data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close })));
+    const vol = chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:'#64748b55' });
+    vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume, color:d.close >= d.open ? '#10b98155' : '#ef444455' })));
+    chart.priceScale('').applyOptions({ scaleMargins:{ top:.82, bottom:0 }});
     chart.timeScale().fitContent();
     new ResizeObserver(() => chart.applyOptions({ width: container.clientWidth, height: container.clientHeight })).observe(container);
   } else renderFallbackSvgChart(data);
 }
-function renderTechnicalPanel(t){
-  const ind = t.indicators || {};
-  document.getElementById('technical-summary').innerHTML = `<b>${t.rating || 'NEUTRAL'}</b> — ${t.summary || 'Technical summary belum tersedia lengkap.'}`;
-  const cards = [
-    ['RSI 14', ind.rsi?.value, ind.rsi?.status], ['MACD', ind.macd?.histogram, ind.macd?.status], ['Trend', ind.trend?.sma_20, ind.trend?.status], ['SMA 50', ind.trend?.sma_50, 'medium'], ['SMA 200', ind.trend?.sma_200, 'long'], ['Boll Upper', ind.bollinger_bands?.upper, 'BB'], ['Boll Lower', ind.bollinger_bands?.lower, 'BB'], ['Stoch %K', ind.stochastic?.k, ind.stochastic?.status], ['ATR', ind.atr?.value, ind.atr?.status], ['Volume Ratio', ind.volume?.ratio, ind.volume?.status], ['Support 20D', ind.support_resistance?.support_20d, 'support'], ['Resistance 20D', ind.support_resistance?.resistance_20d, 'resistance']
-  ];
-  document.getElementById('technical-panel').innerHTML = cards.map(([l,v,s]) => `<div class="stat-tile"><span>${l}</span><strong class="mono">${nf(v,2)}</strong><small>${s || '—'}</small></div>`).join('');
+function sentimentClass(label, value, metric = ''){
+  const s = String(label || '').toLowerCase(); const v = Number(value);
+  if (['bullish','above sma20','spike','strong','fair','low','support'].some(x => s.includes(x))) return 'metric-good';
+  if (['bearish','below','weak','high risk','expensive','danger'].some(x => s.includes(x))) return 'metric-bad';
+  if (['overbought','volatile','resistance','insufficient','watch'].some(x => s.includes(x))) return 'metric-warn';
+  if (metric === 'rsi' && v >= 70) return 'metric-warn';
+  if (metric === 'rsi' && v <= 30) return 'metric-bad';
+  if (metric === 'roe' && v > 15) return 'metric-good';
+  if (metric === 'roe' && v < 5) return 'metric-bad';
+  if (metric === 'der' && v > 2) return 'metric-bad';
+  return 'metric-neutral';
 }
-function renderFundamentalPanel(d, candles){
-  const last = candles[candles.length-1] || {};
-  const stats = [['Last Price', `Rp ${nf(last.close,0)}`], ['Volume', nf(last.volume,0)], ['P/E', d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—'], ['P/B', d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—'], ['ROE', d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—'], ['DER', nf(d.debt_to_equity,2)], ['Revenue', nf(d.revenue,0)], ['Updated', d.updated_at ? String(d.updated_at).slice(0,10) : 'DB IDX']];
-  document.getElementById('fundamental-panel').innerHTML = stats.map(([l,v]) => `<div class="stat-tile"><span>${l}</span><strong class="mono">${v}</strong></div>`).join('');
+function tile(label, value, status = '', cls = ''){ return `<div class="stat-tile ${cls || sentimentClass(status, value)}"><span>${label}</span><strong class="mono metric-value">${value}</strong>${status ? `<small>${status}</small>` : ''}</div>`; }
+function renderTechnicalPanel(t){
+  const ind = t.indicators || {}; const score = Number(t.score ?? 0); const ratingCls = sentimentClass(t.rating, score);
+  document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NEUTRAL'}</span><div class="mt-2 text-sm text-muted">${t.summary || 'Technical summary belum tersedia lengkap.'}</div>`;
+  const ring = document.getElementById('score-ring'); ring.style.setProperty('--score-deg', `${Math.max(0, Math.min(100, score)) * 3.6}deg`); ring.querySelector('strong').textContent = score ? nf(score,0) : '—';
+  const cards = [
+    ['RSI 14', nf(ind.rsi?.value,2), ind.rsi?.status, sentimentClass(ind.rsi?.status, ind.rsi?.value, 'rsi')], ['MACD', nf(ind.macd?.histogram,2), ind.macd?.status], ['Trend', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'medium'], ['SMA 200', nf(ind.trend?.sma_200,2), 'long'], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good'], ['Stoch %K', nf(ind.stochastic?.k,2), ind.stochastic?.status], ['ATR', nf(ind.atr?.value,2), ind.atr?.status], ['Volume Ratio', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support 20D', money(ind.support_resistance?.support_20d), 'support', 'metric-good'], ['Resistance 20D', money(ind.support_resistance?.resistance_20d), 'resistance', 'metric-warn']
+  ];
+  document.getElementById('technical-panel').innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+}
+function renderFundamentalPanel(d, candles, tech){
+  const last = candles[candles.length-1] || {}; const volRatio = tech?.indicators?.volume?.ratio;
+  const stats = [
+    ['Last Price', money(last.close), tech?.rating || '', sentimentClass(tech?.rating, last.close)], ['Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x avg` : '', sentimentClass('spike', volRatio)], ['P/E', d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—', d.trailing_pe ? (d.trailing_pe < 12 ? 'cheap' : d.trailing_pe > 25 ? 'expensive' : 'fair') : 'no data'], ['P/B', d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—', d.price_to_book ? (d.price_to_book < 1.5 ? 'cheap' : d.price_to_book > 3 ? 'expensive' : 'fair') : 'no data'], ['ROE', d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—', 'profitability', sentimentClass('', d.roe, 'roe')], ['DER', nf(d.debt_to_equity,2), 'leverage', sentimentClass('', d.debt_to_equity, 'der')], ['Revenue', nf(d.revenue,0), d.revenue ? 'reported' : 'no data'], ['Updated', d.updated_at ? String(d.updated_at).slice(0,10) : 'DB IDX', 'source']
+  ];
+  document.getElementById('fundamental-panel').innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
 function renderAnalysisPanel(data, tech){
-  const rows = [['Swing Score', data.swing?.score ?? tech.score ?? '—'], ['Signal', tech.rating || data.swing?.label || 'NEUTRAL'], ['Valuation', data.valuation?.label || '—'], ['Dividend', data.dividend?.label || '—'], ['Risk', data.gorengan?.label || 'normal']];
-  document.getElementById('analysis-panel').innerHTML = rows.map(([l,v]) => `<div class="flex justify-between items-center"><span class="text-xs text-dim uppercase strong">${l}</span><span class="mono strong text-main">${v}</span></div>`).join('');
+  const rows = [['Swing Score', data.swing?.score ?? tech.score ?? '—', tech.score >= 60 ? 'bullish' : 'watch'], ['Signal', tech.rating || data.swing?.label || 'NEUTRAL', tech.rating], ['Valuation', data.valuation?.label || 'fair', data.valuation?.label || 'fair'], ['Dividend', data.dividend?.label || 'weak', data.dividend?.label || 'weak'], ['Risk', data.gorengan?.label || 'normal', data.gorengan?.label || 'normal']];
+  document.getElementById('analysis-panel').innerHTML = rows.map(([l,v,s]) => tile(l, v, s)).join('');
+}
+function renderTradePlan(candles, tech){
+  const last = candles[candles.length-1] || {}; const sr = tech?.indicators?.support_resistance || {}; const atr = tech?.indicators?.atr?.value;
+  const entry = last.close, stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : (entry - (atr || entry*.08)); const target = sr.resistance_20d || (entry + (atr || entry*.1));
+  document.getElementById('trade-plan').innerHTML = [ ['Entry Zone', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'wait pullback'], ['Stop Area', money(Math.max(0, stop)), 'risk control'], ['Target Near', money(target), 'resistance'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
+}
+function renderInsightCards(candles, tech, data){
+  const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;
+  const notes = [
+    {t:'Momentum', v: pct >= 0 ? `Harga naik ${pf(pct)}; trend sedang kuat.` : `Harga turun ${pf(pct)}; tunggu konfirmasi.`, c: pct >= 0 ? 'metric-good' : 'metric-bad'},
+    {t:'Volume', v: vol ? `Volume ${nf(vol,2)}x rata-rata 20 hari.` : 'Volume belum lengkap.', c: vol >= 1.5 ? 'metric-good' : 'metric-neutral'},
+    {t:'Risk', v: rsi >= 70 ? 'RSI overbought — jangan chasing, tunggu pullback.' : 'Risk relatif terkendali.', c: rsi >= 70 ? 'metric-warn' : 'metric-good'}
+  ];
+  document.getElementById('insight-cards').innerHTML = notes.map(n => `<div class="stat-tile ${n.c}"><span>${n.t}</span><div class="text-sm text-muted mt-1">${n.v}</div></div>`).join('');
 }
 function renderFallbackSvgChart(data){
   const container = document.getElementById('tvchart');
