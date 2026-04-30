@@ -18,3 +18,20 @@ def test_stock_detail_has_sentiment_colored_metrics():
     assert 'metric-good' in src
     assert 'metric-bad' in src
     assert 'renderInsightCards' in src
+
+
+def test_stock_detail_has_pro_dashboard_sections():
+    src = STOCK_DETAIL.read_text()
+    assert 'Decision Panel' in src
+    assert 'renderDecisionPanel' in src
+    assert 'renderMetricGroup' in src
+    assert 'Momentum' in src
+    assert 'Trend' in src
+    assert 'Volatility' in src
+    assert 'Levels' in src
+    assert 'Set Alert' in src
+    assert 'Run Scanner' in src
+    assert '7D' in src
+    assert '30D' in src
+    assert 'ALL' in src
+    assert 'renderLevelOverlay' in src
