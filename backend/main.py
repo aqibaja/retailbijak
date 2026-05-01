@@ -665,6 +665,14 @@ def get_company_announcements(companyCode: str = "", limit: int = 20):
     return {"count": len(rows), "data": rows, "source": "idx_announcement" if rows else "no_data"}
 
 
+def _sqlite_datetime_literal(value):
+    if value is None:
+        return None
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d %H:%M:%S.%f")
+    return str(value)
+
+
 @app.get("/api/market-breadth")
 def get_market_breadth(db: Session = Depends(get_db)):
     latest_date = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
@@ -672,6 +680,7 @@ def get_market_breadth(db: Session = Depends(get_db)):
         return {"status": "ok", "source": "db_breadth", "count": 0, "data": {"latest_date": None, "advancing": 0, "declining": 0, "unchanged": 0, "advancers": [], "decliners": []}}
 
     latest_date = latest_date[0]
+    latest_date_sql = _sqlite_datetime_literal(latest_date)
     sql = text("""
         WITH latest_rows AS (
             SELECT ticker, date, close
@@ -694,7 +703,7 @@ def get_market_breadth(db: Session = Depends(get_db)):
          AND prev.date = picked.prev_date
         WHERE prev.close IS NOT NULL AND curr.close IS NOT NULL
     """)
-    pairs = db.execute(sql, {"latest_date": latest_date}).mappings().all()
+    pairs = db.execute(sql, {"latest_date": latest_date_sql}).mappings().all()
 
     up = down = flat = 0
     advancing = []

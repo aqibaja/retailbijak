@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from fastapi.testclient import TestClient
 
 try:
-    from main import app
+    from main import app, _sqlite_datetime_literal
 except ModuleNotFoundError:
-    from backend.main import app
+    from backend.main import app, _sqlite_datetime_literal
 
 
 def test_health():
@@ -72,6 +74,11 @@ def test_market_breadth_uses_windowed_db_shape():
     assert 'latest_date' in data['data']
     assert 'advancers' in data['data']
     assert 'decliners' in data['data']
+
+
+def test_sqlite_datetime_literal_keeps_fractional_format():
+    formatted = _sqlite_datetime_literal(datetime(2026, 4, 30, 0, 0, 0))
+    assert formatted == '2026-04-30 00:00:00.000000'
 
 
 def test_corporate_actions_shape():
