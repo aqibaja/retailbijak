@@ -29,6 +29,7 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
    - `/api/watchlist`
    - `/api/portfolio`
    - `/` should contain `RetailBijak`
+   - `/#dashboard`, `/#market`, `/#screener`, `/#portfolio` should return the SPA shell markers
    - `python scripts/post_deploy_smoke_check.py`
 
 ## Preferred one-command deploy

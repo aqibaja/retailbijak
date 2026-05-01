@@ -15,6 +15,17 @@ CORE_ASSETS = [
     'js/api.js',
     'js/theme.js',
 ]
+ROUTED_VIEW_ASSETS = [
+    'js/views/dashboard.js',
+    'js/views/stock_detail.js',
+    'js/views/screener.js',
+    'js/views/portfolio.js',
+    'js/views/market.js',
+    'js/views/news.js',
+    'js/views/settings.js',
+    'js/views/help.js',
+]
+ALL_ASSETS = CORE_ASSETS + ROUTED_VIEW_ASSETS
 
 
 def sha256(path: Path) -> str:
@@ -23,7 +34,7 @@ def sha256(path: Path) -> str:
 
 def main() -> int:
     mismatches: list[str] = []
-    for rel in CORE_ASSETS:
+    for rel in ALL_ASSETS:
         repo_file = REPO_FRONTEND / rel
         runtime_file = RUNTIME_FRONTEND / rel
         if not repo_file.exists():

@@ -157,5 +157,23 @@ def test_frontend_version_tokens_stay_consistent_by_layer():
     assert set(main_import_versions) == {'20260502c'}
 
 
+def test_repo_and_runtime_all_routed_views_match_exactly():
+    routed_views = [
+        'js/views/dashboard.js',
+        'js/views/stock_detail.js',
+        'js/views/screener.js',
+        'js/views/portfolio.js',
+        'js/views/market.js',
+        'js/views/news.js',
+        'js/views/settings.js',
+        'js/views/help.js',
+    ]
+    runtime_frontend = RUNTIME_ROOT.parent
+    for rel_path in routed_views:
+        repo_file = ROOT / 'frontend' / rel_path
+        runtime_file = runtime_frontend / rel_path
+        assert repo_file.exists(), rel_path
+        assert runtime_file.exists(), rel_path
+        assert repo_file.read_text() == runtime_file.read_text(), rel_path
 
 

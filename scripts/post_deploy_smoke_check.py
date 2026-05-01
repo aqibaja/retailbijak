@@ -12,6 +12,10 @@ TARGETS = [
     ('/api/watchlist', None),
     ('/api/portfolio', None),
     ('/', 'RetailBijak'),
+    ('/#dashboard', 'app-root'),
+    ('/#market', 'topbar'),
+    ('/#screener', 'bottom-nav'),
+    ('/#portfolio', 'app-root'),
 ]
 
 

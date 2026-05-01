@@ -23,3 +23,7 @@ def test_deploy_doc_mentions_pre_restart_frontend_parity_check():
 def test_deploy_doc_mentions_post_deploy_smoke_check():
     assert 'post_deploy_smoke_check.py' in DEPLOY_DOC
     assert 'post-deploy smoke check' in DEPLOY_DOC.lower()
+    assert '#dashboard' in DEPLOY_DOC
+    assert '#market' in DEPLOY_DOC
+    assert '#screener' in DEPLOY_DOC
+    assert '#portfolio' in DEPLOY_DOC
