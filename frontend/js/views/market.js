@@ -84,24 +84,42 @@ export async function renderMarket(root) {
   }
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
+  const settle = (p) => Promise.resolve(p).then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error, value: null }));
+  const loadingTimeout = window.setTimeout(() => {
+    if (loadingEl && contentEl && !contentEl.dataset.marketReady) {
+      loadingEl.hidden = true;
+      contentEl.hidden = false;
+    }
+  }, 3500);
+
   const [summary, movers, actions, announcements, foreign, brokers, breadth, stats] = await Promise.all([
-    fetchMarketSummary().catch(() => null),
-    fetchTopMovers(8).catch(() => null),
-    fetchCorporateActions().catch(() => null),
-    fetchCompanyAnnouncements().catch(() => null),
-    fetchForeignTrading().catch(() => null),
-    fetchBrokerActivity().catch(() => null),
-    fetchBreadth().catch(() => null),
-    fetchStats().catch(() => null),
+    settle(fetchMarketSummary()),
+    settle(fetchTopMovers(8)),
+    settle(fetchCorporateActions()),
+    settle(fetchCompanyAnnouncements()),
+    settle(fetchForeignTrading()),
+    settle(fetchBrokerActivity()),
+    settle(fetchBreadth()),
+    settle(fetchStats()),
   ]);
 
-  const src = [summary?.source, actions?.source, announcements?.source, foreign?.source, brokers?.source, breadth?.source, stats?.source].filter(Boolean).join(' / ') || 'NO DATA';
+  const unwrap = (entry) => (entry?.ok ? entry.value : null);
+  const summaryData = unwrap(summary);
+  const moversData = unwrap(movers);
+  const actionsData = unwrap(actions);
+  const announcementsData = unwrap(announcements);
+  const foreignData = unwrap(foreign);
+  const brokersData = unwrap(brokers);
+  const breadthData = unwrap(breadth);
+  const statsData = unwrap(stats);
+
+  const src = [summaryData?.source, actionsData?.source, announcementsData?.source, foreignData?.source, brokersData?.source, breadthData?.source, statsData?.source].filter(Boolean).join(' / ') || 'NO DATA';
   const badgeEl = document.getElementById('market-source');
   if (badgeEl) badgeEl.textContent = `${src.toUpperCase()} · ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 
-  const b = breadth?.data || {};
-  const leadGainer = (Array.isArray(movers?.data) ? movers.data : []).find((x) => Number(x.change_pct) >= 0);
-  const leadLoser = (Array.isArray(movers?.data) ? movers.data : []).find((x) => Number(x.change_pct) < 0);
+  const b = breadthData?.data || {};
+  const leadGainer = (Array.isArray(moversData?.data) ? moversData.data : []).find((x) => Number(x.change_pct) >= 0);
+  const leadLoser = (Array.isArray(moversData?.data) ? moversData.data : []).find((x) => Number(x.change_pct) < 0);
   const pulseEl = document.getElementById('market-summary-sentence');
   if (pulseEl) {
     pulseEl.textContent = `Pulse: ${b.advancing ?? 0} advancers vs ${b.declining ?? 0} decliners. ${leadGainer?.ticker || 'N/A'} memimpin gainers ${leadGainer ? pct(leadGainer.change_pct) : ''} dan ${leadLoser?.ticker || 'N/A'} tertekan ${leadLoser ? pct(leadLoser.change_pct) : ''}.`;
@@ -127,7 +145,7 @@ export async function renderMarket(root) {
       <div class="market-hero-badge ${Number(ihsgChange ?? 0) >= 0 ? 'is-up' : 'is-down'}">${ihsgChange != null ? pct(ihsgChange) : '--'}</div>
     </header>
     <div class="market-card-body">
-      <div class="market-ihsg-row"><div><div class="market-ihsg-value">${ihsg != null ? fmt(ihsg) : '--'}</div><div class="market-sub">${summary?.date || 'Live session'}</div></div><div class="market-hero-summary">${b.advancing ?? 0} advancers · ${b.declining ?? 0} decliners · ${b.unchanged ?? 0} flat</div></div>
+      <div class="market-ihsg-row"><div><div class="market-ihsg-value">${ihsg != null ? fmt(ihsg) : '--'}</div><div class="market-sub">${summaryData?.date || 'Live session'}</div></div><div class="market-hero-summary">${b.advancing ?? 0} advancers · ${b.declining ?? 0} decliners · ${b.unchanged ?? 0} flat</div></div>
     </div>
   </section>`;
   document.getElementById('market-pulse-card').innerHTML = card(
@@ -166,12 +184,15 @@ export async function renderMarket(root) {
 
   document.getElementById('gainers-card').innerHTML = card('Top Gainers', 'Best performing stocks today', `<div class="market-list-stack">${gainers.map(moverRow).join('') || '<div class="market-empty">No gainers available.</div>'}</div>`, 'var(--accent-cyan)');
   document.getElementById('losers-card').innerHTML = card('Top Losers', 'Weakest performing stocks today', `<div class="market-list-stack">${losers.map(moverRow).join('') || '<div class="market-empty">No losers available.</div>'}</div>`, 'var(--text-down)');
-  document.getElementById('corporate-actions').innerHTML = card('Corporate Actions', 'Listing, dividend, suspension, and other company events from IDX', `<div class="market-list-stack">${safeRows(actions).slice(0, 4).map(actionRow).join('') || '<div class="market-empty">No corporate actions available.</div>'}</div>`);
-  document.getElementById('foreign-flows').innerHTML = card('Foreign Investor Flows', 'Live IDX trading summary for foreign participation', `<div class="market-list-stack">${safeRows(foreign).slice(0, 4).map(flowRow).join('') || '<div class="market-empty">No foreign flow data available.</div>'}</div>`, 'var(--text-up)');
-  const brokerRows = safeRows(brokers).slice(0, 4).map(brokerRow).join('');
+  document.getElementById('corporate-actions').innerHTML = card('Corporate Actions', 'Listing, dividend, suspension, and other company events from IDX', `<div class="market-list-stack">${safeRows(actionsData).slice(0, 4).map(actionRow).join('') || '<div class="market-empty">No corporate actions available.</div>'}</div>`);
+  document.getElementById('foreign-flows').innerHTML = card('Foreign Investor Flows', 'Live IDX trading summary for foreign participation', `<div class="market-list-stack">${safeRows(foreignData).slice(0, 4).map(flowRow).join('') || '<div class="market-empty">No foreign flow data available.</div>'}</div>`, 'var(--text-up)');
+  const brokerRows = safeRows(brokersData).slice(0, 4).map(brokerRow).join('');
   const brokerEmpty = `<div class="market-empty market-empty-alive"><strong>Broker activity belum tersedia saat ini.</strong><span>Menggunakan snapshot IDX terakhir jika tersedia. Coba refresh untuk sinkronisasi terbaru.</span><button class="market-empty-refresh" type="button" data-market-refresh="1">Refresh data</button></div>`;
   document.getElementById('broker-activity').innerHTML = card('Broker Trading Activity', 'Top broker concentration and net value from IDX broker summary', `<div class="market-list-stack">${brokerRows || brokerEmpty}</div>`, 'var(--accent-orange)');
-  document.getElementById('announcements-card').innerHTML = card('Corporate News & Announcements', 'Company notices pulled from IDX announcement endpoint', `<div class="market-list-stack">${safeRows(announcements).slice(0, 4).map(actionRow).join('') || '<div class="market-empty">No announcements available.</div>'}</div>`);
+  document.getElementById('announcements-card').innerHTML = card('Corporate News & Announcements', 'Company notices pulled from IDX announcement endpoint', `<div class="market-list-stack">${safeRows(announcementsData).slice(0, 4).map(actionRow).join('') || '<div class="market-empty">No announcements available.</div>'}</div>`);
+
+  contentEl.dataset.marketReady = '1';
+  window.clearTimeout(loadingTimeout);
 
   root.querySelectorAll('[data-market-refresh="1"]').forEach((btn) => {
     btn.addEventListener('click', () => renderMarket(root));

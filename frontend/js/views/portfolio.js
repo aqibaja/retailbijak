@@ -10,7 +10,7 @@ export async function renderPortfolio(root, activeTab) {
             <h1 class="text-3xl mb-2" style="color:var(--text-main); letter-spacing:-0.04em; font-weight:800;">Assets & Watchlist</h1>
             <p class="text-base" style="color:var(--text-muted);">Manage monitored assets and active positions</p>
           </div>
-          <div class="flex p-1" style="background:rgba(0,0,0,0.2); border-radius:10px; border:1px solid rgba(255,255,255,0.04);">
+          <div class="flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
             <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portfolio</a>
             <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Watchlist</a>
           </div>
@@ -32,7 +32,7 @@ async function renderWatchlistTab(el) {
     const rows = Array.isArray(data?.data) ? data.data : [];
     
     el.innerHTML = `
-      <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:rgba(15,22,41,0.8);">
+      <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
         <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;">My Watchlist <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} ITEMS</span></h3>
         <button id="add-watchlist" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
       </div>
@@ -86,7 +86,7 @@ async function renderPortfolioTab(el) {
     const rows = Array.isArray(data?.data) ? data.data : [];
     
     el.innerHTML = `
-      <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:rgba(15,22,41,0.8);">
+      <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
         <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;" data-i18n="current_holdings">Current Holdings <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} POSITIONS</span></h3>
         <button id="add-portfolio" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
       </div>

@@ -27,25 +27,25 @@ const renderRow = (r) => `
             <div class="text-main" style="font-size: 16px; font-weight: 700;">${r.ticker}</div>
             <span style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">BUY</span>
         </div>
-        <div style="font-size: 12px; color: #64748b;">${r.name || 'IDX Equity'}</div>
+        <div style="font-size: 12px; color: var(--text-muted);">${r.name || 'IDX Equity'}</div>
       </div>
     </div>
     
     <div style="display: flex; gap: 24px; align-items: center; flex-shrink: 0;">
         <div style="text-align:right;">
-            <div style="font-size:10px; color:#64748b; text-transform:uppercase;">Price</div>
+            <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Price</div>
             <div class="mono" style="font-size:15px; font-weight:700; color:var(--text-main);">${Number(r.close || 0).toLocaleString('id-ID')}</div>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">CCI</div>
+            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">CCI</div>
             <div class="mono" style="font-size: 14px; color: #38bdf8;">${r.cci ?? '—'}</div>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">MA</div>
+            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MA</div>
             <div class="mono" style="font-size: 14px; color: #f59e0b;">${r.magic_line ?? '—'}</div>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Vol</div>
+            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Vol</div>
             <div class="mono" style="font-size: 14px; color: #10b981;">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</div>
         </div>
     </div>
@@ -69,7 +69,7 @@ export async function renderScreener(root) {
             <button id="btn-run-screener" class="scanner-btn-primary">EXECUTE SCAN</button>
             <div id="screener-progress" style="display:none;" class="panel-lite p-4">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Analysing...</span><span id="sp-percent">0%</span></div>
-              <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px;"><div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color);"></div></div>
+              <div style="height:4px; background:var(--border-subtle); border-radius:2px;"><div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color);"></div></div>
             </div>
           </div>
 
@@ -77,7 +77,7 @@ export async function renderScreener(root) {
             <div class="flex justify-between items-center p-5 border-b border-subtle">
               <div class="flex items-center gap-3">
                 <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main);">Live Signals</h3>
-                <span class="badge" id="screener-count" style="background:rgba(255,255,255,0.05); padding:2px 10px;">0 DETECTED</span>
+                <span class="badge" id="screener-count">0 DETECTED</span>
               </div>
               <div class="flex gap-2">
                 <select id="screener-sort" class="scanner-select" style="width:120px; height:36px; font-size:12px;">

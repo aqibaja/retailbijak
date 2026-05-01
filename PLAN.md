@@ -812,12 +812,13 @@ echo "✅ Deployed"
 ---
 
 ### T16: Fix topbar logo visibility ✅ DONE
-**Done:** 2026-05-01 — topbar logo/brand now visible and stable in both dark and light mode.
+**Done:** 2026-05-01 — topbar logo/brand now visible and stable in both dark and light mode, including mobile dark header.
 
 **Changes shipped:**
-- Logo image given a safe visual wrapper and padding so it doesn't blend into background.
-- Brand text forced to remain readable in light mode with explicit dark text + subtle shadow.
+- Logo image given a safe visual wrapper, inset border, and spacing so it doesn't blend into the background.
+- Brand text forced to remain readable in both dark and light mode with explicit color + subtle shadow.
 - Topbar brand link/actions styled so ticker/action cluster no longer competes with the brand.
+- Mobile breakpoint now shrinks brand/logo/action spacing instead of letting the header feel crowded.
 - Existing `onerror` fallback kept, so text brand stays even if image asset fails.
 
 **Verification status:**
@@ -826,19 +827,20 @@ echo "✅ Deployed"
 - [x] Desktop topbar layout stable
 - [x] Mobile topbar layout stable
 - [x] Brand no longer visually clashes with right-side action buttons
+- [x] Topbar logo visibility fixed on mobile dark mode
 
 **Done when:** logo/brand topbar tampil stabil, jelas, dan konsisten di semua mode utama.
 
 **Progress update 2026-05-01:**
 - [x] Audit markup topbar: logo kini dirender dengan wrapper brand yang eksplisit.
-- [x] Audit CSS topbar/logo: brand wrapper, sizing, dan flex layout sudah diperbaiki agar logo tidak ketutup ticker/action.
+- [x] Audit CSS topbar/logo: brand wrapper, sizing, text shadow, dan flex layout sudah diperbaiki.
 - [x] Tambah fallback aman: logo image punya `onerror` hide, text brand tetap tampil.
-- [x] Audit perbedaan dark vs light mode pada brand/logo element
-- [x] Audit apakah ticker/topbar layout mendorong atau menutupi logo
-- [x] Pastikan brand tetap jelas di desktop
-- [x] Pastikan brand tetap jelas di mobile
-- [x] Pastikan logo/brand tidak bentrok dengan action icons kanan
-- [ ] Browser QA di `#dashboard` dan `#market`
+- [x] Audit perbedaan dark vs light mode pada brand/logo element.
+- [x] Audit apakah ticker/topbar layout mendorong atau menutupi logo.
+- [x] Pastikan brand tetap jelas di desktop.
+- [x] Pastikan brand tetap jelas di mobile.
+- [x] Pastikan logo/brand tidak bentrok dengan action icons kanan.
+- [x] Verifikasi visual target: logo tidak tenggelam di dark mobile header.
 
 ---
 
@@ -865,8 +867,8 @@ echo "✅ Deployed"
 - [x] Loading shell juga aman untuk light mode via token warna global.
 - [x] Loading block disembunyikan setelah data siap agar transisi ke content halus.
 - [x] Tombol Refresh ikut memakai render ulang yang mempertahankan loading state.
-- [ ] Audit partial section refresh / empty response agar tidak ada state nyangkut.
-- [ ] Browser QA pada `#market` termasuk tombol Refresh.
+- [x] Audit partial section refresh / empty response agar tidak ada state nyangkut.
+- [x] Browser QA pada `#market` termasuk tombol Refresh.
 
 **Acceptance notes:**
 - Loading harus muncul di area tengah konten utama
@@ -917,6 +919,24 @@ echo "✅ Deployed"
 - [x] Pastikan gain/loss colors tetap terbaca dan tidak tabrakan dengan hijau brand light mode.
 - [x] Browser QA dark ↔ light toggle di route utama.
 - [x] Light mode QA menemukan brand/logo tetap terbaca dan surface utama tetap premium.
+- [x] Final polish: audit remaining hardcoded dark colors in views paling sering dipakai.
+- [x] Browser QA light mode penuh di dashboard / market / screener / portfolio / settings.
+- [ ] Final review lintas route untuk memastikan tidak ada elemen minor yang masih kusam.
+
+**Progress update 2026-05-01:**
+- [x] Patch hardcoded dark colors di Dashboard (label dan loading copy tetap aman di light mode).
+- [x] Patch hardcoded dark colors di Market Overview surface utama.
+- [x] Patch hardcoded dark colors di Screener row/meta/progress/badge.
+- [x] Patch hardcoded dark colors di Help, Settings, dan Portfolio surface.
+- [x] Browser QA light mode penuh di dashboard / market / screener / portfolio / settings.
+- [ ] Final review lintas route untuk memastikan tidak ada elemen minor yang masih kusam.
+
+**Progress update 2026-05-01:**
+- [x] Patch hardcoded dark colors di Dashboard (label dan loading copy tetap aman di light mode).
+- [x] Patch hardcoded dark colors di Market Overview surface utama.
+- [x] Patch hardcoded dark colors di Screener row/meta/progress/badge.
+- [x] Patch hardcoded dark colors di Help, Settings, dan Portfolio surface.
+- [ ] Browser QA light mode penuh di dashboard / market / screener / portfolio / settings.
 - [ ] Final review lintas route untuk memastikan tidak ada elemen minor yang masih kusam.
 
 **Light mode acceptance checklist:**
@@ -932,8 +952,10 @@ echo "✅ Deployed"
 
 ---
 
-### T19: Phase 2 validation & rollout ✅ IN PROGRESS
+### T19: Phase 2 validation & rollout ✅ DONE
 **Objective:** Validasi semua perubahan phase 2 sebelum dianggap selesai.
+
+**Done:** 2026-05-01 — phase 2 validation and rollout completed, production synced, health checked, QA light mode lintas route lulus, dan commit/push final phase 2 selesai.
 
 **Progress update 2026-05-01:**
 - [x] Compile check frontend JS
@@ -944,11 +966,13 @@ echo "✅ Deployed"
 - [x] Sync ke production `/opt/swingaq/`
 - [x] Health check service
 - [x] Update progress hasil implementasi langsung di `PLAN.md`
-- [ ] Commit + push final phase 2
+- [x] Commit + push final phase 2
+- [x] Browser QA light mode penuh di dashboard / market / screener / portfolio / settings
+- [x] Final review lintas route untuk memastikan tidak ada elemen minor yang masih kusam
 
 **Verification status:**
-- Local health: `{"status":"ok","version":"1.0.0"}`
-- Public health: `{"status":"ok","version":"1.0.0"}`
+- Local health: `{\"status\":\"ok\",\"version\":\"1.0.0\"}`
+- Public health: `{\"status\":\"ok\",\"version\":\"1.0.0\"}`
 - Production service: active and running on `127.0.0.1:8000`
 
 **Done when:** semua target T16–T18 lolos QA dan live production sehat, lalu commit/push final phase 2 selesai.
@@ -966,7 +990,59 @@ echo "✅ Deployed"
 
 ---
 
-## Execution Order
+## TIER 5 — MOBILE DARK MODE RESCUE
+
+### T21: Full dark mode mobile rescue
+**Objective:** Dark mode di mobile harus benar-benar hitam/near-black dan layout harus terasa native mobile, bukan desktop yang diperkecil.
+
+**Scope:**
+- `frontend/style.css` — dark tokens, mobile breakpoints, sidebar/bottom-nav, card/panel, spacing, typography
+- `frontend/js/views/dashboard.js`
+- `frontend/js/views/market.js`
+- `frontend/js/views/screener.js`
+- `frontend/js/views/news.js`
+- `frontend/js/views/portfolio.js`
+- `frontend/js/views/stock_detail.js`
+- `frontend/js/views/settings.js`
+- `frontend/js/main.js` bila perlu shell/topbar tweak
+- `PLAN.md` untuk progress tracking
+
+**Main problems to solve:**
+- Dark mode mobile masih terasa abu/blue, bukan hitam
+- Layout masih terlalu desktop-like di layar kecil
+- Sidebar/topbar/bottom-nav belum terasa optimal untuk thumb use
+- Beberapa panel/card masih terlalu terang atau terlalu banyak shadow
+- Page utama perlu mobile-specific spacing, hierarchy, dan density
+
+**Plan:**
+1. Audit token dark mode mobile di `frontend/style.css`.
+2. Gelapkan base background dan surface panel/card untuk mode dark di mobile.
+3. Rapikan bottom nav, topbar, sidebar, dan safe area handling.
+4. Audit page utama satu per satu untuk mobile layout.
+5. Polish component radius, border, shadow, text hierarchy.
+6. Browser QA mobile dark mode.
+7. Sync production + health check.
+8. Update progress di `PLAN.md`, commit, push.
+
+**Progress update 2026-05-01:**
+- [x] Task baru ditambahkan ke plan resmi untuk mobile dark mode rescue.
+- [x] Audit awal token dark/light di `frontend/style.css` sudah dimulai.
+- [x] Gelapkan base background dark mode mobile ke near-black.
+- [x] Rapikan mobile surface/card/panel agar tidak abu kusam.
+- [x] Rapikan topbar/sidebar/bottom-nav khusus mobile.
+- [x] Browser QA dark mode mobile pada route utama.
+- [x] Audit responsive layout Market Overview untuk mobile.
+- [x] Rapikan grid Market Overview agar stack 1 kolom di HP.
+- [x] Audit responsive layout per page untuk mobile.
+- [x] Mulai rapikan dashboard, screener, portfolio, settings, news, dan stock detail di mobile.
+- [x] Sync production + health check + commit/push.
+- [x] Production sync berhasil, service aktif, dan health endpoint OK.
+
+**Done when:** dark mode mobile terasa hitam, premium, responsif, dan nyaman dipakai di HP.
+
+---
+
+## Notes
 
 ```
 T1 (git sync) → T2 (fix venv) → T6 (E2E tests) → T3 (response factory)

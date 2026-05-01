@@ -16,7 +16,7 @@ export async function renderSettings(root) {
             <div class="flex-col gap-4" style="border-bottom:1px solid var(--border-subtle); padding-bottom:24px;">
                 <h2 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Interface Engine</h2>
                 
-                <label class="flex justify-between items-center p-4" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:12px; cursor:pointer; transition:background 0.2s;">
+                <label class="flex justify-between items-center p-4" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:12px; cursor:pointer; transition:background 0.2s;">
                     <div>
                         <div class="strong mb-1 text-main text-base">High-Density Tables</div>
                         <div class="text-sm text-muted">Compress table rows to maximize visible data points.</div>
@@ -24,7 +24,7 @@ export async function renderSettings(root) {
                     <input id="setting-compact" type="checkbox" style="width:18px; height:18px; accent-color:var(--primary-color);" />
                 </label>
                 
-                <label class="flex justify-between items-center p-4" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:12px; cursor:pointer; transition:background 0.2s;">
+                <label class="flex justify-between items-center p-4" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:12px; cursor:pointer; transition:background 0.2s;">
                     <div>
                         <div class="strong mb-1 text-main text-base">Auto-refresh Scanner</div>
                         <div class="text-sm text-muted">Continuously poll backend for institutional signals when filters change.</div>
@@ -39,16 +39,16 @@ export async function renderSettings(root) {
             </div>
         </div>
 
-        <div class="col-span-4 panel flex-col gap-4" style="background:linear-gradient(135deg, rgba(99,102,241,0.05), rgba(15,23,41,0.6)); border-color:rgba(99,102,241,0.2);">
-            <h2 class="text-xs uppercase strong flex items-center gap-2" style="color:#a5b4fc; letter-spacing:0.08em;"><i data-lucide="terminal" style="width:14px;"></i> Terminal Notes</h2>
+        <div class="col-span-4 panel flex-col gap-4" style="background:linear-gradient(135deg, var(--bg-elevated), rgba(99,102,241,0.05)); border-color:rgba(99,102,241,0.18);">
+            <h2 class="text-xs uppercase strong flex items-center gap-2" style="color:var(--accent-indigo); letter-spacing:0.08em;"><i data-lucide="terminal" style="width:14px;"></i> Terminal Notes</h2>
             <div class="flex-col gap-3 text-sm text-muted">
-                <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid rgba(255,255,255,0.04); border-left:2px solid var(--accent-indigo); line-height:1.5;">
+                <div class="p-3" style="background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle); border-left:2px solid var(--accent-indigo); line-height:1.5;">
                     <strong style="color:var(--text-main)">CMD+K / CTRL+K</strong> triggers the command palette from anywhere for rapid ticker lookup.
                 </div>
-                <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid rgba(255,255,255,0.04); line-height:1.5;">
+                <div class="p-3" style="background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle); line-height:1.5;">
                     Theme adapts automatically. Manual override is available in the top right corner.
                 </div>
-                <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid rgba(255,255,255,0.04); line-height:1.5;">
+                <div class="p-3" style="background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle); line-height:1.5;">
                     Scanner results are delayed by 15 minutes unless connected to a Pro data feed.
                 </div>
             </div>
