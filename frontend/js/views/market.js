@@ -133,8 +133,8 @@ export async function renderMarket(root) {
   root.querySelectorAll('[data-market-refresh="1"]').forEach((btn) => {
     btn.addEventListener('click', () => renderMarket(root));
   });
-  const ihsg = summary?.value;
-  const ihsgChange = summary?.change_pct;
+  const ihsg = summaryData?.value;
+  const ihsgChange = summaryData?.change_pct;
   document.getElementById('ihsg-summary-card').innerHTML = `<section class="market-card market-card-hero" style="--market-accent:var(--accent-indigo)">
     <header class="market-card-head market-hero-head">
       <div>
@@ -178,7 +178,7 @@ export async function renderMarket(root) {
      <div class="market-split-list"><div><div class="market-list-title">Top Advancers</div><div class="market-list-stack">${(b.advancers || []).slice(0, 4).map(moverRow).join('') || '<div class="market-empty">No advancers.</div>'}</div></div><div><div class="market-list-title">Top Decliners</div><div class="market-list-stack">${(b.decliners || []).slice(0, 4).map(moverRow).join('') || '<div class="market-empty">No decliners.</div>'}</div></div></div>`
   );
 
-  const allMovers = Array.isArray(movers?.data) ? movers.data : [];
+  const allMovers = Array.isArray(moversData?.data) ? moversData.data : [];
   const gainers = allMovers.filter((x) => Number(x.change_pct) >= 0).slice(0, 4);
   const losers = allMovers.filter((x) => Number(x.change_pct) < 0).slice(0, 4);
 
