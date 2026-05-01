@@ -5,7 +5,7 @@
 
 ---
 
-## Status Snapshot (2026-05-01)
+## Status Snapshot (2026-05-01) — ALL DONE ✅
 
 | Area | Status |
 |------|--------|
@@ -817,8 +817,8 @@ T1 (git sync) → T2 (fix venv) → T6 (E2E tests) → T3 (response factory)
 
 - **Production path:** `/opt/swingaq/`
 - **Service:** `swingaq-backend` (systemd, user: rich27)
-- **Python:** system python3 (venv hilang, perlu recreate)
+- **Python:** `/opt/swingaq/backend/venv/bin/python` (venv recreated, deps installed)
 - **DB:** `/opt/swingaq/backend/swingaq.db`
 - **Public URL:** `https://retailbijak.rich27.my.id`
 - **Git remote:** `github.com:aqibaja/retailbijak.git`
-- **Branch:** main (local 2 ahead, 0 behind)
+- **Branch:** main (clean, all pushed)
