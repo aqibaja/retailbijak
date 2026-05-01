@@ -1,5 +1,5 @@
-import { handleRoute } from './router.js?v=20260501ui';
-import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260430n';
+import { handleRoute } from './router.js?v=20260502b';
+import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260502a';
 import { initTheme } from './theme.js?v=20260430n';
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {
