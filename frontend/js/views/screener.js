@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430m';
-import { observeElements } from '../main.js?v=20260430m';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260502a';
+import { observeElements } from '../main.js?v=20260502c';
 
 const renderEmptyState = (msg = "Ready to Scan") => `
   <div class="scanner-empty">

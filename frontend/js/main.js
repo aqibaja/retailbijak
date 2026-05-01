@@ -1,4 +1,4 @@
-import { handleRoute } from './router.js?v=20260502b';
+import { handleRoute } from './router.js?v=20260502c';
 import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260502a';
 import { initTheme } from './theme.js?v=20260430n';
 // ================= ANIMATION ENGINE =================
