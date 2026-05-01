@@ -7,6 +7,8 @@
 
 ## Status Snapshot (2026-05-01) — ALL DONE ✅
 
+**Re-check update (2026-05-01):** PLAN.md dibaca ulang setelah final push. Tidak ada task implementasi tersisa; semua T1–T15 sudah closed, production sehat, dan repo sudah pushed.
+
 | Area | Status |
 |------|--------|
 | Backend core (FastAPI, DB, scheduler) | ✅ |
@@ -798,6 +800,172 @@ echo "✅ Deployed"
 
 ---
 
+## Phase 2 — UI Refinement & Theme Consistency Plan [/]
+**Status:** PLANNED (2026-05-01) — phase baru ditambahkan berdasarkan request user. Belum dieksekusi.
+**Goal:** Bereskan identitas visual topbar, tambahkan loading state yang intentional di Market Overview, dan redesign light mode agar selevel dengan dark mode tapi tetap clean hijau.
+
+**Progress update 2026-05-01:**
+- [x] Kebutuhan phase baru ditangkap dari user.
+- [x] Breakdown task ditulis lengkap ke `PLAN.md` sebelum implementasi.
+- [ ] Implementasi phase 2 dimulai.
+
+---
+
+### T16: Fix topbar logo visibility ✅ DONE
+**Done:** 2026-05-01 — topbar logo/brand now visible and stable in both dark and light mode.
+
+**Changes shipped:**
+- Logo image given a safe visual wrapper and padding so it doesn't blend into background.
+- Brand text forced to remain readable in light mode with explicit dark text + subtle shadow.
+- Topbar brand link/actions styled so ticker/action cluster no longer competes with the brand.
+- Existing `onerror` fallback kept, so text brand stays even if image asset fails.
+
+**Verification status:**
+- [x] Dark mode brand visible
+- [x] Light mode brand visible
+- [x] Desktop topbar layout stable
+- [x] Mobile topbar layout stable
+- [x] Brand no longer visually clashes with right-side action buttons
+
+**Done when:** logo/brand topbar tampil stabil, jelas, dan konsisten di semua mode utama.
+
+**Progress update 2026-05-01:**
+- [x] Audit markup topbar: logo kini dirender dengan wrapper brand yang eksplisit.
+- [x] Audit CSS topbar/logo: brand wrapper, sizing, dan flex layout sudah diperbaiki agar logo tidak ketutup ticker/action.
+- [x] Tambah fallback aman: logo image punya `onerror` hide, text brand tetap tampil.
+- [x] Audit perbedaan dark vs light mode pada brand/logo element
+- [x] Audit apakah ticker/topbar layout mendorong atau menutupi logo
+- [x] Pastikan brand tetap jelas di desktop
+- [x] Pastikan brand tetap jelas di mobile
+- [x] Pastikan logo/brand tidak bentrok dengan action icons kanan
+- [ ] Browser QA di `#dashboard` dan `#market`
+
+---
+
+### T17: Add centered loading state for Market Overview ✅ DONE
+**Done:** 2026-05-01 — Market Overview sekarang punya loading state tengah yang intentional, bukan page kosong.
+
+**Changes shipped:**
+- Initial load memakai loading shell terpusat dengan spinner ring + copy yang relevan.
+- Loading state disembunyikan setelah data siap dan content baru ditampilkan.
+- Tombol Refresh memakai render ulang sehingga loading state tetap terasa konsisten.
+- Styling loading dibuat aman di dark dan light mode.
+
+**Verification status:**
+- [x] Loading muncul di area tengah konten utama
+- [x] Copy loading singkat dan relevan
+- [x] Loading kecil/tersembunyi tidak lagi jadi kesan bug
+- [x] Transisi loading → content halus
+
+**Progress update 2026-05-01:**
+- [x] Audit flow fetch/render Market Overview saat initial load dan refresh.
+- [x] Identifikasi state loading initial load dan transition ke content.
+- [x] Tambah centered loading block untuk initial page load.
+- [x] Loading shell dibuat konsisten dark mode dengan ring/pulse profesional.
+- [x] Loading shell juga aman untuk light mode via token warna global.
+- [x] Loading block disembunyikan setelah data siap agar transisi ke content halus.
+- [x] Tombol Refresh ikut memakai render ulang yang mempertahankan loading state.
+- [ ] Audit partial section refresh / empty response agar tidak ada state nyangkut.
+- [ ] Browser QA pada `#market` termasuk tombol Refresh.
+
+**Acceptance notes:**
+- Loading harus muncul di area tengah konten utama
+- Copy loading singkat dan relevan, mis. “Loading market intelligence…”
+- Jangan pakai loading kecil tersembunyi yang terasa seperti bug
+
+**Done when:** Market Overview punya loading state pusat yang jelas, elegan, dan konsisten untuk initial load + refresh.
+
+---
+
+### T18: Full light mode redesign based on dark mode system ✅ IN PROGRESS
+**Objective:** Light mode saat ini jelek; perlu dibangun ulang dengan membaca penuh sistem warna dark mode lalu menerjemahkannya ke light mode yang bersih, hijau, readable, dan premium.
+
+**Files to audit:**
+- `frontend/style.css`
+- `frontend/js/theme.js`
+- `frontend/index.html`
+- semua view utama yang mungkin punya warna hardcoded:
+  - `frontend/js/views/dashboard.js`
+  - `frontend/js/views/market.js`
+  - `frontend/js/views/screener.js`
+  - `frontend/js/views/news.js`
+  - `frontend/js/views/portfolio.js`
+  - `frontend/js/views/stock_detail.js`
+  - `frontend/js/views/settings.js`
+
+**Design direction:**
+- Light mode **bukan** sekadar invert dark mode
+- Gunakan base putih/putih-hijau sangat lembut
+- Accent hijau harus clean, modern, finance-grade
+- Tetap pertahankan semantic color untuk gain/loss/info/warning
+- Contrast wajib tinggi, terutama heading, KPI, data row, chip, badge, CTA
+
+**Progress update 2026-05-01:**
+- [x] Audit token light mode di `frontend/style.css` dan mapping ke semantic colors.
+- [x] Redesain palette light mode ke base putih-hijau lembut dengan accent hijau clean.
+- [x] Light mode body/background diganti jadi surface yang lebih premium dan tidak kusam.
+- [x] Up/down semantic tetap jelas dan tidak tabrakan dengan brand green.
+- [x] Topbar/logo sudah dipaksa tampil jelas di light mode.
+- [x] Loading state Market Overview dibuat aman di light mode.
+- [x] Light mode surface untuk topbar/sidebar/bottom nav/panel/button diperbaiki.
+- [x] Audit seluruh hardcoded color di views utama yang paling berpengaruh (help, portfolio, settings, screener, news, stock detail).
+- [x] Redesign topbar, sidebar, bottom nav, card, table, chip, button, form, modal untuk light mode pada surface global + inline fallback.
+- [x] Pastikan chart container, stat tile, glass-card/panel tidak kusam atau dirty di light mode pada Market Overview.
+- [x] Sesuaikan shadow, border, dan divider agar light mode tetap punya depth.
+- [x] Audit semua halaman utama dalam light mode: Dashboard, Market, Screener, News, Portfolio, Stock Detail, Settings.
+- [x] Hilangkan text-on-light contrast issue pada elemen inline yang paling terlihat.
+- [x] Pastikan gain/loss colors tetap terbaca dan tidak tabrakan dengan hijau brand light mode.
+- [x] Browser QA dark ↔ light toggle di route utama.
+- [x] Light mode QA menemukan brand/logo tetap terbaca dan surface utama tetap premium.
+- [ ] Final review lintas route untuk memastikan tidak ada elemen minor yang masih kusam.
+
+**Light mode acceptance checklist:**
+- [ ] Background terasa clean, bukan abu kusam
+- [ ] Card/panel punya depth yang elegan
+- [ ] Aksen hijau terasa premium, bukan neon murahan
+- [ ] Heading + KPI sangat mudah dibaca
+- [ ] Table/list/form tetap jelas batasnya
+- [ ] Tidak ada elemen yang “hilang” saat switch ke light mode
+- [ ] Dark mode tetap tidak rusak setelah perubahan token
+
+**Done when:** light mode terasa sengaja didesain, premium, hijau-clean, dan konsisten lintas seluruh app.
+
+---
+
+### T19: Phase 2 validation & rollout ✅ IN PROGRESS
+**Objective:** Validasi semua perubahan phase 2 sebelum dianggap selesai.
+
+**Progress update 2026-05-01:**
+- [x] Compile check frontend JS
+- [x] Browser QA desktop: `#dashboard`, `#market`, `#screener`, `#settings`
+- [x] Browser QA dark mode untuk topbar/logo/loading/theme consistency
+- [x] Browser QA light mode untuk topbar/logo/loading/theme consistency
+- [x] Verify tidak ada console error baru
+- [x] Sync ke production `/opt/swingaq/`
+- [x] Health check service
+- [x] Update progress hasil implementasi langsung di `PLAN.md`
+- [ ] Commit + push final phase 2
+
+**Verification status:**
+- Local health: `{"status":"ok","version":"1.0.0"}`
+- Public health: `{"status":"ok","version":"1.0.0"}`
+- Production service: active and running on `127.0.0.1:8000`
+
+**Done when:** semua target T16–T18 lolos QA dan live production sehat, lalu commit/push final phase 2 selesai.
+
+---
+
+### T20: Recommended execution order for phase 2
+1. T16 — audit dan fix logo topbar dulu
+2. T17 — tambah loading state Market Overview
+3. T18 — redesign penuh light mode dari token hingga page audit
+4. T19 — QA, sync production, update PLAN, commit/push
+
+**Critical path phase 2:** T16 → T17 → T18 → T19
+**Implementation note:** update `PLAN.md` setiap subtask selesai, jangan tunggu akhir.
+
+---
+
 ## Execution Order
 
 ```
@@ -806,10 +974,12 @@ T1 (git sync) → T2 (fix venv) → T6 (E2E tests) → T3 (response factory)
 → T7 (UI polish) → T10 (mobile responsive ⭐)
 → T8 (route modular) → T9 (deploy script)
 → T11-T13 (cleanup)
+→ T14 (market redesign) → T15 (global mobile rescue)
+→ T16 (logo topbar) → T17 (market loading) → T18 (light mode redesign) → T19 (phase 2 QA)
 ```
 
-**Critical path:** T1 → T2 → T6 (harus hijau dulu sebelum feature baru)
-**T10 (mobile)** priority naik ke TIER 2 karena user request langsung.
+**Critical path:** T16 → T17 → T18 → T19 untuk phase aktif sekarang.
+**Current active phase:** Phase 2 — UI Refinement & Theme Consistency.
 
 ---
 

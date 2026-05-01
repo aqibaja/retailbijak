@@ -22,6 +22,14 @@ const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
     </header>
     <div class="market-card-body">${body}</div>
   </section>`;
+const loadingShell = (label = 'Loading market intelligence...') => `
+  <div class="market-loading-shell" role="status" aria-live="polite" aria-busy="true">
+    <div class="market-loading-ring"></div>
+    <div class="market-loading-copy">
+      <strong>${label}</strong>
+      <span>Menyiapkan breadth, movers, flows, dan corporate intelligence.</span>
+    </div>
+  </div>`;
 
 const moverRow = (r) => `<a href="#stock/${r.ticker || ''}" class="market-row-link"><div class="market-row"><div><div class="market-code">${r.ticker || '-'}</div><div class="market-sub">${r.name || ''}</div></div><div class="market-right"><div class="market-change ${Number(r.change_pct ?? 0) >= 0 ? 'is-up' : 'is-down'}">${pct(r.change_pct)}</div><div class="market-sub">${r.price != null ? fmt(r.price) : '--'}</div></div></div></a>`;
 const flowRow = (r) => `<div class="market-row-box"><div class="market-row"><div><div class="market-code">${r.ticker || '-'}</div><div class="market-sub">${r.source || 'IDX'}</div></div><div class="market-right"><div class="market-change ${Number(r.net_value ?? 0) >= 0 ? 'is-up' : 'is-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="market-sub">buy ${fmt(r.buy_value ?? 0, 0)} / sell ${fmt(r.sell_value ?? 0, 0)}</div></div></div></div>`;
@@ -43,28 +51,37 @@ export async function renderMarket(root) {
         </div>
       </header>
 
-      <section class="market-top-grid">
-        <div id="ihsg-summary-card"></div>
-        <div id="market-pulse-card"></div>
-      </section>
-      <div id="stats-cards" class="market-stats-grid"></div>
+      <div id="market-loading" class="market-loading-wrap">${loadingShell()}</div>
+      <div id="market-content" class="market-content-wrap" hidden>
+        <section class="market-top-grid">
+          <div id="ihsg-summary-card"></div>
+          <div id="market-pulse-card"></div>
+        </section>
+        <div id="stats-cards" class="market-stats-grid"></div>
 
-      <div class="market-main-grid">
-        <div class="market-left-col">
-          <div id="breadth-card"></div>
-          <div id="corporate-actions"></div>
-          <div id="foreign-flows"></div>
-          <div id="broker-activity"></div>
-        </div>
-        <div class="market-right-col">
-          <div id="gainers-card"></div>
-          <div id="losers-card"></div>
-          <div id="announcements-card"></div>
+        <div class="market-main-grid">
+          <div class="market-left-col">
+            <div id="breadth-card"></div>
+            <div id="corporate-actions"></div>
+            <div id="foreign-flows"></div>
+            <div id="broker-activity"></div>
+          </div>
+          <div class="market-right-col">
+            <div id="gainers-card"></div>
+            <div id="losers-card"></div>
+            <div id="announcements-card"></div>
+          </div>
         </div>
       </div>
     </section>`;
 
   observeElements();
+  const loadingEl = document.getElementById('market-loading');
+  const contentEl = document.getElementById('market-content');
+  if (loadingEl && contentEl) {
+    loadingEl.hidden = false;
+    contentEl.hidden = true;
+  }
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   const [summary, movers, actions, announcements, foreign, brokers, breadth, stats] = await Promise.all([
@@ -91,6 +108,13 @@ export async function renderMarket(root) {
   }
   const refreshBtn = document.getElementById('market-refresh');
   if (refreshBtn) refreshBtn.addEventListener('click', () => renderMarket(root));
+  if (loadingEl && contentEl) {
+    loadingEl.hidden = true;
+    contentEl.hidden = false;
+  }
+  root.querySelectorAll('[data-market-refresh="1"]').forEach((btn) => {
+    btn.addEventListener('click', () => renderMarket(root));
+  });
   const ihsg = summary?.value;
   const ihsgChange = summary?.change_pct;
   document.getElementById('ihsg-summary-card').innerHTML = `<section class="market-card market-card-hero" style="--market-accent:var(--accent-indigo)">
