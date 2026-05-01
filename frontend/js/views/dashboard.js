@@ -62,7 +62,7 @@ async function loadMarketSummary(){
   document.getElementById('market-fold-badge').textContent = isLive ? 'DB' : 'REF';
   const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
   const dateEl = document.getElementById('market-data-date');
-  if (dateEl) dateEl.textContent = dataDate ? `Data IDX tanggal ${dataDate} · auto-sync 08:00 WIB` : 'Data IDX belum tersedia · auto-sync 08:00 WIB';
+  if (dateEl) dateEl.textContent = dataDate ? `Data IDX tanggal ${dataDate} · auto-sync 18:00 WIB` : 'Data IDX belum tersedia · auto-sync 18:00 WIB';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
   const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? pf(c) : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;

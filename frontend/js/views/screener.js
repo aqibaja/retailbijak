@@ -1,242 +1,159 @@
 import { getScanEventSourceUrl, showToast } from '../api.js?v=20260430m';
 import { observeElements } from '../main.js?v=20260430m';
 
-const renderEmptyState = () => `
+const renderEmptyState = (msg = "Ready to Scan") => `
   <div class="scanner-empty">
     <div class="scanner-empty-icon">
       <i data-lucide="radar" style="width:32px; height:32px;"></i>
     </div>
-    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Waiting for live results</h3>
-    <p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">
-      Configure parameters and hit Execute Scan to stream live scan results from backend
-    </p>
-    <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; width:100%; max-width:300px; text-align:left;">
-      <div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Live Cycles</div>
-      <div class="flex items-center gap-2 mb-2" style="font-size:13px; color:#94a3b8;">
-        <i data-lucide="clock" style="width:14px;"></i> Momentum scan — backend stream healthy
-      </div>
-      <div class="flex items-center gap-2" style="font-size:13px; color:#94a3b8;">
-        <i data-lucide="clock" style="width:14px;"></i> Breakout scan — latest cycle
-      </div>
-    </div>
+    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">${msg}</h3>
   </div>
 `;
 
 const renderSkeleton = () => `
   <div class="flex-col">
-    ${Array(5).fill('<div class="scanner-row skeleton-shimmer" style="height:56px;"></div>').join('')}
+    ${Array(5).fill('<div class="scanner-row skeleton-shimmer" style="height:85px; margin-bottom:8px;"></div>').join('')}
   </div>
 `;
 
 const renderRow = (r) => `
-  <a href="#stock/${r.ticker}" class="scanner-row">
-    <div class="flex items-center gap-3">
-      <div style="width:36px; height:36px; border-radius:50%; background:#1e293b; color:var(--text-main); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:12px;">
+  <a href="#stock/${r.ticker}" class="scanner-row" style="height: auto; min-height: 85px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle);">
+    <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+      <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.1); color: #10b981; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid rgba(16,185,129,0.2); flex-shrink: 0;">
         ${r.ticker.substring(0, 2)}
       </div>
       <div>
-        <div style="font-size:15px; font-weight:600; color:var(--text-main);">${r.ticker}</div>
-        <div style="font-size:11px; color:#64748b;">${r.name || r.type || 'EQ'}</div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <div class="text-main" style="font-size: 16px; font-weight: 700;">${r.ticker}</div>
+            <span style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">BUY</span>
+        </div>
+        <div style="font-size: 12px; color: #64748b;">${r.name || 'IDX Equity'}</div>
       </div>
     </div>
-    <div style="text-align:right; max-width:240px;">
-      <div class="mono" style="font-size:15px; font-weight:600; color:var(--text-main);">${Number(r.price || 0).toLocaleString('id-ID')}</div>
-      <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${r.reason || 'OHLCV snapshot'}</div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:6px;">
-        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:none;">Entry ${Number(r.entry || r.price || 0).toLocaleString('id-ID')}</span>
-        ${r.target ? `<span class="badge" style="background:rgba(99,102,241,0.12); color:#818cf8; border:none;">Target ${Number(r.target).toLocaleString('id-ID')}</span>` : ''}
-        ${r.stop_loss ? `<span class="badge" style="background:rgba(239,68,68,0.12); color:#f87171; border:none;">SL ${Number(r.stop_loss).toLocaleString('id-ID')}</span>` : ''}
-        ${r.volume_spike != null ? `<span class="badge" style="background:rgba(14,165,233,0.12); color:#38bdf8; border:none;">Vol ${Number(r.volume_spike).toFixed(2)}x</span>` : ''}
-        ${r.magic_line != null ? `<span class="badge" style="background:rgba(245,158,11,0.12); color:#f59e0b; border:none;">MA20 ${Number(r.magic_line).toLocaleString('id-ID')}</span>` : ''}
-      </div>
+    
+    <div style="display: flex; gap: 24px; align-items: center; flex-shrink: 0;">
+        <div style="text-align:right;">
+            <div style="font-size:10px; color:#64748b; text-transform:uppercase;">Price</div>
+            <div class="mono" style="font-size:15px; font-weight:700; color:var(--text-main);">${Number(r.close || 0).toLocaleString('id-ID')}</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">CCI</div>
+            <div class="mono" style="font-size: 14px; color: #38bdf8;">${r.cci ?? '—'}</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">MA</div>
+            <div class="mono" style="font-size: 14px; color: #f59e0b;">${r.magic_line ?? '—'}</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Vol</div>
+            <div class="mono" style="font-size: 14px; color: #10b981;">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</div>
+        </div>
     </div>
   </a>
 `;
 
+let currentResults = [];
+
 export async function renderScreener(root) {
     root.innerHTML = `
       <section class="stagger-reveal">
-        <div class="mb-4 screener-hero">
-          <div class="screener-kicker">Scanner</div>
-          <div class="scanner-brand-pill">SwingAQ Scanner</div>
-          <h1 class="text-2xl strong mb-2">Institutional Scanner</h1>
-          <p class="text-muted">Quick presets + live SSE results so the page stays responsive.</p>
-          <p class="scanner-rule-note">Active mode: SwingAQ CCI + Magic Line</p>
+        <div class="mb-6 screener-hero">
+          <div class="screener-kicker">SwingAQ Intelligence</div>
+          <h1 class="text-3xl strong mb-2" style="letter-spacing:-0.02em;">Institutional BUY Scanner</h1>
         </div>
 
         <div class="scanner-layout">
-          <!-- Filter Panel (Left) -->
-          <div class="scanner-form flex-col">
-            <div class="scanner-header-text">SCAN PARAMETERS</div>
-            <div class="scanner-rule-label">Rule: SwingAQ CCI + Magic Line</div>
-            
-            <div class="scanner-micro-grid">
-              <button class="scanner-preset active" data-preset="SwingAQ" data-strategy="SwingAQ CCI + Magic Line">SwingAQ</button>
-              <button class="scanner-preset" data-preset="Value" data-strategy="Value Reversal">Value</button>
-              <button class="scanner-preset" data-preset="Dividend" data-strategy="Dividend Quality">Dividend</button>
-              <button class="scanner-preset" data-preset="Gorengan" data-strategy="Gorengan Radar">Gorengan</button>
-            </div>
-            
-            <div class="mb-4">
-              <label class="scanner-label">ALGORITHM</label>
-              <div style="position:relative;">
-                <select id="screener-strategy" class="scanner-select">
-                  <option>SwingAQ CCI + Magic Line</option>
-                  <option>Value Reversal</option>
-                  <option>Dividend Quality</option>
-                  <option>Gorengan Radar</option>
-                </select>
-                <i data-lucide="chevron-right" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); width:16px; color:#94a3b8; pointer-events:none;"></i>
-              </div>
-            </div>
-            
-            <div class="mb-4">
-              <label class="scanner-label">TIMEFRAME</label>
-              <div style="position:relative;">
-                <select id="screener-tf" class="scanner-select">
-                  <option value="1d">Daily (1D)</option>
-                  <option value="1h">1 Hour (H1)</option>
-                </select>
-                <i data-lucide="chevron-right" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); width:16px; color:#94a3b8; pointer-events:none;"></i>
-              </div>
-            </div>
-
-            <button id="btn-run-screener" class="scanner-btn-primary">
-              <i data-lucide="search" style="width:16px;"></i> EXECUTE SCAN
-            </button>
-            <div class="scanner-hint">SwingAQ rule set for SwingAQ / Value / Dividend / Gorengan runs on real backend scan data.</div>
-
-            <div id="screener-progress" style="display:none; margin-top:24px; padding:16px; background:var(--bg-elevated); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
-              <div class="flex justify-between items-center mb-2">
-                <span id="sp-text" class="text-xs text-primary strong">Analysing...</span>
-                <span id="sp-percent" class="mono text-xs strong">0%</span>
-              </div>
-              <div style="height:4px; background:var(--border-strong); border-radius:2px; overflow:hidden;">
-                <div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color); transition:width 0.2s var(--ease-out);"></div>
-              </div>
+          <div class="scanner-form flex-col" style="gap:20px;">
+            <div class="scanner-header-text">CONFIGURATION</div>
+            <select id="screener-tf" class="scanner-select"><option value="1d">Daily (1D)</option></select>
+            <button id="btn-run-screener" class="scanner-btn-primary">EXECUTE SCAN</button>
+            <div id="screener-progress" style="display:none;" class="panel-lite p-4">
+              <div class="flex justify-between text-xs mb-2"><span id="sp-text">Analysing...</span><span id="sp-percent">0%</span></div>
+              <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px;"><div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color);"></div></div>
             </div>
           </div>
 
-          <!-- Results Panel (Right) -->
           <div class="scanner-results flex-col">
-            <div class="flex justify-between items-center p-4" style="border-bottom:1px solid rgba(255,255,255,0.06);">
-              <div class="flex items-center gap-2">
-                <h3 style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#64748b; font-weight:600; margin:0;">Scan Results</h3>
-                <span class="badge" id="screener-count" style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; border:none; padding:2px 8px; border-radius:12px;">0 MATCHES</span>
+            <div class="flex justify-between items-center p-5 border-b border-subtle">
+              <div class="flex items-center gap-3">
+                <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main);">Live Signals</h3>
+                <span class="badge" id="screener-count" style="background:rgba(255,255,255,0.05); padding:2px 10px;">0 DETECTED</span>
               </div>
-              <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2">
-                    <div class="scanner-pulse-dot"></div>
-                    <span style="font-size:11px; font-weight:600; color:#94a3b8;">LIVE</span>
-                </div>
-                <div style="font-size:11px; color:#64748b; cursor:pointer;" class="flex items-center gap-1">
-                    Sort by: Signal Strength <i data-lucide="chevron-down" style="width:12px;"></i>
-                </div>
+              <div class="flex gap-2">
+                <select id="screener-sort" class="scanner-select" style="width:120px; height:36px; font-size:12px;">
+                    <option value="cci">Sort by CCI</option>
+                    <option value="volume">Sort by Volume</option>
+                    <option value="ma">Sort by MA</option>
+                </select>
+                <input type="text" id="screener-search" placeholder="Search..." class="scanner-select" style="width:120px; height:36px; font-size:12px;">
               </div>
             </div>
-            
-            <div id="screener-content" style="flex:1; overflow-y:auto;">
-              ${renderEmptyState()}
-            </div>
+            <div id="screener-content" style="flex:1; overflow-y:auto;">${renderEmptyState()}</div>
           </div>
         </div>
       </section>`;
 
     observeElements();
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    root.querySelectorAll('.scanner-preset').forEach(btn => btn.addEventListener('click', () => {
-        root.querySelectorAll('.scanner-preset').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        root.querySelector('#screener-strategy').value = btn.dataset.strategy;
-        root.querySelector('.scanner-hint').textContent = `${btn.dataset.preset} preset aktif — klik Execute Scan untuk menjalankan.`;
-        root.querySelector('.scanner-rule-label').textContent = `Rule: ${btn.dataset.strategy}`;
-    }));
+    
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
+    root.querySelector('#screener-sort').addEventListener('change', sortResults);
+    root.querySelector('#screener-search').addEventListener('input', filterResults);
+}
+
+function sortResults() {
+    const sortBy = document.getElementById('screener-sort').value;
+    currentResults.sort((a, b) => {
+        if (sortBy === 'cci') return (b.cci || 0) - (a.cci || 0);
+        if (sortBy === 'volume') return (b.volume_spike || 0) - (a.volume_spike || 0);
+        if (sortBy === 'ma') return (b.magic_line || 0) - (a.magic_line || 0);
+        return 0;
+    });
+    renderList(currentResults);
+}
+
+function filterResults() {
+    const term = document.getElementById('screener-search').value.toUpperCase();
+    const filtered = currentResults.filter(r => r.ticker.includes(term));
+    renderList(filtered);
+}
+
+function renderList(results) {
+    const contentArea = document.getElementById('screener-content');
+    contentArea.innerHTML = results.length > 0 
+        ? `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`
+        : renderEmptyState("No BUY Signals Found");
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function runScreener() {
     const tf = document.getElementById('screener-tf').value;
-    const preset = document.querySelector('.scanner-preset.active')?.dataset.preset || 'SwingAQ';
-    const rule = document.querySelector('#screener-strategy').value;
     const btn = document.getElementById('btn-run-screener');
     const contentArea = document.getElementById('screener-content');
     const progBox = document.getElementById('screener-progress');
-    const progText = document.getElementById('sp-text');
-    const progPercent = document.getElementById('sp-percent');
-    const progFill = document.getElementById('sp-fill');
     const countBadge = document.getElementById('screener-count');
-
+    
     btn.disabled = true;
-    btn.innerHTML = `<i data-lucide="loader" class="animate-spin" style="width:16px;"></i> EXECUTING`;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    
-    // Show Loading Skeleton
+    currentResults = [];
     contentArea.innerHTML = renderSkeleton();
-    
     progBox.style.display = 'block';
-    let matchCount = 0;
-    const results = [];
 
-    const es = new EventSource(`${getScanEventSourceUrl(tf)}&rule=${encodeURIComponent(rule)}`);
-    let fallbackTimer = setTimeout(() => {
-        finishScan([], btn, countBadge, contentArea, es);
-        showToast(`${preset} scan taking longer than usual. Waiting for live results.`, 'info');
-    }, 3000);
-    
+    const es = new EventSource(`${getScanEventSourceUrl(tf)}&rule=SwingAQ`);
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            progText.textContent = `${preset}: ${rule} scanning ${data.ticker}...`;
-            progPercent.textContent = `${data.percent}%`;
-            progFill.style.width = `${data.percent}%`;
+            document.getElementById('sp-text').textContent = `Scanning ${data.ticker}...`;
+            document.getElementById('sp-percent').textContent = `${data.percent}%`;
+            document.getElementById('sp-fill').style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
-            matchCount += 1;
-            countBadge.textContent = `${matchCount} MATCHES`;
-            const r = data.data;
-            results.push({
-               ticker: r.ticker,
-               name: r.name || r.ticker,
-               type: r.type || 'EQ',
-               price: r.close ?? r.price ?? 0,
-               change: r.change_pct ?? 0,
-               signal: r.signal || 'BUY'
-            });
+            currentResults.push(data.data);
+            countBadge.textContent = `${currentResults.length} DETECTED`;
+            renderList(currentResults);
         } else if (data.type === 'done') {
-            clearTimeout(fallbackTimer);
-            const meta = {
-              scanned: data.total_scanned,
-              skipped: data.total_skipped,
-              duration: data.duration_seconds,
-              timeframe: data.timeframe,
-              backendDone: true,
-            };
-            finishScan(results, btn, countBadge, contentArea, es, { ...meta, preset });
+            btn.disabled = false;
+            progBox.style.display = 'none';
+            showToast(`Scan complete. Found ${currentResults.length} BUY signals.`, 'success');
         }
     };
-    
-    es.onerror = () => {
-        clearTimeout(fallbackTimer);
-        setTimeout(() => {
-           finishScan(dummyScanResults, btn, countBadge, contentArea, es);
-           showToast(`${preset} backend unavailable. Waiting for live scan results.`, 'info');
-        }, 1500);
-    };
+    es.onerror = () => { es.close(); btn.disabled = false; showToast(`Scan error.`, 'error'); };
 }
-
-function finishScan(results, btn, countBadge, contentArea, eventSource, meta = {}) {
-    btn.disabled = false;
-    btn.innerHTML = `<i data-lucide="search" style="width:16px;"></i> EXECUTE SCAN`;
-    
-    if (eventSource) eventSource.close();
-    
-    const backendZero = meta.backendDone && results.length === 0;
-    countBadge.textContent = backendZero ? `0 MATCHES` : `${results.length} MATCHES`;
-    
-    if (results.length === 0) {
-        contentArea.innerHTML = `<div class="scanner-empty"><div class="scanner-empty-icon"><i data-lucide="radar" style="width:32px; height:32px;"></i></div><h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">Live Scan Complete</h3><p style="font-size:14px; color:#64748b; max-width:300px; line-height:1.6; margin-bottom:24px;">${meta.backendDone ? `Backend scanned ${meta.scanned || 0} tickers in ${meta.duration || '?'}s using ${meta.rule || 'SwingAQ CCI + Magic Line'}.` : 'Waiting for backend stream.'}</p><div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:24px; width:100%; max-width:300px; text-align:left;"><div style="font-size:11px; text-transform:uppercase; color:#64748b; margin-bottom:12px; font-weight:600;">Recent Live Cycles</div><div class="flex items-center gap-2 mb-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Momentum scan — backend stream healthy</div><div class="flex items-center gap-2" style="font-size:13px; color:#94a3b8;"><i data-lucide="clock" style="width:14px;"></i> Breakout scan — latest cycle</div></div></div>`;
-    } else {
-        contentArea.innerHTML = `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`;
-    }
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-

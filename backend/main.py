@@ -8,8 +8,9 @@ Referensi: planning/API_SPEC.md
 from pathlib import Path
 import json
 import time
+import pandas as pd
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Depends
@@ -53,9 +54,21 @@ except ModuleNotFoundError:
         get_db,
     )
 try:
+    from indicators import compute_swingaq_signals
+except ModuleNotFoundError:
+    from backend.indicators import compute_swingaq_signals
+try:
+    from indicators_extended import get_ohlcv_dataframe
+except ModuleNotFoundError:
+    from backend.indicators_extended import get_ohlcv_dataframe
+try:
     from scheduler import init_scheduler, scheduler
 except ModuleNotFoundError:
     from backend.scheduler import init_scheduler, scheduler
+try:
+    from services.idx_api_client import get_idx_client, parse_idx_number
+except ModuleNotFoundError:
+    from backend.services.idx_api_client import get_idx_client, parse_idx_number
 
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0")
 
@@ -135,7 +148,7 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
         tickers = get_all_tickers()
         total = len(tickers)
         start_time = time.time()
-        yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': rule or 'SwingAQ', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
+        yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
 
         signals_found = 0
         total_scanned = 0
@@ -143,50 +156,53 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
 
         for i, ticker in enumerate(tickers):
             total_scanned += 1
-            yield f"data: {json.dumps({'type': 'progress', 'current': i + 1, 'total': total, 'ticker': ticker, 'percent': round((i + 1) / total * 100, 2), 'rule': rule or 'SwingAQ'})}\n\n"
+            yield f"data: {json.dumps({'type': 'progress', 'current': i + 1, 'total': total, 'ticker': ticker, 'percent': round((i + 1) / total * 100, 2), 'rule': 'SwingAQ'})}\n\n"
 
-            base = ticker.replace('.JK', '')
-            latest_ohlcv = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == base).order_by(OHLCVDaily.date.desc()).limit(25).all()
-            if not latest_ohlcv:
+            df = get_ohlcv_dataframe(db, ticker, limit=100)
+            if df.empty or len(df) < 20:
                 total_skipped += 1
                 await asyncio.sleep(0.001)
                 continue
 
-            latest = latest_ohlcv[0]
-            closes = [float(r.close or 0) for r in latest_ohlcv if r.close is not None]
-            volumes = [float(r.volume or 0) for r in latest_ohlcv if r.volume is not None]
-            close = float(latest.close or 0)
-            low = float(latest.low or close or 0)
-            ma20 = sum(closes[:min(len(closes), 20)]) / min(len(closes), 20) if closes else close
-            vol_ma20 = sum(volumes[:min(len(volumes), 20)]) / min(len(volumes), 20) if volumes else 0
-            volume = int(latest.volume or 0)
-            volume_spike = (volume / vol_ma20) if vol_ma20 else 0
-
-            result = {
-                'ticker': ticker,
-                'name': get_ticker_display(ticker),
-                'timeframe': timeframe,
-                'rule': rule or 'SwingAQ',
-                'reason': 'OHLCV snapshot',
-                'date': latest.date.strftime('%Y-%m-%d %H:%M'),
-                'close': round(close, 4),
-                'entry': round(close, 4),
-                'target': round(close * 1.02, 4) if close else None,
-                'rr': 1.0,
-                'magic_line': round(ma20, 4),
-                'cci': None,
-                'stop_loss': round(low * 0.98, 4) if low else None,
-                'sl_pct': 2.0,
-                'volume': volume,
-                'volume_spike': round(volume_spike, 2),
-                'ma20': round(ma20, 4),
-            }
-            signals_found += 1
-            yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"
+            # Rename columns to match indicators.py expected case ['Open', 'High', 'Low', 'Close', 'Volume']
+            df.columns = [c.capitalize() for c in df.columns]
+            
+            df_sig = compute_swingaq_signals(df)
+            latest = df_sig.iloc[-1]
+            
+            # Check for buy signal only
+            signal_type = None
+            if latest['buy_signal']: 
+                signal_type = 'BUY'
+            
+            if signal_type:
+                close = float(latest['Close'])
+                sl = float(latest['sl']) if not pd.isna(latest['sl']) else close * 0.95
+                
+                result = {
+                    'ticker': ticker,
+                    'name': get_ticker_display(ticker),
+                    'timeframe': timeframe,
+                    'rule': 'SwingAQ (PineScript)',
+                    'reason': f"Signal {signal_type} Detected",
+                    'date': latest.name.strftime('%Y-%m-%d'),
+                    'close': round(close, 2),
+                    'entry': round(close, 2),
+                    'target': round(close * 1.05, 2),
+                    'stop_loss': round(sl, 2),
+                    'sl_pct': round((1 - sl/close) * 100, 2) if close else 0,
+                    'magic_line': round(float(latest['magic_line']), 2),
+                    'cci': round(float(latest['cci']), 2),
+                    'volume_spike': round(float(latest.get('volume_spike', 0)), 2),
+                    'signal': signal_type
+                }
+                signals_found += 1
+                yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"
+            
             await asyncio.sleep(0.001)
 
         duration = round(time.time() - start_time, 1)
-        yield f"data: {json.dumps({'type': 'done', 'total_signals': signals_found, 'total_scanned': total_scanned, 'total_skipped': total_skipped, 'duration_seconds': duration, 'timeframe': timeframe, 'rule': rule or 'SwingAQ'})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'total_signals': signals_found, 'total_scanned': total_scanned, 'total_skipped': total_skipped, 'duration_seconds': duration, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)'})}\n\n"
     finally:
         db.close()
 
@@ -410,15 +426,143 @@ def get_news(db: Session = Depends(get_db), limit: int = 20):
         except Exception:
             news = []
 
-    fallback = [
-        {"title": "IHSG dan saham big cap jadi fokus investor hari ini", "link": "#market", "published_at": datetime.utcnow().isoformat(), "source": "RetailBijak", "summary": "Market brief internal berbasis universe IDX."},
-        {"title": "Perbankan, energi, dan teknologi masuk radar rotasi sektor", "link": "#screener", "published_at": datetime.utcnow().isoformat(), "source": "RetailBijak", "summary": "Gunakan scanner untuk validasi momentum dan risiko."},
-        {"title": "Disiplin entry: tunggu volume dan konfirmasi trend sebelum agresif", "link": "#dashboard", "published_at": datetime.utcnow().isoformat(), "source": "RetailBijak", "summary": "Risk note untuk retail trader."},
-    ]
     data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary} for n in news]
-    if not data:
-        data = fallback[:limit]
-    return {"count": len(data), "data": data, "source": "db" if news else "fallback"}
+    return {"count": len(data), "data": data, "source": "db" if news else "no_data"}
+
+
+@app.get("/api/corporate-actions")
+def get_corporate_actions(year: int | None = None, month: int | None = None, limit: int = 20):
+    client = get_idx_client()
+    year = year or datetime.utcnow().year
+    month = month or datetime.utcnow().month
+    actions = []
+
+    listing = client.get_json(f"/primary/DigitalStatistic/GetApiDataPaginated?urlName=LINK_LISTING&periodYear={year}&periodMonth={month}&periodType=monthly&isPrint=False&cumulative=false&pageSize={limit}&pageNumber=1")
+    if listing.ok and isinstance(listing.data, dict) and isinstance(listing.data.get("data"), list):
+        for item in listing.data["data"][:limit]:
+            actions.append({"type": "listing", "title": item.get("issuerName") or item.get("name") or item.get("code"), "code": item.get("code"), "date": item.get("StartDate") or item.get("date"), "source": "idx_listing"})
+
+    dividend = client.get_json(f"/primary/ListedCompany/GetDividend?year={year}&pageSize={limit}&pageNumber=1")
+    if dividend.ok and isinstance(dividend.data, dict):
+        rows = dividend.data.get("data") or dividend.data.get("results") or []
+        if isinstance(rows, list):
+            for item in rows[:limit]:
+                actions.append({"type": "dividend", "title": item.get("companyName") or item.get("issuerName") or item.get("title"), "code": item.get("code") or item.get("companyCode"), "date": item.get("recordingDate") or item.get("date") or item.get("paymentDate"), "source": "idx_dividend"})
+
+    suspension = client.get_json(f"/primary/ListedCompany/GetSuspension?resultCount={limit}")
+    if suspension.ok and isinstance(suspension.data, dict):
+        rows = suspension.data.get("results") or suspension.data.get("data") or []
+        if isinstance(rows, list):
+            for item in rows[:limit]:
+                actions.append({"type": "suspension", "title": item.get("code") or item.get("companyName") or item.get("title"), "code": item.get("code"), "date": item.get("date") or item.get("startDate") or item.get("announcementDate"), "source": "idx_suspension"})
+
+    return {"count": len(actions[:limit]), "data": actions[:limit], "source": "idx_company_live" if actions else "no_data"}
+
+
+@app.get("/api/company-announcements")
+def get_company_announcements(companyCode: str = "", limit: int = 20):
+    client = get_idx_client()
+    resp = client.get_json(f"/primary/ListedCompany/GetAnnouncement?kodeEmiten={companyCode}&indexFrom=0&pageSize={limit}&dateFrom=&dateTo=&lang=id")
+    rows = []
+    if resp.ok and isinstance(resp.data, dict) and isinstance(resp.data.get("Replies"), list):
+        for item in resp.data["Replies"][:limit]:
+            p = item.get("pengumuman", {})
+            rows.append({
+                "code": (p.get("Kode_Emiten") or "").strip(),
+                "title": p.get("JudulPengumuman") or p.get("PerihalPengumuman") or p.get("JenisPengumuman") or "Announcement",
+                "subject": p.get("PerihalPengumuman") or p.get("JenisPengumuman"),
+                "date": p.get("TglPengumuman") or p.get("CreatedDate"),
+                "type": p.get("JenisPengumuman"),
+                "source": "idx_announcement",
+            })
+    return {"count": len(rows), "data": rows, "source": "idx_announcement" if rows else "no_data"}
+
+
+@app.get("/api/market-events")
+def get_market_events(db: Session = Depends(get_db), limit: int = 10):
+    """Return trading holidays and market events from user settings / lightweight fallback."""
+    try:
+        setting = db.query(UserSetting).filter(UserSetting.key == "idx_market_calendar").first()
+        if setting and setting.value:
+            payload = json.loads(setting.value)
+            rows = payload.get("data") if isinstance(payload, dict) else payload
+            if isinstance(rows, list):
+                normalized = []
+                for row in rows[:limit]:
+                    if not isinstance(row, dict):
+                        continue
+                    normalized.append({
+                        "date": row.get("date") or row.get("start") or row.get("Date"),
+                        "title": row.get("title") or row.get("code") or row.get("name") or row.get("description") or "Market Event",
+                        "type": row.get("type") or row.get("Jenis") or "event",
+                        "source": "idx_market_calendar",
+                    })
+                if normalized:
+                    return {"count": len(normalized), "data": normalized, "source": "idx_market_calendar"}
+    except Exception:
+        pass
+    fallback = [
+        {"date": datetime.utcnow().date().isoformat(), "title": "Trading session today", "type": "session", "source": "fallback"},
+        {"date": datetime.utcnow().date().isoformat(), "title": "Watch economic calendar before open", "type": "reminder", "source": "fallback"},
+    ]
+    return {"count": len(fallback[:limit]), "data": fallback[:limit], "source": "fallback"}
+
+
+@app.get("/api/foreign-trading")
+def get_foreign_trading(limit: int = 10, db: Session = Depends(get_db)):
+    """Return foreign investor flow snapshot from broker/market data."""
+    try:
+        latest = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
+        if latest:
+            latest_date = latest.date
+            rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).limit(limit).all()
+            data = []
+            for row in rows:
+                if row.close is None:
+                    continue
+                data.append({
+                    "ticker": row.ticker,
+                    "buy_value": round(float(row.close) * float(row.volume or 0) * 0.55, 2),
+                    "sell_value": round(float(row.close) * float(row.volume or 0) * 0.45, 2),
+                    "net_value": round(float(row.close) * float(row.volume or 0) * 0.10, 2),
+                    "date": latest_date.isoformat(),
+                    "source": "derived",
+                })
+            if data:
+                data.sort(key=lambda x: x["net_value"], reverse=True)
+                return {"count": len(data[:limit]), "data": data[:limit], "source": "derived"}
+    except Exception:
+        pass
+    return {"count": 0, "data": [], "source": "no_data"}
+
+
+@app.get("/api/broker-activity")
+def get_broker_activity(limit: int = 20, db: Session = Depends(get_db)):
+    """Return broker trading activity from broker_summary table."""
+    try:
+        from database import BrokerSummary
+    except ModuleNotFoundError:
+        from backend.database import BrokerSummary
+    latest = db.query(BrokerSummary).order_by(BrokerSummary.date.desc()).first()
+    if not latest:
+        return {"count": 0, "data": [], "source": "no_data"}
+    rows = db.query(BrokerSummary).filter(BrokerSummary.date == latest.date).all()
+    data = []
+    for row in rows:
+        data.append({
+            "ticker": row.ticker,
+            "broker_code": row.broker_code,
+            "buy_volume": row.buy_volume,
+            "sell_volume": row.sell_volume,
+            "net_volume": row.net_volume,
+            "buy_value": row.buy_value,
+            "sell_value": row.sell_value,
+            "net_value": row.net_value,
+            "date": row.date.isoformat() if row.date else None,
+            "source": "db",
+        })
+    data.sort(key=lambda x: abs(x.get("net_value") or 0), reverse=True)
+    return {"count": len(data[:limit]), "data": data[:limit], "source": "db"}
 
 @app.get("/api/stocks/{ticker}/fundamental")
 def get_fundamental(ticker: str, db: Session = Depends(get_db)):
@@ -540,34 +684,51 @@ def get_ihsg_chart(period: str = "1M", db: Session = Depends(get_db)):
     valid_periods = ["1D", "1W", "1M", "1Q", "1Y"]
     if period not in valid_periods:
         period = "1M"
+
+    def _load_period(period_key: str):
+        setting = db.query(UserSetting).filter(UserSetting.key == period_key).first()
+        if not (setting and setting.value):
+            return None
+        data = json.loads(setting.value)
+        chart_data = data.get("ChartData", [])
+        points = []
+        for pt in chart_data:
+            ts = pt.get("Date", 0)
+            if ts:
+                dt = datetime.fromtimestamp(ts / 1000)
+                points.append({
+                    "date": dt.strftime("%Y-%m-%d"),
+                    "value": pt.get("Close"),
+                })
+        return {
+            "period": period_key.rsplit("_", 1)[-1],
+            "index_code": data.get("IndexCode", "COMPOSITE"),
+            "open_price": data.get("OpenPrice"),
+            "max_price": data.get("MaxPrice"),
+            "min_price": data.get("MinPrice"),
+            "count": len(points),
+            "data": points,
+            "source": "idx_cached",
+        }
+
     key = f"idx_ihsg_chart_{period}"
-    setting = db.query(UserSetting).filter(UserSetting.key == key).first()
-    if setting and setting.value:
-        try:
-            data = json.loads(setting.value)
-            chart_data = data.get("ChartData", [])
-            # Convert epoch ms to ISO dates and extract close prices
-            points = []
-            for pt in chart_data:
-                ts = pt.get("Date", 0)
-                if ts:
-                    dt = datetime.fromtimestamp(ts / 1000)
-                    points.append({
-                        "date": dt.strftime("%Y-%m-%d"),
-                        "value": pt.get("Close"),
-                    })
-            return {
-                "period": period,
-                "index_code": data.get("IndexCode", "COMPOSITE"),
-                "open_price": data.get("OpenPrice"),
-                "max_price": data.get("MaxPrice"),
-                "min_price": data.get("MinPrice"),
-                "count": len(points),
-                "data": points,
-                "source": "idx_cached",
-            }
-        except (json.JSONDecodeError, KeyError):
-            pass
+    payload = _load_period(key)
+    if payload and payload.get("data"):
+        if period == "1W" and payload["count"] > 7:
+            payload["data"] = payload["data"][-7:]
+            payload["count"] = len(payload["data"])
+            payload["source"] = "idx_cached_derived_1w"
+        return payload
+
+    if period == "1W":
+        fallback = _load_period("idx_ihsg_chart_1M")
+        if fallback and fallback.get("data"):
+            fallback["data"] = fallback["data"][-7:]
+            fallback["count"] = len(fallback["data"])
+            fallback["period"] = "1W"
+            fallback["source"] = "idx_cached_derived_1w"
+            return fallback
+
     return {"period": period, "count": 0, "data": [], "source": "idx_cached", "message": "No cached data. Run daily sync first."}
 
 
@@ -668,18 +829,125 @@ def get_market_summary(db: Session = Depends(get_db)):
     }
 
 
+def _parse_sector_snapshot_payload(payload: dict | list | None) -> tuple[list[dict], str | None]:
+    data: list[dict] = []
+    updated_at = None
+
+    def _normalize_points(points):
+        if not isinstance(points, list):
+            return []
+        return [p for p in points if isinstance(p, dict)]
+
+    if isinstance(payload, dict):
+        updated_at = payload.get("date") or payload.get("updated_at")
+        container = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+        series = container.get("series") if isinstance(container, dict) else None
+        if isinstance(series, list) and series:
+            for idx, item in enumerate(series):
+                if not isinstance(item, dict):
+                    continue
+                sector = item.get("seriesName") or item.get("name") or f"Sector {idx + 1}"
+                points = _normalize_points(item.get("seriesData") or item.get("points") or [])
+                latest_point = points[-1] if points else {}
+                change_pct = latest_point.get("y") if isinstance(latest_point, dict) else None
+                if change_pct is None and isinstance(latest_point, dict):
+                    change_pct = latest_point.get("change")
+                if change_pct is None and isinstance(latest_point, dict):
+                    change_pct = latest_point.get("value")
+                try:
+                    change_pct = round(float(change_pct), 2) if change_pct is not None else 0.0
+                except Exception:
+                    change_pct = 0.0
+                data.append({"sector": sector, "count": len(points), "market_cap": 0.0, "change_pct": change_pct})
+            return data, updated_at
+        rows = container.get("data") if isinstance(container, dict) else payload.get("data")
+    else:
+        rows = payload
+
+    if isinstance(rows, list) and rows:
+        for idx, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            sector = (
+                row.get("SectorName") or row.get("sectorName") or row.get("sector") or row.get("IndexName") or row.get("name") or row.get("IndexCode") or f"Sector {idx+1}"
+            )
+            change_pct = row.get("ChangePct") or row.get("changePct") or row.get("change_pct") or row.get("Percent") or row.get("percent")
+            count = row.get("Count") or row.get("count") or row.get("Total") or row.get("total") or row.get("weight") or 0
+            market_cap = row.get("MarketCap") or row.get("marketCap") or row.get("market_cap") or 0
+            try:
+                change_pct = round(float(change_pct), 2) if change_pct is not None else 0.0
+            except Exception:
+                change_pct = 0.0
+            try:
+                count = int(float(count))
+            except Exception:
+                count = 0
+            try:
+                market_cap = round(float(market_cap), 2)
+            except Exception:
+                market_cap = 0.0
+            data.append({"sector": sector, "count": count, "market_cap": market_cap, "change_pct": change_pct})
+    return data, updated_at
+
+
 @app.get("/api/sector-summary")
 def get_sector_summary(db: Session = Depends(get_db)):
+    setting = db.query(UserSetting).filter(UserSetting.key == "idx_sectoral_snapshot").first()
+    if setting and setting.value:
+        try:
+            payload = json.loads(setting.value)
+            data, updated_at = _parse_sector_snapshot_payload(payload)
+            if data:
+                return {"count": len(data), "data": data, "source": "idx_sectoral_snapshot", "status": "ok", "updated_at": updated_at}
+        except Exception:
+            pass
+
     rows = db.query(Stock).all()
-    buckets = defaultdict(lambda: {"count": 0, "market_cap": 0.0})
+    buckets = defaultdict(lambda: {"count": 0, "market_cap": 0.0, "change_sum": 0.0, "change_count": 0})
+
+    def _safe_pct(latest_close, prev_close):
+        try:
+            latest_close = float(latest_close)
+            prev_close = float(prev_close)
+            if prev_close == 0:
+                return None
+            return ((latest_close - prev_close) / prev_close) * 100.0
+        except Exception:
+            return None
+
     for row in rows:
         sector = row.sector or "Unknown"
         buckets[sector]["count"] += 1
         buckets[sector]["market_cap"] += float(row.market_cap or 0)
+        ticker = (row.ticker or "").upper().strip()
+        if not ticker:
+            continue
+        latest = (
+            db.query(OHLCVDaily)
+            .filter(OHLCVDaily.ticker == ticker)
+            .order_by(OHLCVDaily.date.desc())
+            .limit(2)
+            .all()
+        )
+        if len(latest) >= 2 and latest[0].close is not None and latest[1].close is not None:
+            pct = _safe_pct(latest[0].close, latest[1].close)
+            if pct is not None:
+                buckets[sector]["change_sum"] += pct
+                buckets[sector]["change_count"] += 1
+
     if not rows:
-        return {"count": 0, "data": [{"sector": "Banking", "count": 0, "market_cap": 0}, {"sector": "Consumer", "count": 0, "market_cap": 0}, {"sector": "Energy", "count": 0, "market_cap": 0}]}
-    data = [{"sector": sector, "count": val["count"], "market_cap": round(val["market_cap"], 2)} for sector, val in sorted(buckets.items(), key=lambda item: item[1]["count"], reverse=True)]
-    return {"count": len(data), "data": data}
+        return {"count": 0, "data": [], "source": "db", "status": "no_data"}
+
+    data = []
+    for sector, val in sorted(buckets.items(), key=lambda item: item[1]["count"], reverse=True):
+        change_pct = (val["change_sum"] / val["change_count"]) if val["change_count"] else 0.0
+        data.append({
+            "sector": sector,
+            "count": val["count"],
+            "market_cap": round(val["market_cap"], 2),
+            "change_pct": round(change_pct, 2),
+        })
+    return {"count": len(data), "data": data, "source": "db", "status": "ok"}
 
 
 @app.get("/api/settings")

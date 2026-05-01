@@ -218,11 +218,24 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
             break
 
     index_summary = None
+    sectoral_snapshot = None
     try:
         index_rows = client.get_index_summary(data_date) if hasattr(client, "get_index_summary") else []
         index_summary = _extract_index_summary(index_rows, data_date)
     except Exception as exc:
         logger.warning("IDX index summary fetch failed: %s", exc)
+    try:
+        if hasattr(client, "get_sectoral_movement"):
+            sector_payload = client.get_sectoral_movement(data_date.year, data_date.month)
+            series = sector_payload.get("series") if isinstance(sector_payload, dict) else None
+            if isinstance(series, list) and series:
+                sectoral_snapshot = {
+                    "title": sector_payload.get("title") if isinstance(sector_payload, dict) else None,
+                    "subtitle": sector_payload.get("subtitle") if isinstance(sector_payload, dict) else None,
+                    "series": series,
+                }
+    except Exception as exc:
+        logger.warning("IDX sectoral movement fetch failed: %s", exc)
 
     db = SessionLocal()
     ok = 0
@@ -231,6 +244,8 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
     try:
         if index_summary:
             _store_setting(db, "idx_market_summary", json.dumps(index_summary))
+        if sectoral_snapshot:
+            _store_setting(db, "idx_sectoral_snapshot", json.dumps({"date": data_date.isoformat(), "data": sectoral_snapshot}))
 
         # Single day upsert (most recent)
         for row in rows:
@@ -251,9 +266,9 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
 
         # Multi-day backfill: loop through last 30 calendar days
         if multi_day and ok > 0:
-            start_date = data_date - timedelta(days=35)
+            start_date = data_date - timedelta(days=70)
             logger.info("Multi-day sync: fetching %s to %s", start_date, data_date)
-            multi = client.get_stock_summary_multi_day(start_date, data_date, max_days=30)
+            multi = client.get_stock_summary_multi_day(start_date, data_date, max_days=45)
             for day_str, day_rows in multi.items():
                 if day_str == data_date.isoformat():
                     continue  # already synced above

@@ -31,6 +31,8 @@ def test_market_and_sector_contracts_are_ui_safe():
     sectors_json = sectors.json()
     assert 'data' in sectors_json
     assert isinstance(sectors_json['data'], list)
+    assert all('change_pct' in row for row in sectors_json['data'])
+    assert all(isinstance(row['change_pct'], (int, float)) for row in sectors_json['data'])
 
 
 def test_stock_detail_endpoints_never_500_for_ui():

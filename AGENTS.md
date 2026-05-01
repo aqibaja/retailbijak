@@ -54,7 +54,7 @@ retailbijak/
 
 ### Development (repo kerja)
 ```bash
-cd /home/rich27/.hermes/profiles/coder/home/retailbijak/backend
+cd /home/rich27/retailbijak/backend
 pip install -r requirements.txt
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 # Frontend diakses via http://127.0.0.1:8000 (static files)
@@ -167,7 +167,7 @@ Semua timezone: **Asia/Jakarta**
 
 Saat melanjutkan pekerjaan di proyek ini:
 
-1. **Repo kerja**: `/home/rich27/.hermes/profiles/coder/home/retailbijak/`
+1. **Repo kerja**: `/home/rich27/retailbijak`
 2. **Runtime publik**: `/opt/swingaq/` — sync dengan `cp` lalu restart service.
 3. **Test**: `cd /opt/swingaq/backend && ./venv/bin/pytest -q test_api_e2e.py`
 4. **Compile check**: `python -m py_compile backend/main.py backend/database.py && python -m compileall -q frontend/js`

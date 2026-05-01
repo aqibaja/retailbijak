@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -163,6 +164,23 @@ class IDXApiClient:
     def get_index_chart(self, index_code: str = "COMPOSITE", period: str = "1M") -> dict[str, Any]:
         """Fetch IHSG/index chart time-series from IDX helper endpoint."""
         resp = self.get_json(f"/primary/helper/GetIndexChart?indexCode={index_code}&period={period}")
+        if not resp.ok or not isinstance(resp.data, dict):
+            return {}
+        return resp.data
+
+    def get_sectoral_movement(self, year: int, month: int) -> dict[str, Any]:
+        """Fetch IDX sectoral movement snapshot from official IDX digital-statistic endpoint."""
+        query_obj = {"year": year, "month": month, "quarter": 0, "type": "monthly"}
+        try:
+            import base64
+            query_base64 = base64.b64encode(json.dumps(query_obj).encode("utf-8")).decode("ascii")
+        except Exception:
+            query_base64 = ""
+        if not query_base64:
+            return {}
+        resp = self.get_json(
+            f"/primary/DigitalStatistic/GetApiData?urlName=LINK_DPS_JCI_SECTORAL_MOVEMENT&query={query_base64}&isPrint=False&cumulative=false"
+        )
         if not resp.ok or not isinstance(resp.data, dict):
             return {}
         return resp.data

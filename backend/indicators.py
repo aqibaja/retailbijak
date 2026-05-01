@@ -27,7 +27,7 @@ def magic_line(high: pd.Series, low: pd.Series, period: int = 9) -> pd.Series:
 
     Bukan Bollinger Band, bukan SMA — ini Donchian Channel midline.
     """
-    return (low.rolling(period).min() + high.rolling(period).max()) / 2
+    return (low.rolling(period, min_periods=1).min() + high.rolling(period, min_periods=1).max()) / 2
 
 
 # =============================================================================
@@ -54,7 +54,7 @@ def mean_absolute_deviation(series: pd.Series, period: int) -> pd.Series:
     """
     def mad(x):
         return np.mean(np.abs(x - np.mean(x)))
-    return series.rolling(period).apply(mad, raw=True)
+    return series.rolling(period, min_periods=1).apply(mad, raw=True)
 
 
 def cci(high: pd.Series, low: pd.Series, close: pd.Series,
@@ -65,7 +65,7 @@ def cci(high: pd.Series, low: pd.Series, close: pd.Series,
     Formula: (HLC3 - SMA(HLC3, N)) / (0.015 * MAD(HLC3, N))
     """
     src = hlc3(high, low, close)
-    cci_ma = src.rolling(period).mean()
+    cci_ma = src.rolling(period, min_periods=1).mean()
     dev = mean_absolute_deviation(src, period)
     # Handle division by zero: jika MAD = 0, CCI = 0
     result = (src - cci_ma) / (0.015 * dev)
@@ -81,7 +81,7 @@ def cci(high: pd.Series, low: pd.Series, close: pd.Series,
 
 def stop_loss(low: pd.Series, lookback: int = 20) -> pd.Series:
     """Swing Low = lowest low dalam N bar terakhir."""
-    return low.rolling(lookback).min()
+    return low.rolling(lookback, min_periods=1).min()
 
 
 # =============================================================================
@@ -104,9 +104,10 @@ MIN_BARS_REQUIRED = 100
 def compute_swingaq_signals(
     df: pd.DataFrame,
     magic_period: int = 9,
-    cci_period: int = 33,
+    cci_period: int = 20,
     window_bars: int = 3,
     sl_lookback: int = 20,
+    vol_ma_period: int = 20,
 ) -> pd.DataFrame:
     """
     Hitung sinyal BUY/SELL SwingAQ pada DataFrame OHLCV.
@@ -119,17 +120,19 @@ def compute_swingaq_signals(
     magic_period : int
         Period Donchian untuk Magic Line (default: 9).
     cci_period : int
-        Period CCI (default: 33).
+        Period CCI (default: 20).
     window_bars : int
         Max bar tunggu konfirmasi harga di atas Magic Line (default: 3).
     sl_lookback : int
         Bar lookback untuk swing low / stop loss (default: 20).
+    vol_ma_period : int
+        Period untuk Volume MA (default: 20).
 
     Returns
     -------
     pd.DataFrame
         DataFrame asli + kolom tambahan:
-        - 'magic_line', 'cci', 'sl', 'buy_signal', 'sell_signal'
+        - 'magic_line', 'cci', 'sl', 'vol_ma', 'volume_spike', 'buy_signal', 'sell_signal'
     """
     df = df.copy()
 
@@ -137,6 +140,11 @@ def compute_swingaq_signals(
     df['magic_line'] = magic_line(df['High'], df['Low'], magic_period)
     df['cci'] = cci(df['High'], df['Low'], df['Close'], cci_period)
     df['sl'] = stop_loss(df['Low'], sl_lookback)
+    
+    # Calculate Volume MA and Spike
+    df['vol_ma'] = df['Volume'].rolling(vol_ma_period, min_periods=1).mean()
+    df['volume_spike'] = df['Volume'] / df['vol_ma']
+    df['volume_spike'] = df['volume_spike'].fillna(0)
 
     # --- State machine (WAJIB iteratif) ---
     ever_below_100 = False
@@ -150,6 +158,8 @@ def compute_swingaq_signals(
     cci_vals = df['cci'].values
     close_vals = df['Close'].values
     magic_vals = df['magic_line'].values
+    volume_vals = df['Volume'].values
+    vol_ma_vals = df['vol_ma'].values
 
     for i in range(n):
         cci_val = cci_vals[i]
@@ -197,8 +207,11 @@ def compute_swingaq_signals(
                     price_above = True
                     break
 
+        # Vol MA condition: Volume must be > Vol MA 20
+        vol_condition = volume_vals[i] > vol_ma_vals[i]
+
         # BUY Step 3: Konfirmasi
-        if pending_buy and price_above:
+        if pending_buy and price_above and vol_condition:
             buy_signals[i] = True
             pending_buy = False
             pending_bar = 0

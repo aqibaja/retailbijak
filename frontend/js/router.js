@@ -1,6 +1,6 @@
 import { renderDashboard } from './views/dashboard.js?v=20260430m';
 import { renderStockDetail } from './views/stock_detail.js?v=20260430ao';
-import { renderScreener } from './views/screener.js?v=20260430m';
+import { renderScreener } from './views/screener.js?v=20260501v2';
 import { renderPortfolio } from './views/portfolio.js?v=20260430m';
 import { renderMarket } from './views/market.js?v=20260430m';
 import { renderNews } from './views/news.js?v=20260430m';

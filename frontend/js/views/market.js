@@ -1,142 +1,115 @@
-import { fetchMarketSummary, fetchSectorSummary } from '../api.js?v=20260430m';
-import { observeElements } from '../main.js?v=20260430m';
-
-const fallbackSectors = [
-  { sector: 'Finance', change_pct: 1.2, total: 128 },
-  { sector: 'Technology', change_pct: -2.4, total: 34 },
-  { sector: 'Energy', change_pct: 1.8, total: 72 },
-  { sector: 'Consumer', change_pct: 0.3, total: 88 },
-  { sector: 'Property', change_pct: -0.8, total: 59 },
-  { sector: 'Basic Materials', change_pct: 0.5, total: 95 },
-  { sector: 'Healthcare', change_pct: 0.6, total: 26 },
-  { sector: 'Infrastructure', change_pct: 0.9, total: 41 },
-  { sector: 'Transport', change_pct: -1.2, total: 25 },
-  { sector: 'Industrials', change_pct: 1.5, total: 57 },
-];
+import { fetchMarketSummary, fetchTopMovers, fetchNews, apiFetch } from '../api.js?v=20260501e';
+import { observeElements } from '../main.js?v=20260501a';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
 const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
+const safeRows = (payload) => Array.isArray(payload?.data) ? payload.data : [];
 
-function normalizeSectors(payload) {
-  const rows = Array.isArray(payload?.data) ? payload.data : [];
-  const shouldUseFallback = !rows.length || rows.length < 5 || rows.every(r => Number(r.change_pct ?? r.avg_change_pct ?? r.change ?? 0) === 0);
-  if (shouldUseFallback) return fallbackSectors.map(s => ({ ...s, source: 'DEMO' }));
-  return rows.map((r, idx) => ({
-    sector: r.sector || r.name || `Sector ${idx + 1}`,
-    change_pct: Number(r.change_pct ?? r.avg_change_pct ?? r.change ?? 0),
-    total: Number(r.count ?? r.total ?? 0),
-    source: payload?.source || payload?.status || 'LIVE',
-  }));
-}
+async function fetchCorporateActions() { return apiFetch('/corporate-actions?limit=12') || { count: 0, data: [], source: 'no_data' }; }
+async function fetchCompanyAnnouncements() { return apiFetch('/company-announcements?limit=8') || { count: 0, data: [], source: 'no_data' }; }
+async function fetchForeignTrading() { return apiFetch('/foreign-trading?limit=8') || { count: 0, data: [], source: 'no_data' }; }
+async function fetchBrokerActivity() { return apiFetch('/broker-activity?limit=8') || { count: 0, data: [], source: 'no_data' }; }
 
-function renderSectorCard(s) {
-  const up = Number(s.change_pct) >= 0;
-  const intensity = Math.min(Math.abs(Number(s.change_pct || 0)) / 4, 1);
-  const bg = up ? `rgba(16,185,129,${0.06 + intensity * 0.14})` : `rgba(239,68,68,${0.06 + intensity * 0.14})`;
-  const border = up ? 'rgba(16,185,129,0.22)' : 'rgba(239,68,68,0.22)';
-  return `
-    <div class="p-4" style="background:${bg}; border:1px solid ${border}; border-radius:var(--radius-md); min-height:92px; display:flex; flex-direction:column; justify-content:space-between;">
-      <div class="flex justify-between items-start gap-2">
-        <div class="text-xs text-muted uppercase truncate strong" title="${s.sector}">${s.sector}</div>
-        <span class="mono text-xs text-dim">${s.total || '-'}</span>
+const badge = (label) => `<span class="badge" style="background:rgba(99,102,241,0.12); color:#c7d2fe; border:1px solid rgba(99,102,241,0.2);">${label}</span>`;
+
+const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
+  <div class="panel flex-col" style="border-left:2px solid ${accent};">
+    <div class="mb-3">
+      <div class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">${title}</div>
+      <div class="text-sm text-muted mt-1">${subtitle}</div>
+    </div>
+    ${body}
+  </div>`;
+
+const moverRow = (r) => `
+  <a href="#stock/${r.ticker || ''}" class="block p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+    <div class="flex justify-between items-center gap-3">
+      <div><div class="strong text-main mono">${r.ticker || '-'}</div><div class="text-xs text-dim truncate">${r.name || ''}</div></div>
+      <div class="text-right"><div class="mono strong ${Number(r.change_pct ?? r.change ?? 0) >= 0 ? 'text-up' : 'text-down'}">${pct(r.change_pct ?? r.change)}</div><div class="text-xs text-dim mono">${r.price != null ? fmt(r.price) : '--'}</div></div>
+    </div>
+  </a>`;
+
+const flowRow = (r) => `
+  <div class="p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+    <div class="flex justify-between items-center gap-3">
+      <div><div class="strong text-main mono">${r.ticker || '-'}</div><div class="text-xs text-dim">${r.source || 'IDX'}</div></div>
+      <div class="text-right"><div class="mono strong ${Number(r.net_value ?? 0) >= 0 ? 'text-up' : 'text-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="text-xs text-dim">buy ${fmt(r.buy_value ?? 0, 0)} / sell ${fmt(r.sell_value ?? 0, 0)}</div></div>
+    </div>
+  </div>`;
+
+const brokerRow = (r) => `
+  <div class="p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+    <div class="flex justify-between items-center gap-3">
+      <div><div class="strong text-main">${r.broker_code || '-'}</div><div class="text-xs text-dim mono">${r.ticker || '-'}</div></div>
+      <div class="text-right"><div class="mono strong ${Number(r.net_value ?? 0) >= 0 ? 'text-up' : 'text-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="text-xs text-dim">vol ${fmt(r.net_volume ?? 0, 0)}</div></div>
+    </div>
+  </div>`;
+
+const actionRow = (r) => `
+  <div class="p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+    <div class="flex justify-between items-start gap-3">
+      <div>
+        <div class="strong text-main">${r.title || '-'}</div>
+        <div class="text-xs text-dim mono mt-1">${r.code || ''} ${r.date || ''}</div>
       </div>
-      <div class="mono strong ${up ? 'text-up' : 'text-down'} text-lg">${pct(s.change_pct)}</div>
-    </div>`;
-}
+      ${badge(String(r.type || 'event').toUpperCase())}
+    </div>
+  </div>`;
+
+const newsRow = (n) => `
+  <a href="${n.link || '#news'}" class="block p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+    <div class="text-sm strong text-main mb-1 line-clamp-2">${n.title || '-'}</div>
+    <div class="text-xs text-dim line-clamp-2">${n.summary || ''}</div>
+    <div class="text-xs text-dim mono mt-2">${n.source || 'IDX'}</div>
+  </a>`;
 
 export async function renderMarket(root) {
   root.innerHTML = `
     <section class="grid grid-cols-12 stagger-reveal">
       <div class="col-span-12 flex justify-between items-end mb-4">
         <div>
-          <h1 class="text-3xl mb-2" data-i18n="market_overview" style="color:var(--text-main); letter-spacing:-0.04em; font-weight:800;">Market Overview</h1>
-          <p class="text-base" style="color:var(--text-muted);">Backend-linked sector performance, market breadth, and flow intelligence</p>
+          <h1 class="text-3xl mb-2" style="color:var(--text-main); letter-spacing:-0.04em; font-weight:800;">Market Overview</h1>
+          <p class="text-base" style="color:var(--text-muted);">Live IDX intelligence: movers, foreign flow, broker activity, announcements, and corporate actions.</p>
         </div>
         <div id="market-source" class="badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">SYNCING</div>
       </div>
 
-      <div class="col-span-8 flex-col gap-6">
-        <div class="panel">
-          <div class="flex justify-between items-center mb-4 pb-4" style="border-bottom:1px solid var(--border-subtle);">
-            <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Sector Performance</h3>
-            <span id="sector-count" class="mono text-xs text-dim">LOADING</span>
-          </div>
-          <div id="sector-grid" class="grid grid-cols-5 gap-3">
-            ${Array(10).fill('<div class="skeleton skeleton-shimmer" style="height:92px;border-radius:var(--radius-md);"></div>').join('')}
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="flex justify-between items-center mb-4 pb-4" style="border-bottom:1px solid var(--border-subtle);">
-            <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Market Pulse</h3>
-            <span id="market-pulse" class="mono text-xs text-up strong" style="background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:4px;">BACKEND</span>
-          </div>
-          <div class="grid grid-cols-4 gap-3">
-            <div class="p-4" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);"><div class="text-xs text-dim strong uppercase">IHSG</div><div id="m-value" class="mono strong text-main text-lg mt-2">--</div></div>
-            <div class="p-4" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);"><div class="text-xs text-dim strong uppercase">Change</div><div id="m-change" class="mono strong text-lg mt-2">--</div></div>
-            <div class="p-4" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);"><div class="text-xs text-dim strong uppercase">Volume</div><div id="m-volume" class="mono strong text-main text-lg mt-2">--</div></div>
-            <div class="p-4" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);"><div class="text-xs text-dim strong uppercase">Value</div><div id="m-trade-value" class="mono strong text-main text-lg mt-2">--</div></div>
-          </div>
-        </div>
+      <div class="col-span-7 flex-col gap-4">
+        <div id="corporate-actions"></div>
+        <div id="foreign-flows"></div>
+        <div id="broker-activity"></div>
       </div>
 
-      <div class="col-span-4 flex-col gap-4">
-        <div class="panel flex-col">
-          <h3 class="text-xs uppercase text-dim strong mb-4 border-b pb-2" style="border-bottom:1px solid var(--border-subtle); letter-spacing:0.08em;">Breadth Today</h3>
-          <div class="flex-col gap-3">
-            <div class="flex justify-between items-center"><span class="text-sm text-muted strong">Advancers</span><span id="m-adv" class="mono strong text-up text-base">--</span></div>
-            <div class="flex justify-between items-center"><span class="text-sm text-muted strong">Decliners</span><span id="m-dec" class="mono strong text-down text-base">--</span></div>
-            <div class="flex justify-between items-center"><span class="text-sm text-muted strong">Unchanged</span><span id="m-unc" class="mono strong text-main text-base">--</span></div>
-          </div>
-          <div class="mt-4 pt-4" style="border-top:1px solid var(--border-subtle);">
-            <div id="bias-label" class="text-xs text-dim mb-2 strong uppercase" style="letter-spacing:0.05em;">BREADTH BIAS</div>
-            <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;"><div id="bias-fill" style="width:50%; height:100%; background:var(--primary-color); border-radius:3px;"></div></div>
-          </div>
-        </div>
-
-        <div class="panel flex-col accent-top" style="flex:1;">
-          <h3 class="text-xs uppercase strong mb-4 flex items-center gap-2" style="color:#a5b4fc; letter-spacing:0.05em;"><i data-lucide="zap" style="width:14px;"></i> Intelligence Notes</h3>
-          <div id="market-notes" class="flex-col gap-3 text-sm text-muted">
-            <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);">Loading market intelligence from backend aggregates...</div>
-          </div>
-        </div>
+      <div class="col-span-5 flex-col gap-4">
+        <div id="movers-card"></div>
+        <div id="announcements-card"></div>
+        <div id="news-card"></div>
       </div>
     </section>`;
 
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
-  const [summary, sectorPayload] = await Promise.all([
+  const [summary, movers, news, actions, announcements, foreign, brokers] = await Promise.all([
     fetchMarketSummary().catch(() => null),
-    fetchSectorSummary().catch(() => null),
+    fetchTopMovers(8).catch(() => null),
+    fetchNews(4).catch(() => null),
+    fetchCorporateActions().catch(() => null),
+    fetchCompanyAnnouncements().catch(() => null),
+    fetchForeignTrading().catch(() => null),
+    fetchBrokerActivity().catch(() => null),
   ]);
 
-  const sectors = normalizeSectors(sectorPayload);
-  const source = sectorPayload?.status || sectorPayload?.source || summary?.source || (sectorPayload?.data?.length ? 'LIVE DATA' : 'DEMO FALLBACK');
-  document.getElementById('market-source').textContent = String(source).toUpperCase();
-  document.getElementById('sector-count').textContent = `${sectors.length} SECTORS`;
-  document.getElementById('sector-grid').innerHTML = sectors.map(renderSectorCard).join('');
+  const src = [summary?.source, actions?.source, announcements?.source, foreign?.source, brokers?.source].filter(Boolean).join(' / ') || 'NO DATA';
+  const badgeEl = document.getElementById('market-source');
+  if (badgeEl) badgeEl.textContent = src.toUpperCase();
 
-  const adv = Number(summary?.advancers ?? 328);
-  const dec = Number(summary?.decliners ?? 271);
-  const unc = Number(summary?.unchanged ?? 143);
-  const breadthPct = Math.round((adv / Math.max(adv + dec, 1)) * 100);
-  document.getElementById('m-value').textContent = fmt(summary?.value ?? 7080.63);
-  document.getElementById('m-change').textContent = pct(summary?.change_pct ?? 0.12);
-  document.getElementById('m-change').className = `mono strong text-lg mt-2 ${Number(summary?.change_pct ?? 0.12) >= 0 ? 'text-up' : 'text-down'}`;
-  document.getElementById('m-volume').textContent = summary?.volume ? fmt(summary.volume, 1) : '8.4T';
-  document.getElementById('m-trade-value').textContent = summary?.trade_value ? `Rp ${fmt(summary.trade_value, 1)}` : 'Rp 9.2T';
-  document.getElementById('m-adv').textContent = fmt(adv, 0);
-  document.getElementById('m-dec').textContent = fmt(dec, 0);
-  document.getElementById('m-unc').textContent = fmt(unc, 0);
-  document.getElementById('bias-fill').style.width = `${breadthPct}%`;
-  document.getElementById('bias-label').textContent = breadthPct >= 55 ? 'BULLISH BIAS' : breadthPct <= 45 ? 'BEARISH BIAS' : 'NEUTRAL BREADTH';
+  document.getElementById('corporate-actions').innerHTML = card('Corporate Actions', 'Listing, dividend, suspension, and other company events from IDX', `<div class="flex-col gap-3">${safeRows(actions).slice(0,4).map(actionRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No corporate actions available.</div>'}</div>`);
+  document.getElementById('foreign-flows').innerHTML = card('Foreign Investor Flows', 'Live IDX trading summary for foreign participation', `<div class="flex-col gap-3">${safeRows(foreign).slice(0,4).map(flowRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No foreign flow data available.</div>'}</div>`, 'var(--text-up)');
+  document.getElementById('broker-activity').innerHTML = card('Broker Trading Activity', 'Top broker concentration and net value from IDX broker summary', `<div class="flex-col gap-3">${safeRows(brokers).slice(0,4).map(brokerRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No broker activity available.</div>'}</div>`, 'var(--accent-orange)');
+  document.getElementById('movers-card').innerHTML = card('Top Gainers / Losers', 'Most active movers today', `<div class="grid grid-cols-1 gap-2">${(Array.isArray(movers?.data) && movers.data.length ? movers.data : []).slice(0,8).map(moverRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No movers available.</div>'}</div>`, 'var(--accent-cyan)');
+  document.getElementById('announcements-card').innerHTML = card('Corporate News & Announcements', 'Company notices pulled from IDX announcement endpoint', `<div class="flex-col gap-3">${safeRows(announcements).slice(0,4).map(actionRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No announcements available.</div>'}</div>`);
+  document.getElementById('news-card').innerHTML = card('Latest Market News', 'Supporting market headlines', `<div class="flex-col gap-3">${(Array.isArray(news?.data) && news.data.length ? news.data : []).slice(0,4).map(newsRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No news available.</div>'}</div>`);
 
-  const best = [...sectors].sort((a, b) => b.change_pct - a.change_pct)[0];
-  const worst = [...sectors].sort((a, b) => a.change_pct - b.change_pct)[0];
-  document.getElementById('market-notes').innerHTML = `
-    <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle); border-left:2px solid var(--accent-indigo);">Best sector: <strong style="color:var(--text-main)">${best?.sector || 'N/A'}</strong> at <span class="${best?.change_pct >= 0 ? 'text-up' : 'text-down'} mono strong">${pct(best?.change_pct || 0)}</span>.</div>
-    <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);">Weakest sector: <strong style="color:var(--text-main)">${worst?.sector || 'N/A'}</strong> at <span class="${worst?.change_pct >= 0 ? 'text-up' : 'text-down'} mono strong">${pct(worst?.change_pct || 0)}</span>.</div>
-    <div class="p-3" style="background:rgba(255,255,255,0.02); border-radius:var(--radius-md); border:1px solid var(--border-subtle);">Breadth ratio: ${fmt(adv,0)} advancers vs ${fmt(dec,0)} decliners. Data path: <span class="mono">/api/market-summary</span> + <span class="mono">/api/sector-summary</span>.</div>
-  `;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
