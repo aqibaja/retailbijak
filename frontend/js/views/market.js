@@ -242,11 +242,11 @@ export async function renderMarket(root) {
         ${breadthStatBox(b.advancing, b.declining)}
         ${statBox('Top Winner', leadGainer?.ticker || '--', '', 'market-stat-value-ticker')}
         ${statBox('Top Loser', leadLoser?.ticker || '--', '', 'market-stat-value-ticker')}
-        <div class="market-stat-box market-mood-box ${mood.tone}"><div class="market-stat-label">Market Mood</div><div class="market-stat-value market-mood-value">${mood.label}</div><div class="market-stat-footnote">${mood.note}</div></div>
+        <div class="market-stat-box market-mood-box market-mood-box-wide ${mood.tone}"><div class="market-stat-label">Market Mood</div><div class="market-stat-value market-mood-value">${mood.label}</div><div class="market-stat-footnote">${mood.note}</div></div>
       </div>
-      <div class="market-pulse-panels">
-        <div class="market-mini-panel is-up"><div class="market-mini-label">Top Winner</div><div class="market-mini-code">${leadGainer?.ticker || '--'}</div><div class="market-mini-value">${leadGainer ? pct(leadGainer.change_pct) : '--'}</div><div class="market-mini-footnote">${leadGainer?.price != null ? `Rp ${fmt(leadGainer.price)}` : 'Harga belum tersedia'}</div></div>
-        <div class="market-mini-panel is-down"><div class="market-mini-label">Top Loser</div><div class="market-mini-code">${leadLoser?.ticker || '--'}</div><div class="market-mini-value">${leadLoser ? pct(leadLoser.change_pct) : '--'}</div><div class="market-mini-footnote">${leadLoser?.price != null ? `Rp ${fmt(leadLoser.price)}` : 'Harga belum tersedia'}</div></div>
+      <div class="market-pulse-panels market-pulse-panels-compact">
+        <div class="market-mini-panel is-up"><div class="market-mini-panel-head"><div class="market-mini-label">Top Winner</div><div class="market-mini-code">${leadGainer?.ticker || '--'}</div></div><div class="market-mini-value">${leadGainer ? pct(leadGainer.change_pct) : '--'}</div><div class="market-mini-footnote">${leadGainer?.price != null ? `Rp ${fmt(leadGainer.price)}` : 'Harga belum tersedia'}</div></div>
+        <div class="market-mini-panel is-down"><div class="market-mini-panel-head"><div class="market-mini-label">Top Loser</div><div class="market-mini-code">${leadLoser?.ticker || '--'}</div></div><div class="market-mini-value">${leadLoser ? pct(leadLoser.change_pct) : '--'}</div><div class="market-mini-footnote">${leadLoser?.price != null ? `Rp ${fmt(leadLoser.price)}` : 'Harga belum tersedia'}</div></div>
       </div>
     </div>`,
     'var(--accent-cyan)'

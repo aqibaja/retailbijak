@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
@@ -666,28 +667,57 @@ def get_company_announcements(companyCode: str = "", limit: int = 20):
 
 @app.get("/api/market-breadth")
 def get_market_breadth(db: Session = Depends(get_db)):
-    rows = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).limit(2000).all()
-    latest_by_ticker = {}
-    for r in rows:
-        if r.ticker not in latest_by_ticker:
-            latest_by_ticker[r.ticker] = r
+    latest_date = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
+    if not latest_date or not latest_date[0]:
+        return {"status": "ok", "source": "db_breadth", "count": 0, "data": {"latest_date": None, "advancing": 0, "declining": 0, "unchanged": 0, "advancers": [], "decliners": []}}
+
+    latest_date = latest_date[0]
+    sql = text("""
+        WITH latest_rows AS (
+            SELECT ticker, date, close
+            FROM ohlcv_daily
+            WHERE date = :latest_date
+        ),
+        previous_rows AS (
+            SELECT curr.ticker AS ticker, MAX(prev.date) AS prev_date
+            FROM latest_rows curr
+            JOIN ohlcv_daily prev
+              ON prev.ticker = curr.ticker
+             AND prev.date < :latest_date
+            GROUP BY curr.ticker
+        )
+        SELECT curr.ticker, curr.close AS close_price, prev.close AS prev_close
+        FROM latest_rows curr
+        JOIN previous_rows picked ON picked.ticker = curr.ticker
+        JOIN ohlcv_daily prev
+          ON prev.ticker = picked.ticker
+         AND prev.date = picked.prev_date
+        WHERE prev.close IS NOT NULL AND curr.close IS NOT NULL
+    """)
+    pairs = db.execute(sql, {"latest_date": latest_date}).mappings().all()
+
     up = down = flat = 0
     advancing = []
     declining = []
-    for ticker, r in latest_by_ticker.items():
-        prev = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == ticker, OHLCVDaily.date < r.date).order_by(OHLCVDaily.date.desc()).first()
-        if not prev or not prev.close:
+    for row in pairs:
+        prev_close = row["prev_close"]
+        if not prev_close:
             continue
-        chg = ((r.close - prev.close) / prev.close) * 100
-        bucket = {"ticker": ticker, "change_pct": round(chg, 2), "price": r.close}
+        chg = ((row["close_price"] - prev_close) / prev_close) * 100
+        bucket = {"ticker": row["ticker"], "change_pct": round(chg, 2), "price": row["close_price"]}
         if chg > 0.2:
-            up += 1; advancing.append(bucket)
+            up += 1
+            advancing.append(bucket)
         elif chg < -0.2:
-            down += 1; declining.append(bucket)
+            down += 1
+            declining.append(bucket)
         else:
             flat += 1
+
+    advancing.sort(key=lambda item: item["change_pct"], reverse=True)
+    declining.sort(key=lambda item: item["change_pct"])
     total = up + down + flat
-    return {"status": "ok", "source": "db_breadth", "count": total, "data": {"advancing": up, "declining": down, "unchanged": flat, "advancers": advancing[:5], "decliners": declining[:5]}}
+    return {"status": "ok", "source": "db_breadth", "count": total, "data": {"latest_date": latest_date.isoformat() if hasattr(latest_date, 'isoformat') else str(latest_date), "advancing": up, "declining": down, "unchanged": flat, "advancers": advancing[:5], "decliners": declining[:5]}}
 
 
 @app.get("/api/market-stats")

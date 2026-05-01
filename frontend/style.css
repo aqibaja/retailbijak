@@ -1155,8 +1155,11 @@ html[data-theme="light"] .news-meta {
 .market-stat-value-ratio { font-size: 1.02rem; line-height: 1.45; }
 .market-mood-box.is-up { box-shadow: inset 0 0 0 1px rgba(16,185,129,.10); }
 .market-mood-box.is-down { box-shadow: inset 0 0 0 1px rgba(239,68,68,.10); }
+.market-mood-box-wide { min-height: 128px; justify-content: space-between; }
 .market-mood-value { font-size: 1.18rem; }
 .market-mini-panel { border-radius:16px; padding:16px; border:1px solid rgba(148,163,184,.14); background: rgba(2,8,20,.34); min-height: 118px; display:flex; flex-direction:column; justify-content:center; gap:8px; }
+.market-pulse-panels-compact { align-content: stretch; }
+.market-mini-panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .market-mini-panel.is-up { box-shadow: inset 0 0 0 1px rgba(16,185,129,.08); }
 .market-mini-panel.is-down { box-shadow: inset 0 0 0 1px rgba(239,68,68,.08); }
 .market-mini-label { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--text-dim); font-weight:800; }

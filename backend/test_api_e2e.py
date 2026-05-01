@@ -62,6 +62,18 @@ def test_market_summary_db_only():
         assert 'updated_at' in data
 
 
+def test_market_breadth_uses_windowed_db_shape():
+    with TestClient(app) as client:
+        res = client.get('/api/market-breadth')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['status'] == 'ok'
+    assert data['source'] == 'db_breadth'
+    assert 'latest_date' in data['data']
+    assert 'advancers' in data['data']
+    assert 'decliners' in data['data']
+
+
 def test_corporate_actions_shape():
     """Corporate actions endpoint returns consistent response factory shape."""
     with TestClient(app) as client:

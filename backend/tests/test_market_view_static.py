@@ -81,3 +81,8 @@ def test_market_first_fold_styles_define_header_rail_and_pulse_four_up_layout():
     assert ".market-stat-footnote {" in content
     assert ".market-mood-value" in content
     assert ".market-mini-footnote" in content
+    assert "market-mood-box market-mood-box-wide" in FRONTEND_MARKET_VIEW.read_text()
+    assert "market-pulse-panels market-pulse-panels-compact" in FRONTEND_MARKET_VIEW.read_text()
+    assert ".market-mood-box-wide {" in content
+    assert ".market-pulse-panels-compact {" in content
+    assert ".market-mini-panel-head {" in content
