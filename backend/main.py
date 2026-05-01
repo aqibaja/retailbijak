@@ -8,6 +8,7 @@ Referensi: planning/API_SPEC.md
 from pathlib import Path
 import json
 import time
+from typing import Any
 import pandas as pd
 from collections import defaultdict
 from datetime import datetime, date
@@ -69,8 +70,18 @@ try:
     from services.idx_api_client import get_idx_client, parse_idx_number
 except ModuleNotFoundError:
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
+try:
+    from services.idx_response_factory import ok as _resp_ok
+except ModuleNotFoundError:
+    from backend.services.idx_response_factory import ok as _resp_ok
+
+try:
+    from routes.user import router as user_router
+except ModuleNotFoundError:
+    from backend.routes.user import router as user_router
 
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0")
+app.include_router(user_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -122,8 +133,33 @@ class PortfolioPayload(BaseModel):
 
 # --- API ---
 @app.get("/api/health")
-async def health():
+def health():
     return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/api/scheduler-health")
+def scheduler_health():
+    jobs = []
+    try:
+        for job in scheduler.get_jobs():
+            next_run = job.next_run_time.isoformat() if job.next_run_time else None
+            jobs.append({
+                "id": job.id,
+                "name": job.name,
+                "next_run_time": next_run,
+                "trigger": str(job.trigger),
+            })
+        return {"status": "ok", "source": "apscheduler", "count": len(jobs), "data": jobs}
+    except Exception as exc:
+        return {"status": "error", "source": "apscheduler", "count": 0, "data": [], "error": str(exc)}
+
+
+@app.get("/api/scheduler-jobs")
+def scheduler_jobs():
+    try:
+        return {"status": "ok", "source": "apscheduler", "count": len(scheduler.get_jobs()), "data": [j.id for j in scheduler.get_jobs()]}
+    except Exception as exc:
+        return {"status": "error", "source": "apscheduler", "count": 0, "data": [], "error": str(exc)}
 
 
 @app.get("/api/timeframes")
@@ -380,30 +416,98 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
     return {"ticker": base, "data": payload}
 
 
+def _compute_analysis_metrics_from_ohlcv(db: Session, ticker: str) -> dict[str, Any]:
+    """Compute real analysis metrics (volume_spike, trend_score, volatility_score, breakout) from OHLCV data."""
+    try:
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+    except ModuleNotFoundError:
+        from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+
+    candidates = [ticker]
+    if ticker.endswith('.JK'):
+        candidates.append(ticker[:-3])
+    else:
+        candidates.append(f'{ticker}.JK')
+
+    df = get_ohlcv_dataframe(db, ticker, limit=100)
+    if df.empty or len(df) < 20:
+        return {"volume_spike": 1.0, "trend_score": 50, "volatility_score": 50, "breakout": False}
+
+    df = calculate_all_indicators(df)
+    latest = df.iloc[-1]
+    prev = df.iloc[-2] if len(df) > 1 else latest
+
+    close = float(latest['close']) if pd.notna(latest['close']) else 0
+    prev_close = float(prev['close']) if pd.notna(prev['close']) else close
+    volume = float(latest['volume']) if pd.notna(latest['volume']) else 0
+
+    # Volume spike: ratio vs 20-day average
+    vol_sma20 = latest.get('vol_sma_20')
+    if pd.isna(vol_sma20) or vol_sma20 is None or vol_sma20 == 0:
+        vol_sma20 = volume
+    volume_spike = round(volume / vol_sma20, 2) if vol_sma20 else 1.0
+
+    # Trend score: based on price vs SMAs and RSI
+    sma5 = latest.get('sma_5')
+    sma10 = latest.get('sma_10')
+    sma20 = latest.get('sma_20')
+    sma50 = latest.get('sma_50')
+    rsi = latest.get('rsi')
+    trend = 50
+    if pd.notna(sma5) and pd.notna(sma20):
+        if close > sma5 > sma20:
+            trend += 20
+        elif close < sma5 < sma20:
+            trend -= 20
+        elif close > sma20:
+            trend += 10
+        elif close < sma20:
+            trend -= 10
+    if pd.notna(sma50):
+        if close > sma50:
+            trend += 10
+        else:
+            trend -= 10
+    if pd.notna(rsi):
+        trend += (rsi - 50) * 0.3  # RSI tilt
+    trend_score = max(min(int(trend), 100), 0)
+
+    # Volatility score: based on ATR relative to price
+    atr = latest.get('atr')
+    if pd.notna(atr) and close > 0:
+        atr_pct = (atr / close) * 100
+        # Low ATR% = low volatility (30), High ATR% = high volatility (80)
+        vol_score = int(min(max(30 + atr_pct * 5, 0), 100))
+    else:
+        vol_score = 50
+    volatility_score = vol_score
+
+    # Breakout: price above 20-day high or above Bollinger upper band
+    bb_high = latest.get('bb_high')
+    high_20 = df['high'].astype(float).tail(20).max() if len(df) >= 20 else close
+    breakout = bool(close >= high_20 * 0.99 or (pd.notna(bb_high) and close > bb_high))
+
+    return {
+        "volume_spike": volume_spike,
+        "trend_score": trend_score,
+        "volatility_score": volatility_score,
+        "breakout": breakout,
+    }
+
+
 @app.get("/api/stocks/{ticker}/analysis")
 def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
     try:
         from backend.services.scanner_engine import analyze_stock
     except ModuleNotFoundError:
         from services.scanner_engine import analyze_stock
+
     row = _fallback_row_for_ticker(ticker, db)
-    analysis = analyze_stock({
-        "ticker": row["ticker"],
-        "name": row["name"],
-        "price": row["price"] or 0,
-        "per": row["per"],
-        "pbv": row["pbv"],
-        "roe": row["roe"],
-        "roa": row["roa"],
-        "market_cap": row["market_cap"],
-        "dividend_yield": row["dividend_yield"],
-        "volume_spike": 1,
-        "trend_score": 50,
-        "liquidity_score": 50,
-        "volatility_score": 50,
-        "breakout": False,
-    })
-    return {"ticker": row["ticker"], "status": "ok", "data": analysis}
+    metrics = _compute_analysis_metrics_from_ohlcv(db, row["ticker"])
+    row.update(metrics)
+
+    analysis = analyze_stock(row)
+    return _resp_ok(analysis, source="scanner_engine")
 
 
 @app.get("/api/news")
@@ -430,33 +534,115 @@ def get_news(db: Session = Depends(get_db), limit: int = 20):
     return {"count": len(data), "data": data, "source": "db" if news else "no_data"}
 
 
+_corporate_actions_cache: dict[str, Any] = {"data": None, "ts": 0}
+
+
 @app.get("/api/corporate-actions")
-def get_corporate_actions(year: int | None = None, month: int | None = None, limit: int = 20):
+def get_corporate_actions(year: int | None = None, month: int | None = None, limit: int = 30):
+    """Corporate actions: listings (new/warrants), dividends — live from IDX DigitalStatistic.
+
+    Uses only working IDX endpoints:
+    - LINK_LISTING via GetApiDataPaginated (listing/warrant data, last 3 months)
+    - LINK_DIVIDEND via GetApiData (dividend announcements)
+    Suspension endpoint (GetSuspension) returns 503 — wrapped in try/except.
+    Results cached for 5 min to avoid IDX rate-limit.
+    """
+    import time as _time
+    now = _time.time()
+    if _corporate_actions_cache["data"] and (now - _corporate_actions_cache["ts"]) < 300:
+        return _corporate_actions_cache["data"]
+
     client = get_idx_client()
     year = year or datetime.utcnow().year
     month = month or datetime.utcnow().month
-    actions = []
+    actions: list[dict[str, Any]] = []
 
-    listing = client.get_json(f"/primary/DigitalStatistic/GetApiDataPaginated?urlName=LINK_LISTING&periodYear={year}&periodMonth={month}&periodType=monthly&isPrint=False&cumulative=false&pageSize={limit}&pageNumber=1")
-    if listing.ok and isinstance(listing.data, dict) and isinstance(listing.data.get("data"), list):
-        for item in listing.data["data"][:limit]:
-            actions.append({"type": "listing", "title": item.get("issuerName") or item.get("name") or item.get("code"), "code": item.get("code"), "date": item.get("StartDate") or item.get("date"), "source": "idx_listing"})
+    # --- Listing / Warrant data (last 3 months cumulative) ---
+    try:
+        for m_offset in range(3):
+            m = month - m_offset
+            y = year
+            if m < 1:
+                m += 12
+                y -= 1
+            listing = client.get_json(
+                f"/primary/DigitalStatistic/GetApiDataPaginated?"
+                f"urlName=LINK_LISTING&periodYear={y}&periodMonth={m}"
+                f"&periodType=monthly&isPrint=False&cumulative=true"
+                f"&pageSize={limit}&pageNumber=1"
+            )
+            if listing.ok and isinstance(listing.data, dict):
+                rows = listing.data.get("data") or []
+                if isinstance(rows, list):
+                    for item in rows:
+                        actions.append({
+                            "type": "listing",
+                            "title": item.get("issuerName") or item.get("code"),
+                            "code": item.get("code"),
+                            "date": item.get("StartDate"),
+                            "end_date": item.get("LastDate"),
+                            "shares": item.get("NumOfShares"),
+                            "source": "idx_listing",
+                        })
+    except Exception:
+        pass
 
-    dividend = client.get_json(f"/primary/ListedCompany/GetDividend?year={year}&pageSize={limit}&pageNumber=1")
-    if dividend.ok and isinstance(dividend.data, dict):
-        rows = dividend.data.get("data") or dividend.data.get("results") or []
-        if isinstance(rows, list):
-            for item in rows[:limit]:
-                actions.append({"type": "dividend", "title": item.get("companyName") or item.get("issuerName") or item.get("title"), "code": item.get("code") or item.get("companyCode"), "date": item.get("recordingDate") or item.get("date") or item.get("paymentDate"), "source": "idx_dividend"})
+    # --- Dividend data (IDX DigitalStatistic) ---
+    try:
+        dividend = client.get_json(
+            "/primary/DigitalStatistic/GetApiData?urlName=LINK_DIVIDEND"
+        )
+        if dividend.ok and isinstance(dividend.data, dict):
+            rows = dividend.data.get("data") or []
+            if isinstance(rows, list):
+                for item in rows:
+                    actions.append({
+                        "type": "dividend",
+                        "title": item.get("name") or item.get("code"),
+                        "code": item.get("code"),
+                        "cash_dividend": item.get("cashDividend"),
+                        "cum_dividend": item.get("cumDividend"),
+                        "ex_dividend": item.get("exDividend"),
+                        "record_date": item.get("recordDate"),
+                        "payment_date": item.get("paymentDate"),
+                        "date": item.get("cumDividend") or item.get("exDividend"),
+                        "source": "idx_dividend",
+                    })
+    except Exception:
+        pass
 
-    suspension = client.get_json(f"/primary/ListedCompany/GetSuspension?resultCount={limit}")
-    if suspension.ok and isinstance(suspension.data, dict):
-        rows = suspension.data.get("results") or suspension.data.get("data") or []
-        if isinstance(rows, list):
-            for item in rows[:limit]:
-                actions.append({"type": "suspension", "title": item.get("code") or item.get("companyName") or item.get("title"), "code": item.get("code"), "date": item.get("date") or item.get("startDate") or item.get("announcementDate"), "source": "idx_suspension"})
+    # --- Suspension (wrapped — IDX often returns 503) ---
+    try:
+        suspension = client.get_json(
+            "/primary/ListedCompany/GetSuspension?resultCount=10"
+        )
+        if suspension.ok and isinstance(suspension.data, dict):
+            rows = suspension.data.get("results") or suspension.data.get("data") or []
+            if isinstance(rows, list):
+                for item in rows:
+                    actions.append({
+                        "type": "suspension",
+                        "title": item.get("code") or item.get("companyName"),
+                        "code": item.get("code"),
+                        "date": item.get("date") or item.get("startDate"),
+                        "source": "idx_suspension",
+                    })
+    except Exception:
+        pass
 
-    return {"count": len(actions[:limit]), "data": actions[:limit], "source": "idx_company_live" if actions else "no_data"}
+    # Deduplicate by (type, code)
+    seen = set()
+    unique: list[dict[str, Any]] = []
+    for a in actions:
+        key = (a.get("type"), a.get("code"))
+        if key not in seen:
+            seen.add(key)
+            unique.append(a)
+
+    result = _resp_ok(unique[:limit], source="idx_corporate_live", count=len(unique[:limit]))
+    _corporate_actions_cache["data"] = result
+    _corporate_actions_cache["ts"] = now
+    return result
 
 
 @app.get("/api/company-announcements")
@@ -476,6 +662,57 @@ def get_company_announcements(companyCode: str = "", limit: int = 20):
                 "source": "idx_announcement",
             })
     return {"count": len(rows), "data": rows, "source": "idx_announcement" if rows else "no_data"}
+
+
+@app.get("/api/market-breadth")
+def get_market_breadth(db: Session = Depends(get_db)):
+    rows = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).limit(2000).all()
+    latest_by_ticker = {}
+    for r in rows:
+        if r.ticker not in latest_by_ticker:
+            latest_by_ticker[r.ticker] = r
+    up = down = flat = 0
+    advancing = []
+    declining = []
+    for ticker, r in latest_by_ticker.items():
+        prev = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == ticker, OHLCVDaily.date < r.date).order_by(OHLCVDaily.date.desc()).first()
+        if not prev or not prev.close:
+            continue
+        chg = ((r.close - prev.close) / prev.close) * 100
+        bucket = {"ticker": ticker, "change_pct": round(chg, 2), "price": r.close}
+        if chg > 0.2:
+            up += 1; advancing.append(bucket)
+        elif chg < -0.2:
+            down += 1; declining.append(bucket)
+        else:
+            flat += 1
+    total = up + down + flat
+    return {"status": "ok", "source": "db_breadth", "count": total, "data": {"advancing": up, "declining": down, "unchanged": flat, "advancers": advancing[:5], "decliners": declining[:5]}}
+
+
+@app.get("/api/market-stats")
+def get_market_stats(db: Session = Depends(get_db)):
+    rows = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).limit(2000).all()
+    latest = {}
+    for r in rows:
+        if r.ticker not in latest:
+            latest[r.ticker] = r
+    prices = [r.close for r in latest.values() if r.close is not None]
+    volumes = [r.volume for r in latest.values() if r.volume is not None]
+    if not prices:
+        return {"status": "empty", "source": "db_stats", "count": 0, "data": {}}
+    return {
+        "status": "ok",
+        "source": "db_stats",
+        "count": len(prices),
+        "data": {
+            "avg_price": round(sum(prices)/len(prices), 2),
+            "max_price": max(prices),
+            "min_price": min(prices),
+            "avg_volume": round(sum(volumes)/len(volumes), 0) if volumes else 0,
+            "active_symbols": len(prices),
+        },
+    }
 
 
 @app.get("/api/market-events")
@@ -506,6 +743,28 @@ def get_market_events(db: Session = Depends(get_db), limit: int = 10):
         {"date": datetime.utcnow().date().isoformat(), "title": "Watch economic calendar before open", "type": "reminder", "source": "fallback"},
     ]
     return {"count": len(fallback[:limit]), "data": fallback[:limit], "source": "fallback"}
+
+
+@app.get("/api/top-movers")
+def top_movers(limit: int = 10, db: Session = Depends(get_db), sort: str = "gainers"):
+    """Return top movers with gainers/losers split and optional sorting."""
+    latest = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
+    if not latest:
+        return {"count": 0, "data": [], "source": "no_data"}
+    latest_date = latest.date
+    rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).all()
+    data = []
+    for row in rows:
+        prev = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == row.ticker, OHLCVDaily.date < row.date).order_by(OHLCVDaily.date.desc()).first()
+        if not prev or not prev.close:
+            continue
+        change_pct = ((row.close - prev.close) / prev.close) * 100
+        data.append({"ticker": row.ticker, "name": row.ticker, "price": row.close, "change_pct": round(change_pct, 2), "date": latest_date.isoformat(), "source": "db"})
+    if sort == "losers":
+        data.sort(key=lambda x: x["change_pct"])
+    else:
+        data.sort(key=lambda x: x["change_pct"], reverse=True)
+    return {"count": len(data[:limit]), "data": data[:limit], "source": "db"}
 
 
 @app.get("/api/foreign-trading")

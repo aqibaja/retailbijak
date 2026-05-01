@@ -60,3 +60,53 @@ def test_market_summary_db_only():
         assert data['status'] in {'ok', 'no_data'}
         assert 'symbol' in data
         assert 'updated_at' in data
+
+
+def test_corporate_actions_shape():
+    """Corporate actions endpoint returns consistent response factory shape."""
+    with TestClient(app) as client:
+        res = client.get('/api/corporate-actions?limit=5')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['status'] in ('ok', 'empty')
+    assert 'source' in data
+    assert 'data' in data
+    assert isinstance(data['data'], list)
+
+
+def test_analysis_shape():
+    """Analysis endpoint returns scanner_engine output with real metrics."""
+    with TestClient(app) as client:
+        res = client.get('/api/stocks/BBCA/analysis')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['status'] == 'ok'
+    assert data['source'] == 'scanner_engine'
+    analysis = data['data']
+    assert 'ticker' in analysis
+    assert 'swing' in analysis
+    assert 'valuation' in analysis
+    assert 'signal' in analysis
+    # Should have real computed metrics, not all zeros
+    assert isinstance(analysis['swing']['score'], (int, float))
+    assert analysis['swing']['score'] >= 0
+
+
+def test_response_factory_shapes():
+    """Response factory produces correct shapes for all variants."""
+    try:
+        from services.idx_response_factory import ok, empty, error, paginated
+    except ModuleNotFoundError:
+        from backend.services.idx_response_factory import ok, empty, error, paginated
+
+    r = ok([1, 2], source='test')
+    assert r['status'] == 'ok' and r['data'] == [1, 2]
+
+    r = empty('test')
+    assert r['status'] == 'empty' and r['data'] == []
+
+    r = error('fail', 'test')
+    assert r['status'] == 'error' and r['error'] == 'fail'
+
+    r = paginated([1], source='test', total=10)
+    assert r['count'] == 1 and r['total'] == 10

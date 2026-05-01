@@ -1,115 +1,157 @@
-import { fetchMarketSummary, fetchTopMovers, fetchNews, apiFetch } from '../api.js?v=20260501e';
+import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260501f';
 import { observeElements } from '../main.js?v=20260501a';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
 const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
-const safeRows = (payload) => Array.isArray(payload?.data) ? payload.data : [];
+const safeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : []);
 
 async function fetchCorporateActions() { return apiFetch('/corporate-actions?limit=12') || { count: 0, data: [], source: 'no_data' }; }
 async function fetchCompanyAnnouncements() { return apiFetch('/company-announcements?limit=8') || { count: 0, data: [], source: 'no_data' }; }
 async function fetchForeignTrading() { return apiFetch('/foreign-trading?limit=8') || { count: 0, data: [], source: 'no_data' }; }
 async function fetchBrokerActivity() { return apiFetch('/broker-activity?limit=8') || { count: 0, data: [], source: 'no_data' }; }
+async function fetchBreadth() { return apiFetch('/market-breadth') || { count: 0, data: {}, source: 'no_data' }; }
+async function fetchStats() { return apiFetch('/market-stats') || { count: 0, data: {}, source: 'no_data' }; }
 
-const badge = (label) => `<span class="badge" style="background:rgba(99,102,241,0.12); color:#c7d2fe; border:1px solid rgba(99,102,241,0.2);">${label}</span>`;
-
+const badge = (label) => `<span class="market-tag">${label}</span>`;
+const statBox = (label, value) => `<div class="market-stat-box"><div class="market-stat-label">${label}</div><div class="market-stat-value">${value}</div></div>`;
 const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
-  <div class="panel flex-col" style="border-left:2px solid ${accent};">
-    <div class="mb-3">
-      <div class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">${title}</div>
-      <div class="text-sm text-muted mt-1">${subtitle}</div>
-    </div>
-    ${body}
-  </div>`;
+  <section class="market-card" style="--market-accent:${accent}">
+    <header class="market-card-head">
+      <h3>${title}</h3>
+      <p>${subtitle}</p>
+    </header>
+    <div class="market-card-body">${body}</div>
+  </section>`;
 
-const moverRow = (r) => `
-  <a href="#stock/${r.ticker || ''}" class="block p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
-    <div class="flex justify-between items-center gap-3">
-      <div><div class="strong text-main mono">${r.ticker || '-'}</div><div class="text-xs text-dim truncate">${r.name || ''}</div></div>
-      <div class="text-right"><div class="mono strong ${Number(r.change_pct ?? r.change ?? 0) >= 0 ? 'text-up' : 'text-down'}">${pct(r.change_pct ?? r.change)}</div><div class="text-xs text-dim mono">${r.price != null ? fmt(r.price) : '--'}</div></div>
-    </div>
-  </a>`;
-
-const flowRow = (r) => `
-  <div class="p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
-    <div class="flex justify-between items-center gap-3">
-      <div><div class="strong text-main mono">${r.ticker || '-'}</div><div class="text-xs text-dim">${r.source || 'IDX'}</div></div>
-      <div class="text-right"><div class="mono strong ${Number(r.net_value ?? 0) >= 0 ? 'text-up' : 'text-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="text-xs text-dim">buy ${fmt(r.buy_value ?? 0, 0)} / sell ${fmt(r.sell_value ?? 0, 0)}</div></div>
-    </div>
-  </div>`;
-
-const brokerRow = (r) => `
-  <div class="p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
-    <div class="flex justify-between items-center gap-3">
-      <div><div class="strong text-main">${r.broker_code || '-'}</div><div class="text-xs text-dim mono">${r.ticker || '-'}</div></div>
-      <div class="text-right"><div class="mono strong ${Number(r.net_value ?? 0) >= 0 ? 'text-up' : 'text-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="text-xs text-dim">vol ${fmt(r.net_volume ?? 0, 0)}</div></div>
-    </div>
-  </div>`;
-
-const actionRow = (r) => `
-  <div class="p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
-    <div class="flex justify-between items-start gap-3">
-      <div>
-        <div class="strong text-main">${r.title || '-'}</div>
-        <div class="text-xs text-dim mono mt-1">${r.code || ''} ${r.date || ''}</div>
-      </div>
-      ${badge(String(r.type || 'event').toUpperCase())}
-    </div>
-  </div>`;
-
-const newsRow = (n) => `
-  <a href="${n.link || '#news'}" class="block p-3" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
-    <div class="text-sm strong text-main mb-1 line-clamp-2">${n.title || '-'}</div>
-    <div class="text-xs text-dim line-clamp-2">${n.summary || ''}</div>
-    <div class="text-xs text-dim mono mt-2">${n.source || 'IDX'}</div>
-  </a>`;
+const moverRow = (r) => `<a href="#stock/${r.ticker || ''}" class="market-row-link"><div class="market-row"><div><div class="market-code">${r.ticker || '-'}</div><div class="market-sub">${r.name || ''}</div></div><div class="market-right"><div class="market-change ${Number(r.change_pct ?? 0) >= 0 ? 'is-up' : 'is-down'}">${pct(r.change_pct)}</div><div class="market-sub">${r.price != null ? fmt(r.price) : '--'}</div></div></div></a>`;
+const flowRow = (r) => `<div class="market-row-box"><div class="market-row"><div><div class="market-code">${r.ticker || '-'}</div><div class="market-sub">${r.source || 'IDX'}</div></div><div class="market-right"><div class="market-change ${Number(r.net_value ?? 0) >= 0 ? 'is-up' : 'is-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="market-sub">buy ${fmt(r.buy_value ?? 0, 0)} / sell ${fmt(r.sell_value ?? 0, 0)}</div></div></div></div>`;
+const brokerRow = (r) => `<div class="market-row-box"><div class="market-row"><div><div class="market-code">${r.broker_code || '-'}</div><div class="market-sub">${r.ticker || '-'}</div></div><div class="market-right"><div class="market-change ${Number(r.net_value ?? 0) >= 0 ? 'is-up' : 'is-down'}">Rp ${fmt(r.net_value ?? 0, 0)}</div><div class="market-sub">vol ${fmt(r.net_volume ?? 0, 0)}</div></div></div></div>`;
+const actionRow = (r) => `<div class="market-row-box"><div class="market-row market-row-top"><div><div class="market-code market-code-wrap">${r.title || '-'}</div><div class="market-sub">${r.code || ''} ${r.date || ''}</div></div>${badge(String(r.type || 'event').toUpperCase())}</div></div>`;
 
 export async function renderMarket(root) {
   root.innerHTML = `
-    <section class="grid grid-cols-12 stagger-reveal">
-      <div class="col-span-12 flex justify-between items-end mb-4">
+    <section class="market-overview-page stagger-reveal">
+      <header class="market-overview-head">
         <div>
-          <h1 class="text-3xl mb-2" style="color:var(--text-main); letter-spacing:-0.04em; font-weight:800;">Market Overview</h1>
-          <p class="text-base" style="color:var(--text-muted);">Live IDX intelligence: movers, foreign flow, broker activity, announcements, and corporate actions.</p>
+          <h1>Market Overview</h1>
+          <p>Live IDX intelligence: movers, breadth, stats, foreign flow, broker activity, announcements, and corporate actions.</p>
+          <p id="market-summary-sentence" class="market-summary-sentence">Menyusun ringkasan market pulse...</p>
         </div>
-        <div id="market-source" class="badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">SYNCING</div>
-      </div>
+        <div class="market-head-status">
+          <div id="market-source" class="market-source-badge">SYNCING</div>
+          <button id="market-refresh" class="market-refresh-btn" type="button">Refresh</button>
+        </div>
+      </header>
 
-      <div class="col-span-7 flex-col gap-4">
-        <div id="corporate-actions"></div>
-        <div id="foreign-flows"></div>
-        <div id="broker-activity"></div>
-      </div>
+      <section class="market-top-grid">
+        <div id="ihsg-summary-card"></div>
+        <div id="market-pulse-card"></div>
+      </section>
+      <div id="stats-cards" class="market-stats-grid"></div>
 
-      <div class="col-span-5 flex-col gap-4">
-        <div id="movers-card"></div>
-        <div id="announcements-card"></div>
-        <div id="news-card"></div>
+      <div class="market-main-grid">
+        <div class="market-left-col">
+          <div id="breadth-card"></div>
+          <div id="corporate-actions"></div>
+          <div id="foreign-flows"></div>
+          <div id="broker-activity"></div>
+        </div>
+        <div class="market-right-col">
+          <div id="gainers-card"></div>
+          <div id="losers-card"></div>
+          <div id="announcements-card"></div>
+        </div>
       </div>
     </section>`;
 
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
-  const [summary, movers, news, actions, announcements, foreign, brokers] = await Promise.all([
+  const [summary, movers, actions, announcements, foreign, brokers, breadth, stats] = await Promise.all([
     fetchMarketSummary().catch(() => null),
     fetchTopMovers(8).catch(() => null),
-    fetchNews(4).catch(() => null),
     fetchCorporateActions().catch(() => null),
     fetchCompanyAnnouncements().catch(() => null),
     fetchForeignTrading().catch(() => null),
     fetchBrokerActivity().catch(() => null),
+    fetchBreadth().catch(() => null),
+    fetchStats().catch(() => null),
   ]);
 
-  const src = [summary?.source, actions?.source, announcements?.source, foreign?.source, brokers?.source].filter(Boolean).join(' / ') || 'NO DATA';
+  const src = [summary?.source, actions?.source, announcements?.source, foreign?.source, brokers?.source, breadth?.source, stats?.source].filter(Boolean).join(' / ') || 'NO DATA';
   const badgeEl = document.getElementById('market-source');
-  if (badgeEl) badgeEl.textContent = src.toUpperCase();
+  if (badgeEl) badgeEl.textContent = `${src.toUpperCase()} · ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 
-  document.getElementById('corporate-actions').innerHTML = card('Corporate Actions', 'Listing, dividend, suspension, and other company events from IDX', `<div class="flex-col gap-3">${safeRows(actions).slice(0,4).map(actionRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No corporate actions available.</div>'}</div>`);
-  document.getElementById('foreign-flows').innerHTML = card('Foreign Investor Flows', 'Live IDX trading summary for foreign participation', `<div class="flex-col gap-3">${safeRows(foreign).slice(0,4).map(flowRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No foreign flow data available.</div>'}</div>`, 'var(--text-up)');
-  document.getElementById('broker-activity').innerHTML = card('Broker Trading Activity', 'Top broker concentration and net value from IDX broker summary', `<div class="flex-col gap-3">${safeRows(brokers).slice(0,4).map(brokerRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No broker activity available.</div>'}</div>`, 'var(--accent-orange)');
-  document.getElementById('movers-card').innerHTML = card('Top Gainers / Losers', 'Most active movers today', `<div class="grid grid-cols-1 gap-2">${(Array.isArray(movers?.data) && movers.data.length ? movers.data : []).slice(0,8).map(moverRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No movers available.</div>'}</div>`, 'var(--accent-cyan)');
-  document.getElementById('announcements-card').innerHTML = card('Corporate News & Announcements', 'Company notices pulled from IDX announcement endpoint', `<div class="flex-col gap-3">${safeRows(announcements).slice(0,4).map(actionRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No announcements available.</div>'}</div>`);
-  document.getElementById('news-card').innerHTML = card('Latest Market News', 'Supporting market headlines', `<div class="flex-col gap-3">${(Array.isArray(news?.data) && news.data.length ? news.data : []).slice(0,4).map(newsRow).join('') || '<div class="p-3 text-sm text-muted" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">No news available.</div>'}</div>`);
+  const b = breadth?.data || {};
+  const leadGainer = (Array.isArray(movers?.data) ? movers.data : []).find((x) => Number(x.change_pct) >= 0);
+  const leadLoser = (Array.isArray(movers?.data) ? movers.data : []).find((x) => Number(x.change_pct) < 0);
+  const pulseEl = document.getElementById('market-summary-sentence');
+  if (pulseEl) {
+    pulseEl.textContent = `Pulse: ${b.advancing ?? 0} advancers vs ${b.declining ?? 0} decliners. ${leadGainer?.ticker || 'N/A'} memimpin gainers ${leadGainer ? pct(leadGainer.change_pct) : ''} dan ${leadLoser?.ticker || 'N/A'} tertekan ${leadLoser ? pct(leadLoser.change_pct) : ''}.`;
+  }
+  const refreshBtn = document.getElementById('market-refresh');
+  if (refreshBtn) refreshBtn.addEventListener('click', () => renderMarket(root));
+  const ihsg = summary?.value;
+  const ihsgChange = summary?.change_pct;
+  document.getElementById('ihsg-summary-card').innerHTML = `<section class="market-card market-card-hero" style="--market-accent:var(--accent-indigo)">
+    <header class="market-card-head market-hero-head">
+      <div>
+        <div class="market-hero-kicker">Primary market snapshot</div>
+        <h3>IHSG Snapshot</h3>
+        <p>Ringkasan indeks utama sesi berjalan</p>
+      </div>
+      <div class="market-hero-badge ${Number(ihsgChange ?? 0) >= 0 ? 'is-up' : 'is-down'}">${ihsgChange != null ? pct(ihsgChange) : '--'}</div>
+    </header>
+    <div class="market-card-body">
+      <div class="market-ihsg-row"><div><div class="market-ihsg-value">${ihsg != null ? fmt(ihsg) : '--'}</div><div class="market-sub">${summary?.date || 'Live session'}</div></div><div class="market-hero-summary">${b.advancing ?? 0} advancers · ${b.declining ?? 0} decliners · ${b.unchanged ?? 0} flat</div></div>
+    </div>
+  </section>`;
+  document.getElementById('market-pulse-card').innerHTML = card(
+    'Market Pulse',
+    'Fokus cepat desktop untuk market breadth dan movers',
+    `<div class="market-pulse-grid">
+      <div class="market-pulse-kpis">
+        ${statBox('Breadth', `${b.advancing ?? 0}/${b.declining ?? 0}`)}
+        ${statBox('Lead Gainer', leadGainer?.ticker || '--')}
+        ${statBox('Lead Loser', leadLoser?.ticker || '--')}
+      </div>
+      <div class="market-pulse-panels">
+        <div class="market-mini-panel is-up"><div class="market-mini-label">Top Gainer</div><div class="market-mini-code">${leadGainer?.ticker || '--'}</div><div class="market-mini-value">${leadGainer ? pct(leadGainer.change_pct) : '--'}</div></div>
+        <div class="market-mini-panel is-down"><div class="market-mini-label">Top Loser</div><div class="market-mini-code">${leadLoser?.ticker || '--'}</div><div class="market-mini-value">${leadLoser ? pct(leadLoser.change_pct) : '--'}</div></div>
+      </div>
+    </div>`,
+    'var(--accent-cyan)'
+  );
+
+  document.getElementById('stats-cards').innerHTML = [
+    statBox('Avg Price', stats?.data?.avg_price != null ? fmt(stats.data.avg_price) : '--'),
+    statBox('Advancing', b.advancing ?? 0),
+    statBox('Declining', b.declining ?? 0),
+  ].join('');
+
+  document.getElementById('breadth-card').innerHTML = card(
+    'Market Breadth',
+    'Advancers vs decliners today',
+    `<div class="market-breadth-grid">${statBox('Advance', b.advancing ?? 0)}${statBox('Decline', b.declining ?? 0)}${statBox('Flat', b.unchanged ?? 0)}</div>
+     <div class="market-split-list"><div><div class="market-list-title">Top Advancers</div><div class="market-list-stack">${(b.advancers || []).slice(0, 4).map(moverRow).join('') || '<div class="market-empty">No advancers.</div>'}</div></div><div><div class="market-list-title">Top Decliners</div><div class="market-list-stack">${(b.decliners || []).slice(0, 4).map(moverRow).join('') || '<div class="market-empty">No decliners.</div>'}</div></div></div>`
+  );
+
+  const allMovers = Array.isArray(movers?.data) ? movers.data : [];
+  const gainers = allMovers.filter((x) => Number(x.change_pct) >= 0).slice(0, 4);
+  const losers = allMovers.filter((x) => Number(x.change_pct) < 0).slice(0, 4);
+
+  document.getElementById('gainers-card').innerHTML = card('Top Gainers', 'Best performing stocks today', `<div class="market-list-stack">${gainers.map(moverRow).join('') || '<div class="market-empty">No gainers available.</div>'}</div>`, 'var(--accent-cyan)');
+  document.getElementById('losers-card').innerHTML = card('Top Losers', 'Weakest performing stocks today', `<div class="market-list-stack">${losers.map(moverRow).join('') || '<div class="market-empty">No losers available.</div>'}</div>`, 'var(--text-down)');
+  document.getElementById('corporate-actions').innerHTML = card('Corporate Actions', 'Listing, dividend, suspension, and other company events from IDX', `<div class="market-list-stack">${safeRows(actions).slice(0, 4).map(actionRow).join('') || '<div class="market-empty">No corporate actions available.</div>'}</div>`);
+  document.getElementById('foreign-flows').innerHTML = card('Foreign Investor Flows', 'Live IDX trading summary for foreign participation', `<div class="market-list-stack">${safeRows(foreign).slice(0, 4).map(flowRow).join('') || '<div class="market-empty">No foreign flow data available.</div>'}</div>`, 'var(--text-up)');
+  const brokerRows = safeRows(brokers).slice(0, 4).map(brokerRow).join('');
+  const brokerEmpty = `<div class="market-empty market-empty-alive"><strong>Broker activity belum tersedia saat ini.</strong><span>Menggunakan snapshot IDX terakhir jika tersedia. Coba refresh untuk sinkronisasi terbaru.</span><button class="market-empty-refresh" type="button" data-market-refresh="1">Refresh data</button></div>`;
+  document.getElementById('broker-activity').innerHTML = card('Broker Trading Activity', 'Top broker concentration and net value from IDX broker summary', `<div class="market-list-stack">${brokerRows || brokerEmpty}</div>`, 'var(--accent-orange)');
+  document.getElementById('announcements-card').innerHTML = card('Corporate News & Announcements', 'Company notices pulled from IDX announcement endpoint', `<div class="market-list-stack">${safeRows(announcements).slice(0, 4).map(actionRow).join('') || '<div class="market-empty">No announcements available.</div>'}</div>`);
+
+  root.querySelectorAll('[data-market-refresh="1"]').forEach((btn) => {
+    btn.addEventListener('click', () => renderMarket(root));
+  });
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
