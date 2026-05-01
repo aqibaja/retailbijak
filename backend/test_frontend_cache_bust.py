@@ -108,3 +108,34 @@ def test_router_imports_only_current_versioned_views_once_each():
         assert ROUTER.count(module_path) == 1
 
 
+def test_nav_hash_routes_all_exist_in_router_cases():
+    nav_matches = re.findall(r'href="#([a-z0-9/-]+)"[^>]*data-view="([a-z0-9_-]+)"', INDEX)
+    assert nav_matches
+    for href_route, data_view in nav_matches:
+        assert href_route == data_view
+        assert (
+            f"if (view === '{data_view}')" in ROUTER
+            or f"else if (view === '{data_view}')" in ROUTER
+            or f"view === '{data_view}' &&" in ROUTER
+            or f"view === '{data_view}' ||" in ROUTER
+        )
+
+
+def test_repo_and_runtime_core_static_assets_match_exactly():
+    assets = [
+        'index.html',
+        'style.css',
+        'js/main.js',
+        'js/router.js',
+        'js/api.js',
+        'js/theme.js',
+    ]
+    runtime_frontend = RUNTIME_ROOT.parent
+    for rel_path in assets:
+        repo_file = ROOT / 'frontend' / rel_path
+        runtime_file = runtime_frontend / rel_path
+        assert repo_file.exists(), rel_path
+        assert runtime_file.exists(), rel_path
+        assert repo_file.read_text() == runtime_file.read_text(), rel_path
+
+
