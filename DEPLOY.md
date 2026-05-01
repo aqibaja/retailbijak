@@ -16,15 +16,22 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
    - `cp frontend/js/api.js /opt/swingaq/frontend/js/api.js`
    - `cp frontend/js/views/portfolio.js /opt/swingaq/frontend/js/views/portfolio.js`
    - `cp frontend/js/views/screener.js /opt/swingaq/frontend/js/views/screener.js`
-3. Validate syntax:
+3. Run pre-restart parity check:
+   - `python scripts/check_frontend_runtime_parity.py`
+   - This must pass before `systemctl restart swingaq-backend`.
+4. Validate syntax:
    - `python -m py_compile /opt/swingaq/backend/main.py /opt/swingaq/backend/database.py`
    - `python -m compileall -q /opt/swingaq/frontend/js`
-4. Restart uvicorn process.
-5. Smoke test public endpoints:
+5. Restart uvicorn process.
+6. Smoke test public endpoints:
    - `/api/health`
    - `/api/settings`
    - `/api/watchlist`
    - `/api/portfolio`
+
+## Preferred one-command deploy
+- `bash scripts/sync_production.sh`
+- Script sekarang menjalankan **pre-restart parity check** otomatis sebelum service restart.
 
 ## Test before shipping
 - `cd backend && pytest -q test_api_e2e.py`
