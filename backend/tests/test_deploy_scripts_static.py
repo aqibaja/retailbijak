@@ -10,6 +10,16 @@ def test_sync_script_runs_frontend_parity_check_before_restart():
     assert SYNC_SCRIPT.index('check_frontend_runtime_parity.py') < SYNC_SCRIPT.index('systemctl restart')
 
 
+def test_sync_script_runs_post_deploy_smoke_check_after_restart():
+    assert 'python "$REPO_DIR/scripts/post_deploy_smoke_check.py"' in SYNC_SCRIPT
+    assert SYNC_SCRIPT.index('systemctl restart') < SYNC_SCRIPT.index('post_deploy_smoke_check.py')
+
+
 def test_deploy_doc_mentions_pre_restart_frontend_parity_check():
     assert 'check_frontend_runtime_parity.py' in DEPLOY_DOC
     assert 'pre-restart parity check' in DEPLOY_DOC.lower()
+
+
+def test_deploy_doc_mentions_post_deploy_smoke_check():
+    assert 'post_deploy_smoke_check.py' in DEPLOY_DOC
+    assert 'post-deploy smoke check' in DEPLOY_DOC.lower()

@@ -28,10 +28,13 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
    - `/api/settings`
    - `/api/watchlist`
    - `/api/portfolio`
+   - `/` should contain `RetailBijak`
+   - `python scripts/post_deploy_smoke_check.py`
 
 ## Preferred one-command deploy
 - `bash scripts/sync_production.sh`
 - Script sekarang menjalankan **pre-restart parity check** otomatis sebelum service restart.
+- Setelah restart, script juga menjalankan **post-deploy smoke check** via `python scripts/post_deploy_smoke_check.py`.
 
 ## Test before shipping
 - `cd backend && pytest -q test_api_e2e.py`
