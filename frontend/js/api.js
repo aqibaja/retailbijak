@@ -55,8 +55,12 @@ export async function searchStocks(query = '', limit = 8) {
     return apiFetch(`/stocks/search?q=${q}&limit=${limit}`) || { count: 0, data: [] };
 }
 
-export async function fetchTopMovers(limit = 10) {
-    return apiFetch(`/top-movers?limit=${limit}`) || { count: 0, data: [] };
+export async function fetchTopMovers(limit = 10, sort = 'gainers') {
+    return apiFetch(`/top-movers?limit=${limit}&sort=${encodeURIComponent(sort)}`) || { count: 0, data: [] };
+}
+
+export async function fetchMarketBreadth() {
+    return apiFetch('/market-breadth') || { status: 'ok', source: 'no_data', count: 0, data: { latest_date: null, advancing: 0, declining: 0, unchanged: 0, advancers: [], decliners: [] } };
 }
 
 export async function fetchScan(timeframe = '1d') {

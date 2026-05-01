@@ -392,8 +392,7 @@ def search_stocks(q: str = "", limit: int = 10, db: Session = Depends(get_db)):
     ordered = grouped["ticker"] + grouped["company"] + grouped["sector"]
     return {"count": len(ordered[:limit]), "data": ordered[:limit], "source": "db" if rows else "idx_universe", "groups": {k: len(v) for k, v in grouped.items()}}
 
-@app.get("/api/top-movers")
-def top_movers(limit: int = 10, db: Session = Depends(get_db)):
+def _legacy_top_movers_snapshot(limit: int = 10, db: Session = Depends(get_db)):
     latest = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
     movers = []
     if latest:

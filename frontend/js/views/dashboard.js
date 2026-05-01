@@ -1,4 +1,4 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart } from '../api.js?v=20260430m';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260502a';
 import { observeElements, animateValue } from '../main.js?v=20260430m';
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
@@ -72,19 +72,38 @@ async function loadMarketSummary(){
   return summary;
 }
 async function loadIntel(){
-  const [m,s] = await Promise.all([fetchMarketSummary().catch(()=>null), fetchSectorSummary().catch(()=>null)]);
-  const sectors = Array.isArray(s?.data)&&s.data.length?s.data:[{sector:'Finance',change_pct:1.2},{sector:'Energy',change_pct:0.8},{sector:'Technology',change_pct:-1.5}];
+  const [summary, breadthRes, gainersRes, losersRes, sectorRes] = await Promise.all([
+    fetchMarketSummary().catch(() => null),
+    fetchMarketBreadth().catch(() => null),
+    fetchTopMovers(5, 'gainers').catch(() => null),
+    fetchTopMovers(5, 'losers').catch(() => null),
+    fetchSectorSummary().catch(() => null),
+  ]);
+  const sectors = Array.isArray(sectorRes?.data) && sectorRes.data.length
+    ? sectorRes.data
+    : [{ sector:'Finance', change_pct:1.2 }, { sector:'Energy', change_pct:0.8 }, { sector:'Technology', change_pct:-1.5 }];
   const best = [...sectors].sort((a,b)=>Number(b.change_pct||0)-Number(a.change_pct||0))[0];
-  const adv = Number(m?.advancers ?? 328), dec = Number(m?.decliners ?? 271);
+  const breadth = breadthRes?.data || {};
+  const adv = Number(breadth.advancing ?? 0);
+  const dec = Number(breadth.declining ?? 0);
+  const gainers = Array.isArray(gainersRes?.data) ? gainersRes.data : [];
+  const losers = Array.isArray(losersRes?.data) ? losersRes.data : [];
+  const leadGainer = gainers[0] || null;
+  const leadLoser = losers[0] || null;
+  const tapeBias = adv === 0 && dec === 0 ? 'menunggu snapshot breadth valid' : (adv >= dec ? 'bias positif' : 'tekanan dominan');
+  const planLine = Number(summary?.change_pct ?? 0) >= 0
+    ? 'Plan: fokus ke saham pemimpin sektor, validasi volume sebelum entry lanjutan.'
+    : 'Plan: prioritaskan defense, entry bertahap, dan hindari chasing rebound tipis.';
   document.getElementById('market-intel').innerHTML = [
-    `Breadth: <b>${adv}</b> advancers vs <b>${dec}</b> decliners — bias ${adv>=dec?'positif':'hati-hati'}.`,
+    `Breadth: <b>${adv}</b> advancers vs <b>${dec}</b> decliners — ${tapeBias}.`,
+    `Leaders: <b>${leadGainer?.ticker || best?.sector || 'N/A'}</b> ${leadGainer ? `(${pf(leadGainer.change_pct ?? 0)})` : `(${pf(best?.change_pct ?? 0)})`} vs <b>${leadLoser?.ticker || 'N/A'}</b> ${leadLoser ? `(${pf(leadLoser.change_pct ?? 0)})` : ''}.`,
     `Sector leader: <b>${best?.sector||best?.name||'Finance'}</b> (${pf(best?.change_pct ?? 1.2)}).`,
-    `Plan: prioritaskan entry bertahap, validasi volume, hindari chasing saat candle melebar.`
+    planLine
   ].map(x=>`<div class="intel-item">${x}</div>`).join('');
 }
 
 async function loadMovers(){
-  const res = await fetchTopMovers(5);
+  const res = await fetchTopMovers(5, 'gainers');
   const items = Array.isArray(res?.data) && res.data.length ? res.data : MOVERS;
   document.getElementById('movers-list').innerHTML = items.slice(0,5).map(r => row({
     ticker: r.ticker,

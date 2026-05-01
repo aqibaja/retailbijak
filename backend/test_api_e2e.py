@@ -90,6 +90,18 @@ def test_top_movers_db_shape_uses_hardened_latest_pairs():
     assert 'volume' in first
 
 
+def test_top_movers_losers_sort_returns_negative_tail_first():
+    with TestClient(app) as client:
+        res = client.get('/api/top-movers?limit=3&sort=losers')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['source'] == 'db'
+    assert data['count'] == 3
+    values = [row['change_pct'] for row in data['data']]
+    assert values == sorted(values)
+    assert values[0] < 0
+
+
 def test_market_stats_include_latest_date_and_active_symbols():
     with TestClient(app) as client:
         res = client.get('/api/market-stats')
