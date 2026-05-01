@@ -7,6 +7,10 @@
 
 ## Status Snapshot (2026-05-01) — ALL DONE ✅
 
+**UI polish update (2026-05-01):** Market Overview spacing/typography pass completed. Header source badge diringkas, hero IHSG diperbesar, gap antar card dilonggarkan, list items dibuat lebih ringan, dan bug `Avg Price` frontend fixed (`statsData`). Static market view test added.
+
+**Responsive Market Pulse update (2026-05-01):** KPI breadth dipecah jadi markup bertingkat (`advancers / decliners`), kartu kiri dibuat lebih lega di desktop, breakpoint tablet jadi 2 kolom, dan mobile stack dirapikan agar value/label tidak overflow. Belum deploy/push.
+
 **Re-check update (2026-05-01):** PLAN.md dibaca ulang setelah final push. Tidak ada task implementasi tersisa; semua T1–T15 sudah closed, production sehat, dan repo sudah pushed.
 
 | Area | Status |

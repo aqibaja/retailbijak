@@ -13,7 +13,8 @@ async function fetchBreadth() { return apiFetch('/market-breadth') || { count: 0
 async function fetchStats() { return apiFetch('/market-stats') || { count: 0, data: {}, source: 'no_data' }; }
 
 const badge = (label) => `<span class="market-tag">${label}</span>`;
-const statBox = (label, value) => `<div class="market-stat-box"><div class="market-stat-label">${label}</div><div class="market-stat-value">${value}</div></div>`;
+const statBox = (label, value, tone = '', valueClass = '', labelClass = '') => `<div class="market-stat-box ${tone}"><div class="market-stat-label ${labelClass}">${label}</div><div class="market-stat-value ${valueClass}">${value}</div></div>`;
+const breadthStatBox = (advancing, declining) => `<div class="market-stat-box market-stat-box-breadth"><div class="market-stat-label">Breadth</div><div class="market-stat-value market-stat-value-breadth"><span>${advancing ?? 0}</span><span class="market-breadth-separator">/</span><span class="market-breadth-secondary">${declining ?? 0}</span></div></div>`;
 const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
   <section class="market-card" style="--market-accent:${accent}">
     <header class="market-card-head">
@@ -113,9 +114,12 @@ export async function renderMarket(root) {
   const breadthData = unwrap(breadth);
   const statsData = unwrap(stats);
 
-  const src = [summaryData?.source, actionsData?.source, announcementsData?.source, foreignData?.source, brokersData?.source, breadthData?.source, statsData?.source].filter(Boolean).join(' / ') || 'NO DATA';
+  const srcParts = [summaryData?.source, actionsData?.source, announcementsData?.source, foreignData?.source, brokersData?.source, breadthData?.source, statsData?.source]
+    .filter(Boolean)
+    .map((part) => String(part).toUpperCase().replaceAll('_', ' '));
+  const srcSummary = srcParts.length > 3 ? `${srcParts.slice(0, 3).join(' · ')} +${srcParts.length - 3}` : (srcParts.join(' · ') || 'NO DATA');
   const badgeEl = document.getElementById('market-source');
-  if (badgeEl) badgeEl.textContent = `${src.toUpperCase()} · ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+  if (badgeEl) badgeEl.textContent = `${srcSummary} · ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 
   const b = breadthData?.data || {};
   const leadGainer = (Array.isArray(moversData?.data) ? moversData.data : []).find((x) => Number(x.change_pct) >= 0);
@@ -145,7 +149,13 @@ export async function renderMarket(root) {
       <div class="market-hero-badge ${Number(ihsgChange ?? 0) >= 0 ? 'is-up' : 'is-down'}">${ihsgChange != null ? pct(ihsgChange) : '--'}</div>
     </header>
     <div class="market-card-body">
-      <div class="market-ihsg-row"><div><div class="market-ihsg-value">${ihsg != null ? fmt(ihsg) : '--'}</div><div class="market-sub">${summaryData?.date || 'Live session'}</div></div><div class="market-hero-summary">${b.advancing ?? 0} advancers · ${b.declining ?? 0} decliners · ${b.unchanged ?? 0} flat</div></div>
+      <div class="market-ihsg-row">
+        <div class="market-ihsg-main">
+          <div class="market-ihsg-value">${ihsg != null ? fmt(ihsg, 1) : '--'}</div>
+          <div class="market-sub market-ihsg-sub">${summaryData?.date || 'Live session'}</div>
+        </div>
+        <div class="market-hero-summary">${b.advancing ?? 0} advancers · ${b.declining ?? 0} decliners · ${b.unchanged ?? 0} flat</div>
+      </div>
     </div>
   </section>`;
   document.getElementById('market-pulse-card').innerHTML = card(
@@ -153,9 +163,9 @@ export async function renderMarket(root) {
     'Fokus cepat desktop untuk market breadth dan movers',
     `<div class="market-pulse-grid">
       <div class="market-pulse-kpis">
-        ${statBox('Breadth', `${b.advancing ?? 0}/${b.declining ?? 0}`)}
-        ${statBox('Lead Gainer', leadGainer?.ticker || '--')}
-        ${statBox('Lead Loser', leadLoser?.ticker || '--')}
+        ${breadthStatBox(b.advancing, b.declining)}
+        ${statBox('Lead Gainer', leadGainer?.ticker || '--', '', 'market-stat-value-ticker')}
+        ${statBox('Lead Loser', leadLoser?.ticker || '--', '', 'market-stat-value-ticker')}
       </div>
       <div class="market-pulse-panels">
         <div class="market-mini-panel is-up"><div class="market-mini-label">Top Gainer</div><div class="market-mini-code">${leadGainer?.ticker || '--'}</div><div class="market-mini-value">${leadGainer ? pct(leadGainer.change_pct) : '--'}</div></div>
@@ -166,9 +176,9 @@ export async function renderMarket(root) {
   );
 
   document.getElementById('stats-cards').innerHTML = [
-    statBox('Avg Price', stats?.data?.avg_price != null ? fmt(stats.data.avg_price) : '--'),
-    statBox('Advancing', b.advancing ?? 0),
-    statBox('Declining', b.declining ?? 0),
+    statBox('Avg Price', statsData?.data?.avg_price != null ? fmt(statsData.data.avg_price) : '--'),
+    statBox('Advancing', b.advancing ?? 0, 'is-positive'),
+    statBox('Declining', b.declining ?? 0, 'is-negative'),
   ].join('');
 
   document.getElementById('breadth-card').innerHTML = card(
