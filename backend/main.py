@@ -673,12 +673,20 @@ def _sqlite_datetime_literal(value):
     return str(value)
 
 
-def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+def _latest_ohlcv_snapshot(db: Session) -> tuple[Any, list[OHLCVDaily]]:
     latest_date_row = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
     if not latest_date_row or not latest_date_row[0]:
         return None, []
-
     latest_date = latest_date_row[0]
+    rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).all()
+    return latest_date, rows
+
+
+def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+    latest_date, _ = _latest_ohlcv_snapshot(db)
+    if not latest_date:
+        return None, []
+
     latest_date_sql = _sqlite_datetime_literal(latest_date)
     sql = text("""
         WITH latest_rows AS (
@@ -762,13 +770,9 @@ def get_market_breadth(db: Session = Depends(get_db)):
 
 @app.get("/api/market-stats")
 def get_market_stats(db: Session = Depends(get_db)):
-    rows = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).limit(2000).all()
-    latest = {}
-    for r in rows:
-        if r.ticker not in latest:
-            latest[r.ticker] = r
-    prices = [r.close for r in latest.values() if r.close is not None]
-    volumes = [r.volume for r in latest.values() if r.volume is not None]
+    latest_date, rows = _latest_ohlcv_snapshot(db)
+    prices = [r.close for r in rows if r.close is not None]
+    volumes = [r.volume for r in rows if r.volume is not None]
     if not prices:
         return {"status": "empty", "source": "db_stats", "count": 0, "data": {}}
     return {
@@ -776,6 +780,7 @@ def get_market_stats(db: Session = Depends(get_db)):
         "source": "db_stats",
         "count": len(prices),
         "data": {
+            "latest_date": latest_date.isoformat() if hasattr(latest_date, 'isoformat') else str(latest_date),
             "avg_price": round(sum(prices)/len(prices), 2),
             "max_price": max(prices),
             "min_price": min(prices),
@@ -830,10 +835,8 @@ def top_movers(limit: int = 10, db: Session = Depends(get_db), sort: str = "gain
 def get_foreign_trading(limit: int = 10, db: Session = Depends(get_db)):
     """Return foreign investor flow snapshot from broker/market data."""
     try:
-        latest = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
-        if latest:
-            latest_date = latest.date
-            rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).limit(limit).all()
+        latest_date, rows = _latest_ohlcv_snapshot(db)
+        if latest_date:
             data = []
             for row in rows:
                 if row.close is None:
@@ -843,7 +846,7 @@ def get_foreign_trading(limit: int = 10, db: Session = Depends(get_db)):
                     "buy_value": round(float(row.close) * float(row.volume or 0) * 0.55, 2),
                     "sell_value": round(float(row.close) * float(row.volume or 0) * 0.45, 2),
                     "net_value": round(float(row.close) * float(row.volume or 0) * 0.10, 2),
-                    "date": latest_date.isoformat(),
+                    "date": latest_date.isoformat() if hasattr(latest_date, 'isoformat') else str(latest_date),
                     "source": "derived",
                 })
             if data:

@@ -89,6 +89,30 @@ def test_top_movers_db_shape_uses_hardened_latest_pairs():
     assert 'volume' in first
 
 
+def test_market_stats_include_latest_date_and_active_symbols():
+    with TestClient(app) as client:
+        res = client.get('/api/market-stats')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['status'] == 'ok'
+    assert data['source'] == 'db_stats'
+    assert 'latest_date' in data['data']
+    assert data['data']['active_symbols'] > 0
+
+
+def test_foreign_trading_uses_full_latest_snapshot():
+    with TestClient(app) as client:
+        res = client.get('/api/foreign-trading?limit=5')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['source'] == 'derived'
+    assert data['count'] == 5
+    first = data['data'][0]
+    assert first['ticker']
+    assert 'net_value' in first
+    assert 'date' in first
+
+
 def test_sqlite_datetime_literal_keeps_fractional_format():
     formatted = _sqlite_datetime_literal(datetime(2026, 4, 30, 0, 0, 0))
     assert formatted == '2026-04-30 00:00:00.000000'
