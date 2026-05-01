@@ -673,17 +673,16 @@ def _sqlite_datetime_literal(value):
     return str(value)
 
 
-@app.get("/api/market-breadth")
-def get_market_breadth(db: Session = Depends(get_db)):
-    latest_date = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
-    if not latest_date or not latest_date[0]:
-        return {"status": "ok", "source": "db_breadth", "count": 0, "data": {"latest_date": None, "advancing": 0, "declining": 0, "unchanged": 0, "advancers": [], "decliners": []}}
+def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+    latest_date_row = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
+    if not latest_date_row or not latest_date_row[0]:
+        return None, []
 
-    latest_date = latest_date[0]
+    latest_date = latest_date_row[0]
     latest_date_sql = _sqlite_datetime_literal(latest_date)
     sql = text("""
         WITH latest_rows AS (
-            SELECT ticker, date, close
+            SELECT ticker, date, close, volume
             FROM ohlcv_daily
             WHERE date = :latest_date
         ),
@@ -695,7 +694,7 @@ def get_market_breadth(db: Session = Depends(get_db)):
              AND prev.date < :latest_date
             GROUP BY curr.ticker
         )
-        SELECT curr.ticker, curr.close AS close_price, prev.close AS prev_close
+        SELECT curr.ticker, curr.close AS close_price, curr.volume AS volume, prev.close AS prev_close
         FROM latest_rows curr
         JOIN previous_rows picked ON picked.ticker = curr.ticker
         JOIN ohlcv_daily prev
@@ -703,7 +702,39 @@ def get_market_breadth(db: Session = Depends(get_db)):
          AND prev.date = picked.prev_date
         WHERE prev.close IS NOT NULL AND curr.close IS NOT NULL
     """)
-    pairs = db.execute(sql, {"latest_date": latest_date_sql}).mappings().all()
+    return latest_date, db.execute(sql, {"latest_date": latest_date_sql}).mappings().all()
+
+
+def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+    latest_date, pairs = _latest_ohlcv_pairs(db)
+    if not latest_date or not pairs:
+        return latest_date, []
+
+    stocks = {row.ticker: row.name for row in db.query(Stock).all()}
+    rows = []
+    for row in pairs:
+        prev_close = row["prev_close"]
+        if not prev_close:
+            continue
+        change_pct = ((row["close_price"] - prev_close) / prev_close) * 100
+        ticker = _display_ticker(row["ticker"])
+        rows.append({
+            "ticker": ticker,
+            "name": stocks.get(ticker) or _company_name(row["ticker"]),
+            "price": row["close_price"],
+            "change_pct": round(change_pct, 2),
+            "volume": row.get("volume"),
+            "date": latest_date.isoformat() if hasattr(latest_date, "isoformat") else str(latest_date),
+            "source": "db",
+        })
+    return latest_date, rows
+
+
+@app.get("/api/market-breadth")
+def get_market_breadth(db: Session = Depends(get_db)):
+    latest_date, pairs = _latest_ohlcv_pairs(db)
+    if not latest_date:
+        return {"status": "ok", "source": "db_breadth", "count": 0, "data": {"latest_date": None, "advancing": 0, "declining": 0, "unchanged": 0, "advancers": [], "decliners": []}}
 
     up = down = flat = 0
     advancing = []
@@ -787,23 +818,12 @@ def get_market_events(db: Session = Depends(get_db), limit: int = 10):
 @app.get("/api/top-movers")
 def top_movers(limit: int = 10, db: Session = Depends(get_db), sort: str = "gainers"):
     """Return top movers with gainers/losers split and optional sorting."""
-    latest = db.query(OHLCVDaily).order_by(OHLCVDaily.date.desc()).first()
-    if not latest:
-        return {"count": 0, "data": [], "source": "no_data"}
-    latest_date = latest.date
-    rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == latest_date).all()
-    data = []
-    for row in rows:
-        prev = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == row.ticker, OHLCVDaily.date < row.date).order_by(OHLCVDaily.date.desc()).first()
-        if not prev or not prev.close:
-            continue
-        change_pct = ((row.close - prev.close) / prev.close) * 100
-        data.append({"ticker": row.ticker, "name": row.ticker, "price": row.close, "change_pct": round(change_pct, 2), "date": latest_date.isoformat(), "source": "db"})
+    _, data = _top_mover_rows(db)
     if sort == "losers":
         data.sort(key=lambda x: x["change_pct"])
     else:
         data.sort(key=lambda x: x["change_pct"], reverse=True)
-    return {"count": len(data[:limit]), "data": data[:limit], "source": "db"}
+    return {"count": len(data[:limit]), "data": data[:limit], "source": "db" if data else "no_data"}
 
 
 @app.get("/api/foreign-trading")

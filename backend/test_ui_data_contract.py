@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 
-from main import app
+try:
+    from main import app
+except ModuleNotFoundError:
+    from backend.main import app
 
 client = TestClient(app)
 

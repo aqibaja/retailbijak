@@ -76,6 +76,19 @@ def test_market_breadth_uses_windowed_db_shape():
     assert 'decliners' in data['data']
 
 
+def test_top_movers_db_shape_uses_hardened_latest_pairs():
+    with TestClient(app) as client:
+        res = client.get('/api/top-movers?limit=5')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['source'] == 'db'
+    assert data['count'] > 0
+    first = data['data'][0]
+    assert first['ticker']
+    assert 'change_pct' in first
+    assert 'volume' in first
+
+
 def test_sqlite_datetime_literal_keeps_fractional_format():
     formatted = _sqlite_datetime_literal(datetime(2026, 4, 30, 0, 0, 0))
     assert formatted == '2026-04-30 00:00:00.000000'
