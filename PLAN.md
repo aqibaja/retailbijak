@@ -740,3 +740,14 @@ Itu akan memberi dampak UX terbesar paling cepat.
 
 ### Current Status
 - **Status:** IMPLEMENTED LOCALLY — belum deploy/push
+
+### Done — Phase 6.3 broker activity fallback hardening
+- `backend/main.py`
+  - import `BrokerSummary` di bootstrap utama agar endpoint broker tidak perlu dynamic import berulang
+  - tambah helper `_derived_broker_activity_rows()` berbasis latest OHLCV snapshot untuk fallback hidup saat tabel `broker_summary` kosong
+  - `/api/broker-activity` sekarang prioritas pakai snapshot DB asli, lalu otomatis turun ke snapshot `derived` jika feed broker belum ada
+- `backend/test_api_e2e.py`
+  - tambah regression test untuk fallback `derived` saat `broker_summary` kosong
+  - tambah regression test bahwa snapshot DB tetap menang bila row broker nyata tersedia
+- Validasi RED/GREEN:
+  - `/opt/swingaq/backend/venv/bin/python -m pytest -q backend/test_api_e2e.py -k broker` ✅

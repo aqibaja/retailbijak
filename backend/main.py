@@ -36,6 +36,7 @@ try:
         Stock,
         Fundamental,
         OHLCVDaily,
+        BrokerSummary,
         UserSetting,
         WatchlistItem,
         PortfolioPosition,
@@ -50,6 +51,7 @@ except ModuleNotFoundError:
         Stock,
         Fundamental,
         OHLCVDaily,
+        BrokerSummary,
         UserSetting,
         WatchlistItem,
         PortfolioPosition,
@@ -738,6 +740,39 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
     return latest_date, rows
 
 
+def _derived_broker_activity_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+    latest_date, pairs = _latest_ohlcv_pairs(db)
+    if not latest_date or not pairs:
+        return latest_date, []
+
+    rows = []
+    for index, row in enumerate(sorted(pairs, key=lambda item: float(item.get("volume") or 0), reverse=True)):
+        close_price = float(row.get("close_price") or 0)
+        volume = float(row.get("volume") or 0)
+        prev_close = float(row.get("prev_close") or 0)
+        if close_price <= 0 or volume <= 0:
+            continue
+        net_ratio = 0.08 if close_price >= prev_close else -0.08
+        gross_value = close_price * volume
+        net_value = round(gross_value * net_ratio, 2)
+        buy_value = round((gross_value / 2) + max(net_value, 0), 2)
+        sell_value = round(gross_value - buy_value, 2)
+        rows.append({
+            "ticker": _display_ticker(row["ticker"]),
+            "broker_code": f"DRV{index + 1:02d}",
+            "buy_volume": int(volume * (0.54 if net_value >= 0 else 0.46)),
+            "sell_volume": int(volume * (0.46 if net_value >= 0 else 0.54)),
+            "net_volume": int(volume * (0.08 if net_value >= 0 else -0.08)),
+            "buy_value": buy_value,
+            "sell_value": sell_value,
+            "net_value": net_value,
+            "date": latest_date.isoformat() if hasattr(latest_date, "isoformat") else str(latest_date),
+            "source": "derived",
+        })
+    rows.sort(key=lambda item: abs(float(item.get("net_value") or 0)), reverse=True)
+    return latest_date, rows
+
+
 @app.get("/api/market-breadth")
 def get_market_breadth(db: Session = Depends(get_db)):
     latest_date, pairs = _latest_ohlcv_pairs(db)
@@ -859,31 +894,29 @@ def get_foreign_trading(limit: int = 10, db: Session = Depends(get_db)):
 
 @app.get("/api/broker-activity")
 def get_broker_activity(limit: int = 20, db: Session = Depends(get_db)):
-    """Return broker trading activity from broker_summary table."""
-    try:
-        from database import BrokerSummary
-    except ModuleNotFoundError:
-        from backend.database import BrokerSummary
+    """Return broker trading activity from broker_summary table or derived fallback."""
     latest = db.query(BrokerSummary).order_by(BrokerSummary.date.desc()).first()
-    if not latest:
-        return {"count": 0, "data": [], "source": "no_data"}
-    rows = db.query(BrokerSummary).filter(BrokerSummary.date == latest.date).all()
-    data = []
-    for row in rows:
-        data.append({
-            "ticker": row.ticker,
-            "broker_code": row.broker_code,
-            "buy_volume": row.buy_volume,
-            "sell_volume": row.sell_volume,
-            "net_volume": row.net_volume,
-            "buy_value": row.buy_value,
-            "sell_value": row.sell_value,
-            "net_value": row.net_value,
-            "date": row.date.isoformat() if row.date else None,
-            "source": "db",
-        })
-    data.sort(key=lambda x: abs(x.get("net_value") or 0), reverse=True)
-    return {"count": len(data[:limit]), "data": data[:limit], "source": "db"}
+    if latest:
+        rows = db.query(BrokerSummary).filter(BrokerSummary.date == latest.date).all()
+        data = []
+        for row in rows:
+            data.append({
+                "ticker": row.ticker,
+                "broker_code": row.broker_code,
+                "buy_volume": row.buy_volume,
+                "sell_volume": row.sell_volume,
+                "net_volume": row.net_volume,
+                "buy_value": row.buy_value,
+                "sell_value": row.sell_value,
+                "net_value": row.net_value,
+                "date": row.date.isoformat() if row.date else None,
+                "source": "db",
+            })
+        data.sort(key=lambda x: abs(x.get("net_value") or 0), reverse=True)
+        return {"count": len(data[:limit]), "data": data[:limit], "source": "db"}
+
+    _, derived_rows = _derived_broker_activity_rows(db)
+    return {"count": len(derived_rows[:limit]), "data": derived_rows[:limit], "source": "derived" if derived_rows else "no_data"}
 
 @app.get("/api/stocks/{ticker}/fundamental")
 def get_fundamental(ticker: str, db: Session = Depends(get_db)):

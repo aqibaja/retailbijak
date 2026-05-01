@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 try:
     from main import app, _sqlite_datetime_literal
@@ -116,6 +117,72 @@ def test_foreign_trading_uses_full_latest_snapshot():
 def test_sqlite_datetime_literal_keeps_fractional_format():
     formatted = _sqlite_datetime_literal(datetime(2026, 4, 30, 0, 0, 0))
     assert formatted == '2026-04-30 00:00:00.000000'
+
+
+def test_broker_activity_falls_back_to_derived_snapshot_when_table_empty():
+    with TestClient(app) as client:
+        res = client.get('/api/broker-activity?limit=5')
+    assert res.status_code == 200
+    data = res.json()
+    assert data['source'] == 'derived'
+    assert data['count'] == 5
+    first = data['data'][0]
+    assert first['ticker']
+    assert first['broker_code']
+    assert first['date']
+    assert 'net_value' in first
+
+
+def test_broker_activity_prefers_db_snapshot_when_available():
+    marker = 'ZZZ_TEST_BROKER'
+    with TestClient(app) as client:
+        from backend.database import SessionLocal
+
+        db = SessionLocal()
+        try:
+            db.execute(text("DELETE FROM broker_summary WHERE broker_code = :code"), {'code': marker})
+            db.execute(
+                text(
+                    """
+                    INSERT INTO broker_summary (
+                        ticker, date, broker_code, buy_volume, sell_volume, net_volume,
+                        buy_value, sell_value, net_value
+                    ) VALUES (
+                        :ticker, :date, :broker_code, :buy_volume, :sell_volume, :net_volume,
+                        :buy_value, :sell_value, :net_value
+                    )
+                    """
+                ),
+                {
+                    'ticker': 'BBCA',
+                    'date': '2099-01-01 00:00:00.000000',
+                    'broker_code': marker,
+                    'buy_volume': 100,
+                    'sell_volume': 40,
+                    'net_volume': 60,
+                    'buy_value': 1_000_000.0,
+                    'sell_value': 400_000.0,
+                    'net_value': 600_000.0,
+                },
+            )
+            db.commit()
+        finally:
+            db.close()
+
+        try:
+            res = client.get('/api/broker-activity?limit=5')
+            assert res.status_code == 200
+            data = res.json()
+            assert data['source'] == 'db'
+            assert data['count'] >= 1
+            assert any(row['broker_code'] == marker for row in data['data'])
+        finally:
+            cleanup = SessionLocal()
+            try:
+                cleanup.execute(text("DELETE FROM broker_summary WHERE broker_code = :code"), {'code': marker})
+                cleanup.commit()
+            finally:
+                cleanup.close()
 
 
 def test_corporate_actions_shape():
