@@ -7,12 +7,18 @@ DEPLOY_DOC = (ROOT / 'DEPLOY.md').read_text()
 
 def test_sync_script_runs_frontend_parity_check_before_restart():
     assert 'python "$REPO_DIR/scripts/check_frontend_runtime_parity.py"' in SYNC_SCRIPT
+    assert 'cp "$REPO_DIR/scripts/check_frontend_runtime_parity.py" "$PROD_DIR/scripts/check_frontend_runtime_parity.py"' in SYNC_SCRIPT
     assert SYNC_SCRIPT.index('check_frontend_runtime_parity.py') < SYNC_SCRIPT.index('systemctl restart')
+    assert 'copy_item "$REPO_DIR/frontend/js/views" "$PROD_DIR/frontend/js/views"' in SYNC_SCRIPT
+
+
+def test_sync_script_copies_smoke_script_to_production():
+    assert 'cp "$REPO_DIR/scripts/post_deploy_smoke_check.py" "$PROD_DIR/scripts/post_deploy_smoke_check.py"' in SYNC_SCRIPT
 
 
 def test_sync_script_runs_post_deploy_smoke_check_after_restart():
     assert 'python "$REPO_DIR/scripts/post_deploy_smoke_check.py"' in SYNC_SCRIPT
-    assert SYNC_SCRIPT.index('systemctl restart') < SYNC_SCRIPT.index('post_deploy_smoke_check.py')
+    assert SYNC_SCRIPT.index('systemctl restart') < SYNC_SCRIPT.index('python "$REPO_DIR/scripts/post_deploy_smoke_check.py"')
 
 
 def test_deploy_doc_mentions_pre_restart_frontend_parity_check():
