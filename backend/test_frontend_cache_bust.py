@@ -139,3 +139,23 @@ def test_repo_and_runtime_core_static_assets_match_exactly():
         assert repo_file.read_text() == runtime_file.read_text(), rel_path
 
 
+def test_frontend_version_tokens_stay_consistent_by_layer():
+    css_versions = re.findall(r'style\.css\?v=([0-9a-z]+)', INDEX)
+    main_versions = re.findall(r'js/main\.js\?v=([0-9a-z]+)', INDEX)
+    router_versions = re.findall(r'router\.js\?v=([0-9a-z]+)', MAIN)
+    api_versions = re.findall(r'api\.js\?v=([0-9a-z]+)', MAIN + DASHBOARD + MARKET + STOCK + SCREENER + PORTFOLIO + SETTINGS + NEWS)
+    theme_versions = re.findall(r'theme\.js\?v=([0-9a-z]+)', MAIN)
+    view_versions = re.findall(r'views/[a-z_]+\.js\?v=([0-9a-z]+)', ROUTER)
+    main_import_versions = re.findall(r'main\.js\?v=([0-9a-z]+)', DASHBOARD + MARKET + STOCK + SCREENER + PORTFOLIO + SETTINGS + HELP)
+
+    assert set(css_versions) == {'20260501ui'}
+    assert set(main_versions) == {'20260502c'}
+    assert set(router_versions) == {'20260502c'}
+    assert set(api_versions) == {'20260502a'}
+    assert set(theme_versions) == {'20260430n'}
+    assert set(view_versions) == {'20260502c'}
+    assert set(main_import_versions) == {'20260502c'}
+
+
+
+
