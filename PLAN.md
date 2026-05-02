@@ -114,7 +114,7 @@
 - [x] Jalankan `python -m compileall -q frontend/js`
 - [x] Browser QA halaman `#market`
 - [x] Update `PLAN.md`
-- [ ] Commit
+- [x] Commit
 - [x] Sync runtime `/opt/swingaq/frontend`
 - [ ] Restart service bila perlu
 
@@ -139,7 +139,8 @@
 - [done] Phase 4 mobile-first polish: header mobile ditata ulang supaya title/session pill tidak saling menekan, meta rail ditumpuk vertikal, data-quality card full-width, CTA refresh/empty-state dibesarkan ke 44px, dan row detail kanan dipindah ke stack penuh agar tidak ada kolom sempit.
 - [done] Verifikasi phase 4: `pytest -q backend/tests/test_market_view_static.py` → `7 passed`; `python -m compileall -q frontend/js` → pass.
 - [done] Browser QA live final: public `#market` tetap render normal setelah sync runtime; live DOM mengonfirmasi `4` pulse tiles dan `4` feed cards tanpa regresi layout desktop.
-- [in_progress] Menyiapkan commit, push, dan penutupan phase 5.
+- [done] Git: commit `bd3285c` (`polish market overview mobile layout`) sudah di-push ke `origin/main`.
+- [done] Phase 5 hampir ditutup; restart service tidak diperlukan karena deploy hanya menyentuh aset frontend statis.
 
 ---
 
