@@ -137,6 +137,26 @@ def test_stock_detail_ai_preview_uses_contextual_copy_not_dev_placeholder():
     assert 'Preview AI' in src
 
 
+def test_stock_detail_adds_desktop_snapshot_panel_and_honest_fundamental_state():
+    src = STOCK_DETAIL.read_text()
+    assert 'Session Snapshot' in src
+    assert 'id="snapshot-panel"' in src
+    assert 'renderSnapshotPanel' in src
+    assert 'Fundamental Coverage' in src
+    assert 'fundamental pending' in src
+    assert 'Open' in src
+    assert 'Prev Close' in src
+    assert 'Trend Bias' in src
+
+
+def test_stock_detail_snapshot_panel_uses_volume_pace_not_fake_order_book():
+    src = STOCK_DETAIL.read_text()
+    assert 'Volume Pace' in src
+    assert 'flow monitor' in src
+    assert 'best bid' not in src.lower()
+    assert 'best offer' not in src.lower()
+
+
 def test_screener_shows_guided_empty_state_and_contextual_controls():
     src = Path(SCREENER).read_text()
     assert 'Belum ada hasil scan' in src
