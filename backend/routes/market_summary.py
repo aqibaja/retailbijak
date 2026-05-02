@@ -12,7 +12,47 @@ try:
 except ModuleNotFoundError:
     from backend.database import OHLCVDaily, Stock, UserSetting, get_db
 
+try:
+    from routes.shared_market_summary_helpers import _parse_sector_snapshot_payload
+except ModuleNotFoundError:
+    from backend.routes.shared_market_summary_helpers import _parse_sector_snapshot_payload
+
 router = APIRouter()
+
+
+def _load_period_for_ihsg(db: Session, period_key: str):
+    setting = db.query(UserSetting).filter(UserSetting.key == period_key).first()
+    if not (setting and setting.value):
+        return None
+    data = json.loads(setting.value)
+    chart_data = data.get('ChartData', [])
+    points = []
+    for pt in chart_data:
+        ts = pt.get('Date', 0)
+        if ts:
+            dt = datetime.fromtimestamp(ts / 1000)
+            points.append({'date': dt.strftime('%Y-%m-%d'), 'value': pt.get('Close')})
+    return {
+        'period': period_key.rsplit('_', 1)[-1],
+        'index_code': data.get('IndexCode', 'COMPOSITE'),
+        'open_price': data.get('OpenPrice'),
+        'max_price': data.get('MaxPrice'),
+        'min_price': data.get('MinPrice'),
+        'count': len(points),
+        'data': points,
+        'source': 'idx_cached',
+    }
+
+
+def _safe_pct(latest_close, prev_close):
+    try:
+        latest_close = float(latest_close)
+        prev_close = float(prev_close)
+        if prev_close == 0:
+            return None
+        return ((latest_close - prev_close) / prev_close) * 100.0
+    except Exception:
+        return None
 
 
 @router.get('/api/ihsg-chart')
@@ -21,34 +61,8 @@ def get_ihsg_chart(period: str = '1M', db: Session = Depends(get_db)):
     if period not in valid_periods:
         period = '1M'
 
-    def _load_period(period_key: str):
-        setting = db.query(UserSetting).filter(UserSetting.key == period_key).first()
-        if not (setting and setting.value):
-            return None
-        data = json.loads(setting.value)
-        chart_data = data.get('ChartData', [])
-        points = []
-        for pt in chart_data:
-            ts = pt.get('Date', 0)
-            if ts:
-                dt = datetime.fromtimestamp(ts / 1000)
-                points.append({
-                    'date': dt.strftime('%Y-%m-%d'),
-                    'value': pt.get('Close'),
-                })
-        return {
-            'period': period_key.rsplit('_', 1)[-1],
-            'index_code': data.get('IndexCode', 'COMPOSITE'),
-            'open_price': data.get('OpenPrice'),
-            'max_price': data.get('MaxPrice'),
-            'min_price': data.get('MinPrice'),
-            'count': len(points),
-            'data': points,
-            'source': 'idx_cached',
-        }
-
     key = f'idx_ihsg_chart_{period}'
-    payload = _load_period(key)
+    payload = _load_period_for_ihsg(db, key)
     if payload and payload.get('data'):
         if period == '1W' and payload['count'] > 7:
             payload['data'] = payload['data'][-7:]
@@ -210,16 +224,6 @@ def get_sector_summary(db: Session = Depends(get_db)):
 
     rows = db.query(Stock).all()
     buckets = defaultdict(lambda: {'count': 0, 'market_cap': 0.0, 'change_sum': 0.0, 'change_count': 0})
-
-    def _safe_pct(latest_close, prev_close):
-        try:
-            latest_close = float(latest_close)
-            prev_close = float(prev_close)
-            if prev_close == 0:
-                return None
-            return ((latest_close - prev_close) / prev_close) * 100.0
-        except Exception:
-            return None
 
     for row in rows:
         sector = row.sector or 'Unknown'
