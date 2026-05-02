@@ -9,6 +9,7 @@ def test_stock_search_helpers_exist_in_shared_module():
     src = MODULE.read_text(encoding='utf-8')
     assert 'def _search_rank(' in src
     assert 'def _search_bucket(' in src
+    assert 'from routes.shared_stock_fallbacks import _ticker_base' in src or 'from backend.routes.shared_stock_fallbacks import _ticker_base' in src
 
 
 def test_stock_search_helpers_are_not_defined_in_stocks_module():

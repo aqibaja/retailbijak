@@ -5,6 +5,11 @@ try:
 except ModuleNotFoundError:
     from backend.stocks import get_ticker_display
 
+try:
+    from routes.shared_stock_fallbacks import _ticker_base
+except ModuleNotFoundError:
+    from backend.routes.shared_stock_fallbacks import _ticker_base
+
 COMPANY_NAMES = {
     "BBCA": "Bank Central Asia Tbk.", "BMRI": "Bank Mandiri (Persero) Tbk.",
     "BBRI": "Bank Rakyat Indonesia Tbk.", "TLKM": "Telkom Indonesia Tbk.", "ASII": "Astra International Tbk.",
@@ -19,7 +24,7 @@ SECTOR_HINTS = {
 
 
 def _display_ticker(t: str) -> str:
-    return t.upper().replace('.JK', '').strip()
+    return _ticker_base(t)
 
 
 def _company_name(t: str) -> str:
