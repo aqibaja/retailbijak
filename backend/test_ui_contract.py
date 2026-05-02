@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 
-from main import app
+try:
+    from main import app
+except ModuleNotFoundError:
+    from backend.main import app
 
 
 def test_scan_accepts_frontend_timeframe_and_streams_done_event():

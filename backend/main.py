@@ -82,9 +82,11 @@ except ModuleNotFoundError:
 try:
     from routes.user import router as user_router
     from routes.system import router as system_router
+    from routes.reference import router as reference_router
 except ModuleNotFoundError:
     from backend.routes.user import router as user_router
     from backend.routes.system import router as system_router
+    from backend.routes.reference import router as reference_router
 
 
 @asynccontextmanager
@@ -102,6 +104,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0", lifespan=lifespan)
 app.include_router(user_router)
 app.include_router(system_router)
+app.include_router(reference_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -137,22 +140,6 @@ class PortfolioPayload(BaseModel):
 
 
 # --- API ---
-@app.get("/api/timeframes")
-async def timeframes():
-    labels = {"1d": "Daily", "1h": "H1", "4h": "H4", "1wk": "Weekly", "1mo": "Monthly"}
-    return {
-        "timeframes": [
-            {"value": tf, "label": labels.get(tf, tf)} for tf in VALID_TIMEFRAMES
-        ]
-    }
-
-
-@app.get("/api/stocks")
-async def stocks():
-    tickers = get_all_tickers()
-    return {"count": len(tickers), "tickers": tickers}
-
-
 async def scan_all_db_generator(timeframe: str, rule: str | None = None):
     db = SessionLocal()
     try:
@@ -903,7 +890,10 @@ def get_broker_activity(limit: int = 20, db: Session = Depends(get_db)):
 @app.get("/api/stocks/{ticker}/fundamental")
 def get_fundamental(ticker: str, db: Session = Depends(get_db)):
     """API endpoint to get fundamental data for a specific stock"""
-    from database import Fundamental
+    try:
+        from database import Fundamental
+    except ModuleNotFoundError:
+        from backend.database import Fundamental
     
     # Optional: if client passes 'BBCA', we append '.JK'
     if not ticker.endswith('.JK'):
