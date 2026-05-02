@@ -85,7 +85,7 @@ def test_market_grouped_layout_styles_define_section_stacks():
     assert ".market-section-group-internals { order: 1; }" in content
     assert ".market-section-group-flow { order: 2; }" in content
     assert ".market-section-group-catalyst { order: 3; }" in content
-    assert ".market-refresh-btn { width: 100%; height: 42px; }" in content
+    assert ".market-refresh-btn { width: 100%; height: 44px; }" in content
     assert ".market-data-quality {" in content
     assert ".market-empty-rich {" in content
 
@@ -105,3 +105,15 @@ def test_market_first_fold_styles_define_header_rail_and_four_tile_pulse_layout(
     assert ".market-stats-grid.market-stats-grid-compact { grid-template-columns: repeat(4, minmax(0,1fr)); }" in content
     assert "market-stats-grid market-stats-grid-compact" in FRONTEND_MARKET_VIEW.read_text()
     assert ".market-pulse-panels-compact" not in content
+
+
+def test_market_mobile_styles_stack_top_fold_rows_and_expand_tap_targets():
+    content = FRONTEND_STYLE.read_text()
+    assert "@media (max-width: 767px) {" in content
+    assert ".market-title-row { width: 100%; justify-content: space-between; gap: 10px; }" in content
+    assert ".market-meta-rail { gap: 8px; flex-direction: column; align-items: flex-start; }" in content
+    assert ".market-data-quality { width: 100%; }" in content
+    assert ".market-refresh-btn { width: 100%; height: 44px; }" in content
+    assert ".market-empty-refresh { min-height: 44px; }" in content
+    assert ".market-row { flex-direction: column; align-items: flex-start; gap: 10px; }" in content
+    assert ".market-right { width: 100%; min-width: 0; text-align: left; padding-left: 0; }" in content

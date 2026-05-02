@@ -1,6 +1,6 @@
 # Market Overview Redesign Plan
 
-> **Execution status:** phase-1 first-fold cleanup **IN PROGRESS** · phase-2 internals regrouping **PLANNED** · phase-3 flow/catalyst refinement **PLANNED** · phase-4 mobile polish **PLANNED** · phase-5 verification/deploy **PLANNED**
+> **Execution status:** phase-1 first-fold cleanup **DONE** · phase-2 internals regrouping **DONE** · phase-3 flow/catalyst refinement **DONE** · phase-4 mobile polish **DONE** · phase-5 verification/deploy **IN PROGRESS**
 
 **Goal:** Merombak halaman `Market Overview` supaya rapi, cepat discan, jelas prioritasnya, dan terasa profesional di desktop maupun mobile.
 
@@ -101,21 +101,21 @@
 - Test: `backend/tests/test_market_view_static.py`
 
 **Checklist:**
-- [ ] Pastikan top fold tetap ringkas di <= 767px.
-- [ ] Hilangkan panel sempit yang memaksa wrap jelek.
-- [ ] Perbesar target tombol/CTA penting.
-- [ ] Rapikan order section di mobile.
+- [x] Pastikan top fold tetap ringkas di <= 767px.
+- [x] Hilangkan panel sempit yang memaksa wrap jelek.
+- [x] Perbesar target tombol/CTA penting.
+- [x] Rapikan order section di mobile.
 
 ### Phase 5 — Verification, deploy, git hygiene
 **Objective:** verifikasi, update progress, commit, deploy.
 
 **Checklist:**
-- [ ] Jalankan `pytest -q backend/tests/test_market_view_static.py`
-- [ ] Jalankan `python -m compileall -q frontend/js`
-- [ ] Browser QA halaman `#market`
-- [ ] Update `PLAN.md`
+- [x] Jalankan `pytest -q backend/tests/test_market_view_static.py`
+- [x] Jalankan `python -m compileall -q frontend/js`
+- [x] Browser QA halaman `#market`
+- [x] Update `PLAN.md`
 - [ ] Commit
-- [ ] Sync runtime `/opt/swingaq/frontend`
+- [x] Sync runtime `/opt/swingaq/frontend`
 - [ ] Restart service bila perlu
 
 ---
@@ -136,16 +136,19 @@
 - [done] Verifikasi ulang phase 3: `pytest -q backend/tests/test_market_view_static.py` → `6 passed`; `python -m compileall -q frontend/js` → pass.
 - [done] Git: commit `98d279a` (`refine market overview feed sections`) sudah di-push ke `origin/main`.
 - [done] Deploy ulang frontend: runtime live sekarang mengonfirmasi `4` pulse tiles, `4` feed cards, `8` catalyst titles, dan `8` value notes.
-- [in_progress] Menyiapkan phase 4: mobile-first polish.
+- [done] Phase 4 mobile-first polish: header mobile ditata ulang supaya title/session pill tidak saling menekan, meta rail ditumpuk vertikal, data-quality card full-width, CTA refresh/empty-state dibesarkan ke 44px, dan row detail kanan dipindah ke stack penuh agar tidak ada kolom sempit.
+- [done] Verifikasi phase 4: `pytest -q backend/tests/test_market_view_static.py` → `7 passed`; `python -m compileall -q frontend/js` → pass.
+- [done] Browser QA live final: public `#market` tetap render normal setelah sync runtime; live DOM mengonfirmasi `4` pulse tiles dan `4` feed cards tanpa regresi layout desktop.
+- [in_progress] Menyiapkan commit, push, dan penutupan phase 5.
 
 ---
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 1 — first-fold cleanup.
+**Slice aktif sekarang:** Phase 5 — verification, deploy, git hygiene.
 
 **Target patch minimum untuk slice ini:**
-1. hapus mini-panel pulse duplikatif,
-2. jadikan pulse 4 tile utama,
-3. rapikan stats strip agar mendukung hierarchy baru,
-4. update progress setelah test pass.
+1. sync runtime frontend,
+2. browser QA live final,
+3. commit progress dan mobile polish,
+4. push origin/main.
