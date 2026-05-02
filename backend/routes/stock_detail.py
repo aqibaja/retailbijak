@@ -17,6 +17,11 @@ except ModuleNotFoundError:
     from backend.routes.shared_stock_fallbacks import _ticker_base, _fallback_row_for_ticker
 
 try:
+    from routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv
+except ModuleNotFoundError:
+    from backend.routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv
+
+try:
     from services.idx_response_factory import ok as _resp_ok
 except ModuleNotFoundError:
     from backend.services.idx_response_factory import ok as _resp_ok
@@ -31,68 +36,6 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
     if not payload['price'] and not payload['signals']:
         return {'ticker': base, 'message': 'No signals found', 'data': payload}
     return {'ticker': base, 'data': payload}
-
-
-def _compute_analysis_metrics_from_ohlcv(db: Session, ticker: str) -> dict[str, Any]:
-    try:
-        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-    except ModuleNotFoundError:
-        from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-
-    df = get_ohlcv_dataframe(db, ticker, limit=100)
-    if df.empty or len(df) < 20:
-        return {'volume_spike': 1.0, 'trend_score': 50, 'volatility_score': 50, 'breakout': False}
-
-    df = calculate_all_indicators(df)
-    latest = df.iloc[-1]
-    prev = df.iloc[-2] if len(df) > 1 else latest
-
-    close = float(latest['close']) if pd.notna(latest['close']) else 0
-    volume = float(latest['volume']) if pd.notna(latest['volume']) else 0
-
-    vol_sma20 = latest.get('vol_sma_20')
-    if pd.isna(vol_sma20) or vol_sma20 is None or vol_sma20 == 0:
-        vol_sma20 = volume
-    volume_spike = round(volume / vol_sma20, 2) if vol_sma20 else 1.0
-
-    sma5 = latest.get('sma_5')
-    sma20 = latest.get('sma_20')
-    sma50 = latest.get('sma_50')
-    rsi = latest.get('rsi')
-    trend = 50
-    if pd.notna(sma5) and pd.notna(sma20):
-        if close > sma5 > sma20:
-            trend += 20
-        elif close < sma5 < sma20:
-            trend -= 20
-        elif close > sma20:
-            trend += 10
-        elif close < sma20:
-            trend -= 10
-    if pd.notna(sma50):
-        trend += 10 if close > sma50 else -10
-    if pd.notna(rsi):
-        trend += (rsi - 50) * 0.3
-    trend_score = max(min(int(trend), 100), 0)
-
-    atr = latest.get('atr')
-    if pd.notna(atr) and close > 0:
-        atr_pct = (atr / close) * 100
-        vol_score = int(min(max(30 + atr_pct * 5, 0), 100))
-    else:
-        vol_score = 50
-    volatility_score = vol_score
-
-    bb_high = latest.get('bb_high')
-    high_20 = df['high'].astype(float).tail(20).max() if len(df) >= 20 else close
-    breakout = bool(close >= high_20 * 0.99 or (pd.notna(bb_high) and close > bb_high))
-
-    return {
-        'volume_spike': volume_spike,
-        'trend_score': trend_score,
-        'volatility_score': volatility_score,
-        'breakout': breakout,
-    }
 
 
 @router.get('/api/stocks/{ticker}/analysis')
@@ -178,19 +121,50 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
         from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
         import numpy as np
     except ModuleNotFoundError as exc:
-        return {'ticker': ticker if ticker.endswith('.JK') else f'{ticker}.JK', 'data': [], 'status': 'no_data', 'message': str(exc)}
+        return {'ticker': ticker, 'status': 'no_data', 'message': str(exc), 'data': []}
 
     if not ticker.endswith('.JK'):
         ticker = f'{ticker}.JK'
 
-    df = get_ohlcv_dataframe(db, ticker, limit=limit + 200)
+    limit = max(20, min(int(limit), 400))
+    df = get_ohlcv_dataframe(db, ticker, limit=limit)
     if df.empty:
-        return {'ticker': ticker, 'data': []}
+        return {'ticker': ticker, 'status': 'no_data', 'data': []}
 
-    df_ind = calculate_all_indicators(df)
-    df_ind = df_ind.tail(limit)
-    df_ind = df_ind.replace({np.nan: None})
-    df_ind.index = df_ind.index.strftime('%Y-%m-%d')
-    df_ind = df_ind.reset_index()
-    records = df_ind.to_dict('records')
-    return {'ticker': ticker, 'count': len(records), 'data': records}
+    df = calculate_all_indicators(df)
+    records = []
+    for _, row in df.tail(limit).iterrows():
+        records.append({
+            'date': row['date'].isoformat() if hasattr(row['date'], 'isoformat') else str(row['date']),
+            'open': float(row['open']) if pd.notna(row['open']) else None,
+            'high': float(row['high']) if pd.notna(row['high']) else None,
+            'low': float(row['low']) if pd.notna(row['low']) else None,
+            'close': float(row['close']) if pd.notna(row['close']) else None,
+            'volume': float(row['volume']) if pd.notna(row['volume']) else None,
+            'sma_20': float(row['sma_20']) if 'sma_20' in row and pd.notna(row['sma_20']) else None,
+            'sma_50': float(row['sma_50']) if 'sma_50' in row and pd.notna(row['sma_50']) else None,
+        })
+
+    return {'ticker': ticker, 'status': 'ok', 'data': records}
+
+
+@router.get('/api/stocks/{ticker}/signals')
+def get_signals(ticker: str, timeframe: str = '1d', db: Session = Depends(get_db)):
+    if not ticker.endswith('.JK'):
+        ticker = f'{ticker}.JK'
+
+    signals = db.query(Signal).filter(Signal.ticker == ticker.replace('.JK', ''), Signal.timeframe == timeframe).order_by(Signal.signal_date.desc()).limit(20).all()
+    data = []
+    for signal in signals:
+        data.append({
+            'ticker': signal.ticker,
+            'timeframe': signal.timeframe,
+            'signal_type': signal.signal_type,
+            'signal_date': signal.signal_date.isoformat() if signal.signal_date else None,
+            'price': signal.price,
+            'entry_price': signal.entry_price,
+            'target_price': signal.target_price,
+            'stop_loss': signal.stop_loss,
+            'rationale': signal.rationale,
+        })
+    return {'ticker': ticker, 'count': len(data), 'data': data}
