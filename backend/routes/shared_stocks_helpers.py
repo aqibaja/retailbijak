@@ -1,11 +1,6 @@
 from __future__ import annotations
 
 try:
-    from stocks import get_ticker_display
-except ModuleNotFoundError:
-    from backend.stocks import get_ticker_display
-
-try:
     from routes.shared_stock_fallbacks import _ticker_base
 except ModuleNotFoundError:
     from backend.routes.shared_stock_fallbacks import _ticker_base
@@ -29,7 +24,7 @@ def _display_ticker(t: str) -> str:
 
 def _company_name(t: str) -> str:
     base = _display_ticker(t)
-    return COMPANY_NAMES.get(base, get_ticker_display(base))
+    return COMPANY_NAMES.get(base, base)
 
 
 def _stock_row_from_static(t: str, i: int = 0) -> dict:

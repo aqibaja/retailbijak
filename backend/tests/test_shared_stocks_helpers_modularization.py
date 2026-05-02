@@ -19,3 +19,6 @@ def test_stock_helper_functions_exist_in_shared_module():
     assert 'def _stock_row_from_static(' in src
     assert 'from routes.shared_stock_fallbacks import _ticker_base' in src or 'from backend.routes.shared_stock_fallbacks import _ticker_base' in src
     assert "return t.upper().replace('.JK', '').strip()" not in src
+    assert 'from stocks import get_ticker_display' not in src
+    assert 'from backend.stocks import get_ticker_display' not in src
+    assert 'get_ticker_display(' not in src
