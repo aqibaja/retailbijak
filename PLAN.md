@@ -1,6 +1,6 @@
 # Market Overview Redesign Plan
 
-> **Execution status:** phase-1 first-fold cleanup **DONE** · phase-2 internals regrouping **DONE** · phase-3 flow/catalyst refinement **DONE** · phase-4 mobile polish **DONE** · phase-5 verification/deploy **IN PROGRESS**
+> **Execution status:** phase-1 first-fold cleanup **DONE** · phase-2 internals regrouping **DONE** · phase-3 flow/catalyst refinement **DONE** · phase-4 mobile polish **DONE** · phase-5 verification/deploy **DONE**
 
 **Goal:** Merombak halaman `Market Overview` supaya rapi, cepat discan, jelas prioritasnya, dan terasa profesional di desktop maupun mobile.
 
@@ -116,7 +116,7 @@
 - [x] Update `PLAN.md`
 - [x] Commit
 - [x] Sync runtime `/opt/swingaq/frontend`
-- [ ] Restart service bila perlu
+- [x] Restart service bila perlu
 
 ---
 
@@ -140,16 +140,16 @@
 - [done] Verifikasi phase 4: `pytest -q backend/tests/test_market_view_static.py` → `7 passed`; `python -m compileall -q frontend/js` → pass.
 - [done] Browser QA live final: public `#market` tetap render normal setelah sync runtime; live DOM mengonfirmasi `4` pulse tiles dan `4` feed cards tanpa regresi layout desktop.
 - [done] Git: commit `bd3285c` (`polish market overview mobile layout`) sudah di-push ke `origin/main`.
-- [done] Phase 5 hampir ditutup; restart service tidak diperlukan karena deploy hanya menyentuh aset frontend statis.
+- [done] Phase 5 ditutup: browser QA live final lulus, runtime frontend sudah sinkron, dan tidak perlu restart service karena deploy hanya menyentuh aset frontend statis.
 
 ---
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 5 — verification, deploy, git hygiene.
+**Slice aktif sekarang:** Phase complete — market overview redesign closed.
 
 **Target patch minimum untuk slice ini:**
-1. sync runtime frontend,
-2. browser QA live final,
-3. commit progress dan mobile polish,
-4. push origin/main.
+1. plan closure selesai,
+2. progress final tersimpan,
+3. commit + push status final,
+4. siap pindah ke route berikutnya.
