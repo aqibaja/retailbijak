@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, saveWatchlistItem, showToast } from '../api.js?v=20260502a';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260502a';
 import { observeElements, flashUpdate } from '../main.js?v=20260502c';
 
 const nf = (n, d = 2) => n == null || Number.isNaN(Number(n)) ? '—' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: d });
@@ -41,6 +41,8 @@ export async function renderStockDetail(root, ticker) {
           <div class="section-gap-large"></div>
           <div id="below-chart-fill" class="below-chart-fill"></div>
           <div class="section-divider"></div>
+          <div id="catalyst-strip" class="below-chart-fill"></div>
+          <div class="section-divider"></div>
           <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">AI Assistant</div><div class="text-sm text-main strong mt-1">Ask AI about this stock</div><div class="text-xs text-muted mt-1">Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.</div></div><span class="signal-pill pill-good">AI Preview</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Ask Risk</span><strong>Kenapa watch?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Ask Entry</span><strong>Area masuk?</strong><small>pullback plan</small></div><div class="stat-tile metric-neutral"><span>Ask News</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Ask Explain</span><strong>Alasan sinyal</strong><small>AI summary</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risk, entry, news, atau alasan sinyal...</div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
@@ -61,8 +63,9 @@ export async function renderStockDetail(root, ticker) {
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showToast(`Alert placeholder for ${symbol}: use entry/stop/target levels`, 'info'));
 
-  const [detail, fund, tech, chart, analysis] = await Promise.all([
-    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol).catch(()=>null)
+  const [detail, fund, tech, chart, analysis, news, announcements] = await Promise.all([
+    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol).catch(()=>null),
+    fetchNews(6).catch(()=>null), apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
   ]);
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   hydrateHeader(symbol, detail, fund, candles);
@@ -80,6 +83,7 @@ export async function renderStockDetail(root, ticker) {
   renderAnalysisPanel(analysisData, technical);
   renderDecisionPanel(candles, technical);
   renderBelowChartFill(candles, technical);
+  renderCatalystStrip(symbol, news, announcements);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisData);
   renderTradePlan(candles, technical);
   renderInsightCards(candles, technical, analysisData);
@@ -221,6 +225,29 @@ function renderBelowChartFill(candles, tech){
     ['Quick Read', rsi >= 70 ? 'Wait pullback' : (tech.rating || 'Watch'), rsi >= 70 ? 'overbought' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
   ];
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+}
+
+function catalystTile(label, title, body, cls = 'metric-neutral'){
+  return `<div class="stat-tile ${cls}"><span>${label}</span><strong>${title}</strong><small>${body}</small></div>`;
+}
+
+function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
+  const el = document.getElementById('catalyst-strip'); if (!el) return;
+  const newsRows = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
+  const announcementRows = Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [];
+  const relevantNews = newsRows.find((row) => `${row?.title || ''} ${row?.summary || ''}`.toUpperCase().includes(symbol));
+  const latestAnnouncement = announcementRows[0];
+  const cards = [
+    relevantNews
+      ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good')
+      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbol} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn'),
+    latestAnnouncement
+      ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral')
+      : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral'),
+    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbol}.`, 'metric-neutral'),
+    catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral'),
+  ];
+  el.innerHTML = cards.join('');
 }
 
 function renderAnalysisPanel(data, tech){

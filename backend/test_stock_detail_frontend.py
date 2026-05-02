@@ -167,6 +167,16 @@ def test_stock_detail_ai_preview_surfaces_actionable_dynamic_summary():
     assert 'risk note' not in src.lower()
 
 
+def test_stock_detail_adds_catalyst_strip_with_honest_fallback_source():
+    src = STOCK_DETAIL.read_text()
+    assert 'renderCatalystStrip' in src
+    assert 'id="catalyst-strip"' in src
+    assert 'Latest Catalysts' in src
+    assert 'News Pulse' in src
+    assert 'Announcement Monitor' in src
+    assert 'Menunggu catalyst terbaru' in src
+
+
 def test_screener_shows_guided_empty_state_and_contextual_controls():
     src = Path(SCREENER).read_text()
     assert 'Belum ada hasil scan' in src
