@@ -41,7 +41,7 @@ export async function renderStockDetail(root, ticker) {
           <div class="section-gap-large"></div>
           <div id="below-chart-fill" class="below-chart-fill"></div>
           <div class="section-divider"></div>
-          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">AI Assistant</div><div class="text-sm text-main strong mt-1">Ask AI about this stock</div><div class="text-xs text-muted mt-1">Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.</div></div><span class="signal-pill pill-good">AI Preview</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Ask Risk</span><strong>Kenapa watch?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Ask Entry</span><strong>Area masuk?</strong><small>pullback plan</small></div><div class="stat-tile metric-neutral"><span>Ask News</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Ask Explain</span><strong>Alasan sinyal</strong><small>AI summary</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"><div class="stat-tile metric-neutral"><span>AI Preview</span><div class="text-sm text-muted mt-1">Saya bisa bantu jelaskan kenapa sinyal watch, area entry ideal, dan risiko chasing.</div></div><div class="stat-tile metric-warn"><span>Risk Note</span><div class="text-sm text-muted mt-1">${symbol} sedang ${String(tech?.rating || 'mixed').toLowerCase()}; tunggu konfirmasi sebelum ambil keputusan.</div></div><div class="stat-tile metric-good"><span>Plan Preview</span><div class="text-sm text-muted mt-1">Entry, stop, dan target akan dihitung agar R/R tetap sehat.</div></div><div class="stat-tile metric-neutral"><span>Next AI Module</span><div class="text-sm text-muted mt-1">Nanti chat ini akan pakai data chart, berita, fundamental, dan scanner.</div></div></div><div class="ai-chat-input">Tanya: risk, entry, news, atau alasan sinyal...</div></div>
+          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">AI Assistant</div><div class="text-sm text-main strong mt-1">Ask AI about this stock</div><div class="text-xs text-muted mt-1">Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.</div></div><span class="signal-pill pill-good">AI Preview</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Ask Risk</span><strong>Kenapa watch?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Ask Entry</span><strong>Area masuk?</strong><small>pullback plan</small></div><div class="stat-tile metric-neutral"><span>Ask News</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Ask Explain</span><strong>Alasan sinyal</strong><small>AI summary</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risk, entry, news, atau alasan sinyal...</div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="panel"><h3 class="panel-title mb-3">Session Snapshot</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
@@ -80,6 +80,7 @@ export async function renderStockDetail(root, ticker) {
   renderAnalysisPanel(analysisData, technical);
   renderDecisionPanel(candles, technical);
   renderBelowChartFill(candles, technical);
+  renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisData);
   renderTradePlan(candles, technical);
   renderInsightCards(candles, technical, analysisData);
   renderLevelSuggestions(candles, technical);
@@ -193,6 +194,18 @@ function renderSnapshotPanel(d, candles, tech){
     ['Trend Bias', tech?.rating || 'WATCH', tech?.summary || 'technical snapshot', sentimentClass(tech?.rating, tech?.score)],
   ];
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+}
+
+function renderAiPreview(symbol, d, candles, tech, analysis){
+  const host = document.querySelector('.ai-thread-mock'); if (!host) return;
+  const levels = getLevels(candles, tech); const last = candles[candles.length-1] || {}; const rsi = Number(tech?.indicators?.rsi?.value);
+  const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
+  const valuation = d.trailing_pe ? (d.trailing_pe < 12 ? 'valuasi murah' : d.trailing_pe > 25 ? 'valuasi premium' : 'valuasi fair') : 'valuasi belum lengkap';
+  const setupBias = tech?.rating === 'BULLISH' ? 'Bias bullish, fokus akumulasi bertahap.' : tech?.rating === 'BEARISH' ? 'Bias defensif, hindari entry agresif.' : 'Bias netral, tunggu konfirmasi lanjutan.';
+  const quickTake = rsi >= 70 ? `${symbol} mulai panas; utamakan disiplin entry dan jangan chasing.` : `${symbol} masih layak dipantau untuk setup berikutnya.`;
+  const tradeMap = `Pantau ${money(levels.entry)} · invalid ${money(levels.stop)} · target ${money(levels.target)}.`;
+  const catalyst = analysis?.valuation?.label || analysis?.swing?.label || 'belum ada katalis dominan';
+  host.innerHTML = `<div class="stat-tile metric-neutral"><span>AI Quick Take</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Setup Bias</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Valuation Read</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Trade Map</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Catalyst Lens</span><div class="text-sm text-muted mt-1">AI akan merangkum catalyst terbaru; saat ini ${catalyst}.</div></div>`;
 }
 
 function renderBelowChartFill(candles, tech){

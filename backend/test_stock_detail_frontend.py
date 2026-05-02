@@ -132,9 +132,9 @@ def test_stock_detail_ai_preview_uses_contextual_copy_not_dev_placeholder():
     assert 'UI placeholder' not in src
     assert 'Coming Soon' not in src
     assert 'KONI sedang overbought' not in src
-    assert '${symbol} sedang ${String(tech?.rating || \'mixed\').toLowerCase()}' in src
+    assert 'renderAiPreview' in src
     assert 'Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.' in src
-    assert 'Preview AI' in src
+    assert 'AI Quick Take' in src
 
 
 def test_stock_detail_adds_desktop_snapshot_panel_and_honest_fundamental_state():
@@ -155,6 +155,16 @@ def test_stock_detail_snapshot_panel_uses_volume_pace_not_fake_order_book():
     assert 'flow monitor' in src
     assert 'best bid' not in src.lower()
     assert 'best offer' not in src.lower()
+
+
+def test_stock_detail_ai_preview_surfaces_actionable_dynamic_summary():
+    src = STOCK_DETAIL.read_text()
+    assert 'renderAiPreview' in src
+    assert 'AI Quick Take' in src
+    assert 'Setup Bias' in src
+    assert 'Valuation Read' in src
+    assert 'Trade Map' in src
+    assert 'risk note' not in src.lower()
 
 
 def test_screener_shows_guided_empty_state_and_contextual_controls():
