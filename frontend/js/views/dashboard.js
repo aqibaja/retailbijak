@@ -24,13 +24,32 @@ export async function renderDashboard(root) {
         <div class="screener-kicker">IDX LIVE WORKSPACE</div>
         <h1>Dashboard Market Intelligence</h1>
         <p>Pantau IHSG, breadth, top movers, dan ide cepat dalam satu layar trading yang padat.</p>
-        <div class="dash-actions"><a href="#screener" class="btn btn-primary">Run Scanner</a><a href="#market" class="btn">Market Overview</a></div>
+        <div class="dash-hero-note">Satu glance untuk baca bias tape, kualitas data, dan jalur aksi tercepat sebelum masuk ke scanner.</div>
+        <div class="dash-actions"><a href="#screener" class="btn btn-primary dash-primary-cta">Run Scanner</a><a href="#market" class="btn dash-secondary-cta">Market Overview</a></div>
+        <div class="dash-summary-strip">
+          <div class="dash-summary-card">
+            <span>Market Bias</span>
+            <strong id="dash-bias-label">Loading...</strong>
+            <small id="dash-bias-note">Menyiapkan breadth dan tape context.</small>
+          </div>
+          <div class="dash-summary-card">
+            <span>Lead Gainer</span>
+            <strong id="dash-lead-gainer">Loading...</strong>
+            <small id="dash-lead-gainer-note">Menunggu top movers valid.</small>
+          </div>
+          <div class="dash-summary-card">
+            <span>Lead Sector</span>
+            <strong id="dash-lead-sector">Loading...</strong>
+            <small id="dash-lead-sector-note">Snapshot rotasi sektor.</small>
+          </div>
+        </div>
       </div>
       <div class="dash-quote-card">
-        <div class="flex justify-between items-start mb-3"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div><div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
+        <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div><div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
         <div class="text-xs text-dim uppercase strong">IHSG Composite</div>
         <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
         <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">—</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
+        <div class="dash-quote-freshness" id="dash-quote-freshness">Last sync: waiting for market summary.</div>
       </div>
     </div>
 
@@ -39,13 +58,13 @@ export async function renderDashboard(root) {
         <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div><div class="dashboard-chip-row"><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button><button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button></div></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
-      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2">Loading movers...</div></div>
+      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Preparing movers tape</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
     </div>
 
     <div class="dash-bottom-grid">
-      <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="intel-item">Loading intelligence...</div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Building market brief</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan plan line intraday.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Suggestions</h3><div class="suggestion-grid">${['BBCA','BMRI','GOTO','BRPT','TLKM','ANTM'].map(t=>`<a href="#stock/${t}" class="suggestion-pill"><span>${t}</span><small>Open detail</small></a>`).join('')}</div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Latest News</h3><div id="news-container" class="intel-list"><div class="intel-item">Loading news...</div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Latest News</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gathering market headlines</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>
     </div>
   </section>`;
   observeElements();
@@ -63,12 +82,18 @@ async function loadMarketSummary(){
   const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
   const dateEl = document.getElementById('market-data-date');
   if (dateEl) dateEl.textContent = dataDate ? `Data IDX tanggal ${dataDate} · auto-sync 18:00 WIB` : 'Data IDX belum tersedia · auto-sync 18:00 WIB';
+  const freshnessEl = document.getElementById('dash-quote-freshness');
+  if (freshnessEl) freshnessEl.textContent = dataDate ? `Last sync: ${dataDate} · auto-refresh after close.` : 'Last sync: waiting for market summary.';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
   const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? pf(c) : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
   document.getElementById('ihsg-open').textContent = summary?.open != null ? nf(summary.open) : '—';
   document.getElementById('ihsg-high').textContent = summary?.high != null ? nf(summary.high) : '—';
   document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';
+  const biasLabel = document.getElementById('dash-bias-label');
+  const biasNote = document.getElementById('dash-bias-note');
+  if (biasLabel) biasLabel.textContent = v == null ? 'Waiting Snapshot' : c >= 0 ? 'Risk-On Tape' : 'Defensive Tape';
+  if (biasNote) biasNote.textContent = v == null ? 'Ringkasan market belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} sehingga defense dan selektivitas lebih penting.`;
   return summary;
 }
 async function loadIntel(){
@@ -94,6 +119,16 @@ async function loadIntel(){
   const planLine = Number(summary?.change_pct ?? 0) >= 0
     ? 'Plan: fokus ke saham pemimpin sektor, validasi volume sebelum entry lanjutan.'
     : 'Plan: prioritaskan defense, entry bertahap, dan hindari chasing rebound tipis.';
+  const biasLabel = document.getElementById('dash-bias-label');
+  const leadGainerEl = document.getElementById('dash-lead-gainer');
+  const leadGainerNoteEl = document.getElementById('dash-lead-gainer-note');
+  const leadSectorEl = document.getElementById('dash-lead-sector');
+  const leadSectorNoteEl = document.getElementById('dash-lead-sector-note');
+  if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? 'Need Breadth' : adv >= dec ? 'Risk-On Tape' : 'Defensive Tape';
+  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'No leader yet';
+  if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin tape hari ini.` : 'Top movers belum lengkap, fallback tetap aktif.';
+  if (leadSectorEl) leadSectorEl.textContent = best?.sector || best?.name || 'Finance';
+  if (leadSectorNoteEl) leadSectorNoteEl.textContent = `Rotasi ${pf(best?.change_pct ?? 1.2)} menjadi konteks sektor utama.`;
   document.getElementById('market-intel').innerHTML = [
     `Breadth: <b>${adv}</b> advancers vs <b>${dec}</b> decliners — ${tapeBias}.`,
     `Leaders: <b>${leadGainer?.ticker || best?.sector || 'N/A'}</b> ${leadGainer ? `(${pf(leadGainer.change_pct ?? 0)})` : `(${pf(best?.change_pct ?? 0)})`} vs <b>${leadLoser?.ticker || 'N/A'}</b> ${leadLoser ? `(${pf(leadLoser.change_pct ?? 0)})` : ''}.`,
