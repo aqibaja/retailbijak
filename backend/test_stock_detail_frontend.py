@@ -180,6 +180,9 @@ def test_stock_detail_adds_catalyst_strip_with_honest_fallback_source():
     assert 'rel="noopener noreferrer"' in src
     assert 'target="_blank"' in src
     assert 'row?.ticker' in src or 'row?.code' in src
+    assert 'scoreCatalystRow' in src
+    assert '.sort((a, b) => b.score - a.score)' in src
+    assert 'symbolUpper' in src
 
 
 def test_screener_shows_guided_empty_state_and_contextual_controls():

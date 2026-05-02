@@ -232,22 +232,39 @@ function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news:/
   return `<div class="stat-tile ${cls}"><span>${label}</span><strong>${title}</strong><small>${body}</small><small><a href="${safeHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a></small></div>`;
 }
 
+function scoreCatalystRow(row, symbolUpper){
+  const haystack = `${row?.ticker || ''} ${row?.code || ''} ${row?.title || ''} ${row?.summary || ''} ${row?.subject || ''}`.toUpperCase();
+  let score = 0;
+  if ((row?.ticker || '').toUpperCase() === symbolUpper) score += 10;
+  if ((row?.code || '').toUpperCase() === symbolUpper) score += 10;
+  if (haystack.includes(symbolUpper)) score += 5;
+  if (row?.link) score += 1;
+  return score;
+}
+
+function rankCatalystRows(rows, symbolUpper){
+  return rows
+    .map((row) => ({ ...row, score: scoreCatalystRow(row, symbolUpper) }))
+    .sort((a, b) => b.score - a.score);
+}
+
 function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const el = document.getElementById('catalyst-strip'); if (!el) return;
-  const newsRows = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
-  const announcementRows = Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [];
-  const relevantNews = newsRows.find((row) => `${row?.ticker || ''} ${row?.code || ''} ${row?.title || ''} ${row?.summary || ''}`.toUpperCase().includes(symbol));
-  const latestAnnouncement = announcementRows.find((row) => `${row?.code || ''} ${row?.title || ''} ${row?.subject || ''}`.toUpperCase().includes(symbol)) || announcementRows[0];
+  const symbolUpper = String(symbol || '').toUpperCase();
+  const newsRows = rankCatalystRows(Array.isArray(newsPayload?.data) ? newsPayload.data : [], symbolUpper);
+  const announcementRows = rankCatalystRows(Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [], symbolUpper);
+  const relevantNews = newsRows[0]?.score > 0 ? newsRows[0] : null;
+  const latestAnnouncement = announcementRows[0]?.score > 0 ? announcementRows[0] : announcementRows[0] || null;
   const newsHref = relevantNews?.link || 'news://pending';
   const annHref = latestAnnouncement?.link || 'news://pending';
   const cards = [
     relevantNews
       ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref)
-      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbol} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref),
+      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbolUpper} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref),
     latestAnnouncement
       ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref)
       : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref),
-    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbol}.`, 'metric-neutral', newsHref),
+    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbolUpper}.`, 'metric-neutral', newsHref),
     catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref),
   ];
   el.innerHTML = cards.join('');

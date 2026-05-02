@@ -32,3 +32,15 @@ def test_top_movers_uses_non_empty_real_ticker_universe():
     data = res.json()
     assert data['count'] > 0
     assert all(row['ticker'] for row in data['data'])
+
+
+def test_company_announcements_include_idx_link_when_available():
+    res = client.get('/api/company-announcements?companyCode=BBCA&limit=2')
+    assert res.status_code == 200
+    data = res.json()
+    assert 'data' in data
+    if data['data']:
+        first = data['data'][0]
+        assert 'link' in first
+        assert first['link']
+        assert first['link'].startswith('http')

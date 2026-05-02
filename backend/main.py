@@ -655,12 +655,23 @@ def get_company_announcements(companyCode: str = "", limit: int = 20):
     if resp.ok and isinstance(resp.data, dict) and isinstance(resp.data.get("Replies"), list):
         for item in resp.data["Replies"][:limit]:
             p = item.get("pengumuman", {})
+            announcement_id = p.get("IdPengumuman") or p.get("PengumumanId") or p.get("id") or p.get("Id")
+            attachment = p.get("AttachmentUrl") or p.get("Url") or p.get("Link") or p.get("Lampiran")
+            if attachment and isinstance(attachment, str) and attachment.startswith('//'):
+                attachment = f"https:{attachment}"
+            idx_link = attachment
+            if not idx_link and announcement_id:
+                idx_link = f"https://www.idx.co.id/id/perusahaan-tercatat/keterbukaan-informasi/?id={announcement_id}"
+            if not idx_link:
+                code = (p.get("Kode_Emiten") or "").strip().upper()
+                idx_link = f"https://www.idx.co.id/id/perusahaan-tercatat/keterbukaan-informasi/?kodeEmiten={code}" if code else "https://www.idx.co.id/id/perusahaan-tercatat/keterbukaan-informasi/"
             rows.append({
                 "code": (p.get("Kode_Emiten") or "").strip(),
                 "title": p.get("JudulPengumuman") or p.get("PerihalPengumuman") or p.get("JenisPengumuman") or "Announcement",
                 "subject": p.get("PerihalPengumuman") or p.get("JenisPengumuman"),
                 "date": p.get("TglPengumuman") or p.get("CreatedDate"),
                 "type": p.get("JenisPengumuman"),
+                "link": idx_link,
                 "source": "idx_announcement",
             })
     return {"count": len(rows), "data": rows, "source": "idx_announcement" if rows else "no_data"}
