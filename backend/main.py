@@ -143,13 +143,10 @@ class PortfolioPayload(BaseModel):
     avg_price: float = Field(gt=0)
 
 
-# --- API ---
-def _sqlite_datetime_literal(value):
-    if value is None:
-        return None
-    if hasattr(value, "strftime"):
-        return value.strftime("%Y-%m-%d %H:%M:%S.%f")
-    return str(value)
+try:
+    from routes.shared_sqlite_helpers import _sqlite_datetime_literal
+except ModuleNotFoundError:
+    from backend.routes.shared_sqlite_helpers import _sqlite_datetime_literal
 
 
 # Mount the entire frontend directory at / to serve static files (js, views, style.css)
