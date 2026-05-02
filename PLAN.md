@@ -184,6 +184,14 @@
 - [done] GREEN verified: `pytest -q tests/test_screener_view_static.py` → lulus; browser QA live `#screener` masih render normal.
 - [done] Commit/push/deploy phase-5 screener polish selesai; no restart needed karena static frontend sync only.
 
+### 2026-05-03 03:05 WIB
+- [done] Start news card polish pass: audit `#news` untuk shell/header, count pill, dan kartu editorial yang lebih padat.
+- [done] TDD RED: tambah static guard untuk `news-page-pro`, `news-head-meta`, `news-count-pill`, `news-card-pro`, `news-card-featured`, `news-status-shell`, dan `news-grid-pro`.
+- [done] Implementasi `frontend/js/views/news.js`: ubah header jadi news brief shell dan kartu berita jadi editorial cards dengan featured item.
+- [done] Implementasi `frontend/style.css`: tambah styling grid/pro card, hero header, fallback image shell, dan responsive stacking untuk news.
+- [done] GREEN verified: `pytest -q tests/test_news_view_static.py` → lulus; browser QA live `#news` masih render normal.
+- [done] Commit/push/deploy phase-6 news polish selesai; no restart needed karena static frontend sync only.
+
 ---
 
 ## Current Slice Notes

@@ -2,19 +2,21 @@ import { fetchNews } from '../api.js?v=20260502a';
 
 export async function renderNews(root) {
     root.innerHTML = `
-      <section class="news-container">
-        <div class="news-header" style="display:flex; justify-content:between; align-items:flex-end; margin-bottom:32px;">
-          <div>
-            <h1 style="font-size: 32px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; letter-spacing:-0.04em;">Market Intelligence</h1>
-            <p style="font-size: 16px; color: var(--text-muted);">Real-time aggregated financial updates</p>
+      <section class="news-container news-page-pro">
+        <div class="news-header">
+          <div class="news-header-copy">
+            <div class="news-kicker">Market Intelligence</div>
+            <h1>Latest News</h1>
+            <p>Ringkasan berita pasar yang dibentuk menjadi kartu editorial ringkas dan mudah discan.</p>
           </div>
-          <div style="height: 36px; background: rgba(99,102,241,0.1); color: #a5b4fc; border:1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 0 16px; font-size: 12px; font-weight: 700; display: flex; align-items: center; letter-spacing:0.05em;" id="news-count">
-            ...
+          <div class="news-head-meta">
+            <div class="news-count-pill" id="news-count">...</div>
+            <div class="news-refresh-note">Auto refresh saat feed berubah.</div>
           </div>
         </div>
         
-        <div id="news-list" class="news-grid">
-            <div id="news-status" style="color:var(--text-main);">Loading intelligence...</div>
+        <div id="news-list" class="news-grid news-grid-pro">
+            <div id="news-status" class="news-status-shell">Loading intelligence...</div>
         </div>
       </section>`;
 
@@ -42,19 +44,19 @@ export async function renderNews(root) {
             }
 
             return `
-                <a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card stagger-reveal" style="transition-delay: ${index * 0.05}s;">
-                    <div class="news-image-wrap" style="display:flex; align-items:center; justify-content:center; background:rgba(99,102,241,0.05); height:140px;">
-                        ${imageUrl ? `<img src="${imageUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:100%; height:100%; object-fit:cover;">` : ''}
-                        <div class="news-image-fallback" style="${imageUrl ? 'display:none;' : 'display:flex;'} align-items:center; justify-content:center; background:rgba(99,102,241,0.05); height:100%; width:100%;">
+                <a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card news-card-pro stagger-reveal ${index === 0 ? 'news-card-featured' : ''}" style="transition-delay: ${index * 0.05}s;">
+                    <div class="news-image-wrap">
+                        ${imageUrl ? `<img src="${imageUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                        <div class="news-image-fallback ${imageUrl ? 'is-hidden' : ''}">
                            <i data-lucide="newspaper" style="width:48px; color:rgba(99,102,241,0.4);"></i>
                         </div>
                     </div>
-                    <div class="news-content" style="padding:24px;">
-                        <span class="news-badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; font-size:10px; font-weight:700; padding:4px 10px; border-radius:6px; margin-bottom:12px; display:inline-block;">${source}</span>
-                        <h3 class="news-title" style="font-size:17px; font-weight:700; color:var(--text-main); margin-bottom:16px; line-height:1.4;">${n.title}</h3>
-                        <div class="news-meta" style="font-size: 13px; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
-                            <span style="font-weight:600;">${source}</span>
-                            <span style="opacity:0.5;">•</span>
+                    <div class="news-content">
+                        <span class="news-badge">${source}</span>
+                        <h3 class="news-title">${n.title}</h3>
+                        <div class="news-meta">
+                            <span class="news-source">${source}</span>
+                            <span class="news-dot">•</span>
                             <span>${time}</span>
                         </div>
                     </div>
