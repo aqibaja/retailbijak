@@ -8,6 +8,8 @@
 
 **Tech Stack:** Vanilla JS SPA, existing design tokens di `frontend/style.css`, FastAPI backend, browser verification, static regression tests di `backend/tests/test_market_view_static.py`.
 
+**Recent progress:** 2026-05-02 — backend stock detail routes (`/api/stocks/{ticker}`, `/analysis`, `/fundamental`, `/technical`, `/chart-data`) dimodularisasi ke `backend/routes/stock_detail.py` dengan guard tests struktur + runtime smoke via main app.
+
 ---
 
 ## 1. Current UX Audit Summary

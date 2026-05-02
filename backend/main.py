@@ -84,11 +84,13 @@ try:
     from routes.system import router as system_router
     from routes.reference import router as reference_router
     from routes.stocks import router as stock_router, _display_ticker, _company_name, _stock_row_from_static
+    from routes.stock_detail import router as stock_detail_router, _ticker_base, _fallback_row_for_ticker
 except ModuleNotFoundError:
     from backend.routes.user import router as user_router
     from backend.routes.system import router as system_router
     from backend.routes.reference import router as reference_router
     from backend.routes.stocks import router as stock_router, _display_ticker, _company_name, _stock_row_from_static
+    from backend.routes.stock_detail import router as stock_detail_router, _ticker_base, _fallback_row_for_ticker
 
 
 @asynccontextmanager
@@ -108,6 +110,7 @@ app.include_router(user_router)
 app.include_router(system_router)
 app.include_router(reference_router)
 app.include_router(stock_router)
+app.include_router(stock_detail_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -286,108 +289,6 @@ def _legacy_top_movers_snapshot(limit: int = 10, db: Session = Depends(get_db)):
         preferred = ["GOTO", "BRPT", "BBCA", "BMRI", "TLKM", "AMMN", "BREN", "ASII", "ANTM", "ADRO"]
         movers = [{**_stock_row_from_static(t, i), "source": "idx_universe"} for i, t in enumerate(preferred)]
     return {"count": len(movers[:limit]), "data": movers[:limit], "source": movers[0].get("source") if movers else "none"}
-
-@app.get("/api/stocks/{ticker}")
-def get_stock(ticker: str, db: Session = Depends(get_db)):
-    base = _ticker_base(ticker)
-    payload = _fallback_row_for_ticker(base, db)
-    if not payload["price"] and not payload["signals"]:
-        return {"ticker": base, "message": "No signals found", "data": payload}
-    return {"ticker": base, "data": payload}
-
-
-def _compute_analysis_metrics_from_ohlcv(db: Session, ticker: str) -> dict[str, Any]:
-    """Compute real analysis metrics (volume_spike, trend_score, volatility_score, breakout) from OHLCV data."""
-    try:
-        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-    except ModuleNotFoundError:
-        from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-
-    candidates = [ticker]
-    if ticker.endswith('.JK'):
-        candidates.append(ticker[:-3])
-    else:
-        candidates.append(f'{ticker}.JK')
-
-    df = get_ohlcv_dataframe(db, ticker, limit=100)
-    if df.empty or len(df) < 20:
-        return {"volume_spike": 1.0, "trend_score": 50, "volatility_score": 50, "breakout": False}
-
-    df = calculate_all_indicators(df)
-    latest = df.iloc[-1]
-    prev = df.iloc[-2] if len(df) > 1 else latest
-
-    close = float(latest['close']) if pd.notna(latest['close']) else 0
-    prev_close = float(prev['close']) if pd.notna(prev['close']) else close
-    volume = float(latest['volume']) if pd.notna(latest['volume']) else 0
-
-    # Volume spike: ratio vs 20-day average
-    vol_sma20 = latest.get('vol_sma_20')
-    if pd.isna(vol_sma20) or vol_sma20 is None or vol_sma20 == 0:
-        vol_sma20 = volume
-    volume_spike = round(volume / vol_sma20, 2) if vol_sma20 else 1.0
-
-    # Trend score: based on price vs SMAs and RSI
-    sma5 = latest.get('sma_5')
-    sma10 = latest.get('sma_10')
-    sma20 = latest.get('sma_20')
-    sma50 = latest.get('sma_50')
-    rsi = latest.get('rsi')
-    trend = 50
-    if pd.notna(sma5) and pd.notna(sma20):
-        if close > sma5 > sma20:
-            trend += 20
-        elif close < sma5 < sma20:
-            trend -= 20
-        elif close > sma20:
-            trend += 10
-        elif close < sma20:
-            trend -= 10
-    if pd.notna(sma50):
-        if close > sma50:
-            trend += 10
-        else:
-            trend -= 10
-    if pd.notna(rsi):
-        trend += (rsi - 50) * 0.3  # RSI tilt
-    trend_score = max(min(int(trend), 100), 0)
-
-    # Volatility score: based on ATR relative to price
-    atr = latest.get('atr')
-    if pd.notna(atr) and close > 0:
-        atr_pct = (atr / close) * 100
-        # Low ATR% = low volatility (30), High ATR% = high volatility (80)
-        vol_score = int(min(max(30 + atr_pct * 5, 0), 100))
-    else:
-        vol_score = 50
-    volatility_score = vol_score
-
-    # Breakout: price above 20-day high or above Bollinger upper band
-    bb_high = latest.get('bb_high')
-    high_20 = df['high'].astype(float).tail(20).max() if len(df) >= 20 else close
-    breakout = bool(close >= high_20 * 0.99 or (pd.notna(bb_high) and close > bb_high))
-
-    return {
-        "volume_spike": volume_spike,
-        "trend_score": trend_score,
-        "volatility_score": volatility_score,
-        "breakout": breakout,
-    }
-
-
-@app.get("/api/stocks/{ticker}/analysis")
-def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
-    try:
-        from backend.services.scanner_engine import analyze_stock
-    except ModuleNotFoundError:
-        from services.scanner_engine import analyze_stock
-
-    row = _fallback_row_for_ticker(ticker, db)
-    metrics = _compute_analysis_metrics_from_ohlcv(db, row["ticker"])
-    row.update(metrics)
-
-    analysis = analyze_stock(row)
-    return _resp_ok(analysis, source="scanner_engine")
 
 
 @app.get("/api/news")
@@ -805,123 +706,6 @@ def get_broker_activity(limit: int = 20, db: Session = Depends(get_db)):
 
     _, derived_rows = _derived_broker_activity_rows(db)
     return {"count": len(derived_rows[:limit]), "data": derived_rows[:limit], "source": "derived" if derived_rows else "no_data"}
-
-@app.get("/api/stocks/{ticker}/fundamental")
-def get_fundamental(ticker: str, db: Session = Depends(get_db)):
-    """API endpoint to get fundamental data for a specific stock"""
-    try:
-        from database import Fundamental
-    except ModuleNotFoundError:
-        from backend.database import Fundamental
-    
-    # Optional: if client passes 'BBCA', we append '.JK'
-    if not ticker.endswith('.JK'):
-        ticker = f"{ticker}.JK"
-        
-    fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker).first()
-    
-    if not fundamental:
-        return {"ticker": ticker, "message": "Fundamental data not found"}
-        
-    return {
-        "ticker": ticker,
-        "data": {
-            "trailing_pe": fundamental.trailing_pe,
-            "forward_pe": fundamental.forward_pe,
-            "price_to_book": fundamental.price_to_book,
-            "trailing_eps": fundamental.trailing_eps,
-            "dividend_yield": fundamental.dividend_yield,
-            "roe": fundamental.roe,
-            "roa": fundamental.roa,
-            "debt_to_equity": fundamental.debt_to_equity,
-            "revenue": fundamental.revenue,
-            "net_income": fundamental.net_income,
-            "free_cashflow": fundamental.free_cashflow,
-            "updated_at": fundamental.updated_at.isoformat() if fundamental.updated_at else None
-        }
-    }
-
-
-@app.get("/api/stocks/{ticker}/technical")
-def get_technical_summary_api(ticker: str, db: Session = Depends(get_db)):
-    """API endpoint to get technical analysis summary (RSI, MACD, etc)"""
-    try:
-        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary, empty_technical_summary
-    except ModuleNotFoundError as exc:
-        empty = {
-            "status": "no_data",
-            "summary": f"Technical engine unavailable: {exc}",
-            "rating": "NO DATA",
-            "score": 50,
-            "indicators": {
-                "rsi": {"value": None, "status": "Insufficient"},
-                "macd": {"macd_line": None, "signal": None, "histogram": None, "status": "Insufficient"},
-                "trend": {"sma_5": None, "sma_10": None, "sma_20": None, "sma_50": None, "sma_200": None, "ema_20": None, "status": "Insufficient"},
-                "bollinger_bands": {"upper": None, "middle": None, "lower": None},
-                "stochastic": {"k": None, "d": None, "status": "Insufficient"},
-                "atr": {"value": None, "status": "Insufficient"},
-                "volume": {"latest": None, "avg_20": None, "ratio": None, "status": "Insufficient"},
-                "support_resistance": {"support_20d": None, "resistance_20d": None},
-            },
-        }
-        return {"ticker": ticker if ticker.endswith('.JK') else f"{ticker}.JK", "status": "no_data", "technical": empty, "message": str(exc)}
-    
-    if not ticker.endswith('.JK'):
-        ticker = f"{ticker}.JK"
-        
-    df = get_ohlcv_dataframe(db, ticker, limit=300) # Need enough data for 200 SMA
-    if df.empty:
-        return {"ticker": ticker, "status": "no_data", "technical": empty_technical_summary()}
-        
-    df_ind = calculate_all_indicators(df)
-    summary = get_technical_summary(df_ind)
-    
-    return {
-        "ticker": ticker,
-        "technical": summary
-    }
-
-
-@app.get("/api/stocks/{ticker}/chart-data")
-def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db)):
-    """API endpoint to get OHLCV and indicators for charting"""
-    try:
-        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-        import numpy as np
-    except ModuleNotFoundError as exc:
-        return {"ticker": ticker if ticker.endswith('.JK') else f"{ticker}.JK", "data": [], "status": "no_data", "message": str(exc)}
-    
-    if not ticker.endswith('.JK'):
-        ticker = f"{ticker}.JK"
-        
-    # We fetch more data to calculate indicators properly, then slice
-    df = get_ohlcv_dataframe(db, ticker, limit=limit + 200)
-    if df.empty:
-        return {"ticker": ticker, "data": []}
-        
-    df_ind = calculate_all_indicators(df)
-    
-    # Slice to requested limit
-    df_ind = df_ind.tail(limit)
-    
-    # Replace NaN with None for JSON serialization
-    df_ind = df_ind.replace({np.nan: None})
-    
-    # Convert index to string
-    df_ind.index = df_ind.index.strftime('%Y-%m-%d')
-    
-    # Reset index so date is a column
-    df_ind = df_ind.reset_index()
-    
-    # Convert to dict records
-    records = df_ind.to_dict('records')
-    
-    return {
-        "ticker": ticker,
-        "count": len(records),
-        "data": records
-    }
-
 
 @app.get("/api/ihsg-chart")
 def get_ihsg_chart(period: str = "1M", db: Session = Depends(get_db)):
