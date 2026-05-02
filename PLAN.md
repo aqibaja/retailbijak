@@ -173,6 +173,8 @@
 - [done] Mulai pass cross-page consistency: audit `#market` dan `#screener` untuk hook editorial hierarchy dan scan-shell compactness.
 - [done] TDD RED: perluasan static guard untuk `market-overview-page`, `market-meta-rail`, `market-session-pill`, `market-data-quality`, `market-row-kicker`, `market-row-meta`, `market-row-value-note`, dan `market-catalyst-title`.
 - [done] Browser QA live awal di `#market`: shell utama, session pill, meta rail, dan data-quality container ada; menunggu refresh penuh untuk isi cards sebelum deploy berikutnya.
+- [done] GREEN verified final market pass: `#market` menampilkan market-content, session pill, data quality, pulse card, grouped internals, flow, dan catalyst sections tanpa console error.
+- [done] Commit/push/deploy phase-4 market consistency selesai; no restart needed karena static frontend sync only.
 
 ---
 

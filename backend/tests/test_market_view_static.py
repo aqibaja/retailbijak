@@ -26,6 +26,8 @@ def test_market_first_fold_uses_session_pill_metadata_rail_and_four_primary_puls
     content = FRONTEND_MARKET_VIEW.read_text()
     assert "market-session-pill" in content
     assert "market-meta-rail" in content
+    assert "market-content" in content
+    assert "market-loading" in content
     assert "Sources:" in content
     assert "Market Mood" in content
     assert "marketMood(" in content
