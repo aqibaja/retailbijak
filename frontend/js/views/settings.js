@@ -3,20 +3,28 @@ import { observeElements } from '../main.js?v=20260502c';
 
 export async function renderSettings(root) {
     root.innerHTML = `
-      <section class="grid grid-cols-12 stagger-reveal">
-        <div class="col-span-12 flex justify-between items-end mb-6">
-          <div>
-            <h1 class="text-3xl mb-2" style="color:var(--text-main); letter-spacing:-0.04em; font-weight:800;">Workspace Controls</h1>
-            <p class="text-base" style="color:var(--text-muted);">Configure data density and interface preferences</p>
+      <section class="settings-page-pro stagger-reveal">
+        <div class="settings-hero">
+          <div class="settings-hero-copy">
+            <div class="settings-meta-pill">SYSTEM SETTINGS</div>
+            <h1>Workspace Controls</h1>
+            <p>Atur densitas data, perilaku refresh, dan preferensi antarmuka dengan shell yang lebih tenang.</p>
           </div>
-          <div class="badge badge-primary">SYSTEM SETTINGS</div>
+          <div class="settings-status-rail">
+            <div class="settings-status-label">Connected</div>
+            <div class="settings-status-value">Local backend sync</div>
+          </div>
         </div>
 
-        <div class="col-span-8 panel flex-col gap-6">
-            <div class="flex-col gap-4" style="border-bottom:1px solid var(--border-subtle); padding-bottom:24px;">
-                <h2 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em;">Interface Engine</h2>
-                
-                <label class="flex justify-between items-center p-4" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:12px; cursor:pointer; transition:background 0.2s;">
+        <div class="settings-layout">
+          <div class="settings-toggle-panel panel flex-col gap-6">
+            <div class="settings-section-head">
+              <h2>Interface Engine</h2>
+              <span>Database-backed controls</span>
+            </div>
+            
+            <div class="settings-toggle-grid">
+                <label class="settings-toggle-card">
                     <div>
                         <div class="strong mb-1 text-main text-base">High-Density Tables</div>
                         <div class="text-sm text-muted">Compress table rows to maximize visible data points.</div>
@@ -24,7 +32,7 @@ export async function renderSettings(root) {
                     <input id="setting-compact" type="checkbox" style="width:18px; height:18px; accent-color:var(--primary-color);" />
                 </label>
                 
-                <label class="flex justify-between items-center p-4" style="background:var(--bg-elevated); border:1px solid var(--border-subtle); border-radius:12px; cursor:pointer; transition:background 0.2s;">
+                <label class="settings-toggle-card">
                     <div>
                         <div class="strong mb-1 text-main text-base">Auto-refresh Scanner</div>
                         <div class="text-sm text-muted">Continuously poll backend for institutional signals when filters change.</div>
@@ -33,25 +41,26 @@ export async function renderSettings(root) {
                 </label>
             </div>
 
-            <div class="flex justify-between items-center pt-2">
-                <span class="text-xs text-dim mono strong" style="letter-spacing:0.05em;">SETTINGS ARE PERSISTED TO DATABASE.</span>
-                <button id="save-settings" class="btn btn-primary" style="height:44px; padding:0 24px;">Save Configuration</button>
+            <div class="settings-actions-row">
+                <span id="settings-status" class="text-xs text-dim mono strong" style="letter-spacing:0.05em;">CONNECTED TO LOCAL BACKEND</span>
+                <button id="save-settings" class="btn btn-primary settings-save-btn">Save Configuration</button>
             </div>
-        </div>
+          </div>
 
-        <div class="col-span-4 panel flex-col gap-4" style="background:linear-gradient(135deg, var(--bg-elevated), rgba(99,102,241,0.05)); border-color:rgba(99,102,241,0.18);">
-            <h2 class="text-xs uppercase strong flex items-center gap-2" style="color:var(--accent-indigo); letter-spacing:0.08em;"><i data-lucide="terminal" style="width:14px;"></i> Terminal Notes</h2>
-            <div class="flex-col gap-3 text-sm text-muted">
-                <div class="p-3" style="background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle); border-left:2px solid var(--accent-indigo); line-height:1.5;">
+          <div class="settings-note-rail panel flex-col gap-4">
+            <h2 class="settings-note-title"><i data-lucide="terminal" style="width:14px;"></i> Terminal Notes</h2>
+            <div class="settings-note-stack">
+                <div class="settings-note-card">
                     <strong style="color:var(--text-main)">CMD+K / CTRL+K</strong> triggers the command palette from anywhere for rapid ticker lookup.
                 </div>
-                <div class="p-3" style="background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle); line-height:1.5;">
+                <div class="settings-note-card">
                     Theme adapts automatically. Manual override is available in the top right corner.
                 </div>
-                <div class="p-3" style="background:var(--bg-elevated); border-radius:12px; border:1px solid var(--border-subtle); line-height:1.5;">
+                <div class="settings-note-card">
                     Scanner results are delayed by 15 minutes unless connected to a Pro data feed.
                 </div>
             </div>
+          </div>
         </div>
       </section>
     `;
