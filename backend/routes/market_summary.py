@@ -13,46 +13,13 @@ except ModuleNotFoundError:
     from backend.database import OHLCVDaily, Stock, UserSetting, get_db
 
 try:
-    from routes.shared_market_summary_helpers import _parse_sector_snapshot_payload
+    from routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
 except ModuleNotFoundError:
-    from backend.routes.shared_market_summary_helpers import _parse_sector_snapshot_payload
+    from backend.routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
 
 router = APIRouter()
 
 
-def _load_period_for_ihsg(db: Session, period_key: str):
-    setting = db.query(UserSetting).filter(UserSetting.key == period_key).first()
-    if not (setting and setting.value):
-        return None
-    data = json.loads(setting.value)
-    chart_data = data.get('ChartData', [])
-    points = []
-    for pt in chart_data:
-        ts = pt.get('Date', 0)
-        if ts:
-            dt = datetime.fromtimestamp(ts / 1000)
-            points.append({'date': dt.strftime('%Y-%m-%d'), 'value': pt.get('Close')})
-    return {
-        'period': period_key.rsplit('_', 1)[-1],
-        'index_code': data.get('IndexCode', 'COMPOSITE'),
-        'open_price': data.get('OpenPrice'),
-        'max_price': data.get('MaxPrice'),
-        'min_price': data.get('MinPrice'),
-        'count': len(points),
-        'data': points,
-        'source': 'idx_cached',
-    }
-
-
-def _safe_pct(latest_close, prev_close):
-    try:
-        latest_close = float(latest_close)
-        prev_close = float(prev_close)
-        if prev_close == 0:
-            return None
-        return ((latest_close - prev_close) / prev_close) * 100.0
-    except Exception:
-        return None
 
 
 @router.get('/api/ihsg-chart')
@@ -71,7 +38,7 @@ def get_ihsg_chart(period: str = '1M', db: Session = Depends(get_db)):
         return payload
 
     if period == '1W':
-        fallback = _load_period('idx_ihsg_chart_1M')
+        fallback = _load_period_for_ihsg(db, 'idx_ihsg_chart_1M')
         if fallback and fallback.get('data'):
             fallback['data'] = fallback['data'][-7:]
             fallback['count'] = len(fallback['data'])
