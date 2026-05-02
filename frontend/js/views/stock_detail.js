@@ -227,9 +227,10 @@ function renderBelowChartFill(candles, tech){
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
 
-function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news://pending'){
+function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news://pending', meta = ''){
   const safeHref = href || 'news://pending';
-  return `<div class="stat-tile ${cls}"><span>${label}</span><strong>${title}</strong><small>${body}</small><small><a href="${safeHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a></small></div>`;
+  const cardHref = safeHref;
+  return `<div class="stat-tile ${cls}" style="position:relative"><span>${label}</span><strong>${title}</strong><small>${body}</small><small>${meta || `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`}</small><a class="stretched-link" href="${cardHref}" target="_blank" rel="noopener noreferrer" aria-label="Open catalyst source"></a></div>`;
 }
 
 function scoreCatalystRow(row, symbolUpper){
@@ -248,6 +249,19 @@ function rankCatalystRows(rows, symbolUpper){
     .sort((a, b) => b.score - a.score);
 }
 
+function formatRelativeCatalystTime(value){
+  if (!value) return 'source live';
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return 'source live';
+  const diffMs = Date.now() - dt.getTime();
+  const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+  if (diffMin < 60) return `${diffMin || 1}m lalu`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}j lalu`;
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay}h lalu`;
+}
+
 function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const el = document.getElementById('catalyst-strip'); if (!el) return;
   const symbolUpper = String(symbol || '').toUpperCase();
@@ -257,15 +271,17 @@ function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const latestAnnouncement = announcementRows[0]?.score > 0 ? announcementRows[0] : announcementRows[0] || null;
   const newsHref = relevantNews?.link || 'news://pending';
   const annHref = latestAnnouncement?.link || 'news://pending';
+  const newsMeta = `${formatRelativeCatalystTime(relevantNews?.published_at)} · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`;
+  const annMeta = `${formatRelativeCatalystTime(latestAnnouncement?.date)} · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`;
   const cards = [
     relevantNews
-      ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref)
-      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbolUpper} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref),
+      ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref, newsMeta)
+      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbolUpper} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref, newsMeta),
     latestAnnouncement
-      ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref)
-      : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref),
-    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbolUpper}.`, 'metric-neutral', newsHref),
-    catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref),
+      ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref, annMeta)
+      : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, annMeta),
+    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbolUpper}.`, 'metric-neutral', newsHref, `Bias monitoring · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`),
+    catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, `Source map · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`),
   ];
   el.innerHTML = cards.join('');
 }
