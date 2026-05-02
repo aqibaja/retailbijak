@@ -88,3 +88,20 @@ def test_dashboard_mobile_polkish_hooks_present_for_compact_first_fold():
     assert '.dash-mobile-shell' in style
     assert '.dash-bottom-grid-mobile' in style
     assert '.dash-grid-pro' in style
+
+
+def test_market_overview_keeps_editorial_hierarchy_hooks():
+    content = Path('/home/rich27/retailbijak/frontend/js/views/market.js').read_text()
+    style = FRONTEND_STYLE.read_text()
+    assert 'market-overview-page' in content
+    assert 'market-meta-rail' in content
+    assert 'market-session-pill' in content
+    assert 'market-data-quality' in content
+    assert 'market-row-kicker' in content
+    assert 'market-row-meta' in content
+    assert 'market-row-value-note' in content
+    assert 'market-catalyst-title' in content
+    assert 'market-card-feed' in style
+    assert 'market-row-kicker' in style
+    assert 'market-catalyst-title' in style
+    assert 'market-card-hero' in style

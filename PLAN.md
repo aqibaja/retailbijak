@@ -169,14 +169,18 @@
 - [done] Trim noise top ticker lagi dengan mengecilkan source sampling menjadi 4 mover unik agar header tidak terlalu kompetitif di first fold.
 - [done] Browser QA live tetap sehat setelah trim, lalu siapkan sync/deploy ulang untuk asset frontend yang berubah.
 
+### 2026-05-03 02:35 WIB
+- [done] Mulai pass cross-page consistency: audit `#market` dan `#screener` untuk hook editorial hierarchy dan scan-shell compactness.
+- [done] TDD RED: perluasan static guard untuk `market-overview-page`, `market-meta-rail`, `market-session-pill`, `market-data-quality`, `market-row-kicker`, `market-row-meta`, `market-row-value-note`, dan `market-catalyst-title`.
+- [done] Browser QA live awal di `#market`: shell utama, session pill, meta rail, dan data-quality container ada; menunggu refresh penuh untuk isi cards sebelum deploy berikutnya.
+
 ---
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 3 density + ticker trim complete.
+**Slice aktif sekarang:** Phase 4 cross-page consistency (market/screener) in progress.
 
 **Target patch minimum untuk slice berikutnya:**
-1. mobile-first dashboard pass lebih agresif,
-2. cross-page consistency ke market/screener card shell,
-3. compact news cards di mobile,
-4. ulangi verify + push + deploy.
+1. market editorial hierarchy hooks,
+2. screener compact toolbar / empty state polish,
+3. rerun verify + push + deploy.
