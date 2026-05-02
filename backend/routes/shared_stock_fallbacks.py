@@ -12,6 +12,11 @@ def _ticker_base(ticker: str) -> str:
     return ticker.upper().replace('.JK', '').strip()
 
 
+def _ticker_with_suffix(ticker: str) -> str:
+    base = _ticker_base(ticker)
+    return f'{base}.JK' if base else '.JK'
+
+
 def _fallback_row_for_ticker(ticker: str, db: Session) -> dict:
     base = _ticker_base(ticker)
     stock = db.query(Stock).filter(Stock.ticker == base).first()

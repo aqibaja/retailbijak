@@ -24,3 +24,5 @@ def test_stock_detail_routes_exist_in_module():
         '/api/stocks/{ticker}/chart-data',
     ]:
         assert route in src
+    assert "if not ticker.endswith('.JK'):" not in src
+    assert "ticker = f'{ticker}.JK'" not in src

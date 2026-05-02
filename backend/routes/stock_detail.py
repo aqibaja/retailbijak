@@ -12,9 +12,9 @@ except ModuleNotFoundError:
     from backend.database import Fundamental, OHLCVDaily, Signal, Stock, get_db
 
 try:
-    from routes.shared_stock_fallbacks import _ticker_base, _fallback_row_for_ticker
+    from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
 except ModuleNotFoundError:
-    from backend.routes.shared_stock_fallbacks import _ticker_base, _fallback_row_for_ticker
+    from backend.routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
 
 try:
     from routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv
@@ -54,8 +54,7 @@ def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
 
 @router.get('/api/stocks/{ticker}/fundamental')
 def get_fundamental(ticker: str, db: Session = Depends(get_db)):
-    if not ticker.endswith('.JK'):
-        ticker = f'{ticker}.JK'
+    ticker = _ticker_with_suffix(ticker)
 
     fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker).first()
     if not fundamental:
@@ -101,10 +100,9 @@ def get_technical_summary_api(ticker: str, db: Session = Depends(get_db)):
                 'support_resistance': {'support_20d': None, 'resistance_20d': None},
             },
         }
-        return {'ticker': ticker if ticker.endswith('.JK') else f'{ticker}.JK', 'status': 'no_data', 'technical': empty, 'message': str(exc)}
+        return {'ticker': _ticker_with_suffix(ticker), 'status': 'no_data', 'technical': empty, 'message': str(exc)}
 
-    if not ticker.endswith('.JK'):
-        ticker = f'{ticker}.JK'
+    ticker = _ticker_with_suffix(ticker)
 
     df = get_ohlcv_dataframe(db, ticker, limit=300)
     if df.empty:
@@ -121,10 +119,9 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
         from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
         import numpy as np
     except ModuleNotFoundError as exc:
-        return {'ticker': ticker, 'status': 'no_data', 'message': str(exc), 'data': []}
+        return {'ticker': _ticker_with_suffix(ticker), 'status': 'no_data', 'message': str(exc), 'data': []}
 
-    if not ticker.endswith('.JK'):
-        ticker = f'{ticker}.JK'
+    ticker = _ticker_with_suffix(ticker)
 
     limit = max(20, min(int(limit), 400))
     df = get_ohlcv_dataframe(db, ticker, limit=limit)
@@ -134,8 +131,9 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
     df = calculate_all_indicators(df)
     records = []
     for _, row in df.tail(limit).iterrows():
+        row_date = row.get('date', row.name)
         records.append({
-            'date': row['date'].isoformat() if hasattr(row['date'], 'isoformat') else str(row['date']),
+            'date': row_date.isoformat() if hasattr(row_date, 'isoformat') else str(row_date),
             'open': float(row['open']) if pd.notna(row['open']) else None,
             'high': float(row['high']) if pd.notna(row['high']) else None,
             'low': float(row['low']) if pd.notna(row['low']) else None,
@@ -150,8 +148,7 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
 
 @router.get('/api/stocks/{ticker}/signals')
 def get_signals(ticker: str, timeframe: str = '1d', db: Session = Depends(get_db)):
-    if not ticker.endswith('.JK'):
-        ticker = f'{ticker}.JK'
+    ticker = _ticker_with_suffix(ticker)
 
     signals = db.query(Signal).filter(Signal.ticker == ticker.replace('.JK', ''), Signal.timeframe == timeframe).order_by(Signal.signal_date.desc()).limit(20).all()
     data = []

@@ -7,6 +7,7 @@ STOCK_DETAIL = ROOT / 'backend/routes/stock_detail.py'
 
 HELPERS = [
     'def _ticker_base(',
+    'def _ticker_with_suffix(',
     'def _fallback_row_for_ticker(',
 ]
 
@@ -28,4 +29,4 @@ def test_shared_stock_fallback_helpers_exist_in_module_and_stock_detail_imports_
     stock_detail_src = STOCK_DETAIL.read_text(encoding='utf-8')
     for helper in HELPERS:
         assert helper in module_src
-    assert 'from routes.shared_stock_fallbacks import _ticker_base, _fallback_row_for_ticker' in stock_detail_src or 'from backend.routes.shared_stock_fallbacks import _ticker_base, _fallback_row_for_ticker' in stock_detail_src
+    assert 'from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker' in stock_detail_src or 'from backend.routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker' in stock_detail_src
