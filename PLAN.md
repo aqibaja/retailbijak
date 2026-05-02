@@ -134,7 +134,9 @@
 - [done] Deploy frontend: `frontend/js/views/market.js` dan `frontend/style.css` disalin ke `/opt/swingaq/frontend/...`; browser QA live mengonfirmasi `4` pulse tiles, `2` list-card heads, dan `market-breadth-card` tampil.
 - [done] Phase 3 flow/catalyst refinement: row foreign flow + broker kini punya kicker/meta/value note yang lebih editorial, card feed diberi hierarchy lebih rapi, dan judul catalyst dipisah dari metadata.
 - [done] Verifikasi ulang phase 3: `pytest -q backend/tests/test_market_view_static.py` → `6 passed`; `python -m compileall -q frontend/js` → pass.
-- [in_progress] Menyiapkan phase 4: mobile-first polish, lalu push + deploy.
+- [done] Git: commit `98d279a` (`refine market overview feed sections`) sudah di-push ke `origin/main`.
+- [done] Deploy ulang frontend: runtime live sekarang mengonfirmasi `4` pulse tiles, `4` feed cards, `8` catalyst titles, dan `8` value notes.
+- [in_progress] Menyiapkan phase 4: mobile-first polish.
 
 ---
 
