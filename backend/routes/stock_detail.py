@@ -17,9 +17,9 @@ except ModuleNotFoundError:
     from backend.routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
 
 try:
-    from routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv
+    from routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv, _serialize_signal_rows
 except ModuleNotFoundError:
-    from backend.routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv
+    from backend.routes.shared_stock_detail_helpers import _compute_analysis_metrics_from_ohlcv, _serialize_signal_rows
 
 try:
     from services.idx_response_factory import ok as _resp_ok
@@ -152,17 +152,5 @@ def get_signals(ticker: str, timeframe: str = '1d', db: Session = Depends(get_db
     ticker = _ticker_with_suffix(ticker)
 
     signals = db.query(Signal).filter(Signal.ticker == base, Signal.timeframe == timeframe).order_by(Signal.signal_date.desc()).limit(20).all()
-    data = []
-    for signal in signals:
-        data.append({
-            'ticker': signal.ticker,
-            'timeframe': signal.timeframe,
-            'signal_type': signal.signal_type,
-            'signal_date': signal.signal_date.isoformat() if signal.signal_date else None,
-            'price': signal.price,
-            'entry_price': signal.entry_price,
-            'target_price': signal.target_price,
-            'stop_loss': signal.stop_loss,
-            'rationale': signal.rationale,
-        })
+    data = _serialize_signal_rows(signals)
     return {'ticker': ticker, 'count': len(data), 'data': data}

@@ -6,6 +6,23 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 
+def _serialize_signal_rows(signals) -> list[dict[str, Any]]:
+    data: list[dict[str, Any]] = []
+    for signal in signals:
+        data.append({
+            'ticker': signal.ticker,
+            'timeframe': signal.timeframe,
+            'signal_type': signal.signal_type,
+            'signal_date': signal.signal_date.isoformat() if signal.signal_date else None,
+            'price': signal.price,
+            'entry_price': signal.entry_price,
+            'target_price': signal.target_price,
+            'stop_loss': signal.stop_loss,
+            'rationale': signal.rationale,
+        })
+    return data
+
+
 def _compute_analysis_metrics_from_ohlcv(db: Session, ticker: str) -> dict[str, Any]:
     try:
         from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators

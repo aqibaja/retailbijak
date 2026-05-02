@@ -10,6 +10,7 @@ def test_stock_detail_routes_still_work_via_main_app():
         '/api/stocks/BBCA/technical',
         '/api/stocks/BBCA/chart-data?limit=5',
         '/api/stocks/BBCA/analysis',
+        '/api/stocks/BBCA/signals',
     ]
     with TestClient(app) as client:
         responses = [client.get(url) for url in endpoints]
