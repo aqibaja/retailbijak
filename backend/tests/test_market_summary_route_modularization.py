@@ -11,6 +11,8 @@ ROUTES = [
 ]
 
 HELPERS = [
+    'def _load_period_for_ihsg(',
+    'def _safe_pct(',
     'def _parse_sector_snapshot_payload(',
 ]
 
@@ -27,5 +29,8 @@ def test_market_summary_routes_and_helpers_exist_in_module():
     src = SUMMARY.read_text(encoding='utf-8')
     for route in ROUTES:
         assert route in src
+    assert 'def get_ihsg_chart(' in src
+    assert 'def get_market_summary(' in src
+    assert 'def get_sector_summary(' in src
     for helper in HELPERS:
-        assert helper in src
+        assert helper not in src

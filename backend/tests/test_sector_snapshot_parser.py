@@ -1,4 +1,4 @@
-from backend.routes.market_summary import _parse_sector_snapshot_payload
+from backend.routes.shared_market_summary_helpers import _parse_sector_snapshot_payload
 
 
 def test_parse_sector_snapshot_prefers_seriesdata_y_values():
