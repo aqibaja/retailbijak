@@ -1,5 +1,5 @@
-import { handleRoute } from './router.js?v=20260503a';
-import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260503a';
+import { handleRoute } from './router.js?v=20260503b';
+import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260503b';
 import { initTheme } from './theme.js?v=20260430n';
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {
@@ -209,9 +209,9 @@ async function refreshTopbarMarket() {
 async function setupRunningTicker() {
    const tickerContainer = document.getElementById('running-ticker');
    if (!tickerContainer) return;
-   const res = await fetchTopMovers(10);
-   const rows = Array.isArray(res?.data) && res.data.length ? res.data : [];
-   const tickerItems = [...rows, ...rows];
+   const res = await fetchTopMovers(6);
+  const rows = Array.isArray(res?.data) && res.data.length ? res.data.slice(0, 6) : [];
+  const tickerItems = [...rows, ...rows];
    tickerContainer.innerHTML = tickerItems.map(item => {
        const change = Number(item.change_pct ?? item.change ?? 0);
        const price = item.price == null ? '—' : Number(item.price).toLocaleString('id-ID', { maximumFractionDigits: 0 });

@@ -37,6 +37,19 @@ def test_dashboard_phase2_adds_chart_context_and_movers_summary_hooks():
     assert 'dash-mover-row' in content
 
 
+def test_dashboard_phase3_compacts_hero_and_first_fold_density_hooks():
+    dashboard = FRONTEND_DASHBOARD_VIEW.read_text()
+    style = FRONTEND_STYLE.read_text()
+    assert 'dash-hero-lead' in dashboard
+    assert 'dash-summary-strip dash-summary-strip-compact' in dashboard
+    assert 'dash-actions dash-actions-compact' in dashboard
+    assert 'dash-density-note' in dashboard
+    assert '.dash-hero-lead{' in style
+    assert '.dash-summary-strip-compact{' in style
+    assert '.dash-actions-compact{' in style
+    assert '.dash-density-note{' in style
+
+
 def test_dashboard_styles_define_summary_strip_widget_state_and_phase2_editorial_system():
     content = FRONTEND_STYLE.read_text()
     assert '.dash-hero-note{' in content

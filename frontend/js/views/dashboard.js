@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260503a';
-import { observeElements, animateValue } from '../main.js?v=20260503a';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260503b';
+import { observeElements, animateValue } from '../main.js?v=20260503b';
 
 const SUGGESTION_PRESETS = [
   { ticker: 'BBCA', reason: 'Relative strength bertahan di atas pivot harian.' },
@@ -32,10 +32,11 @@ export async function renderDashboard(root) {
       <div class="dash-copy">
         <div class="screener-kicker">IDX LIVE WORKSPACE</div>
         <h1>Dashboard Market Intelligence</h1>
-        <p>Pantau IHSG, breadth, top movers, dan ide cepat dalam satu layar trading yang padat.</p>
+        <p class="dash-hero-lead">Pantau IHSG, breadth, top movers, dan ide cepat dalam satu layar trading yang padat.</p>
         <div class="dash-hero-note">Satu glance untuk baca bias tape, kualitas data, dan jalur aksi tercepat sebelum masuk ke scanner.</div>
-        <div class="dash-actions"><a href="#screener" class="btn btn-primary dash-primary-cta">Run Scanner</a><a href="#market" class="btn dash-secondary-cta">Market Overview</a></div>
-        <div class="dash-summary-strip">
+        <div class="dash-actions dash-actions-compact"><a href="#screener" class="btn btn-primary dash-primary-cta">Run Scanner</a><a href="#market" class="btn dash-secondary-cta">Market Overview</a></div>
+        <div class="dash-density-note">Mode briefing padat: lebih sedikit noise di top fold, lebih cepat masuk ke chart dan movers.</div>
+        <div class="dash-summary-strip dash-summary-strip-compact">
           <div class="dash-summary-card">
             <span>Market Bias</span>
             <strong id="dash-bias-label">Loading...</strong>

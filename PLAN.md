@@ -1,6 +1,6 @@
 # Dashboard First-Fold Polish Plan
 
-> **Execution status:** phase-1 first-fold clarity & widget-state system **DONE** · phase-2 deeper dashboard regrouping **PLANNED** · phase-3 verification/deploy **DONE**
+> **Execution status:** phase-1 first-fold clarity & widget-state system **DONE** · phase-2 deeper dashboard regrouping **DONE** · phase-3 first-fold density + ticker-noise trim **DONE** · phase-4 verification/deploy **DONE**
 
 **Goal:** memoles route `#dashboard` supaya first fold lebih fokus, trust/freshness lebih jelas, dan widget loading state terasa profesional tanpa redesign besar yang berisiko.
 
@@ -85,7 +85,26 @@
 - Bottom grid terasa lebih editorial dan tidak datar.
 - Static guard phase-2 lulus.
 
-### Phase 3 — Verification, deploy, git hygiene
+### Phase 3 — First-fold density + ticker-noise trim
+**Objective:** compress desktop top fold, reduce ticker competition, dan dorong chart/movers lebih cepat masuk first glance.
+
+**Checklist:**
+- [x] Tulis failing static guards untuk compact hero density hooks.
+- [x] Tambah `dash-hero-lead`, `dash-actions-compact`, `dash-density-note`, dan compact summary strip.
+- [x] Trim spacing hero/quote/chart agar first fold lebih padat namun tetap terbaca.
+- [x] Kurangi noise running ticker dengan item lebih sedikit.
+- [x] Jalankan pytest static guard.
+- [x] Jalankan compile check frontend.
+- [x] Browser QA live.
+- [x] Update `PLAN.md`.
+
+**Acceptance criteria:**
+- Hero lebih ringkas dan tidak terasa seperti landing page.
+- Ticker atas tidak terlalu dominan.
+- Chart/movers naik prioritas visual di first fold.
+- Static guard phase-3 lulus.
+
+### Phase 4 — Verification, deploy, git hygiene
 **Objective:** verifikasi live, sync runtime, commit, push, deploy notes.
 
 **Checklist:**
@@ -128,12 +147,25 @@
 
 ---
 
+### 2026-05-03 01:45 WIB
+- [done] Audit phase-2 live dashboard: issue terbesar berikutnya bukan fitur baru, tetapi signal competition di top fold (ticker terlalu ramai, hero terlalu tinggi, chart/movers kalah first glance).
+- [done] TDD RED phase-3: tambah static guard compact hooks untuk `dash-hero-lead`, `dash-actions-compact`, `dash-density-note`, dan `dash-summary-strip-compact`.
+- [done] Implementasi `frontend/js/views/dashboard.js`: hero copy dipadatkan, CTA jadi mode compact, tambah density note, dan compact summary strip.
+- [done] Implementasi `frontend/style.css`: kurangi spacing hero/quote/chart, kecilkan summary card density, rebalance chart+movers height, dan rapikan first fold desktop.
+- [done] Implementasi `frontend/js/main.js`: trim running ticker jadi 6 item agar topbar tidak terlalu noisy.
+- [done] GREEN verified: `pytest -q backend/tests/test_dashboard_view_static.py` → `5 passed`; `python -m compileall -q frontend/js` → pass.
+- [done] Cache-bust phase-3: bump `frontend/index.html`, `frontend/js/main.js`, `frontend/js/router.js`, dan dashboard imports ke `20260503b`.
+- [done] Deploy runtime phase-3: sync `index.html`, `main.js`, `router.js`, `dashboard.js`, `style.css`, dan static test ke `/opt/swingaq/...` tanpa restart karena hanya aset frontend.
+- [done] Browser QA live phase-3: `main.js?v=20260503b` termuat, compact hero hooks aktif, running ticker turun menjadi 12 rendered cards (6 unik x duplikasi scroll), dan chart area tetap tampil di first fold.
+
+---
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 2 dashboard regrouping complete.
+**Slice aktif sekarang:** Phase 3 density + ticker trim complete.
 
 **Target patch minimum untuk slice berikutnya:**
-1. compact ticker noise / desktop spacing,
-2. mobile-first dashboard pass lebih agresif,
-3. cross-page consistency ke market/screener,
+1. mobile-first dashboard pass lebih agresif,
+2. cross-page consistency ke market/screener card shell,
+3. compact news cards di mobile,
 4. ulangi verify + push + deploy.
