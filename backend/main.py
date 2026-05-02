@@ -6,19 +6,15 @@ Referensi: planning/API_SPEC.md
 """
 
 from pathlib import Path
-import json
-import time
 from typing import Any
-import pandas as pd
 from collections import defaultdict
 from datetime import datetime, date
-import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -32,7 +28,6 @@ try:
     from database import (
         Base,
         engine,
-        SessionLocal,
         Signal,
         Stock,
         Fundamental,
@@ -47,7 +42,6 @@ except ModuleNotFoundError:
     from backend.database import (
         Base,
         engine,
-        SessionLocal,
         Signal,
         Stock,
         Fundamental,
@@ -58,14 +52,6 @@ except ModuleNotFoundError:
         PortfolioPosition,
         get_db,
     )
-try:
-    from indicators import compute_swingaq_signals
-except ModuleNotFoundError:
-    from backend.indicators import compute_swingaq_signals
-try:
-    from indicators_extended import get_ohlcv_dataframe
-except ModuleNotFoundError:
-    from backend.indicators_extended import get_ohlcv_dataframe
 try:
     from scheduler import init_scheduler, scheduler
 except ModuleNotFoundError:
@@ -88,6 +74,7 @@ try:
     from routes.market import router as market_router
     from routes.market_summary import router as market_summary_router
     from routes.news import router as news_router
+    from routes.scanner_stream import router as scanner_stream_router
 except ModuleNotFoundError:
     from backend.routes.user import router as user_router
     from backend.routes.system import router as system_router
@@ -97,6 +84,7 @@ except ModuleNotFoundError:
     from backend.routes.market import router as market_router
     from backend.routes.market_summary import router as market_summary_router
     from backend.routes.news import router as news_router
+    from backend.routes.scanner_stream import router as scanner_stream_router
 
 
 @asynccontextmanager
@@ -120,6 +108,7 @@ app.include_router(stock_detail_router)
 app.include_router(market_router)
 app.include_router(market_summary_router)
 app.include_router(news_router)
+app.include_router(scanner_stream_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -155,83 +144,6 @@ class PortfolioPayload(BaseModel):
 
 
 # --- API ---
-async def scan_all_db_generator(timeframe: str, rule: str | None = None):
-    db = SessionLocal()
-    try:
-        tickers = get_all_tickers()
-        total = len(tickers)
-        start_time = time.time()
-        yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
-
-        signals_found = 0
-        total_scanned = 0
-        total_skipped = 0
-
-        for i, ticker in enumerate(tickers):
-            total_scanned += 1
-            yield f"data: {json.dumps({'type': 'progress', 'current': i + 1, 'total': total, 'ticker': ticker, 'percent': round((i + 1) / total * 100, 2), 'rule': 'SwingAQ'})}\n\n"
-
-            df = get_ohlcv_dataframe(db, ticker, limit=100)
-            if df.empty or len(df) < 20:
-                total_skipped += 1
-                await asyncio.sleep(0.001)
-                continue
-
-            # Rename columns to match indicators.py expected case ['Open', 'High', 'Low', 'Close', 'Volume']
-            df.columns = [c.capitalize() for c in df.columns]
-            
-            df_sig = compute_swingaq_signals(df)
-            latest = df_sig.iloc[-1]
-            
-            # Check for buy signal only
-            signal_type = None
-            if latest['buy_signal']: 
-                signal_type = 'BUY'
-            
-            if signal_type:
-                close = float(latest['Close'])
-                sl = float(latest['sl']) if not pd.isna(latest['sl']) else close * 0.95
-                
-                result = {
-                    'ticker': ticker,
-                    'name': get_ticker_display(ticker),
-                    'timeframe': timeframe,
-                    'rule': 'SwingAQ (PineScript)',
-                    'reason': f"Signal {signal_type} Detected",
-                    'date': latest.name.strftime('%Y-%m-%d'),
-                    'close': round(close, 2),
-                    'entry': round(close, 2),
-                    'target': round(close * 1.05, 2),
-                    'stop_loss': round(sl, 2),
-                    'sl_pct': round((1 - sl/close) * 100, 2) if close else 0,
-                    'magic_line': round(float(latest['magic_line']), 2),
-                    'cci': round(float(latest['cci']), 2),
-                    'volume_spike': round(float(latest.get('volume_spike', 0)), 2),
-                    'signal': signal_type
-                }
-                signals_found += 1
-                yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"
-            
-            await asyncio.sleep(0.001)
-
-        duration = round(time.time() - start_time, 1)
-        yield f"data: {json.dumps({'type': 'done', 'total_signals': signals_found, 'total_scanned': total_scanned, 'total_skipped': total_skipped, 'duration_seconds': duration, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)'})}\n\n"
-    finally:
-        db.close()
-
-
-@app.get("/api/scan")
-async def scan(timeframe: str = "1d", rule: str | None = None):
-    if timeframe not in VALID_TIMEFRAMES:
-        raise HTTPException(400, f"Invalid timeframe. Valid: {VALID_TIMEFRAMES}")
-
-    return StreamingResponse(
-        scan_all_db_generator(timeframe, rule=rule),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
 def _ticker_base(ticker: str) -> str:
     return ticker.upper().replace('.JK', '').strip()
 
