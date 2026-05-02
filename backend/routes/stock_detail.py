@@ -148,9 +148,10 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
 
 @router.get('/api/stocks/{ticker}/signals')
 def get_signals(ticker: str, timeframe: str = '1d', db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
     ticker = _ticker_with_suffix(ticker)
 
-    signals = db.query(Signal).filter(Signal.ticker == ticker.replace('.JK', ''), Signal.timeframe == timeframe).order_by(Signal.signal_date.desc()).limit(20).all()
+    signals = db.query(Signal).filter(Signal.ticker == base, Signal.timeframe == timeframe).order_by(Signal.signal_date.desc()).limit(20).all()
     data = []
     for signal in signals:
         data.append({

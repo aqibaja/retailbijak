@@ -11,6 +11,12 @@ HELPERS = [
     'def _fallback_row_for_ticker(',
 ]
 
+USAGE_MARKERS = [
+    '_ticker_base(',
+    '_ticker_with_suffix(',
+    '_fallback_row_for_ticker(',
+]
+
 DEAD_LEGACY = [
     'COMPANY_NAMES = {',
     'SECTOR_HINTS = {',
@@ -30,3 +36,4 @@ def test_shared_stock_fallback_helpers_exist_in_module_and_stock_detail_imports_
     for helper in HELPERS:
         assert helper in module_src
     assert 'from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker' in stock_detail_src or 'from backend.routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker' in stock_detail_src
+    assert "ticker.replace('.JK', '')" not in stock_detail_src

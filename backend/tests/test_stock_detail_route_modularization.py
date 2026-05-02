@@ -26,3 +26,4 @@ def test_stock_detail_routes_exist_in_module():
         assert route in src
     assert "if not ticker.endswith('.JK'):" not in src
     assert "ticker = f'{ticker}.JK'" not in src
+    assert "ticker.replace('.JK', '')" not in src
