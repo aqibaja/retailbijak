@@ -72,6 +72,7 @@ sudo systemctl status swingaq-backend
 - **Binary/service**: `/opt/swingaq/backend/venv/bin/uvicorn main:app ... --workers 1`
 - **Unit file**: `/etc/systemd/system/swingaq-backend.service`
 - **Deploy script**: `cp` file dari repo kerja → `/opt/swingaq/` lalu restart service.
+- **Catatan sync frontend**: folder `/opt/swingaq/frontend/js/views` harus dibersihkan dulu sebelum copy agar tidak menghasilkan nested path `views/views` yang bisa bikin parity checker salah target.
 - **DB**: `swingaq.db` di `/opt/swingaq/backend/` dan bisa juga di repo kerja.
 - **User service**: `rich27`
 

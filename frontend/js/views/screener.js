@@ -1,12 +1,18 @@
 import { getScanEventSourceUrl, showToast } from '../api.js?v=20260502a';
 import { observeElements } from '../main.js?v=20260502c';
 
-const renderEmptyState = (msg = "Ready to Scan") => `
+const renderEmptyState = ({
+  title = 'Belum ada hasil scan',
+  body = 'Pilih timeframe di panel kiri lalu klik Run Institutional Scan untuk melihat sinyal beli institusional secara live.',
+  action = 'Sorting tersedia setelah hasil scan muncul.',
+} = {}) => `
   <div class="scanner-empty">
     <div class="scanner-empty-icon">
       <i data-lucide="radar" style="width:32px; height:32px;"></i>
     </div>
-    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">${msg}</h3>
+    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">${title}</h3>
+    <p class="scanner-empty-copy">${body}</p>
+    <p class="scanner-empty-hint">${action}</p>
   </div>
 `;
 
@@ -66,7 +72,8 @@ export async function renderScreener(root) {
           <div class="scanner-form flex-col" style="gap:20px;">
             <div class="scanner-header-text">CONFIGURATION</div>
             <select id="screener-tf" class="scanner-select"><option value="1d">Daily (1D)</option></select>
-            <button id="btn-run-screener" class="scanner-btn-primary">EXECUTE SCAN</button>
+            <p class="scanner-form-note">Run Institutional Scan untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
+            <button id="btn-run-screener" class="scanner-btn-primary">Run Institutional Scan</button>
             <div id="screener-progress" style="display:none;" class="panel-lite p-4">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Analysing...</span><span id="sp-percent">0%</span></div>
               <div style="height:4px; background:var(--border-subtle); border-radius:2px;"><div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color);"></div></div>
@@ -77,15 +84,21 @@ export async function renderScreener(root) {
             <div class="flex justify-between items-center p-5 border-b border-subtle">
               <div class="flex items-center gap-3">
                 <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main);">Live Signals</h3>
-                <span class="badge" id="screener-count">0 DETECTED</span>
+                <span class="badge" id="screener-count">BELUM SCAN</span>
               </div>
-              <div class="flex gap-2">
-                <select id="screener-sort" class="scanner-select" style="width:120px; height:36px; font-size:12px;">
-                    <option value="cci">Sort by CCI</option>
-                    <option value="volume">Sort by Volume</option>
-                    <option value="ma">Sort by MA</option>
-                </select>
-                <input type="text" id="screener-search" placeholder="Search..." class="scanner-select" style="width:120px; height:36px; font-size:12px;">
+              <div class="flex gap-2 screener-toolbar">
+                <div class="scanner-control-stack">
+                  <select id="screener-sort" class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
+                      <option value="cci">Sort by CCI</option>
+                      <option value="volume">Sort by Volume</option>
+                      <option value="ma">Sort by MA</option>
+                  </select>
+                  <small class="scanner-toolbar-hint">Sorting tersedia setelah hasil scan muncul.</small>
+                </div>
+                <div class="scanner-control-stack">
+                  <input type="text" id="screener-search" placeholder="Search..." class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
+                  <small class="scanner-toolbar-hint">Search ticker tersedia setelah hasil scan muncul.</small>
+                </div>
               </div>
             </div>
             <div id="screener-content" style="flex:1; overflow-y:auto;">${renderEmptyState()}</div>
@@ -99,6 +112,8 @@ export async function renderScreener(root) {
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
     root.querySelector('#screener-sort').addEventListener('change', sortResults);
     root.querySelector('#screener-search').addEventListener('input', filterResults);
+    document.getElementById('screener-sort').disabled = true;
+    document.getElementById('screener-search').disabled = true;
 }
 
 function sortResults() {
@@ -120,9 +135,21 @@ function filterResults() {
 
 function renderList(results) {
     const contentArea = document.getElementById('screener-content');
-    contentArea.innerHTML = results.length > 0 
+    const sortControl = document.getElementById('screener-sort');
+    const searchControl = document.getElementById('screener-search');
+    const hasResults = results.length > 0;
+    sortControl.disabled = !hasResults;
+    searchControl.disabled = !hasResults;
+    contentArea.innerHTML = hasResults
         ? `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`
-        : renderEmptyState("No BUY Signals Found");
+        : renderEmptyState({
+            title: 'Tidak ada sinyal BUY ditemukan',
+            body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
+            action: 'Coba jalankan scan lagi beberapa saat atau ganti timeframe saat preset tambahan tersedia.',
+        });
+    if (!hasResults) {
+        searchControl.value = '';
+    }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -132,8 +159,14 @@ function runScreener() {
     const contentArea = document.getElementById('screener-content');
     const progBox = document.getElementById('screener-progress');
     const countBadge = document.getElementById('screener-count');
+    const sortControl = document.getElementById('screener-sort');
+    const searchControl = document.getElementById('screener-search');
     
     btn.disabled = true;
+    sortControl.disabled = true;
+    searchControl.disabled = true;
+    searchControl.value = '';
+    countBadge.textContent = 'SCANNING...';
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
     progBox.style.display = 'block';
@@ -152,8 +185,18 @@ function runScreener() {
         } else if (data.type === 'done') {
             btn.disabled = false;
             progBox.style.display = 'none';
+            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} DETECTED` : 'TIDAK ADA SINYAL';
+            renderList(currentResults);
             showToast(`Scan complete. Found ${currentResults.length} BUY signals.`, 'success');
+            es.close();
         }
     };
-    es.onerror = () => { es.close(); btn.disabled = false; showToast(`Scan error.`, 'error'); };
+    es.onerror = () => {
+        es.close();
+        btn.disabled = false;
+        progBox.style.display = 'none';
+        countBadge.textContent = 'SCAN ERROR';
+        renderList([]);
+        showToast(`Scan error.`, 'error');
+    };
 }

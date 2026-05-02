@@ -456,6 +456,45 @@ button, input, select { font-family: inherit; border: none; background: none; co
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 80px 40px; height: 100%; text-align: center;
 }
+.scanner-empty-copy {
+  max-width: 420px;
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.scanner-empty-hint {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.scanner-form-note {
+  margin: -4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.scanner-control-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.scanner-toolbar-hint {
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.4;
+  max-width: 120px;
+}
+.scanner-select:disabled,
+.scanner-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.scanner-btn-primary:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
 .scanner-empty-icon {
   width: 64px; height: 64px; border-radius: 16px;
   display: flex; align-items: center; justify-content: center;

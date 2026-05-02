@@ -9,7 +9,8 @@ def test_sync_script_runs_frontend_parity_check_before_restart():
     assert 'python "$REPO_DIR/scripts/check_frontend_runtime_parity.py"' in SYNC_SCRIPT
     assert 'cp "$REPO_DIR/scripts/check_frontend_runtime_parity.py" "$PROD_DIR/scripts/check_frontend_runtime_parity.py"' in SYNC_SCRIPT
     assert SYNC_SCRIPT.index('check_frontend_runtime_parity.py') < SYNC_SCRIPT.index('systemctl restart')
-    assert 'copy_item "$REPO_DIR/frontend/js/views" "$PROD_DIR/frontend/js/views"' in SYNC_SCRIPT
+    assert 'rm -rf "$PROD_DIR/frontend/js/views"' in SYNC_SCRIPT
+    assert 'copy_item "$REPO_DIR/frontend/js/views/." "$PROD_DIR/frontend/js/views"' in SYNC_SCRIPT
 
 
 def test_sync_script_copies_smoke_script_to_production():

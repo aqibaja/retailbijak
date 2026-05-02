@@ -179,7 +179,8 @@ def test_repo_and_runtime_all_routed_views_match_exactly():
 
 def test_sync_script_copies_all_routed_views_and_scripts():
     sync_script = (ROOT / 'scripts' / 'sync_production.sh').read_text()
-    assert 'copy_item "$REPO_DIR/frontend/js/views" "$PROD_DIR/frontend/js/views"' in sync_script
+    assert 'rm -rf "$PROD_DIR/frontend/js/views"' in sync_script
+    assert 'copy_item "$REPO_DIR/frontend/js/views/." "$PROD_DIR/frontend/js/views"' in sync_script
     assert 'cp "$REPO_DIR/scripts/check_frontend_runtime_parity.py" "$PROD_DIR/scripts/check_frontend_runtime_parity.py"' in sync_script
     assert 'cp "$REPO_DIR/scripts/post_deploy_smoke_check.py" "$PROD_DIR/scripts/post_deploy_smoke_check.py"' in sync_script
 

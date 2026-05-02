@@ -127,15 +127,21 @@ def test_stock_detail_chart_spacing_puts_pills_and_decision_panel_farther_apart(
     assert 'levelMax' not in src
     assert 'line(' not in src
 
-def test_screener_branding_shows_swingaq_and_keeps_other_presets():
+def test_screener_shows_guided_empty_state_and_contextual_controls():
     src = Path(SCREENER).read_text()
-    assert 'SwingAQ Scanner' in src
-    assert 'SwingAQ CCI + Magic Line' in src
-    assert 'SwingAQ' in src
-    assert 'Value' in src
-    assert 'Dividend' in src
-    assert 'Gorengan' in src
-    assert 'Breakout</button>' not in src
-    assert 'Quick presets + live SSE results' in src
-    assert 'demo candidates' not in src
-    assert 'rule=' in src
+    assert 'Belum ada hasil scan' in src
+    assert 'Pilih timeframe di panel kiri lalu klik Run Institutional Scan untuk melihat sinyal beli institusional secara live.' in src
+    assert 'Sorting tersedia setelah hasil scan muncul.' in src
+    assert 'Search ticker tersedia setelah hasil scan muncul.' in src
+    assert 'Run Institutional Scan' in src
+    assert 'disabled' in src
+
+
+def test_screener_empty_state_disables_sort_and_search_until_results_exist():
+    src = Path(SCREENER).read_text()
+    assert 'id="screener-sort"' in src
+    assert 'id="screener-search"' in src
+    assert "document.getElementById('screener-sort').disabled = true" in src
+    assert "document.getElementById('screener-search').disabled = true" in src
+    assert 'sortControl.disabled = !hasResults' in src
+    assert 'searchControl.disabled = !hasResults' in src
