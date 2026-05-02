@@ -13,9 +13,9 @@ except ModuleNotFoundError:
     from backend.database import BrokerSummary, UserSetting, get_db
 
 try:
-    from routes.shared_market_helpers import _top_mover_rows, _derived_broker_activity_rows
+    from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
 except ModuleNotFoundError:
-    from backend.routes.shared_market_helpers import _top_mover_rows, _derived_broker_activity_rows
+    from backend.routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
 
 router = APIRouter()
 
