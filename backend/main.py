@@ -13,6 +13,7 @@ import pandas as pd
 from collections import defaultdict
 from datetime import datetime, date
 import asyncio
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
@@ -83,7 +84,20 @@ try:
 except ModuleNotFoundError:
     from backend.routes.user import router as user_router
 
-app = FastAPI(title="SwingAQ Scanner", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    if not scheduler.running:
+        init_scheduler()
+    try:
+        yield
+    finally:
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+
+
+app = FastAPI(title="SwingAQ Scanner", version="1.0.0", lifespan=lifespan)
 app.include_router(user_router)
 
 app.add_middleware(
@@ -92,21 +106,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def on_startup():
-    # Initialize DB tables if they don't exist
-    Base.metadata.create_all(bind=engine)
-
-    # Avoid re-initializing scheduler in repeated app lifecycles (e.g. tests).
-    if not scheduler.running:
-        init_scheduler()
-
-
-@app.on_event("shutdown")
-def on_shutdown():
-    if scheduler.running:
-        scheduler.shutdown(wait=False)
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
