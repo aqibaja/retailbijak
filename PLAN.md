@@ -218,4 +218,5 @@
 1. market editorial hierarchy hooks,
 2. screener compact toolbar / empty state polish,
 3. settings workspace shell polish,
-4. rerun verify + push + deploy.
+4. router/cache-bust validation,
+5. rerun verify + push + deploy.
