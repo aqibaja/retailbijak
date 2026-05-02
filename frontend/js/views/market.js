@@ -95,7 +95,7 @@ export async function renderMarket(root) {
           <div id="ihsg-summary-card"></div>
           <div id="market-pulse-card"></div>
         </section>
-        <div id="stats-cards" class="market-stats-grid"></div>
+        <div id="stats-cards" class="market-stats-grid market-stats-grid-compact"></div>
 
         <div class="market-main-grid">
           <section class="market-section-group market-section-group-internals">
@@ -197,7 +197,7 @@ export async function renderMarket(root) {
   }
   const pulseEl = document.getElementById('market-summary-sentence');
   if (pulseEl) {
-    pulseEl.textContent = `Tekanan pasar ${Number(b.declining ?? 0) > Number(b.advancing ?? 0) ? 'masih dominan' : 'lebih seimbang'}: ${b.advancing ?? 0} naik vs ${b.declining ?? 0} turun, dipimpin ${leadGainer?.ticker || 'N/A'} (${leadGainer ? pct(leadGainer.change_pct) : '--'}) sementara ${leadLoser?.ticker || 'N/A'} melemah ${leadLoser ? pct(leadLoser.change_pct) : '--'}.`;
+    pulseEl.textContent = `Tekanan pasar ${Number(b.declining ?? 0) > Number(b.advancing ?? 0) ? 'masih dominan' : 'lebih seimbang'} dengan breadth ${b.advancing ?? 0} naik vs ${b.declining ?? 0} turun. ${leadGainer?.ticker || 'N/A'} memimpin penguatan ${leadGainer ? pct(leadGainer.change_pct) : '--'}, sementara ${leadLoser?.ticker || 'N/A'} melemah ${leadLoser ? pct(leadLoser.change_pct) : '--'}.`;
   }
   const refreshBtn = document.getElementById('market-refresh');
   if (refreshBtn) refreshBtn.addEventListener('click', () => renderMarket(root));
@@ -236,49 +236,48 @@ export async function renderMarket(root) {
   </section>`;
   document.getElementById('market-pulse-card').innerHTML = card(
     'Market Pulse',
-    'Ringkasan cepat untuk breadth, pemenang, pecundang, dan mood sesi.',
+    'Empat sinyal inti untuk membaca breadth, pemimpin, dan mood sesi.',
     `<div class="market-pulse-grid">
-      <div class="market-pulse-kpis market-pulse-kpis-four">
-        ${breadthStatBox(b.advancing, b.declining)}
-        ${statBox('Top Winner', leadGainer?.ticker || '--', '', 'market-stat-value-ticker')}
-        ${statBox('Top Loser', leadLoser?.ticker || '--', '', 'market-stat-value-ticker')}
-        <div class="market-stat-box market-mood-box market-mood-box-wide ${mood.tone}"><div class="market-stat-label">Market Mood</div><div class="market-stat-value market-mood-value">${mood.label}</div><div class="market-stat-footnote">${mood.note}</div></div>
-      </div>
-      <div class="market-pulse-panels market-pulse-panels-compact">
-        <div class="market-mini-panel is-up"><div class="market-mini-panel-head"><div class="market-mini-label">Top Winner</div><div class="market-mini-code">${leadGainer?.ticker || '--'}</div></div><div class="market-mini-value">${leadGainer ? pct(leadGainer.change_pct) : '--'}</div><div class="market-mini-footnote">${leadGainer?.price != null ? `Rp ${fmt(leadGainer.price)}` : 'Harga belum tersedia'}</div></div>
-        <div class="market-mini-panel is-down"><div class="market-mini-panel-head"><div class="market-mini-label">Top Loser</div><div class="market-mini-code">${leadLoser?.ticker || '--'}</div></div><div class="market-mini-value">${leadLoser ? pct(leadLoser.change_pct) : '--'}</div><div class="market-mini-footnote">${leadLoser?.price != null ? `Rp ${fmt(leadLoser.price)}` : 'Harga belum tersedia'}</div></div>
-      </div>
+      <div class="market-pulse-tile market-stat-box market-stat-box-breadth"><div class="market-stat-label">Breadth</div><div class="market-pulse-tile-value market-stat-value market-stat-value-breadth"><span>${b.advancing ?? 0}</span><span class="market-breadth-separator">/</span><span class="market-breadth-secondary">${b.declining ?? 0}</span></div><div class="market-pulse-tile-footnote market-stat-footnote">${breadthInsight(b.advancing, b.declining)}</div></div>
+      <div class="market-pulse-tile market-stat-box"><div class="market-stat-label">Top Winner</div><div class="market-pulse-tile-value market-stat-value market-stat-value-ticker">${leadGainer?.ticker || '--'}</div><div class="market-pulse-tile-footnote market-stat-footnote">${leadGainer ? `${pct(leadGainer.change_pct)} · Rp ${fmt(leadGainer.price)}` : 'Belum ada pemenang tervalidasi'}</div></div>
+      <div class="market-pulse-tile market-stat-box"><div class="market-stat-label">Top Loser</div><div class="market-pulse-tile-value market-stat-value market-stat-value-ticker">${leadLoser?.ticker || '--'}</div><div class="market-pulse-tile-footnote market-stat-footnote">${leadLoser ? `${pct(leadLoser.change_pct)} · Rp ${fmt(leadLoser.price)}` : 'Belum ada pecundang tervalidasi'}</div></div>
+      <div class="market-pulse-tile market-stat-box market-mood-box ${mood.tone}"><div class="market-stat-label">Market Mood</div><div class="market-pulse-tile-value market-stat-value market-mood-value">${mood.label}</div><div class="market-pulse-tile-footnote market-stat-footnote">${mood.note}</div></div>
     </div>`,
     'var(--accent-cyan)'
   );
 
   document.getElementById('stats-cards').innerHTML = [
     statBox('Breadth Ratio', breadthInsight(b.advancing, b.declining), '', 'market-stat-value-ratio'),
-    statBox('Advancing', b.advancing ?? 0, 'is-positive'),
-    statBox('Declining', b.declining ?? 0, 'is-negative'),
+    statBox('Advancers', b.advancing ?? 0, 'is-positive'),
+    statBox('Decliners', b.declining ?? 0, 'is-negative'),
+    statBox('Flat', b.unchanged ?? 0),
   ].join('');
 
-  document.getElementById('breadth-card').innerHTML = card(
-    'Market Breadth',
-    'Advancers vs decliners today',
-    `<div class="market-breadth-visual" aria-label="Market breadth distribution">
-      <div class="market-breadth-bar">
-        <span class="market-breadth-fill is-up" style="width:${Math.max(8, ((Number(b.advancing ?? 0) / Math.max(1, Number(b.advancing ?? 0) + Number(b.declining ?? 0) + Number(b.unchanged ?? 0))) * 100).toFixed(2))}%"></span>
-        <span class="market-breadth-fill is-flat" style="width:${Math.max(6, ((Number(b.unchanged ?? 0) / Math.max(1, Number(b.advancing ?? 0) + Number(b.declining ?? 0) + Number(b.unchanged ?? 0))) * 100).toFixed(2))}%"></span>
-        <span class="market-breadth-fill is-down" style="width:${Math.max(8, ((Number(b.declining ?? 0) / Math.max(1, Number(b.advancing ?? 0) + Number(b.declining ?? 0) + Number(b.unchanged ?? 0))) * 100).toFixed(2))}%"></span>
+  document.getElementById('breadth-card').innerHTML = `<section class="market-card market-card-subtle market-breadth-card" style="--market-accent:var(--accent-indigo)">
+    <header class="market-card-head">
+      <h3>Market Breadth</h3>
+      <p>Advancers vs decliners today</p>
+    </header>
+    <div class="market-card-body">
+      <div class="market-breadth-visual" aria-label="Market breadth distribution">
+        <div class="market-breadth-bar">
+          <span class="market-breadth-fill is-up" style="width:${Math.max(8, ((Number(b.advancing ?? 0) / Math.max(1, Number(b.advancing ?? 0) + Number(b.declining ?? 0) + Number(b.unchanged ?? 0))) * 100).toFixed(2))}%"></span>
+          <span class="market-breadth-fill is-flat" style="width:${Math.max(6, ((Number(b.unchanged ?? 0) / Math.max(1, Number(b.advancing ?? 0) + Number(b.declining ?? 0) + Number(b.unchanged ?? 0))) * 100).toFixed(2))}%"></span>
+          <span class="market-breadth-fill is-down" style="width:${Math.max(8, ((Number(b.declining ?? 0) / Math.max(1, Number(b.advancing ?? 0) + Number(b.declining ?? 0) + Number(b.unchanged ?? 0))) * 100).toFixed(2))}%"></span>
+        </div>
+        <div class="market-breadth-caption">${b.advancing ?? 0} naik / ${b.declining ?? 0} turun / ${b.unchanged ?? 0} flat · ${Number(b.declining ?? 0) > Number(b.advancing ?? 0) ? 'Breadth negatif luas, tekanan dominan di mayoritas saham.' : 'Partisipasi penguatan lebih sehat dibanding tekanan jual.'}</div>
       </div>
-      <div class="market-breadth-caption">${b.advancing ?? 0} naik / ${b.declining ?? 0} turun / ${b.unchanged ?? 0} flat · ${Number(b.declining ?? 0) > Number(b.advancing ?? 0) ? 'Breadth negatif luas, tekanan dominan di mayoritas saham.' : 'Partisipasi penguatan lebih sehat dibanding tekanan jual.'}</div>
+      <div class="market-breadth-grid">${statBox('Advance', b.advancing ?? 0)}${statBox('Decline', b.declining ?? 0)}${statBox('Flat', b.unchanged ?? 0)}</div>
+      <div class="market-split-list"><div><div class="market-list-title">Top Advancers</div><div class="market-list-stack">${(b.advancers || []).slice(0, 4).map((row, index) => moverRow(row, index + 1)).join('') || '<div class="market-empty">No advancers.</div>'}</div></div><div><div class="market-list-title">Top Decliners</div><div class="market-list-stack">${(b.decliners || []).slice(0, 4).map((row, index) => moverRow(row, index + 1)).join('') || '<div class="market-empty">No decliners.</div>'}</div></div></div>
     </div>
-    <div class="market-breadth-grid">${statBox('Advance', b.advancing ?? 0)}${statBox('Decline', b.declining ?? 0)}${statBox('Flat', b.unchanged ?? 0)}</div>
-     <div class="market-split-list"><div><div class="market-list-title">Top Advancers</div><div class="market-list-stack">${(b.advancers || []).slice(0, 4).map((row, index) => moverRow(row, index + 1)).join('') || '<div class="market-empty">No advancers.</div>'}</div></div><div><div class="market-list-title">Top Decliners</div><div class="market-list-stack">${(b.decliners || []).slice(0, 4).map((row, index) => moverRow(row, index + 1)).join('') || '<div class="market-empty">No decliners.</div>'}</div></div></div>`
-  );
+  </section>`;
 
   const allMovers = Array.isArray(moversData?.data) ? moversData.data : [];
   const gainers = allMovers.filter((x) => Number(x.change_pct) >= 0).slice(0, 4);
   const losers = allMovers.filter((x) => Number(x.change_pct) < 0).slice(0, 4);
 
-  document.getElementById('gainers-card').innerHTML = card('Top Gainers', 'Best performing stocks today', `<div class="market-list-stack">${gainers.map((row, index) => moverRow(row, index + 1)).join('') || emptyState('Belum ada top gainer yang tervalidasi.', 'Data mover belum lengkap untuk menyusun daftar penguatan sesi ini.')}</div>`, 'var(--accent-cyan)');
-  document.getElementById('losers-card').innerHTML = card('Top Losers', 'Weakest performing stocks today', `<div class="market-list-stack">${losers.map((row, index) => moverRow(row, index + 1)).join('') || emptyState('Belum ada top loser yang tervalidasi.', 'Snapshot pelemahan market belum cukup lengkap untuk ditampilkan.')}</div>`, 'var(--text-down)');
+  document.getElementById('gainers-card').innerHTML = card('Top Gainers', 'Best performing stocks today', `<div class="market-list-card-body"><div class="market-list-card-head">${gainers.length ? `${gainers.length} saham penguat tervalidasi untuk sesi ini.` : 'Belum ada saham penguat yang tervalidasi untuk sesi ini.'}</div><div class="market-list-stack">${gainers.map((row, index) => moverRow(row, index + 1)).join('') || emptyState('Belum ada top gainer yang tervalidasi.', 'Data mover belum lengkap untuk menyusun daftar penguatan sesi ini.')}</div></div>`, 'var(--accent-cyan)');
+  document.getElementById('losers-card').innerHTML = card('Top Losers', 'Weakest performing stocks today', `<div class="market-list-card-body"><div class="market-list-card-head">${losers.length ? `${losers.length} saham pelemah tervalidasi untuk sesi ini.` : 'Belum ada saham pelemah yang tervalidasi untuk sesi ini.'}</div><div class="market-list-stack">${losers.map((row, index) => moverRow(row, index + 1)).join('') || emptyState('Belum ada top loser yang tervalidasi.', 'Snapshot pelemahan market belum cukup lengkap untuk ditampilkan.')}</div></div>`, 'var(--text-down)');
   document.getElementById('corporate-actions').innerHTML = card('Corporate Actions', 'Listing, dividend, suspension, and other company events from IDX', `<div class="market-section-summary">${safeRows(actionsData).length ? `${safeRows(actionsData).length} event terbaru untuk dipantau di sesi ini.` : 'Belum ada event korporasi yang menonjol untuk sesi ini.'}</div><div class="market-list-stack">${safeRows(actionsData).slice(0, 4).map(actionRow).join('') || emptyState('Belum ada corporate action yang relevan.', 'Pantau lagi setelah sinkronisasi IDX berikutnya untuk event korporasi terbaru.')}</div>`);
   document.getElementById('foreign-flows').innerHTML = card('Foreign Investor Flows', 'Live IDX trading summary for foreign participation', `<div class="market-section-summary">${safeRows(foreignData).length ? `${safeRows(foreignData).filter((row) => Number(row.net_value ?? 0) >= 0).length} saham net buy asing, ${safeRows(foreignData).filter((row) => Number(row.net_value ?? 0) < 0).length} saham net sell asing.` : 'Belum ada snapshot foreign flow yang valid untuk sesi ini.'}</div><div class="market-list-stack">${safeRows(foreignData).slice(0, 4).map(flowRow).join('') || emptyState('Belum ada foreign flow yang tervalidasi.', 'Feed foreign participation belum mengirim snapshot yang cukup untuk sesi ini.')}</div>`, 'var(--text-up)');
   const brokerRows = safeRows(brokersData).slice(0, 4).map(brokerRow).join('');

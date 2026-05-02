@@ -22,7 +22,7 @@ def test_market_pulse_has_mobile_friendly_breadth_value_hook_and_stacked_markup(
     assert "market-stat-footnote" in content
 
 
-def test_market_first_fold_uses_session_pill_metadata_rail_and_mood_panel():
+def test_market_first_fold_uses_session_pill_metadata_rail_and_four_primary_pulse_tiles():
     content = FRONTEND_MARKET_VIEW.read_text()
     assert "market-session-pill" in content
     assert "market-meta-rail" in content
@@ -33,6 +33,10 @@ def test_market_first_fold_uses_session_pill_metadata_rail_and_mood_panel():
     assert "Top Loser" in content
     assert "market-data-quality" in content
     assert "market-empty-rich" in content
+    assert "market-pulse-tile" in content
+    assert "market-pulse-tile-value" in content
+    assert "market-pulse-tile-footnote" in content
+    assert "market-pulse-panels" not in content
 
 
 def test_market_deep_insight_grid_uses_grouped_section_headers():
@@ -48,6 +52,9 @@ def test_market_deep_insight_grid_uses_grouped_section_headers():
     assert "market-section-summary" in content
     assert "market-catalyst-meta" in content
     assert "market-flow-chip" in content
+    assert "market-list-card-body" in content
+    assert "saham penguat tervalidasi" in content
+    assert "saham pelemah tervalidasi" in content
 
 
 def test_market_grouped_layout_styles_define_section_stacks():
@@ -62,6 +69,10 @@ def test_market_grouped_layout_styles_define_section_stacks():
     assert ".market-section-summary {" in content
     assert ".market-catalyst-meta {" in content
     assert ".market-flow-chip {" in content
+    assert ".market-list-card-body {" in content
+    assert ".market-list-card-head {" in content
+    assert ".market-card-subtle" in content
+    assert ".market-breadth-card .market-split-list {" in content
     assert ".market-section-group-internals { order: 1; }" in content
     assert ".market-section-group-flow { order: 2; }" in content
     assert ".market-section-group-catalyst { order: 3; }" in content
@@ -70,19 +81,18 @@ def test_market_grouped_layout_styles_define_section_stacks():
     assert ".market-empty-rich {" in content
 
 
-def test_market_first_fold_styles_define_header_rail_and_pulse_four_up_layout():
+def test_market_first_fold_styles_define_header_rail_and_four_tile_pulse_layout():
     content = FRONTEND_STYLE.read_text()
     assert ".market-head-copy { display:flex; flex-direction:column; gap:12px; }" in content
     assert ".market-meta-rail { display:flex; flex-wrap:wrap; gap:10px;" in content
     assert ".market-session-pill { display:inline-flex;" in content
     assert ".market-hero-metrics {" in content
-    assert ".market-pulse-kpis { display:grid; grid-template-columns: repeat(3, minmax(148px,1fr));" in content
-    assert ".market-pulse-kpis.market-pulse-kpis-four { grid-template-columns: repeat(4, minmax(0,1fr)); }" in content
-    assert ".market-stat-footnote {" in content
+    assert ".market-pulse-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr));" in content
+    assert ".market-pulse-tile {" in content
+    assert ".market-pulse-tile-value" in content
+    assert ".market-pulse-tile-footnote" in content
     assert ".market-mood-value" in content
-    assert ".market-mini-footnote" in content
-    assert "market-mood-box market-mood-box-wide" in FRONTEND_MARKET_VIEW.read_text()
-    assert "market-pulse-panels market-pulse-panels-compact" in FRONTEND_MARKET_VIEW.read_text()
-    assert ".market-mood-box-wide {" in content
-    assert ".market-pulse-panels-compact {" in content
-    assert ".market-mini-panel-head {" in content
+    assert "market-mood-box ${mood.tone}" in FRONTEND_MARKET_VIEW.read_text()
+    assert ".market-stats-grid.market-stats-grid-compact { grid-template-columns: repeat(4, minmax(0,1fr)); }" in content
+    assert "market-stats-grid market-stats-grid-compact" in FRONTEND_MARKET_VIEW.read_text()
+    assert ".market-pulse-panels-compact" not in content
