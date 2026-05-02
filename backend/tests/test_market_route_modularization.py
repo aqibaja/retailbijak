@@ -33,5 +33,11 @@ def test_market_routes_and_helpers_exist_in_module():
     src = MARKET.read_text(encoding='utf-8')
     for route in ROUTES:
         assert route in src
+    assert 'def get_market_breadth(' in src
+    assert 'def get_market_stats(' in src
+    assert 'def get_market_events(' in src
+    assert 'def top_movers(' in src
+    assert 'def get_foreign_trading(' in src
+    assert 'def get_broker_activity(' in src
     for helper in HELPERS:
-        assert helper in src
+        assert helper not in src

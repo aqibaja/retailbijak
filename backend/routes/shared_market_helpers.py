@@ -13,9 +13,9 @@ except ModuleNotFoundError:
     from backend.stocks import get_ticker_display
 
 try:
-    from routes.stocks import _company_name
+    from routes.shared_stocks_helpers import _company_name
 except ModuleNotFoundError:
-    from backend.routes.stocks import _company_name
+    from backend.routes.shared_stocks_helpers import _company_name
 
 try:
     from routes.shared_sqlite_helpers import _sqlite_datetime_literal
