@@ -4,19 +4,20 @@ import { observeElements } from '../main.js?v=20260502c';
 export async function renderPortfolio(root, activeTab) {
     const isPort = activeTab === 'portfolio';
     root.innerHTML = `
-      <section class="grid grid-cols-12 stagger-reveal">
-        <div class="col-span-12 flex justify-between items-end mb-6">
-          <div>
-            <h1 class="text-3xl mb-2" style="color:var(--text-main); letter-spacing:-0.04em; font-weight:800;">Assets & Watchlist</h1>
-            <p class="text-base" style="color:var(--text-muted);">Manage monitored assets and active positions</p>
+      <section class="grid grid-cols-12 stagger-reveal portfolio-page-pro">
+        <div class="col-span-12 portfolio-header">
+          <div class="portfolio-header-copy">
+            <div class="portfolio-kicker">Portfolio Control</div>
+            <h1>Assets & Watchlist</h1>
+            <p>Kelola posisi aktif dan pantau asset kandidat dengan tampilan yang lebih rapat dan editorial.</p>
           </div>
-          <div class="flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
+          <div class="portfolio-tab-switch flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
             <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portfolio</a>
             <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Watchlist</a>
           </div>
         </div>
 
-        <div id="tab-content" class="col-span-12 panel flex-col" style="padding:0; overflow:hidden;">
+        <div id="tab-content" class="col-span-12 panel flex-col portfolio-table-shell" style="padding:0; overflow:hidden;">
             <div class="p-4" style="text-align:center;"><div class="skeleton skel-text" style="width:200px; margin:auto;"></div></div>
         </div>
       </section>`;
@@ -32,25 +33,25 @@ async function renderWatchlistTab(el) {
     const rows = Array.isArray(data?.data) ? data.data : [];
     
     el.innerHTML = `
-      <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
+      <div class="portfolio-table-head flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
         <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;">My Watchlist <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} ITEMS</span></h3>
         <button id="add-watchlist" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
       </div>
-      <div class="table-wrapper">
-        <table class="table">
+      <div class="table-wrapper portfolio-table-wrap">
+        <table class="table portfolio-table">
           <thead>
             <tr><th>Ticker</th><th>Notes</th><th style="text-align:right">Action</th></tr>
           </thead>
           <tbody>
             ${rows.length ? rows.map(r => `
-              <tr>
-                <td class="mono strong text-main" style="width:180px;">
+              <tr class="portfolio-row">
+                <td class="mono strong text-main portfolio-row-ticker" style="width:180px;">
                     <a href="#stock/${r.ticker}" class="flex items-center gap-3">
-                      <span style="width:32px;height:32px;background:rgba(99,102,241,0.1);border-radius:8px;display:grid;place-items:center;font-size:10px; color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${r.ticker.substring(0,2)}</span> 
+                      <span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span>
                       <span style="font-size:15px; font-family:var(--font-mono);">${r.ticker}</span>
                     </a>
                 </td>
-                <td class="text-muted text-sm">${r.notes || '-'}</td>
+                <td class="text-muted text-sm portfolio-row-note">${r.notes || '-'}</td>
                 <td style="text-align:right; width:80px;">
                   <button class="btn-icon delete-watchlist" data-ticker="${r.ticker}" style="color:var(--down-color);"><i data-lucide="trash-2" style="width:16px;"></i></button>
                 </td>
@@ -86,21 +87,21 @@ async function renderPortfolioTab(el) {
     const rows = Array.isArray(data?.data) ? data.data : [];
     
     el.innerHTML = `
-      <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
+      <div class="portfolio-table-head flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
         <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;" data-i18n="current_holdings">Current Holdings <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} POSITIONS</span></h3>
         <button id="add-portfolio" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
       </div>
-      <div class="table-wrapper">
-        <table class="table">
+      <div class="table-wrapper portfolio-table-wrap">
+        <table class="table portfolio-table">
           <thead>
             <tr><th>Ticker</th><th>Lots</th><th>Avg Price</th><th style="text-align:right">Action</th></tr>
           </thead>
           <tbody>
             ${rows.length ? rows.map(r => `
-              <tr>
-                <td class="mono strong text-main" style="width:180px;">
+              <tr class="portfolio-row">
+                <td class="mono strong text-main portfolio-row-ticker" style="width:180px;">
                     <a href="#stock/${r.ticker}" class="flex items-center gap-3">
-                      <span style="width:32px;height:32px;background:rgba(99,102,241,0.1);border-radius:8px;display:grid;place-items:center;font-size:10px; color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${r.ticker.substring(0,2)}</span> 
+                      <span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span>
                       <span style="font-size:15px; font-family:var(--font-mono);">${r.ticker}</span>
                     </a>
                 </td>

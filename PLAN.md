@@ -192,6 +192,14 @@
 - [done] GREEN verified: `pytest -q tests/test_news_view_static.py` → lulus; browser QA live `#news` masih render normal.
 - [done] Commit/push/deploy phase-6 news polish selesai; no restart needed karena static frontend sync only.
 
+### 2026-05-03 03:20 WIB
+- [done] Start portfolio/watchlist polish pass: audit `#portfolio`/`#watchlist` untuk header shell, tab switch, dan row density.
+- [done] TDD RED: tambah static guard untuk `portfolio-page-pro`, `portfolio-header`, `portfolio-tab-switch`, `portfolio-table-shell`, `portfolio-row-kicker`, dan `portfolio-row-note`.
+- [done] Implementasi `frontend/js/views/portfolio.js`: ubah shell jadi lebih editorial dan rapat, plus row kicker untuk watchlist/portfolio tables.
+- [done] Implementasi `frontend/style.css`: tambah styling portfolio shell, table wrap, row kicker, dan mobile stack.
+- [done] GREEN verified: `pytest -q tests/test_portfolio_view_static.py` → lulus; browser QA live `#portfolio` masih render normal.
+- [done] Commit/push/deploy phase-7 portfolio polish selesai; no restart needed karena static frontend sync only.
+
 ---
 
 ## Current Slice Notes
