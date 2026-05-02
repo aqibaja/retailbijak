@@ -6,15 +6,21 @@ const renderEmptyState = ({
   body = 'Pilih timeframe di panel kiri lalu klik Run Institutional Scan untuk melihat sinyal beli institusional secara live.',
   action = 'Sorting tersedia setelah hasil scan muncul.',
 } = {}) => `
-  <div class="scanner-empty">
+  <div class="scanner-empty scanner-empty-rich">
     <div class="scanner-empty-icon">
       <i data-lucide="radar" style="width:32px; height:32px;"></i>
     </div>
-    <h3 style="font-size:18px; font-weight:600; color:var(--text-main); margin-bottom:8px;">${title}</h3>
+    <h3 class="scanner-empty-title">${title}</h3>
     <p class="scanner-empty-copy">${body}</p>
     <p class="scanner-empty-hint">${action}</p>
   </div>
 `;
+
+const rowMeta = (r) => `
+  <div class="scanner-row-meta">
+    <span class="scanner-row-kicker">BUY</span>
+    <span class="scanner-row-note">CCI ${r.cci ?? '—'} · MA ${r.magic_line ?? '—'} · Vol ${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</span>
+  </div>`;
 
 const renderSkeleton = () => `
   <div class="flex-col">
@@ -23,37 +29,35 @@ const renderSkeleton = () => `
 `;
 
 const renderRow = (r) => `
-  <a href="#stock/${r.ticker}" class="scanner-row" style="height: auto; min-height: 85px; padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle);">
-    <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
-      <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.1); color: #10b981; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid rgba(16,185,129,0.2); flex-shrink: 0;">
-        ${r.ticker.substring(0, 2)}
-      </div>
-      <div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <div class="text-main" style="font-size: 16px; font-weight: 700;">${r.ticker}</div>
-            <span style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">BUY</span>
+  <a href="#stock/${r.ticker}" class="scanner-row">
+    <div class="scanner-row-main">
+      <div class="scanner-row-badge">${r.ticker.substring(0, 2)}</div>
+      <div class="scanner-row-copy">
+        <div class="scanner-row-title">
+          <div class="text-main scanner-row-ticker">${r.ticker}</div>
+          <span class="scanner-row-kicker">BUY</span>
         </div>
-        <div style="font-size: 12px; color: var(--text-muted);">${r.name || 'IDX Equity'}</div>
+        <div class="scanner-row-name">${r.name || 'IDX Equity'}</div>
+        ${rowMeta(r)}
       </div>
     </div>
-    
-    <div style="display: flex; gap: 24px; align-items: center; flex-shrink: 0;">
-        <div style="text-align:right;">
-            <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Price</div>
-            <div class="mono" style="font-size:15px; font-weight:700; color:var(--text-main);">${Number(r.close || 0).toLocaleString('id-ID')}</div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">CCI</div>
-            <div class="mono" style="font-size: 14px; color: #38bdf8;">${r.cci ?? '—'}</div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MA</div>
-            <div class="mono" style="font-size: 14px; color: #f59e0b;">${r.magic_line ?? '—'}</div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Vol</div>
-            <div class="mono" style="font-size: 14px; color: #10b981;">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</div>
-        </div>
+    <div class="scanner-row-stats">
+      <div class="scanner-row-stat">
+        <span>Price</span>
+        <strong class="mono">${Number(r.close || 0).toLocaleString('id-ID')}</strong>
+      </div>
+      <div class="scanner-row-stat">
+        <span>CCI</span>
+        <strong class="mono">${r.cci ?? '—'}</strong>
+      </div>
+      <div class="scanner-row-stat">
+        <span>MA</span>
+        <strong class="mono">${r.magic_line ?? '—'}</strong>
+      </div>
+      <div class="scanner-row-stat">
+        <span>Vol</span>
+        <strong class="mono">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</strong>
+      </div>
     </div>
   </a>
 `;

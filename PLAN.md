@@ -176,6 +176,14 @@
 - [done] GREEN verified final market pass: `#market` menampilkan market-content, session pill, data quality, pulse card, grouped internals, flow, dan catalyst sections tanpa console error.
 - [done] Commit/push/deploy phase-4 market consistency selesai; no restart needed karena static frontend sync only.
 
+### 2026-05-03 02:50 WIB
+- [done] Start screener compact pass: audit `#screener` untuk toolbar stack, richer empty state, dan row metadata yang lebih editorial.
+- [done] TDD RED: tambah static guard untuk `screener-hero`, `screener-toolbar`, `scanner-control-stack`, `scanner-empty-rich`, `scanner-row-kicker`, `scanner-row-meta`, `scanner-row-note`, dan `scanner-progress`.
+- [done] Implementasi `frontend/js/views/screener.js`: ganti empty state polos dengan `scanner-empty-rich`, tambahkan row meta hook, dan ubah row hasil scan jadi layout yang lebih terstruktur.
+- [done] Implementasi `frontend/style.css`: tambah styling toolbar stack, empty state, row editorial, dan mobile stacking untuk screener.
+- [done] GREEN verified: `pytest -q tests/test_screener_view_static.py` → lulus; browser QA live `#screener` masih render normal.
+- [done] Commit/push/deploy phase-5 screener polish selesai; no restart needed karena static frontend sync only.
+
 ---
 
 ## Current Slice Notes
