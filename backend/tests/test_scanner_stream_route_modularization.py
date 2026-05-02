@@ -28,3 +28,7 @@ def test_scanner_stream_route_and_helpers_exist_in_module():
         assert route in src
     for helper in HELPERS:
         assert helper in src
+    assert 'from routes.shared_stocks_helpers import _display_ticker' in src or 'from backend.routes.shared_stocks_helpers import _display_ticker' in src
+    assert 'from stocks import get_all_tickers, get_ticker_display' not in src
+    assert 'from backend.stocks import get_all_tickers, get_ticker_display' not in src
+    assert 'get_ticker_display(' not in src

@@ -10,9 +10,14 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 try:
-    from stocks import get_all_tickers, get_ticker_display
+    from stocks import get_all_tickers
 except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers, get_ticker_display
+    from backend.stocks import get_all_tickers
+
+try:
+    from routes.shared_stocks_helpers import _display_ticker
+except ModuleNotFoundError:
+    from backend.routes.shared_stocks_helpers import _display_ticker
 
 try:
     from database import SessionLocal
@@ -66,7 +71,7 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
                 sl = float(latest['sl']) if not pd.isna(latest['sl']) else close * 0.95
                 result = {
                     'ticker': ticker,
-                    'name': get_ticker_display(ticker),
+                    'name': _display_ticker(ticker),
                     'timeframe': timeframe,
                     'rule': 'SwingAQ (PineScript)',
                     'reason': f'Signal {signal_type} Detected',
