@@ -4,42 +4,21 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 try:
-    from stocks import get_all_tickers, get_ticker_display
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers, get_ticker_display
-
-try:
     from database import Stock, get_db
 except ModuleNotFoundError:
     from backend.database import Stock, get_db
 
+try:
+    from routes.shared_stocks_helpers import _display_ticker, _company_name, _stock_row_from_static, _search_rank, _search_bucket, SECTOR_HINTS
+except ModuleNotFoundError:
+    from backend.routes.shared_stocks_helpers import _display_ticker, _company_name, _stock_row_from_static, _search_rank, _search_bucket, SECTOR_HINTS
+
+try:
+    from stocks import get_all_tickers
+except ModuleNotFoundError:
+    from backend.stocks import get_all_tickers
+
 router = APIRouter()
-
-COMPANY_NAMES = {
-    "BBCA": "Bank Central Asia Tbk.", "BMRI": "Bank Mandiri (Persero) Tbk.",
-    "BBRI": "Bank Rakyat Indonesia Tbk.", "TLKM": "Telkom Indonesia Tbk.", "ASII": "Astra International Tbk.",
-    "BRPT": "Barito Pacific Tbk.", "ADRO": "Adaro Energy Indonesia Tbk.", "ANTM": "Aneka Tambang Tbk.", "UNVR": "Unilever Indonesia Tbk.",
-    "AMMN": "Amman Mineral Internasional Tbk.", "BREN": "Barito Renewables Energy Tbk.", "BUMI": "Bumi Resources Tbk.",
-}
-SECTOR_HINTS = {
-    "BBCA": "Financials", "BMRI": "Financials", "BBRI": "Financials", "TLKM": "Infrastructure", "GOTO": "Technology",
-    "ASII": "Industrials", "BRPT": "Basic Materials", "ADRO": "Energy", "ANTM": "Basic Materials", "UNVR": "Consumer Non-Cyclicals",
-    "AMMN": "Basic Materials", "BREN": "Energy", "BUMI": "Energy",
-}
-
-
-def _display_ticker(t: str) -> str:
-    return t.upper().replace('.JK', '').strip()
-
-
-def _company_name(t: str) -> str:
-    base = _display_ticker(t)
-    return COMPANY_NAMES.get(base, get_ticker_display(base))
-
-
-def _stock_row_from_static(t: str, i: int = 0) -> dict:
-    base = _display_ticker(t)
-    return {'ticker': base, 'name': _company_name(base), 'sector': SECTOR_HINTS.get(base, 'IDX Equity'), 'price': None, 'change_pct': None, 'rank': i + 1}
 
 
 def _search_rank(row_ticker: str, row_name: str | None, row_sector: str | None, query: str) -> tuple[int, int, int, int]:

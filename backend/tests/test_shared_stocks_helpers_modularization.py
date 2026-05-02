@@ -1,0 +1,19 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+STOCKS = ROOT / 'backend/routes/stocks.py'
+MODULE = ROOT / 'backend/routes/shared_stocks_helpers.py'
+
+
+def test_stock_helper_functions_are_moved_out_of_stocks_module():
+    src = STOCKS.read_text(encoding='utf-8')
+    assert 'def _display_ticker(' not in src
+    assert 'def _company_name(' not in src
+    assert 'def _stock_row_from_static(' not in src
+
+
+def test_stock_helper_functions_exist_in_shared_module():
+    src = MODULE.read_text(encoding='utf-8')
+    assert 'def _display_ticker(' in src
+    assert 'def _company_name(' in src
+    assert 'def _stock_row_from_static(' in src
