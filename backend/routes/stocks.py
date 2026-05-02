@@ -21,35 +21,6 @@ except ModuleNotFoundError:
 router = APIRouter()
 
 
-def _search_rank(row_ticker: str, row_name: str | None, row_sector: str | None, query: str) -> tuple[int, int, int, int]:
-    ticker = _display_ticker(row_ticker)
-    name = (row_name or _company_name(row_ticker)).upper()
-    sector = (row_sector or SECTOR_HINTS.get(ticker, '')).upper()
-    q = query.strip().upper()
-    if not q:
-        return (0, 0, 0, 0)
-    ticker_exact = 0 if ticker == q else 1
-    ticker_prefix = 0 if ticker.startswith(q) else 1
-    name_prefix = 0 if name.startswith(q) else 1
-    name_contains = 0 if q in name else 1
-    sector_match = 0 if q in sector else 1
-    return (ticker_exact, ticker_prefix, name_prefix + name_contains, sector_match)
-
-
-def _search_bucket(ticker: str, name: str, sector: str, query: str) -> str:
-    q = query.strip().upper()
-    t = ticker.upper()
-    n = name.upper()
-    s = sector.upper()
-    if q and (t == q or t.startswith(q)):
-        return 'ticker'
-    if q and n.startswith(q):
-        return 'company'
-    if q and len(q) >= 4 and q in s:
-        return 'sector'
-    return 'company' if q and q in n else 'ticker'
-
-
 @router.get('/api/stocks/search')
 def search_stocks(q: str = '', limit: int = 10, db: Session = Depends(get_db)):
     query = q.strip().upper()
