@@ -215,8 +215,6 @@
 **Slice aktif sekarang:** Phase 4 cross-page consistency (market/screener/help/news/portfolio/settings) in progress.
 
 **Target patch minimum untuk slice berikutnya:**
-1. market editorial hierarchy hooks,
-2. screener compact toolbar / empty state polish,
-3. settings workspace shell polish,
-4. router/cache-bust validation,
-5. rerun verify + push + deploy.
+1. portfolio editorial shell polish,
+2. router/cache-bust validation,
+3. rerun verify + push + deploy.

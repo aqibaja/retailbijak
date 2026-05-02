@@ -13,6 +13,8 @@ def test_portfolio_view_uses_compact_shell_and_editorial_table_rows():
     assert 'portfolio-table-shell' in content
     assert 'portfolio-row-kicker' in content
     assert 'portfolio-row-note' in content
+    assert 'portfolio-meta-rail' in content
+    assert 'portfolio-summary' in content
 
 
 def test_portfolio_styles_define_compact_hierarchy_and_mobile_stack():
@@ -22,4 +24,6 @@ def test_portfolio_styles_define_compact_hierarchy_and_mobile_stack():
     assert '.portfolio-tab-switch {' in content
     assert '.portfolio-table-shell {' in content
     assert '.portfolio-row-kicker {' in content
+    assert '.portfolio-meta-rail {' in content
+    assert '.portfolio-summary {' in content
     assert '@media (max-width: 768px) {' in content

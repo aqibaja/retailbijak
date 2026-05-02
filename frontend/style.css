@@ -441,6 +441,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .portfolio-header h1 { font-size: 2rem; font-weight: 800; color: var(--text-main); letter-spacing:-0.04em; margin:0; }
 .portfolio-header p { font-size: 15px; color: var(--text-muted); line-height: 1.6; margin:0; }
 .portfolio-tab-switch { align-self:flex-end; }
+.portfolio-meta-rail { display:grid; gap:8px; justify-items:end; }
+.portfolio-summary { font-size:11px; color:var(--text-dim); max-width: 36ch; text-align:right; }
 .portfolio-table-shell { overflow:hidden; }
 .portfolio-table-wrap { overflow:auto; }
 .portfolio-row-kicker { width:32px; height:32px; background:rgba(99,102,241,0.1); border-radius:8px; display:grid; place-items:center; font-size:10px; color:#a5b4fc; border:1px solid rgba(99,102,241,0.2); }
@@ -1110,6 +1112,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
   .settings-hero { flex-direction: column; align-items: flex-start; }
   .settings-status-rail { justify-items: start; }
   .settings-layout { grid-template-columns: 1fr; }
+  .portfolio-meta-rail { justify-items: start; }
+  .portfolio-summary { text-align:left; }
 }
 
 @media (max-width: 420px) {

@@ -11,9 +11,12 @@ export async function renderPortfolio(root, activeTab) {
             <h1>Assets & Watchlist</h1>
             <p>Kelola posisi aktif dan pantau asset kandidat dengan tampilan yang lebih rapat dan editorial.</p>
           </div>
-          <div class="portfolio-tab-switch flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
-            <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portfolio</a>
-            <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Watchlist</a>
+          <div class="portfolio-meta-rail">
+            <div class="portfolio-summary">Fast path for positions, notes, and quick watchlist ops.</div>
+            <div class="portfolio-tab-switch flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
+              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portfolio</a>
+              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Watchlist</a>
+            </div>
           </div>
         </div>
 
