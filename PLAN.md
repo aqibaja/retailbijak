@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vanilla JS SPA, existing design tokens di `frontend/style.css`, FastAPI backend, browser verification, static regression tests di `backend/tests/test_market_view_static.py`.
 
-**Recent progress:** 2026-05-02 — backend market summary routes (`/api/ihsg-chart`, `/api/market-summary`, `/api/sector-summary`) dimodularisasi ke `backend/routes/market_summary.py` dan parser sector snapshot ikut dipindah dengan guard tests struktur + runtime smoke via main app.
+**Recent progress:** 2026-05-02 — backend market summary routes (`/api/ihsg-chart`, `/api/market-summary`, `/api/sector-summary`) dimodularisasi ke `backend/routes/market_summary.py` dan parser sector snapshot ikut dipindah dengan guard tests struktur + runtime smoke via main app. News/corporate routes (`/api/news`, `/api/corporate-actions`, `/api/company-announcements`) juga dipisah ke `backend/routes/news.py` dengan guard tests struktur + runtime smoke via main app.
 
 ---
 
