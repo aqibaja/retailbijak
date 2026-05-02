@@ -1,4 +1,4 @@
-import { renderDashboard } from './views/dashboard.js?v=20260502c';
+import { renderDashboard } from './views/dashboard.js?v=20260503a';
 import { renderStockDetail } from './views/stock_detail.js?v=20260502c';
 import { renderScreener } from './views/screener.js?v=20260502c';
 import { renderPortfolio } from './views/portfolio.js?v=20260502c';

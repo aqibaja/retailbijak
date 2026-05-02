@@ -68,11 +68,22 @@
 ### Phase 2 — Deeper dashboard regrouping
 **Objective:** batch berikutnya bila lanjut: rebalance chart / movers / bottom-grid hierarchy.
 
-**Candidates:**
-- regroup `Market Intelligence` jadi lebih editorial
-- rebalance chart vs movers density
-- compact ticker noise / desktop spacing
-- mobile-first dashboard pass
+**Checklist:**
+- [x] Tulis failing static guards untuk chart context, movers summary, editorial cards, suggestion reasons, dan featured news hooks.
+- [x] Tambah chart context bar + live bias/readout.
+- [x] Tambah movers summary + ranked mover rows.
+- [x] Ubah market intelligence jadi editorial card stack.
+- [x] Tambah suggestion reasons + featured news treatment.
+- [x] Jalankan pytest static guard.
+- [x] Jalankan compile check frontend.
+- [x] Browser QA live.
+- [x] Update `PLAN.md`.
+
+**Acceptance criteria:**
+- Chart panel punya context/readout yang jelas.
+- Movers panel punya summary dan rows lebih kaya hierarchy.
+- Bottom grid terasa lebih editorial dan tidak datar.
+- Static guard phase-2 lulus.
 
 ### Phase 3 — Verification, deploy, git hygiene
 **Objective:** verifikasi live, sync runtime, commit, push, deploy notes.
@@ -106,12 +117,23 @@
 
 ---
 
+### 2026-05-03 01:25 WIB
+- [done] TDD RED phase-2: tambah static guards untuk `dash-chart-context`, `dash-movers-summary`, ranked mover rows, editorial intel cards, suggestion reasons, dan featured news styling.
+- [done] Implementasi `frontend/js/views/dashboard.js`: tambah chart context bar + live readout breadth, movers summary chip, ranked mover rows, editorial intel cards, richer suggestion reasons, dan featured news markup.
+- [done] Implementasi `frontend/style.css`: rebalance chart vs movers, styling context bar, summary chip, ranked rows, editorial intel cards, news featured state, dan responsive pass kecil.
+- [done] GREEN verified: `pytest -q backend/tests/test_dashboard_view_static.py` → `4 passed`; `python -m compileall -q frontend/js` → pass.
+- [done] Fix cache-bust deploy gap: bump asset versions di `frontend/index.html`, `frontend/js/main.js`, `frontend/js/router.js`, dan import dashboard view agar runtime memuat patch phase-2.
+- [done] Sync runtime `/opt/swingaq/frontend` + `/opt/swingaq/backend/tests` untuk dashboard phase-2.
+- [done] Browser QA live setelah deploy: phase-2 hooks termuat; chart context, movers summary, suggestion reasons, dan featured news sudah tersedia dari asset baru.
+
+---
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 1 dashboard complete.
+**Slice aktif sekarang:** Phase 2 dashboard regrouping complete.
 
 **Target patch minimum untuk slice berikutnya:**
-1. regroup hierarchy chart/movers,
-2. polish bottom-grid editorial density,
-3. mobile-first dashboard pass,
+1. compact ticker noise / desktop spacing,
+2. mobile-first dashboard pass lebih agresif,
+3. cross-page consistency ke market/screener,
 4. ulangi verify + push + deploy.

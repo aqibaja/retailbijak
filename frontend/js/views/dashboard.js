@@ -1,5 +1,14 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260502a';
-import { observeElements, animateValue } from '../main.js?v=20260502c';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260503a';
+import { observeElements, animateValue } from '../main.js?v=20260503a';
+
+const SUGGESTION_PRESETS = [
+  { ticker: 'BBCA', reason: 'Relative strength bertahan di atas pivot harian.' },
+  { ticker: 'BMRI', reason: 'Bank besar tetap jadi fokus saat tape defensif.' },
+  { ticker: 'GOTO', reason: 'Momentum aktif untuk trader agresif intraday.' },
+  { ticker: 'BRPT', reason: 'Rotasi sektor dan volatility cocok untuk watchlist cepat.' },
+  { ticker: 'TLKM', reason: 'Quality defensive name untuk pullback map.' },
+  { ticker: 'ANTM', reason: 'Komoditas tetap menarik saat flow sektor bergeser.' },
+];
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -56,14 +65,15 @@ export async function renderDashboard(root) {
     <div class="dash-grid-pro">
       <div class="panel dash-chart-panel">
         <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div><div class="dashboard-chip-row"><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button><button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button></div></div>
+        <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias sedang dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu summary dan chart range.</strong></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
-      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><h3 class="panel-title">Top Movers</h3><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Preparing movers tape</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
+      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Top Movers</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape loading</span><small id="dash-movers-summary-note">Membaca leader tape dan breadth support.</small></div></div><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Preparing movers tape</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
     </div>
 
-    <div class="dash-bottom-grid">
+    <div class="dash-bottom-grid dash-bottom-grid-phase2">
       <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Building market brief</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan plan line intraday.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Suggestions</h3><div class="suggestion-grid">${['BBCA','BMRI','GOTO','BRPT','TLKM','ANTM'].map(t=>`<a href="#stock/${t}" class="suggestion-pill"><span>${t}</span><small>Open detail</small></a>`).join('')}</div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Suggestions</h3><div class="suggestion-grid">${SUGGESTION_PRESETS.slice(0,4).map(({ ticker, reason })=>`<a href="#stock/${ticker}" class="suggestion-pill"><span>${ticker}</span><small>Open detail</small><em class="dash-suggestion-reason">${reason}</em></a>`).join('')}</div></div>
       <div class="panel"><h3 class="panel-title mb-3">Latest News</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gathering market headlines</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>
     </div>
   </section>`;
@@ -124,35 +134,47 @@ async function loadIntel(){
   const leadGainerNoteEl = document.getElementById('dash-lead-gainer-note');
   const leadSectorEl = document.getElementById('dash-lead-sector');
   const leadSectorNoteEl = document.getElementById('dash-lead-sector-note');
+  const chartBiasChip = document.getElementById('dash-chart-bias-chip');
+  const chartReadout = document.getElementById('dash-chart-readout');
   if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? 'Need Breadth' : adv >= dec ? 'Risk-On Tape' : 'Defensive Tape';
   if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'No leader yet';
   if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin tape hari ini.` : 'Top movers belum lengkap, fallback tetap aktif.';
   if (leadSectorEl) leadSectorEl.textContent = best?.sector || best?.name || 'Finance';
   if (leadSectorNoteEl) leadSectorNoteEl.textContent = `Rotasi ${pf(best?.change_pct ?? 1.2)} menjadi konteks sektor utama.`;
+  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? 'Breadth pending' : adv >= dec ? 'Breadth support' : 'Breadth bearish';
+  if (chartReadout) chartReadout.textContent = `IHSG ${pf(Number(summary?.change_pct ?? 0))} · ${adv} adv vs ${dec} dec · fokus ${best?.sector || 'sector leader'} sebagai konteks tape.`;
   document.getElementById('market-intel').innerHTML = [
-    `Breadth: <b>${adv}</b> advancers vs <b>${dec}</b> decliners — ${tapeBias}.`,
-    `Leaders: <b>${leadGainer?.ticker || best?.sector || 'N/A'}</b> ${leadGainer ? `(${pf(leadGainer.change_pct ?? 0)})` : `(${pf(best?.change_pct ?? 0)})`} vs <b>${leadLoser?.ticker || 'N/A'}</b> ${leadLoser ? `(${pf(leadLoser.change_pct ?? 0)})` : ''}.`,
-    `Sector leader: <b>${best?.sector||best?.name||'Finance'}</b> (${pf(best?.change_pct ?? 1.2)}).`,
-    planLine
-  ].map(x=>`<div class="intel-item">${x}</div>`).join('');
+    { kicker: 'Breadth', value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? 'Snapshot breadth belum valid.' : `${tapeBias} untuk first glance tape.` },
+    { kicker: 'Leader', value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin, lawan ${leadLoser?.ticker || 'N/A'} di sisi lemah.` : 'Leader tape masih memakai fallback sektoral.' },
+    { kicker: 'Sector', value: best?.sector||best?.name||'Finance', note: `Rotasi ${pf(best?.change_pct ?? 1.2)} paling dominan saat ini.` },
+    { kicker: 'Plan', value: Number(summary?.change_pct ?? 0) >= 0 ? 'Momentum Selective' : 'Defense First', note: planLine.replace('Plan: ', '') }
+  ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
 }
 
 async function loadMovers(){
   const res = await fetchTopMovers(5, 'gainers');
   const items = Array.isArray(res?.data) && res.data.length ? res.data : MOVERS;
-  document.getElementById('movers-list').innerHTML = items.slice(0,5).map(r => row({
+  const moversSummaryChip = document.getElementById('dash-movers-summary-chip');
+  const moversSummaryNote = document.getElementById('dash-movers-summary-note');
+  const positiveCount = items.filter(item => Number(item.change_pct ?? item.change ?? 0) >= 0).length;
+  if (moversSummaryChip) moversSummaryChip.textContent = `${positiveCount}/${items.length} hijau`;
+  if (moversSummaryNote) moversSummaryNote.textContent = positiveCount === items.length
+    ? 'Leader tape masih dominan hijau untuk first glance.'
+    : 'Perhatikan rotasi karena tidak semua leader bergerak searah.';
+  document.getElementById('movers-list').innerHTML = items.slice(0,5).map((r, index) => row({
     ticker: r.ticker,
     name: r.name || r.sector || 'IDX Equity',
     price: r.price ?? 0,
     change: r.change_pct ?? r.change ?? 0,
+    rank: index + 1,
   })).join('');
 }
 
 async function loadNews(){
   const res = await fetchNews(3); const items = (Array.isArray(res?.data)&&res.data.length?res.data:FALLBACK_NEWS);
-  document.getElementById('news-container').innerHTML = items.slice(0,3).map(n=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,90) : 'Buka Market Intelligence'}</small></a>`).join('');
+  document.getElementById('news-container').innerHTML = items.slice(0,3).map((n, index)=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><span class="dash-news-meta">${index===0?'Headline utama':'Quick brief'} · ${n.source||'NEWS'}</span><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,72) : 'Buka Market Intelligence'}</small></a>`).join('');
 }
-const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row"><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div><div class="text-right"><b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
+const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row dash-mover-row"><div class="dash-mover-main"><span class="dash-mover-rank">#${r.rank || '—'}</span><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div></div><div class="text-right"><b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
 
 let ihsgChart;
 const PERIOD_MAP = { '1W': '1W', '1M': '1M', '1Q': '1Q', '1Y': '1Y' };
