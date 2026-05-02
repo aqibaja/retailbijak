@@ -130,7 +130,9 @@
 - [done] Implementasi phase 1: `Market Pulse` disederhanakan menjadi 4 tile primer, mini-panel winner/loser dihapus, stats strip diubah jadi `Breadth Ratio`, `Advancers`, `Decliners`, `Flat`.
 - [done] Verifikasi: `pytest -q backend/tests/test_market_view_static.py` → `6 passed`; `python -m compileall -q frontend/js` → pass.
 - [done] Phase 2 internals regrouping: breadth card diberi anatomy lebih jelas, `Top Gainers/Losers` punya summary head yang konsisten, dan density list card dibersihkan.
-- [in_progress] Menyiapkan phase 3: flow/catalyst refinement, lalu push + deploy.
+- [done] Git: commit `f2b9e19` (`refine market overview first folds and internals`) sudah di-push ke `origin/main`.
+- [done] Deploy frontend: `frontend/js/views/market.js` dan `frontend/style.css` disalin ke `/opt/swingaq/frontend/...`; browser QA live mengonfirmasi `4` pulse tiles, `2` list-card heads, dan `market-breadth-card` tampil.
+- [in_progress] Menyiapkan phase 3: flow/catalyst refinement.
 
 ---
 
