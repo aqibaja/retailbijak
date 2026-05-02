@@ -175,6 +175,11 @@ def test_stock_detail_adds_catalyst_strip_with_honest_fallback_source():
     assert 'News Pulse' in src
     assert 'Announcement Monitor' in src
     assert 'Menunggu catalyst terbaru' in src
+    assert 'Catalyst Link' in src
+    assert 'news://pending' in src
+    assert 'rel="noopener noreferrer"' in src
+    assert 'target="_blank"' in src
+    assert 'row?.ticker' in src or 'row?.code' in src
 
 
 def test_screener_shows_guided_empty_state_and_contextual_controls():

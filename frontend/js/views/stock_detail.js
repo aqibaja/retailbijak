@@ -227,25 +227,28 @@ function renderBelowChartFill(candles, tech){
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
 
-function catalystTile(label, title, body, cls = 'metric-neutral'){
-  return `<div class="stat-tile ${cls}"><span>${label}</span><strong>${title}</strong><small>${body}</small></div>`;
+function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news://pending'){
+  const safeHref = href || 'news://pending';
+  return `<div class="stat-tile ${cls}"><span>${label}</span><strong>${title}</strong><small>${body}</small><small><a href="${safeHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a></small></div>`;
 }
 
 function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const el = document.getElementById('catalyst-strip'); if (!el) return;
   const newsRows = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
   const announcementRows = Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [];
-  const relevantNews = newsRows.find((row) => `${row?.title || ''} ${row?.summary || ''}`.toUpperCase().includes(symbol));
-  const latestAnnouncement = announcementRows[0];
+  const relevantNews = newsRows.find((row) => `${row?.ticker || ''} ${row?.code || ''} ${row?.title || ''} ${row?.summary || ''}`.toUpperCase().includes(symbol));
+  const latestAnnouncement = announcementRows.find((row) => `${row?.code || ''} ${row?.title || ''} ${row?.subject || ''}`.toUpperCase().includes(symbol)) || announcementRows[0];
+  const newsHref = relevantNews?.link || 'news://pending';
+  const annHref = latestAnnouncement?.link || 'news://pending';
   const cards = [
     relevantNews
-      ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good')
-      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbol} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn'),
+      ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref)
+      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbol} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref),
     latestAnnouncement
-      ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral')
-      : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral'),
-    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbol}.`, 'metric-neutral'),
-    catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral'),
+      ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref)
+      : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref),
+    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbol}.`, 'metric-neutral', newsHref),
+    catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref),
   ];
   el.innerHTML = cards.join('');
 }
