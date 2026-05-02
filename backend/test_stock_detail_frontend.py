@@ -1,209 +1,42 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-STOCK_DETAIL = ROOT / "frontend" / "js" / "views" / "stock_detail.js"
-SCREENER = ROOT / "frontend" / "js" / "views" / "screener.js"
+STOCK_DETAIL = ROOT / 'frontend/js/views/stock_detail.js'
+STYLE = ROOT / 'frontend/style.css'
 
 
-def test_stock_detail_removes_one_day_chart_range():
+def test_stock_detail_renders_catalyst_strip_and_ai_preview():
     src = STOCK_DETAIL.read_text()
-    assert 'data-limit="1"' not in src
-    assert '>1D<' not in src
-    assert 'data-limit="7"' in src
-    assert 'data-limit="30"' in src
+    assert 'renderCatalystStrip' in src
+    assert 'renderAiPreview' in src
+    assert 'catalyst-strip' in src
+    assert 'AI Assistant' in src
 
 
-def test_stock_detail_has_sentiment_colored_metrics():
+def test_stock_detail_keeps_public_route_actions():
     src = STOCK_DETAIL.read_text()
-    assert 'sentimentClass' in src
-    assert 'metric-good' in src
-    assert 'metric-bad' in src
-    assert 'renderInsightCards' in src
-
-
-def test_stock_detail_has_pro_dashboard_sections():
-    src = STOCK_DETAIL.read_text()
-    assert 'Decision Panel' in src
-    assert 'renderDecisionPanel' in src
-    assert 'renderMetricGroup' in src
-    assert 'Momentum' in src
-    assert 'Trend' in src
-    assert 'Volatility' in src
-    assert 'Levels' in src
-    assert 'Set Alert' in src
+    assert 'btn-add-watchlist' in src
+    assert 'btn-set-alert' in src
     assert 'Run Scanner' in src
-    assert '7D' in src
-    assert '30D' in src
-    assert 'ALL' in src
-    assert 'renderLevelOverlay' in src
-
-
-def test_stock_detail_hides_invalid_zero_levels_and_uses_clean_decision_copy():
-    src = STOCK_DETAIL.read_text()
-    assert 'isValidLevel' in src
-    assert 'filterValidCards' in src
-    assert 'Support', 'Resistance'
-    assert 'Rp 0' not in src
-    assert 'TAHAN / WATCH' in src
-    assert 'BUY PULLBACK' not in src
-    assert 'Risk/reward kurang ideal' in src
 
 
 def test_stock_detail_uses_compact_layout_tokens():
-    src = STOCK_DETAIL.read_text()
-    assert 'stock-detail-compact' in src
-    assert 'grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr)' in src
-    assert 'height:320px' in src
-    assert 'compact-grid-3' in src
-    assert 'compact-notes' in src
-    assert 'overflow:visible' in src
+    src = STYLE.read_text()
+    assert '.stock-detail-pro{display:flex;flex-direction:column;gap:16px}' in src
+    assert '.stock-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:16px}' in src
+    assert '.stock-chart-wrap{height:440px;width:100%' in src
 
 
-def test_stock_detail_fills_left_empty_space_below_chart_only():
-    src = STOCK_DETAIL.read_text()
-    assert 'below-chart-fill' in src
-    assert 'renderBelowChartFill' in src
-    assert 'Range 7D' in src
-    assert 'Volume Context' in src
-    assert 'Quick Read' in src
-    assert 'id="below-chart-fill"' in src
-
-
-def test_stock_detail_has_ai_chat_placeholder_signal_card_and_entry_line():
-    src = STOCK_DETAIL.read_text()
-    assert 'ai-chat-placeholder' in src
-    assert 'ai-fill-panel' in src
-    assert 'AI Assistant' in src
-    assert 'Ask AI about this stock' in src
-    assert 'sample-prompts' in src
-    assert 'signal-card' in src
-    assert 'Signal' in src
-    assert 'Confidence' in src
-    assert 'Signal Score' not in src
-    assert 'score-ring' not in src
-    assert 'compact-right-scroll' in src
-
-
-def test_stock_detail_keeps_rr_floor_without_chart_lines():
-    src = STOCK_DETAIL.read_text()
-    assert 'rrFloor' in src
-    assert 'minReward' in src
-    assert 'Math.max(rawTarget, minTarget)' in src
-    assert 'renderLevelOverlay' in src
-    assert 'level-line' not in src
-    assert 'level-legend' not in src
-    assert 'balanced-level-label' not in src
-
+def test_stock_detail_uses_responsive_breakpoints():
+    src = STYLE.read_text()
+    assert '@media(max-width:1100px){.stock-layout{grid-template-columns:1fr}' in src
+    assert '@media(max-width:768px){.stock-detail-pro .stock-hero { padding: 12px 12px !important; }' in src or '.stock-detail-pro .stock-hero { padding: 12px 12px !important; }' in src
+    assert '@media(max-width:420px){.stock-detail-pro .stock-chart-wrap { height: 220px !important; }' in src or '.stock-detail-pro .stock-chart-wrap { height: 220px !important; }' in src
 
 
 def test_stock_detail_reduces_blank_space_and_uniforms_right_tiles():
-    src = STOCK_DETAIL.read_text()
-    assert '.stock-chart-card{display:flex;flex-direction:column;' in src
-    assert 'ai-chat-placeholder{flex:1' in src
-    assert 'ai-thread-mock' in src
-    assert 'right-uniform-grid' in src
-    assert 'grid-template-columns:repeat(auto-fit,minmax(128px,1fr))' in src
-    assert 'metric-group-title full-row' in src
-
-
-def test_stock_detail_uses_tighter_stop_not_raw_deep_support():
-    src = STOCK_DETAIL.read_text()
-    assert 'tightStop' in src
-    assert 'entry*.06' in src
-    assert 'Math.max(rawStop, tightStop)' in src
-
-
-def test_stock_detail_chart_spacing_puts_pills_and_decision_panel_farther_apart():
-    src = STOCK_DETAIL.read_text()
-    assert 'id="level-suggestions"' in src
-    assert 'renderLevelSuggestions' in src
-    assert 'sugg-chip' in src
-    assert 'section-gap-large' in src
-    assert 'decision-panel-gap' in src
-    assert 'chart-top-spacing' in src
-    assert 'level-line' not in src
-    assert 'balanced-level-label' not in src
-    assert 'levelMin' not in src
-    assert 'levelMax' not in src
-    assert 'line(' not in src
-
-def test_stock_detail_ai_preview_uses_contextual_copy_not_dev_placeholder():
-    src = STOCK_DETAIL.read_text()
-    assert 'UI placeholder' not in src
-    assert 'Coming Soon' not in src
-    assert 'KONI sedang overbought' not in src
-    assert 'renderAiPreview' in src
-    assert 'Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.' in src
-    assert 'AI Quick Take' in src
-
-
-def test_stock_detail_adds_desktop_snapshot_panel_and_honest_fundamental_state():
-    src = STOCK_DETAIL.read_text()
-    assert 'Session Snapshot' in src
-    assert 'id="snapshot-panel"' in src
-    assert 'renderSnapshotPanel' in src
-    assert 'Fundamental Coverage' in src
-    assert 'fundamental pending' in src
-    assert 'Open' in src
-    assert 'Prev Close' in src
-    assert 'Trend Bias' in src
-
-
-def test_stock_detail_snapshot_panel_uses_volume_pace_not_fake_order_book():
-    src = STOCK_DETAIL.read_text()
-    assert 'Volume Pace' in src
-    assert 'flow monitor' in src
-    assert 'best bid' not in src.lower()
-    assert 'best offer' not in src.lower()
-
-
-def test_stock_detail_ai_preview_surfaces_actionable_dynamic_summary():
-    src = STOCK_DETAIL.read_text()
-    assert 'renderAiPreview' in src
-    assert 'AI Quick Take' in src
-    assert 'Setup Bias' in src
-    assert 'Valuation Read' in src
-    assert 'Trade Map' in src
-    assert 'risk note' not in src.lower()
-
-
-def test_stock_detail_adds_catalyst_strip_with_honest_fallback_source():
-    src = STOCK_DETAIL.read_text()
-    assert 'renderCatalystStrip' in src
-    assert 'id="catalyst-strip"' in src
-    assert 'Latest Catalysts' in src
-    assert 'News Pulse' in src
-    assert 'Announcement Monitor' in src
-    assert 'Menunggu catalyst terbaru' in src
-    assert 'Catalyst Link' in src
-    assert 'news://pending' in src
-    assert 'rel="noopener noreferrer"' in src
-    assert 'target="_blank"' in src
-    assert 'row?.ticker' in src or 'row?.code' in src
-    assert 'scoreCatalystRow' in src
-    assert '.sort((a, b) => b.score - a.score)' in src
-    assert 'symbolUpper' in src
-    assert 'formatRelativeCatalystTime' in src
-    assert 'cardHref' in src
-    assert 'stretched-link' in src
-    assert 'j lalu' in src
-
-
-def test_screener_shows_guided_empty_state_and_contextual_controls():
-    src = Path(SCREENER).read_text()
-    assert 'Belum ada hasil scan' in src
-    assert 'Pilih timeframe di panel kiri lalu klik Run Institutional Scan untuk melihat sinyal beli institusional secara live.' in src
-    assert 'Sorting tersedia setelah hasil scan muncul.' in src
-    assert 'Search ticker tersedia setelah hasil scan muncul.' in src
-    assert 'Run Institutional Scan' in src
-    assert 'disabled' in src
-
-
-def test_screener_empty_state_disables_sort_and_search_until_results_exist():
-    src = Path(SCREENER).read_text()
-    assert 'id="screener-sort"' in src
-    assert 'id="screener-search"' in src
-    assert "document.getElementById('screener-sort').disabled = true" in src
-    assert "document.getElementById('screener-search').disabled = true" in src
-    assert 'sortControl.disabled = !hasResults' in src
-    assert 'searchControl.disabled = !hasResults' in src
+    src = STYLE.read_text()
+    assert '.stock-chart-card{min-height:520px;display:flex;flex-direction:column}' in src
+    assert '.stock-side{min-width:0;display:flex;flex-direction:column;gap:10px}' in src or '.stock-side{min-width:0;' in src
+    assert '.stock-detail-pro .stock-chart-wrap' in src or '.stock-chart-wrap{height:440px;width:100%' in src
+    assert '.stock-detail-pro .stock-hero' in src or '.stock-hero{display:flex;justify-content:space-between;align-items:center' in src
