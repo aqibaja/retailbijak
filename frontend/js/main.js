@@ -209,8 +209,8 @@ async function refreshTopbarMarket() {
 async function setupRunningTicker() {
    const tickerContainer = document.getElementById('running-ticker');
    if (!tickerContainer) return;
-   const res = await fetchTopMovers(6);
-  const rows = Array.isArray(res?.data) && res.data.length ? res.data.slice(0, 6) : [];
+   const res = await fetchTopMovers(4);
+  const rows = Array.isArray(res?.data) && res.data.length ? res.data.slice(0, 4) : [];
   const tickerItems = [...rows, ...rows];
    tickerContainer.innerHTML = tickerItems.map(item => {
        const change = Number(item.change_pct ?? item.change ?? 0);

@@ -165,6 +165,10 @@
 - [done] Browser console QA: dashboard masih sehat; `heroLead=true`, `densityNote=true`, `compactStrip=true`, `compactActions=true`, `chartCanvas=true`, `intelCards=4`, `moversRows=5`, `newsCards=3`.
 - [done] Commit/push/deploy tetap mengikuti workflow batch sebelumnya; tidak ada service restart karena hanya aset frontend statis.
 
+### 2026-05-03 02:20 WIB
+- [done] Trim noise top ticker lagi dengan mengecilkan source sampling menjadi 4 mover unik agar header tidak terlalu kompetitif di first fold.
+- [done] Browser QA live tetap sehat setelah trim, lalu siapkan sync/deploy ulang untuk asset frontend yang berubah.
+
 ---
 
 ## Current Slice Notes
