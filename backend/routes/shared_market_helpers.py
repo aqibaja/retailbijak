@@ -7,15 +7,13 @@ from sqlalchemy.orm import Session
 
 try:
     from database import BrokerSummary, OHLCVDaily, Stock, UserSetting
-    from stocks import get_ticker_display
 except ModuleNotFoundError:
     from backend.database import BrokerSummary, OHLCVDaily, Stock, UserSetting
-    from backend.stocks import get_ticker_display
 
 try:
-    from routes.shared_stocks_helpers import _company_name
+    from routes.shared_stocks_helpers import _company_name, _display_ticker
 except ModuleNotFoundError:
-    from backend.routes.shared_stocks_helpers import _company_name
+    from backend.routes.shared_stocks_helpers import _company_name, _display_ticker
 
 try:
     from routes.shared_sqlite_helpers import _sqlite_datetime_literal
@@ -75,7 +73,7 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
         if not prev_close:
             continue
         change_pct = ((row['close_price'] - prev_close) / prev_close) * 100
-        ticker = get_ticker_display(row['ticker'])
+        ticker = _display_ticker(row['ticker'])
         rows.append({
             'ticker': ticker,
             'name': stocks.get(ticker) or _company_name(row['ticker']),
@@ -106,7 +104,7 @@ def _derived_broker_activity_rows(db: Session) -> tuple[Any, list[dict[str, Any]
         buy_value = round((gross_value / 2) + max(net_value, 0), 2)
         sell_value = round(gross_value - buy_value, 2)
         rows.append({
-            'ticker': get_ticker_display(row['ticker']),
+            'ticker': _display_ticker(row['ticker']),
             'broker_code': f'DRV{index + 1:02d}',
             'buy_volume': int(volume * (0.54 if net_value >= 0 else 0.46)),
             'sell_volume': int(volume * (0.46 if net_value >= 0 else 0.54)),
