@@ -914,9 +914,11 @@ button, input, select { font-family: inherit; border: none; background: none; co
   .dash-actions .btn { width: 100%; }
   .dashboard-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .dash-summary-strip-compact { grid-template-columns: 1fr; gap: 10px; }
-  .dash-mobile-status, .dash-mobile-stack, .dash-mobile-chip { display: grid; }
+  .dash-mobile-status, .dash-mobile-stack, .dash-mobile-chip, .dash-mobile-shell { display: grid; }
   .dash-mobile-status { padding: 16px; }
   .dash-mobile-chip { gap: 4px; }
+  .dash-mobile-shell { gap: 12px; }
+  .dash-bottom-grid-mobile { gap: 12px; }
   .scanner-form, .scanner-results { padding: 14px; }
   .scanner-results .flex.justify-between.items-center.p-5,
   .panel .flex.justify-between.items-center.p-6,

@@ -63,7 +63,7 @@ export async function renderDashboard(root) {
       </div>
     </div>
 
-    <div class="dash-grid-pro">
+    <div class="dash-grid-pro dash-mobile-shell">
       <div class="panel dash-chart-panel">
         <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div><div class="dashboard-chip-row"><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button><button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button></div></div>
         <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias sedang dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu summary dan chart range.</strong></div>
@@ -72,7 +72,7 @@ export async function renderDashboard(root) {
       <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Top Movers</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape loading</span><small id="dash-movers-summary-note">Membaca leader tape dan breadth support.</small></div></div><a href="#market" class="text-xs text-primary strong">View All</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Preparing movers tape</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
     </div>
 
-    <div class="dash-bottom-grid dash-bottom-grid-phase2">
+    <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
       <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Building market brief</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan plan line intraday.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Suggestions</h3><div class="suggestion-grid">${SUGGESTION_PRESETS.slice(0,4).map(({ ticker, reason })=>`<a href="#stock/${ticker}" class="suggestion-pill"><span>${ticker}</span><small>Open detail</small><em class="dash-suggestion-reason">${reason}</em></a>`).join('')}</div></div>
       <div class="panel"><h3 class="panel-title mb-3">Latest News</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gathering market headlines</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>

@@ -79,8 +79,12 @@ def test_dashboard_mobile_polkish_hooks_present_for_compact_first_fold():
     assert 'dash-mobile-status' in content
     assert 'dash-mobile-stack' in content
     assert 'dash-mobile-chip' in content
+    assert 'dash-mobile-shell' in content
+    assert 'dash-bottom-grid-mobile' in content
     assert '.dash-summary-strip-compact' in style
     assert '.dash-mobile-status' in style
     assert '.dash-mobile-stack' in style
     assert '.dash-mobile-chip' in style
+    assert '.dash-mobile-shell' in style
+    assert '.dash-bottom-grid-mobile' in style
     assert '.dash-grid-pro' in style
