@@ -81,8 +81,10 @@ except ModuleNotFoundError:
 
 try:
     from routes.user import router as user_router
+    from routes.system import router as system_router
 except ModuleNotFoundError:
     from backend.routes.user import router as user_router
+    from backend.routes.system import router as system_router
 
 
 @asynccontextmanager
@@ -99,6 +101,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SwingAQ Scanner", version="1.0.0", lifespan=lifespan)
 app.include_router(user_router)
+app.include_router(system_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -134,36 +137,6 @@ class PortfolioPayload(BaseModel):
 
 
 # --- API ---
-@app.get("/api/health")
-def health():
-    return {"status": "ok", "version": "1.0.0"}
-
-
-@app.get("/api/scheduler-health")
-def scheduler_health():
-    jobs = []
-    try:
-        for job in scheduler.get_jobs():
-            next_run = job.next_run_time.isoformat() if job.next_run_time else None
-            jobs.append({
-                "id": job.id,
-                "name": job.name,
-                "next_run_time": next_run,
-                "trigger": str(job.trigger),
-            })
-        return {"status": "ok", "source": "apscheduler", "count": len(jobs), "data": jobs}
-    except Exception as exc:
-        return {"status": "error", "source": "apscheduler", "count": 0, "data": [], "error": str(exc)}
-
-
-@app.get("/api/scheduler-jobs")
-def scheduler_jobs():
-    try:
-        return {"status": "ok", "source": "apscheduler", "count": len(scheduler.get_jobs()), "data": [j.id for j in scheduler.get_jobs()]}
-    except Exception as exc:
-        return {"status": "error", "source": "apscheduler", "count": 0, "data": [], "error": str(exc)}
-
-
 @app.get("/api/timeframes")
 async def timeframes():
     labels = {"1d": "Daily", "1h": "H1", "4h": "H4", "1wk": "Weekly", "1mo": "Monthly"}
