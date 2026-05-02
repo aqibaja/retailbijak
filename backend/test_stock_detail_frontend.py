@@ -127,6 +127,16 @@ def test_stock_detail_chart_spacing_puts_pills_and_decision_panel_farther_apart(
     assert 'levelMax' not in src
     assert 'line(' not in src
 
+def test_stock_detail_ai_preview_uses_contextual_copy_not_dev_placeholder():
+    src = STOCK_DETAIL.read_text()
+    assert 'UI placeholder' not in src
+    assert 'Coming Soon' not in src
+    assert 'KONI sedang overbought' not in src
+    assert '${symbol} sedang ${String(tech?.rating || \'mixed\').toLowerCase()}' in src
+    assert 'Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.' in src
+    assert 'Preview AI' in src
+
+
 def test_screener_shows_guided_empty_state_and_contextual_controls():
     src = Path(SCREENER).read_text()
     assert 'Belum ada hasil scan' in src
