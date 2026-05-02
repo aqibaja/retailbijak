@@ -200,11 +200,19 @@
 - [done] GREEN verified: `pytest -q tests/test_portfolio_view_static.py` → lulus; browser QA live `#portfolio` masih render normal.
 - [done] Commit/push/deploy phase-7 portfolio polish selesai; no restart needed karena static frontend sync only.
 
+### 2026-05-03 03:35 WIB
+- [done] Start help center polish pass: audit `#help` untuk hero shell, quick-start cards, dan support panel.
+- [done] TDD RED: tambah static guard untuk `help-page-pro`, `help-hero`, `help-meta-pill`, `help-guide-grid`, `help-step-card`, dan `help-support-panel`.
+- [done] Implementasi `frontend/js/views/help.js`: ubah help center jadi editorial help shell dengan fast-path hero, guide grid, dan support card.
+- [done] Implementasi `frontend/style.css`: tambah styling help shell, guide cards, support panel, dan mobile stacking.
+- [done] GREEN verified: `pytest -q tests/test_help_view_static.py` → lulus; browser QA live `#help` masih render normal.
+- [done] Commit/push/deploy phase-8 help polish selesai; no restart needed karena static frontend sync only.
+
 ---
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 4 cross-page consistency (market/screener) in progress.
+**Slice aktif sekarang:** Phase 4 cross-page consistency (market/screener/help/news/portfolio) in progress.
 
 **Target patch minimum untuk slice berikutnya:**
 1. market editorial hierarchy hooks,
