@@ -71,3 +71,16 @@ def test_dashboard_styles_define_summary_strip_widget_state_and_phase2_editorial
     assert '.dash-news-card-featured{' in content
     assert '.dash-news-meta{' in content
     assert '.dash-actions .btn.dash-primary-cta{min-height:44px' in content
+
+
+def test_dashboard_mobile_polkish_hooks_present_for_compact_first_fold():
+    content = FRONTEND_DASHBOARD_VIEW.read_text()
+    style = FRONTEND_STYLE.read_text()
+    assert 'dash-mobile-status' in content
+    assert 'dash-mobile-stack' in content
+    assert 'dash-mobile-chip' in content
+    assert '.dash-summary-strip-compact' in style
+    assert '.dash-mobile-status' in style
+    assert '.dash-mobile-stack' in style
+    assert '.dash-mobile-chip' in style
+    assert '.dash-grid-pro' in style

@@ -158,6 +158,13 @@
 - [done] Deploy runtime phase-3: sync `index.html`, `main.js`, `router.js`, `dashboard.js`, `style.css`, dan static test ke `/opt/swingaq/...` tanpa restart karena hanya aset frontend.
 - [done] Browser QA live phase-3: `main.js?v=20260503b` termuat, compact hero hooks aktif, running ticker turun menjadi 12 rendered cards (6 unik x duplikasi scroll), dan chart area tetap tampil di first fold.
 
+### 2026-05-03 02:05 WIB
+- [done] Final polish pass: tambahkan hook mobile-first ringan pada dashboard (`dash-mobile-status`, `dash-mobile-stack`, `dash-mobile-chip`) untuk menjaga first fold tetap rapi saat viewport menyempit.
+- [done] Update static guard agar hook mobile polish terjaga di `backend/tests/test_dashboard_view_static.py`.
+- [done] Update `frontend/style.css` untuk rule mobile dashboard compact tanpa mengganggu desktop layout.
+- [done] Browser console QA: dashboard masih sehat; `heroLead=true`, `densityNote=true`, `compactStrip=true`, `compactActions=true`, `chartCanvas=true`, `intelCards=4`, `moversRows=5`, `newsCards=3`.
+- [done] Commit/push/deploy tetap mengikuti workflow batch sebelumnya; tidak ada service restart karena hanya aset frontend statis.
+
 ---
 
 ## Current Slice Notes

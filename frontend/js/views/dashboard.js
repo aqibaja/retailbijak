@@ -36,7 +36,7 @@ export async function renderDashboard(root) {
         <div class="dash-hero-note">Satu glance untuk baca bias tape, kualitas data, dan jalur aksi tercepat sebelum masuk ke scanner.</div>
         <div class="dash-actions dash-actions-compact"><a href="#screener" class="btn btn-primary dash-primary-cta">Run Scanner</a><a href="#market" class="btn dash-secondary-cta">Market Overview</a></div>
         <div class="dash-density-note">Mode briefing padat: lebih sedikit noise di top fold, lebih cepat masuk ke chart dan movers.</div>
-        <div class="dash-summary-strip dash-summary-strip-compact">
+        <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack">
           <div class="dash-summary-card">
             <span>Market Bias</span>
             <strong id="dash-bias-label">Loading...</strong>
@@ -47,14 +47,14 @@ export async function renderDashboard(root) {
             <strong id="dash-lead-gainer">Loading...</strong>
             <small id="dash-lead-gainer-note">Menunggu top movers valid.</small>
           </div>
-          <div class="dash-summary-card">
+          <div class="dash-summary-card dash-mobile-chip">
             <span>Lead Sector</span>
             <strong id="dash-lead-sector">Loading...</strong>
             <small id="dash-lead-sector-note">Snapshot rotasi sektor.</small>
           </div>
         </div>
       </div>
-      <div class="dash-quote-card">
+      <div class="dash-quote-card dash-mobile-status">
         <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div><div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
         <div class="text-xs text-dim uppercase strong">IHSG Composite</div>
         <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
