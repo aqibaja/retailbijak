@@ -55,6 +55,10 @@ def test_market_deep_insight_grid_uses_grouped_section_headers():
     assert "market-list-card-body" in content
     assert "saham penguat tervalidasi" in content
     assert "saham pelemah tervalidasi" in content
+    assert "market-row-meta" in content
+    assert "market-row-kicker" in content
+    assert "market-row-value-note" in content
+    assert "market-catalyst-title" in content
 
 
 def test_market_grouped_layout_styles_define_section_stacks():
@@ -73,6 +77,11 @@ def test_market_grouped_layout_styles_define_section_stacks():
     assert ".market-list-card-head {" in content
     assert ".market-card-subtle" in content
     assert ".market-breadth-card .market-split-list {" in content
+    assert ".market-row-meta {" in content
+    assert ".market-row-kicker {" in content
+    assert ".market-row-value-note {" in content
+    assert ".market-catalyst-title {" in content
+    assert ".market-card-feed {" in content
     assert ".market-section-group-internals { order: 1; }" in content
     assert ".market-section-group-flow { order: 2; }" in content
     assert ".market-section-group-catalyst { order: 3; }" in content

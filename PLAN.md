@@ -87,10 +87,10 @@
 - Test: `backend/tests/test_market_view_static.py`
 
 **Checklist:**
-- [ ] Rapikan row hierarchy foreign flow.
-- [ ] Rapikan row hierarchy broker activity.
-- [ ] Clamp + rapikan catalysts/announcements metadata.
-- [ ] Samakan spacing dan density antar list cards.
+- [x] Rapikan row hierarchy foreign flow.
+- [x] Rapikan row hierarchy broker activity.
+- [x] Clamp + rapikan catalysts/announcements metadata.
+- [x] Samakan spacing dan density antar list cards.
 
 ### Phase 4 — Mobile-first polish
 **Objective:** pastikan hasil redesign benar-benar enak di mobile.
@@ -132,7 +132,9 @@
 - [done] Phase 2 internals regrouping: breadth card diberi anatomy lebih jelas, `Top Gainers/Losers` punya summary head yang konsisten, dan density list card dibersihkan.
 - [done] Git: commit `f2b9e19` (`refine market overview first folds and internals`) sudah di-push ke `origin/main`.
 - [done] Deploy frontend: `frontend/js/views/market.js` dan `frontend/style.css` disalin ke `/opt/swingaq/frontend/...`; browser QA live mengonfirmasi `4` pulse tiles, `2` list-card heads, dan `market-breadth-card` tampil.
-- [in_progress] Menyiapkan phase 3: flow/catalyst refinement.
+- [done] Phase 3 flow/catalyst refinement: row foreign flow + broker kini punya kicker/meta/value note yang lebih editorial, card feed diberi hierarchy lebih rapi, dan judul catalyst dipisah dari metadata.
+- [done] Verifikasi ulang phase 3: `pytest -q backend/tests/test_market_view_static.py` → `6 passed`; `python -m compileall -q frontend/js` → pass.
+- [in_progress] Menyiapkan phase 4: mobile-first polish, lalu push + deploy.
 
 ---
 
