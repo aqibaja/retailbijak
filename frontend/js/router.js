@@ -1,7 +1,7 @@
 import { renderDashboard } from './views/dashboard.js?v=20260503y';
 import { renderStockDetail } from './views/stock_detail.js?v=20260503x';
 import { renderScreener } from './views/screener.js?v=20260503z';
-import { renderPortfolio } from './views/portfolio.js?v=20260503x';
+import { renderPortfolio } from './views/portfolio.js?v=20260503aa';
 import { renderMarket } from './views/market.js?v=20260503x';
 import { renderNews } from './views/news.js?v=20260503u';
 import { renderSettings } from './views/settings.js?v=20260503x';
@@ -60,7 +60,7 @@ export function handleRoute(hash) {
             
         } catch (e) {
             console.error("Routing error:", e);
-            root.innerHTML = `<div class="p-4 text-down">Error loading view.</div>`;
+            root.innerHTML = `<div class="p-4 text-down">Gagal memuat tampilan.</div>`;
         }
 
         // Fade in

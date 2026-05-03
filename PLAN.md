@@ -245,12 +245,22 @@
 - [done] Sync runtime `/opt/swingaq/frontend` untuk `index.html`, `main.js`, `router.js`, `views/screener.js`, dan `views/help.js`; readback runtime mengonfirmasi token `20260503z` dan string baru sudah tertulis.
 - [done] Browser QA live final dengan URL `/?cb=20260503z#screener` dan `/?cb=20260503z#help`: screener kini menampilkan `Pemindai Akumulasi Institusi`, `PUSAT KONTROL`, `Jalankan Pemindaian SwingAQ`, `Sinyal Live`, `Urutkan berdasarkan CCI`, `Cari kode saham...`; help kini menampilkan `Mulai pemindaian...`, `Buka Pemindai`, dan `Analisis Hasil`.
 
+### 2026-05-03 12:35 WIB
+- [done] Audit slice berikutnya berbasis `search_files` pada shell utama + route `#portfolio`; pilih cleanup copy Indonesia untuk `frontend/index.html`, `frontend/js/main.js`, `frontend/js/router.js`, dan `frontend/js/views/portfolio.js` sebagai batch prioritas berikutnya.
+- [done] TDD RED: tambah guard baru `backend/tests/test_main_shell_copy_static.py` untuk shell utama (topbar, nav, search overlay, router error copy) dan perluas `backend/tests/test_portfolio_view_static.py` agar memaksa label/prompt/toast portofolio-daftar pantau berbahasa Indonesia.
+- [done] RED verified: `pytest -q backend/tests/test_main_shell_copy_static.py backend/tests/test_portfolio_view_static.py` gagal sebelum implementasi.
+- [done] Implementasi shell utama: lokalisasi CTA topbar, tooltip/nav mobile, placeholder pencarian, label grup suggestion, fallback `Ekuitas IDX`, status `IDX BUKA/TUTUP`, dan error route menjadi Indonesia; bump cache-bust chain ke `20260503aa` pada `index.html`, `main.js`, `router.js`, dan import `views/portfolio.js`.
+- [done] Implementasi `frontend/js/views/portfolio.js`: rapikan copy `Portofolio`/`Daftar Pantau`, header tabel, prompt input, confirm dialog, dan toast agar konsisten Indonesia.
+- [done] GREEN verified lokal: `pytest -q backend/tests/test_main_shell_copy_static.py backend/tests/test_portfolio_view_static.py` → `4 passed`; `python -m compileall -q frontend/js` → pass; grep residual English pada file target → bersih.
+- [done] Root cause blank-route saat QA live ditemukan di runtime publik: `/opt/swingaq/frontend/js/views/` hanya berisi 3 file sehingga import `dashboard.js`/`market.js`/`news.js`/`settings.js`/`stock_detail.js` gagal walau repo sudah benar.
+- [done] Fix runtime parity: sync ulang seluruh `frontend/js/views/*.js` ke `/opt/swingaq/frontend/js/views/`; readback runtime dan HTTP HEAD memastikan semua module view kini tersedia publik dengan status `200`.
+- [done] Browser QA live final dengan `/?cb=20260503aa#portfolio` dan `/?cb=20260503aa#dashboard`: portfolio menampilkan `Pusat Portofolio`, `Aset & Daftar Pantau`, `Kode Saham`, `Belum ada posisi portofolio.`; dashboard kembali render normal dengan ticker, hero, chart, movers, dan `activeView` sesuai. Tidak ada blank state baru setelah parity fix runtime.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** stabilitas render SPA lintas route tetap aman, dan copy operasional Indonesia pada route `#screener` + `#help` sudah dirapikan serta tervalidasi live lewat cache-bust chain `20260503z`.
+**Slice aktif sekarang:** shell utama + route `#portfolio` sudah bersih dari copy campuran berprioritas tinggi, cache-bust chain `20260503aa` aktif, dan parity runtime `/opt/swingaq/frontend/js/views` sudah diperbaiki sehingga SPA publik tidak blank lagi.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch audit lanjutan ini,
-2. bila mau lanjut, fokus ke cleanup copy minor/high-signal UX per route daripada stabilitas render,
-3. pertahankan guard anti-korupsi prefix line-number pada file inti + seluruh view di batch frontend berikutnya,
-4. rapikan copy operasional Indonesia pada route `#screener` dan `#help`, lalu verifikasi live dengan cache-bust chain baru.
+1. commit + push batch cleanup shell/portfolio ini,
+2. tambah guard/deploy helper agar sync runtime tidak lagi meninggalkan file view hilang,
+3. lanjutkan cleanup copy minor per-route yang masih high-signal tanpa menyentuh kontrak backend.

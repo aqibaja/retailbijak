@@ -7,14 +7,14 @@ export async function renderPortfolio(root, activeTab) {
       <section class="grid grid-cols-12 stagger-reveal portfolio-page-pro">
         <div class="col-span-12 portfolio-header">
           <div class="portfolio-header-copy">
-            <div class="portfolio-kicker">Pusat Portfolio</div>
-            <h1>Aset & Watchlist</h1>
+            <div class="portfolio-kicker">Pusat Portofolio</div>
+            <h1>Aset & Daftar Pantau</h1>
             <p>Kelola posisi aktif dan pantau aset kandidat dengan tampilan yang lebih rapat dan editorial.</p>
           </div>
           <div class="portfolio-meta-rail">
-            <div class="portfolio-summary">Jalur cepat untuk posisi aktif, catatan ringkas, dan operasi watchlist.</div>
+            <div class="portfolio-summary">Jalur cepat untuk posisi aktif, catatan ringkas, dan operasi daftar pantau.</div>
             <div class="portfolio-tab-switch flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
-              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portfolio</a>
+              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portofolio</a>
               <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Daftar Pantau</a>
             </div>
           </div>
@@ -43,7 +43,7 @@ async function renderWatchlistTab(el) {
       <div class="table-wrapper portfolio-table-wrap">
         <table class="table portfolio-table">
           <thead>
-            <tr><th>Ticker</th><th>Notes</th><th style="text-align:right">Action</th></tr>
+            <tr><th>Kode Saham</th><th>Catatan</th><th style="text-align:right">Aksi</th></tr>
           </thead>
           <tbody>
             ${rows.length ? rows.map(r => `
@@ -64,10 +64,10 @@ async function renderWatchlistTab(el) {
       </div>`;
 
     el.querySelector('#add-watchlist').addEventListener('click', async () => {
-        const ticker = window.prompt('Ticker (e.g. BBCA):'); if (!ticker) return;
-        const notes = window.prompt('Notes:', '') || '';
+        const ticker = window.prompt('Kode saham (contoh: BBCA):'); if (!ticker) return;
+        const notes = window.prompt('Catatan:', '') || '';
         await saveWatchlistItem({ ticker: ticker.toUpperCase(), notes });
-        showToast(`${ticker} added to Watchlist`, 'success');
+        showToast(`${ticker} ditambahkan ke daftar pantau`, 'success');
         await renderWatchlistTab(el);
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
@@ -75,9 +75,9 @@ async function renderWatchlistTab(el) {
     el.querySelectorAll('.delete-watchlist').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const ticker = e.currentTarget.getAttribute('data-ticker');
-            if (window.confirm(`Are you sure you want to remove ${ticker} from your Watchlist?`)) {
+            if (window.confirm(`Yakin ingin menghapus ${ticker} dari daftar pantau?`)) {
                 await deleteWatchlistItem(ticker);
-                showToast(`${ticker} removed from Watchlist`, 'success');
+                showToast(`${ticker} dihapus dari daftar pantau`, 'success');
                 await renderWatchlistTab(el);
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }
@@ -97,7 +97,7 @@ async function renderPortfolioTab(el) {
       <div class="table-wrapper portfolio-table-wrap">
         <table class="table portfolio-table">
           <thead>
-            <tr><th>Ticker</th><th>Lots</th><th>Avg Price</th><th style="text-align:right">Action</th></tr>
+            <tr><th>Kode Saham</th><th>Lot</th><th>Harga Rata-Rata</th><th style="text-align:right">Aksi</th></tr>
           </thead>
           <tbody>
             ${rows.length ? rows.map(r => `
@@ -113,21 +113,21 @@ async function renderPortfolioTab(el) {
                 <td style="text-align:right; width:80px;">
                   <button class="btn-icon delete-portfolio" data-ticker="${r.ticker}" style="color:var(--down-color);"><i data-lucide="trash-2" style="width:16px;"></i></button>
                 </td>
-              </tr>`).join('') : '<tr><td colspan="4" class="text-center p-8 text-dim">Belum ada posisi portfolio.</td></tr>'}
+              </tr>`).join('') : '<tr><td colspan="4" class="text-center p-8 text-dim">Belum ada posisi portofolio.</td></tr>'}
           </tbody>
         </table>
       </div>`;
 
     el.querySelector('#add-portfolio').addEventListener('click', async () => {
-        const ticker = window.prompt('Ticker:'); if (!ticker) return;
-        const lots = Number(window.prompt('Lots:', '1'));
-        const avgPrice = Number(window.prompt('Avg Price:', '1000'));
+        const ticker = window.prompt('Kode saham:'); if (!ticker) return;
+        const lots = Number(window.prompt('Lot:', '1'));
+        const avgPrice = Number(window.prompt('Harga rata-rata:', '1000'));
         if (isNaN(lots) || isNaN(avgPrice)) {
-            showToast('Invalid lots or price', 'error');
+            showToast('Lot atau harga tidak valid', 'error');
             return;
         }
         await savePortfolioPosition({ ticker: ticker.toUpperCase(), lots, avg_price: avgPrice });
-        showToast(`${ticker} added to Portfolio`, 'success');
+        showToast(`${ticker} ditambahkan ke portofolio`, 'success');
         await renderPortfolioTab(el);
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
@@ -135,9 +135,9 @@ async function renderPortfolioTab(el) {
     el.querySelectorAll('.delete-portfolio').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const ticker = e.currentTarget.getAttribute('data-ticker');
-            if (window.confirm(`Are you sure you want to remove ${ticker} from your Portfolio?`)) {
+            if (window.confirm(`Yakin ingin menghapus ${ticker} dari portofolio?`)) {
                 await deletePortfolioPosition(ticker);
-                showToast(`${ticker} removed from Portfolio`, 'success');
+                showToast(`${ticker} dihapus dari portofolio`, 'success');
                 await renderPortfolioTab(el);
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }

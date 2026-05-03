@@ -1,4 +1,4 @@
-import { handleRoute } from './router.js?v=20260503z';
+import { handleRoute } from './router.js?v=20260503aa';
 import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260503b';
 import { initTheme } from './theme.js?v=20260430n';
 // ================= ANIMATION ENGINE =================
@@ -96,21 +96,21 @@ function setupSearchOverlay() {
            <div class="flex items-center gap-3" style="min-width:0;">
              <span class="badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${item.bucket === 'sector' ? 'SC' : item.bucket === 'company' ? 'CO' : 'EQ'}</span>
              <span class="mono strong text-main" style="font-size:15px;">${highlight(item.ticker, query)}</span>
-             <span class="text-sm text-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px;">${highlight(item.name || item.sector || 'IDX Equity', query)}</span>
+             <span class="text-sm text-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px;">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
            </div>
            <span class="text-xs text-dim" style="text-transform:uppercase;">${escapeHtml(item.bucket || item.source || '')}</span>
          </a>`;
        suggestions.innerHTML = [
-         groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Ticker</div>${groups.ticker.map(renderRow).join('')}` : '',
-         groups.company.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Company</div>${groups.company.map(renderRow).join('')}` : '',
-         groups.sector.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Sector</div>${groups.sector.map(renderRow).join('')}` : '',
-       ].filter(Boolean).join('');
+        groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Kode Saham</div>${groups.ticker.map(renderRow).join('')}` : '',
+        groups.company.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Emiten</div>${groups.company.map(renderRow).join('')}` : '',
+        groups.sector.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Sektor</div>${groups.sector.map(renderRow).join('')}` : '',
+].filter(Boolean).join('');
        suggestions.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)));
    };
    const refreshSuggestions = async () => {
        const q = input.value.trim();
        if (!q) {
-           suggestions.innerHTML = '<div class="text-sm text-muted p-3">Ketik ticker atau nama emiten.</div>';
+           suggestions.innerHTML = '<div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div>';
            currentItems = [];
            activeIndex = -1;
            return;
@@ -198,11 +198,11 @@ async function refreshTopbarMarket() {
            if (dotEl && txtEl) {
                const isOpen = data.status === 'ok';
                dotEl.classList.toggle('live', isOpen);
-               txtEl.textContent = isOpen ? 'IDX OPEN' : 'IDX CLOSED';
+               txtEl.textContent = isOpen ? 'IDX BUKA' : 'IDX TUTUP';
            }
        }
    } catch (e) {
-       console.warn('Failed to refresh topbar', e);
+       console.warn('Gagal memperbarui topbar', e);
    }
 }
 // Running Ticker Setup
