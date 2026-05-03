@@ -295,6 +295,16 @@
 - [done] GREEN verified lokal + publik: `pytest -q backend/tests/test_high_signal_route_copy_static.py backend/tests/test_public_resource_chain_static.py backend/tests/test_frontend_runtime_scripts_static.py backend/tests/test_deploy_scripts_static.py` → `17 passed`; `python -m py_compile scripts/check_public_resource_chain.py` → pass; `python -m compileall -q frontend/js` → pass.
 - [done] Runtime/public verification: sync `dashboard.js`, `news.js`, `stock_detail.js`, dan `check_public_resource_chain.py` ke `/opt/swingaq/...`; `python scripts/check_frontend_runtime_parity.py` tetap `PASS`; `python scripts/check_public_resource_chain.py` kembali `PASS` sambil memverifikasi marker copy high-signal publik bersama token chain aktif.
 
+### 2026-05-03 13:47 WIB
+- [done] TDD RED batch-2: tambah `backend/tests/test_high_signal_route_copy_batch2_static.py` untuk guard high-signal copy route `#screener`, `#portfolio`, dan `#settings`; failure awal mengonfirmasi marker prioritas dan banned-string batch kedua belum bersih.
+- [done] Rapikan static guard lama `backend/tests/test_cache_bust_chain_static.py` agar mengikuti token aktif secara dinamis, bukan angka token lama yang sudah usang.
+- [done] Implementasi `frontend/js/views/screener.js`: lokalisasi high-signal surface `BELI`, `Harga`, `Ekuitas IDX`, status `SEDANG MEMINDAI...`, progress `Sedang memindai ...`, empty/result toast `sinyal beli`, dan hilangkan string prioritas Inggris (`BUY`, `Price`, `SCANNING...`, `IDX Equity`).
+- [done] Implementasi `frontend/js/views/portfolio.js`: ubah CTA jadi `Tambah ke Daftar Pantau` / `Tambah Posisi`, badge `ENTRI` / `POS`, dan header `Harga Beli Rata-Rata`.
+- [done] Implementasi `frontend/js/views/settings.js`: ganti `CMD+K / CTRL+K` menjadi `⌘K / Ctrl+K` dan copy `aliran data premium` menjadi `aliran data lanjutan`.
+- [done] Perluas `scripts/check_public_resource_chain.py` untuk ikut memverifikasi marker high-signal publik route `screener`, `portfolio`, dan `settings`; update `backend/tests/test_public_resource_chain_static.py` agar helper baru dijaga static test.
+- [done] GREEN verified lokal: `pytest -q backend/tests/test_cache_bust_chain_static.py backend/tests/test_frontend_import_chain_static.py backend/tests/test_public_resource_chain_static.py backend/tests/test_high_signal_route_copy_static.py backend/tests/test_high_signal_route_copy_batch2_static.py` → `13 passed`; `python -m compileall -q frontend/js` dan `python -m py_compile scripts/check_public_resource_chain.py` → pass.
+- [done] Runtime/public verification: sync `screener.js`, `portfolio.js`, `settings.js`, checker publik, dan static tests terkait ke `/opt/swingaq/...`; `python scripts/check_frontend_runtime_parity.py` → `PASS`; `python scripts/check_public_resource_chain.py` → `PASS` sambil mengonfirmasi route publik `screener`, `portfolio`, `settings` ikut lolos marker copy baru.
+
 ## Current Slice Notes
 
 **Slice aktif sekarang:** guard deploy publik kini mengawasi dua kelas regresi sekaligus: drift token/import chain dan copy high-signal pada route paling terlihat user (`dashboard`, `stock`, `news`).

@@ -24,6 +24,9 @@ ROUTE_COPY_MARKERS = {
     'dashboard': ['Dashboard Intelijen Pasar', 'Jalankan Pemindai', 'Penggerak Teratas', 'Berita Terbaru'],
     'stock': ['Grafik Harga', 'Ringkasan Sesi', 'Tambah ke Daftar Pantau', 'Jalankan Pemindai'],
     'news': ['Berita Terbaru', 'Memuat feed intel pasar...', 'Gagal memuat berita: '],
+    'screener': ['Pemindai Akumulasi Institusi', 'Jalankan Pemindaian SwingAQ', 'Sinyal Live', 'Urutkan berdasarkan CCI', 'Cari kode saham...', 'Sedang memindai'],
+    'portfolio': ['Pusat Portofolio', 'Aset & Daftar Pantau', 'Tambah ke Daftar Pantau', 'Posisi Aktif', 'Harga Beli Rata-Rata'],
+    'settings': ['PUSAT PENGATURAN', 'Kontrol Ruang Kerja', 'Mesin Antarmuka', 'Catatan Terminal', 'aliran data lanjutan'],
 }
 
 

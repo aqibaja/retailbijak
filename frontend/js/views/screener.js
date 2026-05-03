@@ -18,7 +18,7 @@ const renderEmptyState = ({
 
 const rowMeta = (r) => `
   <div class="scanner-row-meta">
-    <span class="scanner-row-kicker">BUY</span>
+    <span class="scanner-row-kicker">BELI</span>
     <span class="scanner-row-note">CCI ${r.cci ?? '—'} · MA ${r.magic_line ?? '—'} · Vol ${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</span>
   </div>`;
 
@@ -35,15 +35,15 @@ const renderRow = (r) => `
       <div class="scanner-row-copy">
         <div class="scanner-row-title">
           <div class="text-main scanner-row-ticker">${r.ticker}</div>
-          <span class="scanner-row-kicker">BUY</span>
+          <span class="scanner-row-kicker">BELI</span>
         </div>
-        <div class="scanner-row-name">${r.name || 'IDX Equity'}</div>
+        <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}</div>
         ${rowMeta(r)}
       </div>
     </div>
     <div class="scanner-row-stats">
       <div class="scanner-row-stat">
-        <span>Price</span>
+        <span>Harga</span>
         <strong class="mono">${Number(r.close || 0).toLocaleString('id-ID')}</strong>
       </div>
       <div class="scanner-row-stat">
@@ -147,7 +147,7 @@ function renderList(results) {
     contentArea.innerHTML = hasResults
         ? `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`
         : renderEmptyState({
-            title: 'Tidak ada sinyal BUY ditemukan',
+            title: 'Tidak ada sinyal beli terdeteksi',
             body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
             action: 'Coba jalankan scan lagi beberapa saat atau ganti timeframe saat preset tambahan tersedia.',
         });
@@ -170,7 +170,7 @@ function runScreener() {
     sortControl.disabled = true;
     searchControl.disabled = true;
     searchControl.value = '';
-    countBadge.textContent = 'SCANNING...';
+    countBadge.textContent = 'SEDANG MEMINDAI...';
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
     progBox.style.display = 'block';
@@ -179,7 +179,7 @@ function runScreener() {
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            document.getElementById('sp-text').textContent = `Memindai ${data.ticker}...`;
+            document.getElementById('sp-text').textContent = `Sedang memindai ${data.ticker}...`;
             document.getElementById('sp-percent').textContent = `${data.percent}%`;
             document.getElementById('sp-fill').style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
@@ -191,7 +191,7 @@ function runScreener() {
             progBox.style.display = 'none';
             countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
-            showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal BUY.`, 'success');
+            showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal beli.`, 'success');
             es.close();
         }
     };

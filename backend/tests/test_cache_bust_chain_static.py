@@ -8,22 +8,30 @@ JS_DIR = Path('/home/rich27/retailbijak/frontend/js')
 VIEWS_DIR = JS_DIR / 'views'
 
 
-def test_cache_bust_chain_uses_current_20260503y_token():
+def test_cache_bust_chain_follows_current_tokens():
     index = INDEX.read_text()
     main = MAIN.read_text()
     router = ROUTER.read_text()
-    assert 'js/main.js?v=20260503y' in index
-    assert "./router.js?v=20260503y" in main
-    assert "./views/dashboard.js?v=20260503y" in router
-    assert "./views/stock_detail.js?v=20260503x" in router
-    assert "./views/screener.js?v=20260503x" in router
-    assert "./views/portfolio.js?v=20260503x" in router
-    assert "./views/market.js?v=20260503x" in router
-    assert "./views/news.js?v=20260503u" in router
-    assert "./views/help.js?v=20260503x" in router
-    assert "./views/settings.js?v=20260503x" in router
-    assert "../main.js?v=20260503y" in Path('/home/rich27/retailbijak/frontend/js/views/dashboard.js').read_text()
-    assert "../main.js?v=20260503y" in Path('/home/rich27/retailbijak/frontend/js/views/market.js').read_text()
+    main_token = re.search(r'js/main\.js\?v=([A-Za-z0-9_-]+)', index).group(1)
+    router_token = re.search(r"\.\/router\.js\?v=([A-Za-z0-9_-]+)", main).group(1)
+
+    assert main_token == router_token
+    assert f'js/main.js?v={main_token}' in index
+    assert f"./router.js?v={router_token}" in main
+    assert f"../main.js?v={main_token}" in Path('/home/rich27/retailbijak/frontend/js/views/dashboard.js').read_text()
+    assert f"../main.js?v={main_token}" in Path('/home/rich27/retailbijak/frontend/js/views/market.js').read_text()
+
+    for view_name in [
+        'dashboard.js',
+        'stock_detail.js',
+        'screener.js',
+        'portfolio.js',
+        'market.js',
+        'news.js',
+        'settings.js',
+        'help.js',
+    ]:
+        assert f"./views/{view_name}?v=" in router
 
 
 def test_view_files_do_not_contain_line_number_prefix_corruption():

@@ -51,13 +51,13 @@ export async function renderSettings(root) {
             <h2 class="settings-note-title"><i data-lucide="terminal" style="width:14px;"></i> Catatan Terminal</h2>
             <div class="settings-note-stack">
                 <div class="settings-note-card">
-                    <strong style="color:var(--text-main)">CMD+K / CTRL+K</strong> membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.
+                    <strong style="color:var(--text-main)">⌘K / Ctrl+K</strong> membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.
                 </div>
                 <div class="settings-note-card">
                     Tema menyesuaikan otomatis. Penyesuaian manual tetap tersedia di pojok kanan atas.
                 </div>
                 <div class="settings-note-card">
-                    Hasil pemindai tertunda 15 menit kecuali ruang kerja terhubung ke aliran data premium.
+                    Hasil pemindai tertunda 15 menit kecuali ruang kerja terhubung ke aliran data lanjutan.
                 </div>
             </div>
           </div>

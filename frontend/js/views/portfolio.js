@@ -37,8 +37,8 @@ async function renderWatchlistTab(el) {
     
     el.innerHTML = `
       <div class="portfolio-table-head flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
-        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;">Daftar Pantau <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} ITEM</span></h3>
-        <button id="add-watchlist" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> Tambah</button>
+        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;">Daftar Pantau <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} ENTRI</span></h3>
+        <button id="add-watchlist" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> Tambah ke Daftar Pantau</button>
       </div>
       <div class="table-wrapper portfolio-table-wrap">
         <table class="table portfolio-table">
@@ -91,13 +91,13 @@ async function renderPortfolioTab(el) {
     
     el.innerHTML = `
       <div class="portfolio-table-head flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
-        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;" data-i18n="current_holdings">Posisi Aktif <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} POSISI</span></h3>
-        <button id="add-portfolio" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> Tambah</button>
+        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;" data-i18n="current_holdings">Posisi Aktif <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} POS</span></h3>
+        <button id="add-portfolio" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> Tambah Posisi</button>
       </div>
       <div class="table-wrapper portfolio-table-wrap">
         <table class="table portfolio-table">
           <thead>
-            <tr><th>Kode Saham</th><th>Lot</th><th>Harga Rata-Rata</th><th style="text-align:right">Aksi</th></tr>
+            <tr><th>Kode Saham</th><th>Lot</th><th>Harga Beli Rata-Rata</th><th style="text-align:right">Aksi</th></tr>
           </thead>
           <tbody>
             ${rows.length ? rows.map(r => `
