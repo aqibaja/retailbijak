@@ -14,6 +14,7 @@ CORE_ASSETS = [
     'js/router.js',
     'js/api.js',
     'js/theme.js',
+    'js/i18n.js',
 ]
 ROUTED_VIEW_ASSETS = [
     'js/views/dashboard.js',

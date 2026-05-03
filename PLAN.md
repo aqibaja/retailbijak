@@ -256,11 +256,20 @@
 - [done] Fix runtime parity: sync ulang seluruh `frontend/js/views/*.js` ke `/opt/swingaq/frontend/js/views/`; readback runtime dan HTTP HEAD memastikan semua module view kini tersedia publik dengan status `200`.
 - [done] Browser QA live final dengan `/?cb=20260503aa#portfolio` dan `/?cb=20260503aa#dashboard`: portfolio menampilkan `Pusat Portofolio`, `Aset & Daftar Pantau`, `Kode Saham`, `Belum ada posisi portofolio.`; dashboard kembali render normal dengan ticker, hero, chart, movers, dan `activeView` sesuai. Tidak ada blank state baru setelah parity fix runtime.
 
+### 2026-05-03 12:52 WIB
+- [done] Audit deploy/runtime parity batch berikutnya: gap minimum ditemukan pada aset `frontend/js/i18n.js`, karena file ini dipakai runtime publik tetapi belum ikut dicopy oleh `scripts/sync_production.sh`, belum dijaga oleh `scripts/check_frontend_runtime_parity.py`, dan belum disebut eksplisit di `DEPLOY.md`.
+- [done] TDD RED: tambah `backend/tests/test_runtime_parity_i18n_static.py` untuk memaksa tiga hal sekaligus — sync script wajib menyalin `frontend/js/i18n.js`, parity checker wajib mengaudit `js/i18n.js`, dan runbook deploy wajib mendokumentasikan sync aset tersebut.
+- [done] RED verified: `pytest -q backend/tests/test_runtime_parity_i18n_static.py` awalnya gagal `3 failed`, membuktikan gap parity i18n memang nyata sebelum implementasi.
+- [done] Implementasi deploy helper: update `scripts/sync_production.sh` agar menyalin `frontend/js/i18n.js`; update `scripts/check_frontend_runtime_parity.py` agar `js/i18n.js` masuk daftar core assets; update `DEPLOY.md` agar langkah manual dan one-command deploy sama-sama menyebut parity i18n.
+- [done] GREEN verified: `pytest -q backend/tests/test_runtime_parity_i18n_static.py backend/tests/test_deploy_scripts_static.py backend/tests/test_frontend_runtime_scripts_static.py` → `10 passed`; `python -m py_compile scripts/check_frontend_runtime_parity.py scripts/post_deploy_smoke_check.py` → pass; `bash -n scripts/sync_production.sh` → pass.
+- [done] Runtime parity verified: sync `frontend/js/i18n.js` ke `/opt/swingaq/frontend/js/i18n.js`, lalu jalankan `python scripts/check_frontend_runtime_parity.py` → seluruh core assets + routed views `PASS`.
+- [done] Browser QA live `/?cb=20260503aa#settings`: route tetap render normal dengan `activeView=settings`; resource entries live kini eksplisit memuat `js/i18n.js` bersama chain modul frontend lain.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** shell utama + route `#portfolio` sudah bersih dari copy campuran berprioritas tinggi, cache-bust chain `20260503aa` aktif, dan parity runtime `/opt/swingaq/frontend/js/views` sudah diperbaiki sehingga SPA publik tidak blank lagi.
+**Slice aktif sekarang:** deploy helper + parity guard sekarang sudah mencakup `frontend/js/i18n.js`, sehingga chain aset frontend inti lebih lengkap dan risiko runtime drift setelah deploy berkurang.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch cleanup shell/portfolio ini,
-2. tambah guard/deploy helper agar sync runtime tidak lagi meninggalkan file view hilang,
-3. lanjutkan cleanup copy minor per-route yang masih high-signal tanpa menyentuh kontrak backend.
+1. commit + push batch hardening deploy/parity ini,
+2. pertimbangkan helper parity berikutnya untuk mendeteksi import versi lama lintas resource chain bila masih muncul di browser QA,
+3. lanjutkan cleanup copy minor/high-signal per-route setelah guard deploy stabil.
