@@ -258,15 +258,15 @@ async function loadAiPickWidget() {
           </div>
           <div class="dash-ai-pick-score">${nf(featured.score, 1)}</div>
         </div>
-        <p class="dash-ai-pick-fit">${featured.fit_label || 'Explainable ranking engine memilih kandidat ini untuk mode swing.'}</p>
+        <p class="dash-ai-pick-fit">${featured.fit_label || 'Ranking engine memilih kandidat ini sebagai ide tercepat untuk mode swing.'}</p>
         <div class="dash-ai-pick-metrics">
-          <div><span>Conf</span><strong>${featured.confidence || '-'}</strong></div>
+          <div><span>Keyakinan</span><strong>${featured.confidence || '-'}</strong></div>
           <div><span>Change</span><strong>${pf(featured.change_pct ?? 0)}</strong></div>
           <div><span>Vol Ratio</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
         </div>
         <div class="dash-ai-pick-summary">
           <span>${featured.reason_labels?.[0] || 'Likuiditas dan teknikal masih mendukung.'}</span>
-          <small>${featured.risk_note || 'Tetap validasi entry dan invalidasi sebelum eksekusi.'}</small>
+          <small>${Number(featured.confidence ?? 0) >= 75 ? 'konfirmasi teknikal cukup kuat untuk akumulasi bertahap' : Number(featured.confidence ?? 0) >= 55 ? 'cukup layak dipantau, tetapi belum konfirmasi kuat' : (featured.risk_note || 'Tetap validasi entry dan invalidasi sebelum eksekusi.')}</small>
         </div>
       </a>
       ${alternatives.length ? `

@@ -70,6 +70,13 @@ function renderMetricStrip(item) {
     </div>`;
 }
 
+function confidenceNarrative(value) {
+  const score = Number(value ?? 0);
+  if (score >= 75) return 'konfirmasi teknikal cukup kuat untuk akumulasi bertahap';
+  if (score >= 55) return 'cukup layak dipantau, tetapi belum konfirmasi kuat';
+  return 'masih butuh validasi tambahan sebelum masuk radar utama';
+}
+
 function renderCompareTray(items = []) {
   if (!items.length) {
     return `
@@ -90,7 +97,7 @@ function renderCompareTray(items = []) {
                 <div class="screener-kicker">${item.ticker}</div>
                 <strong>${item.score}</strong>
               </div>
-              <small>Conf ${item.confidence}</small>
+              <small>Keyakinan ${item.confidence} · ${confidenceNarrative(item.confidence)}</small>
             </div>
             ${renderMetricStrip(item)}
             <div class="ai-picks-factor-list">
@@ -145,7 +152,7 @@ function renderRankCard(item, mode) {
         </div>
         <div class="ai-picks-score-stack">
           <strong>${nf(item.score, 1)}</strong>
-          <small>Confidence ${item.confidence}</small>
+          <small>Keyakinan ${item.confidence} · ${confidenceNarrative(item.confidence)}</small>
         </div>
       </div>
       ${renderMetricStrip(item)}
@@ -345,7 +352,7 @@ export async function renderAiPicks(root) {
             </div>
             <div class="ai-picks-score-stack">
               <strong>${nf(featured.score, 1)}</strong>
-              <small>Confidence ${featured.confidence}</small>
+              <small>Keyakinan ${featured.confidence} · ${confidenceNarrative(featured.confidence)}</small>
             </div>
           </div>
           ${renderMetricStrip(featured)}

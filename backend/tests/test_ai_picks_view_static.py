@@ -18,12 +18,10 @@ def test_api_exposes_fetch_ai_picks_helper_with_safe_fallback_shape():
     assert "market_context: { tone: 'unknown', breadth_label: 'data belum cukup', latest_date: null }" in content
 
 
-
 def test_router_registers_ai_picks_view():
     content = ROUTER.read_text()
     assert "import { renderAiPicks } from './views/ai_picks.js" in content
     assert "else if (baseRoute === 'ai-picks') renderAiPicks(root);" in content
-
 
 
 def test_ai_picks_view_exports_render_function_and_shell_hooks():
@@ -37,7 +35,6 @@ def test_ai_picks_view_exports_render_function_and_shell_hooks():
     assert 'ai-picks-compare' in content
     assert 'ai-picks-empty' in content
     assert 'fetchAiPicks' in content
-
 
 
 def test_ai_picks_view_contains_compare_tray_and_explainable_metric_hooks():
@@ -57,7 +54,6 @@ def test_ai_picks_view_contains_compare_tray_and_explainable_metric_hooks():
     assert 'data-ai-picks-compare' in content
 
 
-
 def test_ai_picks_view_persists_mode_and_exposes_richer_state_markers():
     content = VIEW.read_text()
     assert 'const AI_PICKS_MODE_KEY =' in content
@@ -67,7 +63,6 @@ def test_ai_picks_view_persists_mode_and_exposes_richer_state_markers():
     assert 'data-ai-picks-state="empty"' in content
     assert 'data-ai-picks-state="error"' in content
     assert 'data-ai-picks-retry' in content
-
 
 
 def test_ai_picks_view_supports_detail_context_handoff():
@@ -85,6 +80,26 @@ def test_ai_picks_view_supports_detail_context_handoff():
     assert 'source_route' in content
     assert 'source_label' in content
 
+
+def test_ai_picks_and_dashboard_use_indonesian_confidence_copy_with_explanation():
+    ai_picks = VIEW.read_text()
+    dashboard = DASHBOARD.read_text()
+    expected = [
+        'Keyakinan',
+        'cukup layak dipantau, tetapi belum konfirmasi kuat',
+        'konfirmasi teknikal cukup kuat untuk akumulasi bertahap',
+    ]
+    for marker in expected:
+        assert marker in ai_picks or marker in dashboard
+
+    banned = [
+        'Confidence ',
+        'Conf ',
+        'Explainable ranking engine memilih kandidat ini untuk mode swing.',
+    ]
+    for marker in banned:
+        assert marker not in ai_picks
+        assert marker not in dashboard
 
 
 def test_dashboard_contains_top_ai_pick_widget_hooks():
@@ -106,7 +121,6 @@ def test_dashboard_contains_top_ai_pick_widget_hooks():
     assert 'dash-ai-pick-alt-item' in content
     assert 'data-dash-ai-pick-alt-detail' in content
     assert 'picks.slice(1, 3)' in content
-
 
 
 def test_stock_detail_can_render_ai_pick_context_banner():
@@ -137,7 +151,6 @@ def test_stock_detail_can_render_ai_pick_context_banner():
     assert 'stock-ai-pick-context-cta' in content
 
 
-
 def test_ai_picks_styles_exist_for_shell_layout():
     content = STYLE.read_text()
     assert '.ai-picks-page' in content
@@ -146,7 +159,6 @@ def test_ai_picks_styles_exist_for_shell_layout():
     assert '.ai-picks-featured-card' in content
     assert '.ai-picks-rank-card' in content
     assert '.ai-picks-compare-tray' in content
-
 
 
 def test_ai_picks_styles_exist_for_compare_and_factor_visuals():
@@ -159,14 +171,12 @@ def test_ai_picks_styles_exist_for_compare_and_factor_visuals():
     assert '.ai-picks-metric-strip' in content
 
 
-
 def test_ai_picks_styles_cover_loading_empty_and_error_states():
     content = STYLE.read_text()
     assert '.ai-picks-state-card' in content
     assert '.ai-picks-state-stack' in content
     assert '.ai-picks-state-pulse' in content
     assert '.ai-picks-retry-btn' in content
-
 
 
 def test_dashboard_styles_cover_top_ai_pick_widget():
@@ -179,11 +189,9 @@ def test_dashboard_styles_cover_top_ai_pick_widget():
     assert '.dash-ai-pick-alt-item' in content
 
 
-
 def test_stock_detail_styles_cover_ai_pick_context_banner():
     content = STYLE.read_text()
     assert '.stock-ai-pick-context' in content
     assert '.stock-ai-pick-context-meta' in content
     assert '.stock-ai-pick-context-origin' in content
     assert '.stock-ai-pick-context-actions' in content
-
