@@ -302,7 +302,17 @@
 - [done] QA follow-up pasca-fix untuk behavior overlay/keyboard juga dijalankan di domain live agar coverage tidak berhenti di happy path `bbca`. Hasilnya: buka overlay via tombol `Cari` tetap fokus ke `#global-search-input`, `Escape` menutup overlay bersih tanpa console error, state fallback `Ketik kode saham atau nama emiten.` muncul saat kosong, pencarian `bbri` merender suggestion `#stock/BBRI`, dan navigasi keyboard `ArrowDown/ArrowUp` tetap mempertahankan highlight aktif pada hasil suggestion. Satu observasi minor: trigger shortcut yang diuji via automation hanya `browser_press('k')`, sehingga ia tidak mereplikasi kombinasi `Ctrl/Cmd+K`; bug baru tidak terdeteksi, tetapi shortcut chord penuh belum tervalidasi oleh tool browser saat ini.
 - [done] Dokumentasi QA follow-up search overlay sudah disinkronkan ke git sebagai commit `d2dd752 docs: record search overlay follow-up qa` dan berhasil di-push ke `origin/main`.
 - [done] QA topbar shell dilanjutkan ke kontrol tema + shortcut pengaturan pada domain live. Verifikasi menunjukkan `data-theme` awal `dark`, klik tombol `Ubah tema` sukses mengubah state ke `light` tanpa console error, klik kedua mengembalikan state ke `dark`, dan route `#settings` dari tombol `Pengaturan` terbuka sehat (`h1 = Kontrol Ruang Kerja`, marker route `settings`, tombol `Simpan Konfigurasi` terlihat). Jadi dua kontrol shell paling dekat setelah search-fix tervalidasi normal pada runtime publik.
-- [next] Persist batch QA topbar shell ini ke git agar `PLAN.md` tetap sinkron.
+- [done] Dokumentasi QA topbar shell sudah disinkronkan ke git sebagai commit `8a11d26 docs: record topbar shell qa` dan berhasil di-push ke `origin/main`.
+
+---
+
+### 2026-05-04 02:18 CST
+- [done] Lanjut QA shell/nav parity di domain live sesuai instruksi user untuk terus jalan dan mencatat **setiap proses** ke `PLAN.md`.
+- [done] Audit awal landing dashboard: running ticker header terdeteksi sehat dengan `8` anchor render (`4` simbol unik diduplikasi untuk marquee scroll) dan semua href mengarah ke route hash `#stock/{ticker}` yang valid (`SDMU`, `HERO`, `ADHI`, `INDS`).
+- [done] Verifikasi klik nyata pada ticker `ADHI 212 +16.48%`: navigasi berhasil ke `#stock/ADHI`, `h1 = ADHI`, konten detail saham terisi penuh (`innerHTML.length≈15894`), panel chart/AI/action buttons tampil, dan tidak ada indikasi blank-route dari flow ticker link.
+- [done] Verifikasi nav parity sidebar + bottom-nav pada route `#market`: klik ikon sidebar market berhasil membuka `#market`, `h1 = Ikhtisar Pasar`, serta status aktif sinkron di dua shell sekaligus (`.nav-item.active` dan `.bottom-nav-item.active` sama-sama menunjuk `#market`).
+- [done] Observasi tambahan QA shell: `document.body.dataset.routePath` masih `null` pada snapshot automation meski route/hash, heading, dan state active nav sudah benar. Karena render aktual + active classes tetap sinkron, saya catat ini sebagai nuance automation/non-blocking observability, bukan defect user-facing baru.
+- [done] Kesimpulan batch ini: running ticker links dan parity nav utama tervalidasi sehat di runtime publik; tidak ada patch kode yang dibutuhkan untuk batch QA ini.
 
 ---
 
