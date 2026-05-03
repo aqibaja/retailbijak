@@ -261,7 +261,12 @@
 - [done] Git hygiene final selesai: patch di-stage selektif, di-commit sebagai `9121d55 fix: align ai picks briefing date with jakarta trading day`, lalu berhasil di-push ke `origin/main`.
 - [done] Post-push status bersih untuk patch produk; sisa untracked hanya file planning lokal di `.hermes/plans/`, tidak memengaruhi runtime maupun repo produk.
 - [done] Audit lanjutan hygiene repo: `.gitignore` belum mengabaikan artefak planning lokal `.hermes/plans/`, sehingga setiap sesi kerja masih meninggalkan noise `git status` walau patch produk sudah selesai.
-- [next] Rapikan hygiene repo dengan mengabaikan `.hermes/plans/`, verifikasi `git status`, lalu dokumentasikan hasilnya di `PLAN.md`.
+- [done] Fix hygiene repo diterapkan: tambah rule `.hermes/plans/` ke `.gitignore` agar artefak planning lokal Hermes tidak lagi mencemari working tree proyek.
+- [done] Verifikasi pasca-fix: `git status --short` sebelum commit tinggal menunjukkan `.gitignore` dan `PLAN.md`; empat file plan lokal tidak lagi muncul sebagai untracked.
+- [done] Git hygiene lanjutan selesai: perubahan di-commit sebagai `6010700 chore: ignore local hermes planning artifacts`.
+- [done] Push final hygiene commit berhasil ke `origin/main`; status HEAD kini `6010700`.
+- [done] Setelah push, working tree yang tersisa hanya `PLAN.md` karena dokumentasi step final ini baru saja ditambahkan; artefak `.hermes/plans/` sudah benar-benar tidak muncul lagi di `git status`.
+- [done] Scope batch lanjutan ini juga tuntas: hygiene repo untuk file planning lokal kini permanen lebih bersih tanpa mengganggu patch produk.
 
 ---
 
