@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 from typing import Any
 
@@ -78,10 +79,47 @@ def _chat_completion(*, api_key: str, model: str, system_prompt: str, user_promp
         ],
     }
     response = requests.post(f'{OPENROUTER_BASE_URL}/chat/completions', headers=headers, json=payload, timeout=timeout)
-    response.raise_for_status()
-    data = response.json()
-    content = data['choices'][0]['message']['content']
-    parsed = json.loads(content)
+    try:
+        data = response.json()
+    except Exception:
+        raw_body = (response.text or '').strip()
+        json_start = raw_body.find('{')
+        if json_start >= 0:
+            try:
+                data = json.loads(raw_body[json_start:])
+            except Exception as exc:
+                raise RuntimeError(f'gagal parse body OpenRouter: {exc}') from exc
+        else:
+            raise RuntimeError('respons OpenRouter kosong atau bukan JSON')
+    if response.status_code >= 400:
+        error = data.get('error') or {}
+        metadata = error.get('metadata') or {}
+        raw_message = metadata.get('raw') or error.get('message') or response.text or f'HTTP {response.status_code}'
+        if response.status_code == 429:
+            raise RuntimeError(f'RATE_LIMIT::{raw_message}')
+        raise RuntimeError(raw_message)
+    choices = data.get('choices') or []
+    if not choices:
+        error = data.get('error') or {}
+        metadata = error.get('metadata') or {}
+        raw_message = metadata.get('raw') or error.get('message') or 'respons OpenRouter tidak memuat choices'
+        raise RuntimeError(raw_message)
+    content = choices[0]['message']['content']
+    if isinstance(content, list):
+        content = ''.join(
+            part.get('text', '') if isinstance(part, dict) else str(part)
+            for part in content
+        )
+    content = str(content).strip()
+    if not content:
+        raise RuntimeError('respons OpenRouter kosong')
+    try:
+        parsed = json.loads(content)
+    except Exception:
+        match = re.search(r'\{.*\}', content, re.S)
+        if not match:
+            raise RuntimeError('konten OpenRouter bukan JSON valid')
+        parsed = json.loads(match.group(0))
     parsed['_provider'] = data.get('provider')
     return parsed
 
@@ -130,13 +168,17 @@ def build_stock_analysis_llm_payload(*, ticker: str, row: dict[str, Any], analys
             'runtime_message': runtime['message'],
         }
     except Exception as exc:
-        fallback_message = runtime['message'] if runtime['state'] in {'invalid', 'unknown'} else f'LLM gagal: {exc}'
+        message = str(exc)
+        is_rate_limited = message.startswith('RATE_LIMIT::') or 'rate-limit' in message.lower() or 'rate limit' in message.lower() or '429' in message
+        fallback_message = runtime['message'] if runtime['state'] in {'invalid', 'unknown'} else (
+            f"LLM sementara kena rate limit upstream: {message.split('RATE_LIMIT::', 1)[-1]}" if is_rate_limited else f'LLM gagal: {message}'
+        )
         return {
             'status': 'error',
             'model': model,
             'summary': fallback_message,
             'bullets': [],
-            'runtime_state': runtime['state'] if runtime['state'] != 'ok' else 'unknown',
+            'runtime_state': 'rate_limited' if is_rate_limited else (runtime['state'] if runtime['state'] != 'ok' else 'unknown'),
             'runtime_message': fallback_message,
         }
 
@@ -199,12 +241,16 @@ def build_ai_picks_llm_payload(*, mode: str, picks: list[dict[str, Any]], market
             'runtime_message': runtime['message'],
         }
     except Exception as exc:
-        fallback_message = runtime['message'] if runtime['state'] in {'invalid', 'unknown'} else f'LLM gagal: {exc}'
+        message = str(exc)
+        is_rate_limited = message.startswith('RATE_LIMIT::') or 'rate-limit' in message.lower() or 'rate limit' in message.lower() or '429' in message
+        fallback_message = runtime['message'] if runtime['state'] in {'invalid', 'unknown'} else (
+            f"LLM sementara kena rate limit upstream: {message.split('RATE_LIMIT::', 1)[-1]}" if is_rate_limited else f'LLM gagal: {message}'
+        )
         return {
             'status': 'error',
             'model': model,
             'summary': fallback_message,
             'pick_notes': {},
-            'runtime_state': runtime['state'] if runtime['state'] != 'ok' else 'unknown',
+            'runtime_state': 'rate_limited' if is_rate_limited else (runtime['state'] if runtime['state'] != 'ok' else 'unknown'),
             'runtime_message': fallback_message,
         }

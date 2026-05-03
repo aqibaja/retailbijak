@@ -236,7 +236,19 @@
 
 ---
 
-### 2026-05-03 23:52 CST
+### 2026-05-04 00:42 CST
+- [done] Validasi model OpenRouter live: katalog `/api/v1/models` dan endpoint detail `/models/openai/gpt-oss-120b:free/endpoints` sama-sama mengonfirmasi `openai/gpt-oss-120b:free` masih terdaftar dan punya provider `OpenInference`, jadi slug model RetailBijak valid dan bukan typo konfigurasi.
+- [done] Reproduksi provider langsung dengan API key baru menunjukkan perilaku upstream memang fluktuatif: request yang sama ke `openai/gpt-oss-120b:free` kadang `200`, kadang `429 temporarily rate-limited upstream`, dan kadang respons/body rusak dari provider (`could not decode header` / body non-JSON). Jadi blocker live saat ini bukan invalid key atau model hilang, melainkan instabilitas upstream free-tier `OpenInference`.
+- [done] TDD RED: tambah regression tests baru di `backend/tests/test_openrouter_llm_service.py` untuk kasus rate-limit, body JSON dengan leading whitespace, body prefixed/non-JSON, dan fallback error parser agar builder OpenRouter tidak lagi pecah dengan error mentah seperti `LLM gagal: 'choices'` atau `Expecting value`.
+- [done] Implementasi hardening `backend/services/openrouter_llm.py`: parser `_chat_completion()` sekarang menangani HTTP error payload tanpa `choices`, rate-limit `429`, body JSON yang diawali whitespace/debug preamble, `content` list/string, body kosong, dan konten non-JSON; surface fallback kini konsisten mengembalikan `runtime_state` yang jujur (`rate_limited` / `unknown`) beserta pesan operator yang bisa ditindaklanjuti.
+- [done] GREEN verified lokal: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_openrouter_llm_service.py backend/tests/test_ai_picks_api.py backend/tests/test_stock_analysis_llm_api.py backend/tests/test_user_route_runtime.py` → `20 passed`; `python3 -m py_compile backend/services/openrouter_llm.py backend/routes/user.py backend/ai_picks.py backend/main.py` → pass.
+- [done] Deploy runtime: `backend/services/openrouter_llm.py` + regression tests disalin ke `/opt/swingaq/backend/...`, service `swingaq-backend` direstart, health check publik tetap `{"status":"ok","version":"1.0.0"}`.
+- [done] Verifikasi end-to-end publik pascadeploy: `/api/settings` live menunjukkan `openrouter_runtime_state="ok"`; loop smoke `ai-picks`/`stock-detail` sekarang mayoritas `ok` dengan fallback jujur saat upstream gagal. Error `Model not found` hilang; kegagalan yang tersisa kini terklasifikasi sebagai `rate_limited` atau `unknown` dengan pesan nyata dari provider, bukan crash parser internal.
+- [warn] Residual issue live masih berasal dari provider free-tier `openai/gpt-oss-120b:free` via `OpenInference`: observasi publik menunjukkan respons sesekali sukses tetapi kadang rate-limit atau corrupt upstream (`could not decode header`, `konten OpenRouter bukan JSON valid`). Jika ingin pengalaman lebih stabil, model stock-analysis sebaiknya dipindah kembali ke `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` atau model non-free/BYOK yang lebih stabil.
+
+---
+
+### 2026-05-04 00:42 CST
 - [done] TDD RED: perluas guard `backend/tests/test_ai_picks_api.py`, `backend/tests/test_stock_analysis_llm_api.py`, dan `backend/tests/test_ai_picks_view_static.py` agar payload/UX `llm` wajib membawa `runtime_state` + `runtime_message`, termasuk saat runtime invalid (`API key OpenRouter ditolak provider: User not found.`).
 - [done] Implementasi backend `backend/services/openrouter_llm.py`: builder `build_ai_picks_llm_payload()` dan `build_stock_analysis_llm_payload()` kini selalu menyertakan `runtime_state`/`runtime_message`; saat OpenRouter invalid/unknown, `summary` error tidak lagi generik `LLM gagal: ...` tetapi memakai pesan provider yang jujur.
 - [done] Implementasi frontend `frontend/js/views/ai_picks.js` dan `frontend/js/views/stock_detail.js`: panel AI sekarang memprioritaskan `runtime_message` agar invalid key langsung terbaca di UI, plus chip state `invalid` tampil di AI Picks brief.

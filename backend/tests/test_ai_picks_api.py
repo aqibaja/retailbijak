@@ -173,6 +173,32 @@ def test_ai_picks_endpoint_surfaces_invalid_runtime_message(monkeypatch):
     assert data['llm']['summary'] == 'API key OpenRouter ditolak provider: User not found.'
 
 
+def test_ai_picks_endpoint_surfaces_rate_limit_runtime_message(monkeypatch):
+    from backend import ai_picks as ai_picks_module
+
+    def fake_llm_payload(*, mode, picks, market_context, db=None):
+        return {
+            'status': 'error',
+            'model': 'openai/gpt-oss-120b:free',
+            'summary': 'LLM sementara kena rate limit upstream: openai/gpt-oss-120b:free is temporarily rate-limited upstream.',
+            'pick_notes': {},
+            'runtime_state': 'rate_limited',
+            'runtime_message': 'LLM sementara kena rate limit upstream: openai/gpt-oss-120b:free is temporarily rate-limited upstream.',
+        }
+
+    monkeypatch.setattr(ai_picks_module, 'build_ai_picks_llm_payload', fake_llm_payload)
+
+    with TestClient(app) as client:
+        res = client.get('/api/ai-picks?mode=swing&limit=2&llm=1')
+
+    assert res.status_code == 200
+    data = res.json()
+    assert data['llm']['status'] == 'error'
+    assert data['llm']['runtime_state'] == 'rate_limited'
+    assert 'rate limit' in data['llm']['runtime_message'].lower()
+    assert 'temporarily rate-limited upstream' in data['llm']['summary']
+
+
 
 def test_ai_picks_fallback_payload_keeps_stable_no_data_summary_defaults():
     data = build_ai_picks_fallback_payload('defensive')
