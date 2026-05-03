@@ -3,10 +3,15 @@ from __future__ import annotations
 from typing import Any
 import sqlite3
 from pathlib import Path
+from datetime import datetime, timedelta
+
+from sqlalchemy.orm import Session
 
 try:
+    from backend.database import DailyAIPickReport, SessionLocal
     from backend.services.openrouter_llm import build_ai_picks_llm_payload
 except ModuleNotFoundError:
+    from database import DailyAIPickReport, SessionLocal
     from services.openrouter_llm import build_ai_picks_llm_payload
 
 VALID_AI_PICK_MODES = {"swing", "defensive", "catalyst"}
@@ -45,16 +50,13 @@ def _clamp(value: float, lower: float, upper: float) -> float:
     return max(lower, min(upper, value))
 
 
-
 def _factor_value(factors: dict[str, Any], key: str) -> float:
     return _clamp(float(factors.get(key, 0.0) or 0.0), 0.0, 1.0)
-
 
 
 def normalize_ai_pick_mode(mode: str | None) -> str:
     safe_mode = (mode or "swing").strip().lower()
     return safe_mode if safe_mode in VALID_AI_PICK_MODES else "swing"
-
 
 
 def label_confidence(score: float, factors: dict[str, Any]) -> int:
@@ -68,7 +70,6 @@ def label_confidence(score: float, factors: dict[str, Any]) -> int:
         confidence -= 8
     confidence -= _factor_value(factors, 'risk') * 20
     return int(round(_clamp(confidence, 35, 95)))
-
 
 
 def reason_labels_from_factors(factors: dict[str, Any], mode: str) -> list[str]:
@@ -135,7 +136,6 @@ def reason_labels_from_factors(factors: dict[str, Any], mode: str) -> list[str]:
     return labels[:3]
 
 
-
 def score_pick(factors: dict[str, Any], mode: str, market_tone: str | None = None) -> dict[str, Any]:
     safe_mode = normalize_ai_pick_mode(mode)
     weights = MODE_WEIGHTS[safe_mode]
@@ -180,19 +180,16 @@ def score_pick(factors: dict[str, Any], mode: str, market_tone: str | None = Non
     }
 
 
-
 def _safe_ratio(a: float, b: float) -> float:
     if not b:
         return 0.0
     return a / b
 
 
-
 def _connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 
 def summarize_market_context() -> dict[str, Any]:
@@ -232,7 +229,6 @@ def summarize_market_context() -> dict[str, Any]:
         tone = 'neutral'
         breadth_label = 'campuran'
     return {'tone': tone, 'breadth_label': breadth_label, 'latest_date': latest_date[:10] if latest_date else None}
-
 
 
 def build_candidate_universe(limit_universe: int | None = None, mode: str = 'swing', min_bars: int = 30) -> list[dict[str, Any]]:
@@ -324,6 +320,19 @@ def build_candidate_universe(limit_universe: int | None = None, mode: str = 'swi
     return candidates
 
 
+def _format_price_band(value: float, spread_pct: float = 0.015) -> str:
+    low = max(0.0, value * (1 - spread_pct))
+    high = value * (1 + spread_pct)
+    return f"{round(low)}-{round(high)}"
+
+
+def _format_rr(entry: float, stop_loss: float, take_profit: float) -> str:
+    risk = max(entry - stop_loss, 0.0)
+    reward = max(take_profit - entry, 0.0)
+    if risk <= 0:
+        return 'n/a'
+    return f"1:{round(reward / risk, 2)}"
+
 
 def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market_tone: str | None = None) -> dict[str, Any]:
     scored = score_pick(candidate['factors'], mode, market_tone=market_tone)
@@ -333,6 +342,8 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market
     volume_ratio = float(candidate['factors'].get('volume_ratio') or 0.0)
     risk_buffer = max(latest_close * 0.04, 1)
     reward_buffer = max(latest_close * 0.08, 1)
+    stop_loss = round(max(0, latest_close - risk_buffer))
+    take_profit = round(latest_close + reward_buffer)
     factor_scores = {
         'technical': round(_factor_value(candidate['factors'], 'technical'), 3),
         'liquidity': round(_factor_value(candidate['factors'], 'liquidity'), 3),
@@ -354,6 +365,9 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market
         'risk_label': 'risiko relatif jinak' if factor_scores['risk'] <= 0.3 else 'invalidasi perlu disiplin ketat',
         'timing_label': 'timing entry masih enak dicicil' if candidate['factors'].get('rr_ok') else 'lebih aman tunggu pullback rapih',
     }
+    risk_note = 'perlu disiplin pada area invalidasi' if candidate['factors']['risk'] > 0.55 else 'struktur risiko masih relatif terjaga'
+    catalysts = [label for label in scored['reason_labels'] if 'katalis' in label.lower() or 'sentimen' in label.lower()]
+    thesis = f"{candidate['ticker']} cocok untuk mode {safe_mode} karena {', '.join(scored['reason_labels'][:2])}."
     return {
         'ticker': candidate['ticker'],
         'name': candidate['name'],
@@ -364,11 +378,14 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market
         'fit_label': scored['fit_label'],
         'reason_codes': [label.lower().replace('/', '_').replace(' ', '_') for label in scored['reason_labels']],
         'reason_labels': scored['reason_labels'],
-        'risk_note': 'perlu disiplin pada area invalidasi' if candidate['factors']['risk'] > 0.55 else 'struktur risiko masih relatif terjaga',
+        'risk_note': risk_note,
         'entry_style': 'tunggu pullback' if candidate['factors']['technical'] > 0.6 else 'boleh cicil bertahap',
-        'entry_zone': round(latest_close),
-        'invalidation': round(max(0, latest_close - risk_buffer)),
-        'target_zone': round(latest_close + reward_buffer),
+        'entry_zone': _format_price_band(latest_close),
+        'stop_loss': stop_loss,
+        'take_profit': take_profit,
+        'risk_reward': _format_rr(latest_close, stop_loss, take_profit),
+        'invalidation': stop_loss,
+        'target_zone': take_profit,
         'latest_close': round(latest_close, 2),
         'change_pct': round(change_pct, 2),
         'volume_ratio': round(volume_ratio, 2),
@@ -379,17 +396,34 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market
             'available': bool(candidate['factors'].get('catalyst_ok')),
             'label': 'pengumuman emiten tersedia' if candidate['factors'].get('catalyst_ok') else 'katalis eksplisit belum dominan',
         },
+        'catalysts': catalysts or [comparison_points['catalyst_label']],
+        'thesis': thesis,
+        'risk_notes': risk_note,
         'source': 'derived',
     }
 
+
+def _build_freshness(generated_at: datetime | None) -> dict[str, Any]:
+    if not generated_at:
+        return {'label': 'Belum ada briefing', 'is_stale': True, 'generated_at': None}
+    age = datetime.utcnow() - generated_at
+    is_stale = age > timedelta(hours=18)
+    label = 'Briefing baru' if not is_stale else 'Briefing perlu refresh'
+    return {
+        'label': label,
+        'is_stale': is_stale,
+        'generated_at': generated_at.isoformat(),
+    }
 
 
 def build_ai_picks_payload(mode: str | None = 'swing', limit: int = 5) -> dict[str, Any]:
     safe_mode = normalize_ai_pick_mode(mode)
     market_context = summarize_market_context()
     candidates = build_candidate_universe(limit_universe=max(int(limit or 5) * 4, 12), mode=safe_mode)
+    trading_date = market_context.get('latest_date')
+    generated_at = datetime.utcnow()
     if not candidates:
-        return build_ai_picks_fallback_payload(safe_mode)
+        return build_ai_picks_fallback_payload(safe_mode, trading_date=trading_date)
 
     ranked = sorted(
         candidates,
@@ -400,25 +434,33 @@ def build_ai_picks_payload(mode: str | None = 'swing', limit: int = 5) -> dict[s
         compose_pick_payload(candidate, idx + 1, safe_mode, market_tone=market_context.get('tone'))
         for idx, candidate in enumerate(ranked[: max(0, int(limit or 0))])
     ]
+    market_bias = market_context.get('breadth_label') or 'data belum cukup'
     return {
         'mode': safe_mode,
+        'trading_date': trading_date,
+        'generated_at': generated_at.isoformat(),
+        'as_of_label': f"Premarket briefing {trading_date}" if trading_date else 'Premarket briefing belum tersedia',
         'updated_at': candidates[0]['latest_date'],
         'source': 'derived',
         'market_context': market_context,
+        'market_bias': market_bias,
         'summary': {
             'candidates_analyzed': len(candidates),
             'eligible_count': len(ranked),
             'featured_ticker': picks[0]['ticker'] if picks else None,
         },
+        'freshness': _build_freshness(generated_at),
         'data': picks,
     }
 
 
-
-def build_ai_picks_fallback_payload(mode: str | None = 'swing') -> dict[str, Any]:
+def build_ai_picks_fallback_payload(mode: str | None = 'swing', trading_date: str | None = None) -> dict[str, Any]:
     safe_mode = normalize_ai_pick_mode(mode)
     return {
         'mode': safe_mode,
+        'trading_date': trading_date,
+        'generated_at': None,
+        'as_of_label': 'Premarket briefing belum tersedia',
         'updated_at': None,
         'source': 'no_data',
         'market_context': {
@@ -426,10 +468,95 @@ def build_ai_picks_fallback_payload(mode: str | None = 'swing') -> dict[str, Any
             'breadth_label': 'data belum cukup',
             'latest_date': None,
         },
+        'market_bias': 'data belum cukup',
         'summary': {
             'candidates_analyzed': 0,
             'eligible_count': 0,
             'featured_ticker': None,
         },
+        'freshness': _build_freshness(None),
         'data': [],
     }
+
+
+def _serialize_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        'mode': payload.get('mode'),
+        'trading_date': payload.get('trading_date'),
+        'generated_at': payload.get('generated_at'),
+        'as_of_label': payload.get('as_of_label'),
+        'updated_at': payload.get('updated_at'),
+        'source': payload.get('source'),
+        'market_context': payload.get('market_context'),
+        'market_bias': payload.get('market_bias'),
+        'summary': payload.get('summary'),
+        'freshness': payload.get('freshness'),
+        'data': payload.get('data'),
+        'llm': payload.get('llm'),
+    }
+
+
+def generate_and_store_daily_ai_pick_report(mode: str = 'swing', limit: int = 5, db: Session | None = None) -> dict[str, Any]:
+    owns_session = db is None
+    db = db or SessionLocal()
+    try:
+        payload = build_ai_picks_payload(mode=mode, limit=limit)
+        llm = build_ai_picks_llm_payload(
+            mode=payload.get('mode') or normalize_ai_pick_mode(mode),
+            picks=payload.get('data') or [],
+            market_context=payload.get('market_context') or {},
+            db=db,
+        )
+        payload['llm'] = llm
+        trading_date = payload.get('trading_date') or datetime.utcnow().date().isoformat()
+        report = db.query(DailyAIPickReport).filter(
+            DailyAIPickReport.trading_date == trading_date,
+            DailyAIPickReport.mode == payload.get('mode'),
+        ).order_by(DailyAIPickReport.generated_at.desc()).first()
+        if report is None:
+            report = DailyAIPickReport(trading_date=trading_date, mode=payload.get('mode') or normalize_ai_pick_mode(mode))
+            db.add(report)
+        report.generated_at = datetime.utcnow()
+        report.market_bias = str(payload.get('market_bias') or '')
+        report.summary = str((llm or {}).get('summary') or '')
+        report.runtime_state = str((llm or {}).get('runtime_state') or 'unknown')
+        report.runtime_message = str((llm or {}).get('runtime_message') or '')
+        report.model = str((llm or {}).get('model') or '')
+        payload['generated_at'] = report.generated_at.isoformat()
+        payload['freshness'] = _build_freshness(report.generated_at)
+        report.payload_json = _serialize_report_payload(payload)
+        db.commit()
+        db.refresh(report)
+        return hydrate_ai_pick_report(report)
+    finally:
+        if owns_session:
+            db.close()
+
+
+def get_latest_ai_pick_report(mode: str = 'swing', db: Session | None = None) -> dict[str, Any] | None:
+    owns_session = db is None
+    db = db or SessionLocal()
+    try:
+        report = db.query(DailyAIPickReport).filter(
+            DailyAIPickReport.mode == normalize_ai_pick_mode(mode)
+        ).order_by(DailyAIPickReport.generated_at.desc()).first()
+        if report is None:
+            return None
+        return hydrate_ai_pick_report(report)
+    finally:
+        if owns_session:
+            db.close()
+
+
+def hydrate_ai_pick_report(report: DailyAIPickReport) -> dict[str, Any]:
+    payload = dict(report.payload_json or {})
+    payload['mode'] = payload.get('mode') or report.mode
+    payload['trading_date'] = payload.get('trading_date') or report.trading_date
+    payload['generated_at'] = payload.get('generated_at') or (report.generated_at.isoformat() if report.generated_at else None)
+    payload['source'] = 'db' if payload.get('data') else (payload.get('source') or 'db')
+    payload['updated_at'] = payload.get('updated_at')
+    payload['market_bias'] = payload.get('market_bias') or report.market_bias
+    payload['freshness'] = _build_freshness(report.generated_at)
+    if report.summary and payload.get('llm') and not payload['llm'].get('summary'):
+        payload['llm']['summary'] = report.summary
+    return payload

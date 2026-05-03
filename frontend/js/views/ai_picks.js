@@ -58,10 +58,10 @@ function buildAiPickContext(item, mode) {
     confidence: item?.confidence || null,
     fit_label: item?.fit_label || '',
     entry_zone: item?.entry_zone ?? null,
-    target_zone: item?.target_zone ?? null,
-    invalidation: item?.invalidation ?? null,
+    target_zone: item?.take_profit ?? null,
+    invalidation: item?.stop_loss ?? null,
     reason_labels: Array.isArray(item?.reason_labels) ? item.reason_labels.slice(0, 3) : [],
-    risk_note: item?.risk_note || '',
+    risk_note: item?.risk_notes || item?.risk_note || '',
   });
 }
 
@@ -84,7 +84,7 @@ function renderMetricStrip(item) {
       <div class="ai-picks-metric-chip"><span>Close</span><strong>${nf(item.latest_close, 2)}</strong></div>
       <div class="ai-picks-metric-chip"><span>Change</span><strong>${pct(item.change_pct)}</strong></div>
       <div class="ai-picks-metric-chip"><span>Vol Ratio</span><strong>${nf(item.volume_ratio, 2)}x</strong></div>
-      <div class="ai-picks-metric-chip"><span>Bars</span><strong>${nf(item.bars_count)}</strong></div>
+      <div class="ai-picks-metric-chip"><span>RR</span><strong>${item.risk_reward || 'n/a'}</strong></div>
     </div>`;
 }
 
@@ -190,6 +190,15 @@ function renderAiDeskBrief(llm = null) {
     </div>`;
 }
 
+function renderBriefingMeta(payload) {
+  return `
+    <div class="ai-picks-briefing-meta">
+      <div class="panel ai-picks-summary-card ai-picks-freshness"><span>Briefing</span><strong>${payload?.as_of_label || 'Premarket briefing belum tersedia'}</strong></div>
+      <div class="panel ai-picks-summary-card ai-picks-generated-at"><span>Generated</span><strong>${payload?.generated_at ? String(payload.generated_at).replace('T', ' ').slice(0, 16) : 'Belum ada'}</strong></div>
+      <div class="panel ai-picks-summary-card"><span>Status</span><strong>${payload?.freshness?.label || 'Belum ada briefing'}</strong></div>
+    </div>`;
+}
+
 function renderRankCard(item, mode) {
   return `
     <article class="ai-picks-rank-card panel">
@@ -206,10 +215,15 @@ function renderRankCard(item, mode) {
       </div>
       ${renderMetricStrip(item)}
       <div class="ai-picks-reason-row">${renderReasonChips(item.reason_labels || [])}</div>
+      <p><strong>Thesis:</strong> ${item.thesis || '-'}</p>
       <div class="ai-picks-rank-meta">
-        <span>Entry ${nf(item.entry_zone)}</span>
-        <span>Target ${nf(item.target_zone)}</span>
-        <span>Invalidasi ${nf(item.invalidation)}</span>
+        <span>Entry ${item.entry_zone || '-'}</span>
+        <span>Stop ${nf(item.stop_loss)}</span>
+        <span>TP ${nf(item.take_profit)}</span>
+      </div>
+      <div class="ai-picks-rank-meta">
+        <span>RR ${item.risk_reward || 'n/a'}</span>
+        <span>Risk ${item.risk_notes || '-'}</span>
       </div>
       <div class="ai-picks-factor-list">
         ${renderFactorMeter('Teknikal', item.factor_scores?.technical)}
@@ -256,7 +270,8 @@ function renderErrorState(title, note) {
     </div>`;
 }
 
-function renderLoadingShell(featuredEl, listEl, compareEl) {
+function renderLoadingShell(metaEl, featuredEl, listEl, compareEl) {
+  metaEl.innerHTML = renderBriefingMeta({ freshness: { label: 'Menyiapkan briefing' } });
   featuredEl.innerHTML = renderLoadingState('Menyiapkan pick unggulan', 'Menghitung score, confidence, dan kandidat teratas.');
   listEl.innerHTML = renderLoadingState('Menarik ranked list', 'Shell ini tetap hidup walau data masih dimuat.');
   compareEl.innerHTML = renderCompareTray([]);
@@ -323,7 +338,13 @@ async function wireQuickActions(root, mode, picks = [], loadMode) {
 
   root.querySelectorAll('[data-ai-picks-retry]').forEach(button => {
     button.addEventListener('click', () => {
-      loadMode(mode);
+      loadMode(mode, { refresh: true });
+    });
+  });
+
+  root.querySelectorAll('[data-ai-picks-refresh]').forEach(button => {
+    button.addEventListener('click', () => {
+      loadMode(mode, { refresh: true });
     });
   });
 }
@@ -335,21 +356,26 @@ export async function renderAiPicks(root) {
     <section class="ai-picks-page stagger-reveal">
       <div class="ai-picks-hero panel">
         <div>
-          <div class="screener-kicker">CURATED IDEA DESK</div>
-          <h1>AI Picks</h1>
-          <p>Kurasi kandidat saham berbasis ranking engine explainable dari data market, kualitas, dan katalis.</p>
+          <div class="screener-kicker">PREMARKET BRIEFING</div>
+          <h1>AI Picks Hari Ini</h1>
+          <p>Premarket briefing otomatis untuk memilih saham yang layak dipertimbangkan masuk hari ini, lengkap dengan alasan, entry, stop, target, dan risk-reward.</p>
         </div>
         <div class="ai-picks-mode-switch" data-ai-picks-active-mode="${initialMode}">
           <button class="btn ${initialMode === 'swing' ? 'btn-primary' : ''}" data-ai-picks-mode="swing">Swing</button>
           <button class="btn ${initialMode === 'defensive' ? 'btn-primary' : ''}" data-ai-picks-mode="defensive">Defensive</button>
           <button class="btn ${initialMode === 'catalyst' ? 'btn-primary' : ''}" data-ai-picks-mode="catalyst">Catalyst</button>
+          <button class="btn" data-ai-picks-refresh="1">Manual Refresh</button>
         </div>
+      </div>
+
+      <div class="ai-picks-briefing-meta" id="ai-picks-briefing-meta">
+        ${renderBriefingMeta({ freshness: { label: 'Menyiapkan briefing' } })}
       </div>
 
       <div class="ai-picks-summary-strip">
         <div class="panel ai-picks-summary-card"><span>Tone</span><strong id="ai-picks-tone">Memuat...</strong></div>
         <div class="panel ai-picks-summary-card"><span>Universe</span><strong id="ai-picks-universe">Memuat...</strong></div>
-        <div class="panel ai-picks-summary-card"><span>Update</span><strong id="ai-picks-updated">Memuat...</strong></div>
+        <div class="panel ai-picks-summary-card"><span>Market Bias</span><strong id="ai-picks-bias">Memuat...</strong></div>
       </div>
 
       <div class="ai-picks-layout">
@@ -372,31 +398,33 @@ export async function renderAiPicks(root) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   const modeSwitch = root.querySelector('.ai-picks-mode-switch');
+  const metaEl = root.querySelector('#ai-picks-briefing-meta');
   const featuredEl = root.querySelector('#ai-picks-featured');
   const listEl = root.querySelector('#ai-picks-ranked-list');
   const compareEl = root.querySelector('#ai-picks-compare');
   const toneEl = root.querySelector('#ai-picks-tone');
   const universeEl = root.querySelector('#ai-picks-universe');
-  const updatedEl = root.querySelector('#ai-picks-updated');
+  const biasEl = root.querySelector('#ai-picks-bias');
 
-  const loadMode = async (mode = 'swing') => {
+  const loadMode = async (mode = 'swing', options = {}) => {
     setModeButtons(modeSwitch, mode);
     safeLocalStorageSet(AI_PICKS_MODE_KEY, mode);
-    renderLoadingShell(featuredEl, listEl, compareEl);
+    renderLoadingShell(metaEl, featuredEl, listEl, compareEl);
     toneEl.textContent = 'Menyusun tone';
     universeEl.textContent = 'Menyaring kandidat';
-    updatedEl.textContent = 'Sinkronisasi';
+    biasEl.textContent = 'Sinkronisasi';
 
     try {
-      const payload = await fetchAiPicks(mode, 5, { llm: true });
+      const payload = await fetchAiPicks(mode, 5, { llm: true, refresh: options?.refresh });
+      metaEl.innerHTML = renderBriefingMeta(payload);
       toneEl.textContent = payload?.market_context?.breadth_label || 'data belum cukup';
       universeEl.textContent = `${payload?.summary?.eligible_count || 0} kandidat`;
-      updatedEl.textContent = payload?.updated_at ? String(payload.updated_at).slice(0, 10) : 'Belum ada';
+      biasEl.textContent = payload?.market_bias || 'data belum cukup';
 
       const picks = Array.isArray(payload?.data) ? payload.data : [];
       const featured = picks[0];
       if (!featured) {
-        featuredEl.innerHTML = renderEmptyState('Belum ada pick unggulan siap pakai', 'Mode ini belum menemukan kandidat yang cukup kuat. Coba mode lain atau tunggu update sesi berikutnya.');
+        featuredEl.innerHTML = renderEmptyState('Belum ada pick unggulan siap pakai', 'Mode ini belum menemukan kandidat yang cukup kuat. Coba mode lain atau tunggu briefing berikutnya.');
         compareEl.innerHTML = `${renderCompareTray([])}${renderAiDeskBrief(payload?.llm)}`;
         listEl.innerHTML = renderEmptyState('Ranked list belum terisi', 'Universe kandidat masih tipis. Sistem akan menampilkan daftar saat coverage market cukup.');
         await wireQuickActions(root, mode, picks, loadMode);
@@ -418,10 +446,15 @@ export async function renderAiPicks(root) {
           </div>
           ${renderMetricStrip(featured)}
           <div class="ai-picks-reason-row">${renderReasonChips(featured.reason_labels || [])}</div>
+          <p><strong>Thesis:</strong> ${featured.thesis || '-'}</p>
           <div class="ai-picks-rank-meta">
-            <span>Entry ${nf(featured.entry_zone)}</span>
-            <span>Target ${nf(featured.target_zone)}</span>
-            <span>Invalidasi ${nf(featured.invalidation)}</span>
+            <span>Entry ${featured.entry_zone || '-'}</span>
+            <span>Stop ${nf(featured.stop_loss)}</span>
+            <span>TP ${nf(featured.take_profit)}</span>
+          </div>
+          <div class="ai-picks-rank-meta">
+            <span>Risk/Reward ${featured.risk_reward || 'n/a'}</span>
+            <span>Risk Notes ${featured.risk_notes || '-'}</span>
           </div>
           <div class="ai-picks-factor-list">
             ${renderFactorMeter('Teknikal', featured.factor_scores?.technical)}
@@ -429,7 +462,7 @@ export async function renderAiPicks(root) {
             ${renderFactorMeter('Fundamental', featured.factor_scores?.fundamental)}
             ${renderFactorMeter('Katalis', featured.factor_scores?.catalyst)}
           </div>
-          <p><strong>Risiko Utama:</strong> ${featured.risk_note}</p>
+          <p><strong>Katalis:</strong> ${(featured.catalysts || []).join(' · ') || '-'}</p>
           <div class="ai-picks-rank-actions">
             <button class="btn" data-ai-picks-open-detail="${featured.ticker}">Buka Detail</button>
             <button class="btn" data-ai-picks-compare="${featured.ticker}">Bandingkan</button>
@@ -442,9 +475,10 @@ export async function renderAiPicks(root) {
       listEl.innerHTML = picks.slice(1).map(item => renderRankCard(item, mode)).join('') || renderEmptyState('Kandidat tambahan belum tersedia', 'Pick unggulan sudah siap, tetapi antrian lanjutan masih tipis untuk mode ini.');
       await wireQuickActions(root, mode, picks, loadMode);
     } catch {
+      metaEl.innerHTML = renderBriefingMeta({ freshness: { label: 'Gagal memuat briefing' } });
       toneEl.textContent = 'Perlu retry';
       universeEl.textContent = 'API belum stabil';
-      updatedEl.textContent = 'Gagal memuat';
+      biasEl.textContent = 'Gagal memuat';
       featuredEl.innerHTML = renderErrorState('Gagal memuat pick unggulan', 'Koneksi atau API sedang bermasalah. Retry akan mencoba memuat ulang mode aktif tanpa meninggalkan halaman ini.');
       compareEl.innerHTML = `${renderCompareTray([])}${renderAiDeskBrief({ status: 'error', summary: 'OpenRouter atau endpoint AI Picks sedang bermasalah.' })}`;
       listEl.innerHTML = renderErrorState('Ranked list belum bisa ditarik', 'Data ranking tidak tersedia untuk sementara. Coba lagi beberapa detik lagi.');

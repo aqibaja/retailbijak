@@ -133,6 +133,21 @@ class PortfolioPosition(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class DailyAIPickReport(Base):
+    __tablename__ = "daily_ai_pick_reports"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    trading_date = Column(String, index=True, nullable=False)
+    generated_at = Column(DateTime, default=datetime.utcnow, index=True)
+    mode = Column(String, index=True, nullable=False)
+    market_bias = Column(String, default="")
+    summary = Column(String, default="")
+    runtime_state = Column(String, default="unknown")
+    runtime_message = Column(String, default="")
+    model = Column(String, default="")
+    payload_json = Column(JSON)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()

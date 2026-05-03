@@ -57,9 +57,9 @@ try:
 except ModuleNotFoundError:
     from scheduler import init_scheduler, scheduler
 try:
-    from backend.ai_picks import build_ai_picks_payload
+    from backend.ai_picks import build_ai_picks_payload, get_latest_ai_pick_report, generate_and_store_daily_ai_pick_report
 except ModuleNotFoundError:
-    from ai_picks import build_ai_picks_payload
+    from ai_picks import build_ai_picks_payload, get_latest_ai_pick_report, generate_and_store_daily_ai_pick_report
 try:
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
 except ModuleNotFoundError:
@@ -132,9 +132,14 @@ async def root():
 
 
 @app.get("/api/ai-picks")
-def get_ai_picks(mode: str = "swing", limit: int = 5, llm: bool = False, db: Session = Depends(get_db)):
+def get_ai_picks(mode: str = "swing", limit: int = 5, llm: bool = False, refresh: bool = False, db: Session = Depends(get_db)):
     safe_limit = max(0, min(int(limit or 0), 20))
-    payload = build_ai_picks_payload(mode=mode, limit=safe_limit)
+    if safe_limit == 0:
+        payload = build_ai_picks_payload(mode=mode, limit=0)
+    elif refresh:
+        payload = generate_and_store_daily_ai_pick_report(mode=mode, limit=safe_limit or 5, db=db)
+    else:
+        payload = get_latest_ai_pick_report(mode=mode, db=db) or build_ai_picks_payload(mode=mode, limit=safe_limit)
     if llm:
         try:
             from backend import ai_picks as ai_picks_module
@@ -154,6 +159,8 @@ def get_ai_picks(mode: str = "swing", limit: int = 5, llm: bool = False, db: Ses
                 picks=payload.get('data') or [],
                 market_context=payload.get('market_context') or {},
             )
+    else:
+        payload.pop('llm', None)
     return payload
 
 

@@ -248,16 +248,50 @@
 
 ---
 
-### 2026-05-04 00:42 CST
-- [done] TDD RED: perluas guard `backend/tests/test_ai_picks_api.py`, `backend/tests/test_stock_analysis_llm_api.py`, dan `backend/tests/test_ai_picks_view_static.py` agar payload/UX `llm` wajib membawa `runtime_state` + `runtime_message`, termasuk saat runtime invalid (`API key OpenRouter ditolak provider: User not found.`).
-- [done] Implementasi backend `backend/services/openrouter_llm.py`: builder `build_ai_picks_llm_payload()` dan `build_stock_analysis_llm_payload()` kini selalu menyertakan `runtime_state`/`runtime_message`; saat OpenRouter invalid/unknown, `summary` error tidak lagi generik `LLM gagal: ...` tetapi memakai pesan provider yang jujur.
-- [done] Implementasi frontend `frontend/js/views/ai_picks.js` dan `frontend/js/views/stock_detail.js`: panel AI sekarang memprioritaskan `runtime_message` agar invalid key langsung terbaca di UI, plus chip state `invalid` tampil di AI Picks brief.
-- [done] Implementasi copy `frontend/js/views/settings.js`: tambahkan catatan operator bahwa status `OpenRouter perlu dicek` biasanya berarti `API key OpenRouter ditolak provider`, supaya user tidak perlu membuka log server.
-- [done] GREEN verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_settings_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_stock_analysis_llm_api.py backend/tests/test_ai_picks_view_static.py backend/tests/test_user_route_runtime.py` → `33 passed`.
-- [done] Compile verified: `python3 -m py_compile backend/services/openrouter_llm.py backend/routes/user.py backend/ai_picks.py backend/routes/stock_detail.py && python3 -m compileall -q frontend/js` lulus.
-- [done] Deploy production verified: `bash scripts/sync_production.sh` PASS penuh (parity, restart, smoke check, public resource chain).
-- [done] Live API verified: `/api/settings` tetap menunjukkan `openrouter_runtime_state="invalid"`; `/api/ai-picks?...&llm=1` dan `/api/stocks/BBCA/analysis?llm=1` sekarang mengembalikan `llm.runtime_message` + `summary` yang eksplisit `API key OpenRouter ditolak provider: User not found.` sehingga user tidak lagi melihat pesan generik.
-- [warn] Blocker tetap sama: aktivasi AI penuh menunggu penggantian API key OpenRouter yang valid.
+### 2026-05-04 01:41 CST
+- [done] Deploy briefing harian AI Picks ke runtime `/opt/swingaq`: sync `backend/{ai_picks,database,main,scheduler}.py`, `frontend/js/{api,views/ai_picks}.js`, dan `frontend/style.css`; service `swingaq-backend` berhasil restart dengan status `active`.
+- [done] Smoke test runtime lokal + publik lulus: `/api/health` tetap `ok`, `/api/ai-picks?mode=swing&limit=2` publik mengembalikan payload briefing `source=db` + `freshness=Briefing baru`, dan refresh lokal `refresh=1&llm=1` mengembalikan `llm_state=ok`.
+- [next] Finalisasi git diff/commit/push agar perubahan AI Picks briefing harian terdokumentasi penuh di repo.
+
+---
+
+### 2026-05-04 01:33 CST
+- [done] Implementasi backend/frontend briefing harian distabilkan: route `/api/ai-picks` kini menghormati `limit=0`, hanya inject `llm` saat diminta, dan payload report tersimpan/terbaca konsisten dengan `updated_at`.
+- [done] Verifikasi compile + test ulang pasca-fix: `35 passed` dan compile check backend/frontend lulus.
+- [next] Tinggal verifikasi runtime/deploy ke `/opt/swingaq`, restart service, smoke test live, lalu commit/push.
+
+---
+
+### 2026-05-04 01:28 CST
+- [done] TDD GREEN untuk fase test: sesuaikan assertion static/API setelah kontrak final menyertakan `updated_at` dan helper frontend `refresh=1`.
+- [done] Verifikasi suite fokus AI Picks harian lulus penuh: `35 passed` untuk `test_ai_picks_api.py`, `test_ai_picks_view_static.py`, `test_ai_picks_scheduler_static.py`, dan `test_database_config.py`.
+- [next] Lanjut verifikasi production code/backend-frontend lebih dalam (compile/runtime), lalu update status todo ke implementasi + deploy.
+
+---
+
+### 2026-05-04 01:18 CST
+- [done] TDD RED dimulai: tambah failing tests untuk `DailyAIPickReport`, kontrak API briefing harian (`trading_date/generated_at/freshness`), actionable pick fields (`thesis`, `entry_zone`, `stop_loss`, `take_profit`, `risk_reward`), dan static UI briefing harian + scheduler hook `daily_ai_picks` jam 08:00 WIB.
+- [done] RED verified: `pytest` collection langsung gagal karena `backend.database` **belum** punya model `DailyAIPickReport`; ini mengonfirmasi test baru benar-benar memaksa implementasi storage briefing persisten lebih dulu.
+- [next] Implementasi production code untuk model DB + generator briefing + route/API + scheduler agar test RED bisa digreen-kan.
+
+---
+
+### 2026-05-04 01:12 CST
+- [done] Mulai eksekusi implementasi AI Picks briefing harian otomatis dengan workflow TDD + continuous flow.
+- [done] Audit source saat ini: `backend/ai_picks.py` masih menghasilkan payload on-demand `updated_at/source/summary/data` tanpa storage persisten, tanpa `trading_date/generated_at`, dan tanpa field actionable baru seperti `stop_loss`, `take_profit`, `risk_reward`.
+- [done] Audit scheduler: `backend/scheduler.py` belum punya job AI Picks harian jam **08:00 WIB**; yang ada baru signal/news/fundamental/IDX daily sync.
+- [done] Audit route/UI: `/api/ai-picks` masih langsung memanggil `build_ai_picks_payload()` on-demand, dan `frontend/js/views/ai_picks.js` masih berframing `CURATED IDEA DESK` + ranked candidates, belum sebagai briefing harian otomatis dengan freshness timestamp.
+- [next] Menulis failing tests dulu untuk model storage briefing harian, job scheduler 08:00 WIB, kontrak API AI Picks harian, dan static UI briefing sebelum implementasi production code.
+
+---
+
+### 2026-05-04 01:02 CST
+- [done] Requirement AI Picks diperjelas: fitur ini bukan sekadar page AI on-demand, tetapi **daily premarket stock-pick briefing** yang otomatis jalan setiap hari kerja jam **08:00 WIB**.
+- [done] Plan separation AI feature diperbarui agar AI Picks wajib menyimpan briefing harian persisten dengan output actionable: alasan masuk, entry zone, stop loss, take profit, risk-reward, serta catatan risiko/katalis.
+- [done] Plan juga diperluas dengan phase baru untuk storage report harian, scheduler job 08:00 WIB, kontrak API briefing harian, dan UX `#ai-picks` berbasis hasil briefing terbaru.
+- [next] Implementasi belum dimulai; tahap saat ini masih requirement capture + plan update.
+
+---
 
 ---
 

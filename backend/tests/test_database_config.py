@@ -23,3 +23,15 @@ def test_database_url_can_be_overridden_by_env(monkeypatch):
     database = _reload_database_module(monkeypatch)
 
     assert database.SQLALCHEMY_DATABASE_URL == 'sqlite:////tmp/retailbijak-test.db'
+
+
+def test_database_defines_daily_ai_pick_report_model(monkeypatch):
+    database = _reload_database_module(monkeypatch)
+
+    assert hasattr(database, 'DailyAIPickReport')
+    model = database.DailyAIPickReport
+    columns = model.__table__.columns
+    assert model.__tablename__ == 'daily_ai_pick_reports'
+    assert 'trading_date' in columns
+    assert 'generated_at' in columns
+    assert 'payload_json' in columns

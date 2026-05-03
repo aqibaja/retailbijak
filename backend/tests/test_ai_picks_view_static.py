@@ -19,9 +19,12 @@ def test_api_exposes_fetch_analysis_helper_with_optional_llm_query():
 def test_api_exposes_fetch_ai_picks_helper_with_safe_fallback_shape():
     content = API.read_text()
     assert 'export async function fetchAiPicks(mode = \'swing\', limit = 5, options = {})' in content
-    assert "const withLlm = options?.llm ? '&llm=1' : '';" in content
-    assert "return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}`) || {" in content
+    assert "const withRefresh = options?.refresh ? '&refresh=1' : '';" in content
+    assert "return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}${withRefresh}`) || {" in content
     assert "source: 'no_data'" in content
+    assert "trading_date: null" in content
+    assert "generated_at: null" in content
+    assert "freshness: { label: 'Belum ada briefing', is_stale: true, generated_at: null }" in content
     assert "market_context: { tone: 'unknown', breadth_label: 'data belum cukup', latest_date: null }" in content
 
 
@@ -42,6 +45,23 @@ def test_ai_picks_view_exports_render_function_and_shell_hooks():
     assert 'ai-picks-compare' in content
     assert 'ai-picks-empty' in content
     assert 'fetchAiPicks' in content
+
+
+def test_ai_picks_view_contains_daily_briefing_hooks_and_actionable_fields():
+    content = VIEW.read_text()
+    assert 'AI Picks Hari Ini' in content
+    assert 'Premarket briefing otomatis' in content
+    assert 'ai-picks-briefing-meta' in content
+    assert 'ai-picks-freshness' in content
+    assert 'ai-picks-generated-at' in content
+    assert 'Manual Refresh' in content
+    assert 'entry_zone' in content
+    assert 'stop_loss' in content
+    assert 'take_profit' in content
+    assert 'risk_reward' in content
+    assert 'thesis' in content
+    assert 'risk_notes' in content
+    assert 'catalysts' in content
 
 
 def test_ai_picks_view_contains_compare_tray_and_explainable_metric_hooks():
@@ -91,8 +111,6 @@ def test_ai_picks_view_supports_detail_context_handoff_and_pin_state():
     assert 'risk_note' in content
     assert 'fit_label' in content
     assert 'entry_zone' in content
-    assert 'target_zone' in content
-    assert 'invalidation' in content
     assert 'source_route' in content
     assert 'source_label' in content
 
@@ -177,6 +195,8 @@ def test_ai_picks_styles_exist_for_shell_layout():
     assert '.ai-picks-featured-card' in content
     assert '.ai-picks-rank-card' in content
     assert '.ai-picks-compare-tray' in content
+    assert '.ai-picks-briefing-meta' in content
+    assert '.ai-picks-freshness' in content
 
 
 def test_ai_picks_styles_exist_for_compare_and_factor_visuals():

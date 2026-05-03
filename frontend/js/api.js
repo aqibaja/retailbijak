@@ -115,12 +115,18 @@ export async function fetchAiPicks(mode = 'swing', limit = 5, options = {}) {
     const safeMode = encodeURIComponent(mode || 'swing');
     const safeLimit = Number(limit || 5);
     const withLlm = options?.llm ? '&llm=1' : '';
-    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}`) || {
+    const withRefresh = options?.refresh ? '&refresh=1' : '';
+    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}${withRefresh}`) || {
         mode: mode || 'swing',
+        trading_date: null,
+        generated_at: null,
+        as_of_label: 'Premarket briefing belum tersedia',
         updated_at: null,
         source: 'no_data',
         market_context: { tone: 'unknown', breadth_label: 'data belum cukup', latest_date: null },
+        market_bias: 'data belum cukup',
         summary: { candidates_analyzed: 0, eligible_count: 0, featured_ticker: null },
+        freshness: { label: 'Belum ada briefing', is_stale: true, generated_at: null },
         data: [],
     };
 }

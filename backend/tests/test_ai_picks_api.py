@@ -1,7 +1,11 @@
-from fastapi.testclient import TestClient
+from __future__ import annotations
+
+from datetime import date
 
 from backend.ai_picks import build_ai_picks_fallback_payload
 from backend.main import app
+from backend.database import DailyAIPickReport
+from fastapi.testclient import TestClient
 
 
 KNOWN_MODES = ("swing", "defensive", "catalyst")
@@ -11,6 +15,19 @@ EXPLAINABILITY_KEYS = {
     'invalidation', 'target_zone', 'catalyst', 'source', 'latest_close',
     'change_pct', 'volume_ratio', 'bars_count', 'factor_scores', 'comparison_points',
 }
+ACTIONABLE_KEYS = {
+    'ticker', 'thesis', 'entry_zone', 'stop_loss', 'take_profit', 'risk_reward', 'risk_notes', 'catalysts'
+}
+
+
+def test_daily_ai_pick_report_model_exposes_persistent_briefing_fields():
+    columns = DailyAIPickReport.__table__.columns
+    assert DailyAIPickReport.__tablename__ == 'daily_ai_pick_reports'
+    for key in (
+        'id', 'trading_date', 'generated_at', 'mode', 'market_bias', 'summary',
+        'runtime_state', 'runtime_message', 'model', 'payload_json'
+    ):
+        assert key in columns
 
 
 def test_ai_picks_endpoint_returns_expected_top_level_shape():
@@ -19,7 +36,10 @@ def test_ai_picks_endpoint_returns_expected_top_level_shape():
 
     assert res.status_code == 200
     data = res.json()
-    assert set(data.keys()) == {'mode', 'updated_at', 'source', 'market_context', 'summary', 'data'}
+    assert set(data.keys()) == {
+        'mode', 'trading_date', 'generated_at', 'as_of_label', 'updated_at', 'source', 'market_context',
+        'market_bias', 'summary', 'freshness', 'data'
+    }
     assert data['mode'] == 'swing'
     assert data['source'] in {'derived', 'db', 'no_data'}
     assert isinstance(data['market_context'], dict)
@@ -120,6 +140,40 @@ def test_ai_picks_endpoint_honors_limit_on_ranked_rows():
 
 
 
+def test_ai_picks_endpoint_rows_include_actionable_daily_trade_fields():
+    with TestClient(app) as client:
+        res = client.get('/api/ai-picks?mode=swing&limit=3')
+
+    assert res.status_code == 200
+    data = res.json()
+    if not data['data']:
+        return
+    first = data['data'][0]
+    assert ACTIONABLE_KEYS.issubset(first.keys())
+    assert first['thesis']
+    assert first['entry_zone'] is not None
+    assert first['stop_loss'] is not None
+    assert first['take_profit'] is not None
+    assert first['risk_reward']
+    assert isinstance(first['catalysts'], list)
+    assert first['risk_notes']
+
+
+
+def test_ai_picks_endpoint_exposes_daily_briefing_freshness_metadata():
+    with TestClient(app) as client:
+        res = client.get('/api/ai-picks?mode=swing&limit=3')
+
+    assert res.status_code == 200
+    data = res.json()
+    assert 'trading_date' in data
+    assert 'generated_at' in data
+    assert 'as_of_label' in data
+    assert 'freshness' in data
+    assert set(data['freshness'].keys()) == {'label', 'is_stale', 'generated_at'}
+
+
+
 def test_ai_picks_endpoint_optionally_includes_llm_payload(monkeypatch):
     from backend import ai_picks as ai_picks_module
 
@@ -210,3 +264,4 @@ def test_ai_picks_fallback_payload_keeps_stable_no_data_summary_defaults():
     }
     assert data['market_context']['tone'] in {'unknown', 'bullish', 'neutral', 'defensive'}
     assert data['market_context']['breadth_label']
+    assert data['trading_date'] in {None, str(date.today())}
