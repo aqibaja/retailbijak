@@ -5,18 +5,18 @@ export async function renderNews(root) {
       <section class="news-container news-page-pro">
         <div class="news-header">
           <div class="news-header-copy">
-            <div class="news-kicker">Market Intelligence</div>
-            <h1>Latest News</h1>
+            <div class="news-kicker">Intel Pasar</div>
+            <h1>Berita Terbaru</h1>
             <p>Ringkasan berita pasar yang dibentuk menjadi kartu editorial ringkas dan mudah discan.</p>
           </div>
           <div class="news-head-meta">
             <div class="news-count-pill" id="news-count">...</div>
-            <div class="news-refresh-note">Auto refresh saat feed berubah.</div>
+            <div class="news-refresh-note">Feed akan diperbarui otomatis saat sumber berubah.</div>
           </div>
         </div>
         
         <div id="news-list" class="news-grid news-grid-pro">
-            <div id="news-status" class="news-status-shell">Loading intelligence...</div>
+            <div id="news-status" class="news-status-shell">Memuat feed intelligence...</div>
         </div>
       </section>`;
 

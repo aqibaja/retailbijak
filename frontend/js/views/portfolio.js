@@ -7,15 +7,15 @@ export async function renderPortfolio(root, activeTab) {
       <section class="grid grid-cols-12 stagger-reveal portfolio-page-pro">
         <div class="col-span-12 portfolio-header">
           <div class="portfolio-header-copy">
-            <div class="portfolio-kicker">Portfolio Control</div>
-            <h1>Assets & Watchlist</h1>
-            <p>Kelola posisi aktif dan pantau asset kandidat dengan tampilan yang lebih rapat dan editorial.</p>
+            <div class="portfolio-kicker">Pusat Portfolio</div>
+            <h1>Aset & Watchlist</h1>
+            <p>Kelola posisi aktif dan pantau aset kandidat dengan tampilan yang lebih rapat dan editorial.</p>
           </div>
           <div class="portfolio-meta-rail">
-            <div class="portfolio-summary">Fast path for positions, notes, and quick watchlist ops.</div>
+            <div class="portfolio-summary">Jalur cepat untuk posisi aktif, catatan ringkas, dan operasi watchlist.</div>
             <div class="portfolio-tab-switch flex p-1" style="background:var(--bg-elevated); border-radius:10px; border:1px solid var(--border-subtle);">
               <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Portfolio</a>
-              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Watchlist</a>
+              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none; padding:4px 16px; border-radius:8px; min-width:100px; height:32px;">Daftar Pantau</a>
             </div>
           </div>
         </div>
@@ -37,8 +37,8 @@ async function renderWatchlistTab(el) {
     
     el.innerHTML = `
       <div class="portfolio-table-head flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
-        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;">My Watchlist <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} ITEMS</span></h3>
-        <button id="add-watchlist" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
+        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;">Daftar Pantau <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} ITEM</span></h3>
+        <button id="add-watchlist" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> Tambah</button>
       </div>
       <div class="table-wrapper portfolio-table-wrap">
         <table class="table portfolio-table">
@@ -58,7 +58,7 @@ async function renderWatchlistTab(el) {
                 <td style="text-align:right; width:80px;">
                   <button class="btn-icon delete-watchlist" data-ticker="${r.ticker}" style="color:var(--down-color);"><i data-lucide="trash-2" style="width:16px;"></i></button>
                 </td>
-              </tr>`).join('') : '<tr><td colspan="3" class="text-center p-8 text-dim">Watchlist is empty.</td></tr>'}
+              </tr>`).join('') : '<tr><td colspan="3" class="text-center p-8 text-dim">Belum ada saham di daftar pantau.</td></tr>'}
           </tbody>
         </table>
       </div>`;
@@ -91,8 +91,8 @@ async function renderPortfolioTab(el) {
     
     el.innerHTML = `
       <div class="portfolio-table-head flex justify-between items-center p-6" style="border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated);">
-        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;" data-i18n="current_holdings">Current Holdings <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} POSITIONS</span></h3>
-        <button id="add-portfolio" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> NEW</button>
+        <h3 class="text-xs uppercase text-dim strong" style="letter-spacing:0.08em; margin:0;" data-i18n="current_holdings">Posisi Aktif <span class="badge ml-2" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${rows.length} POSISI</span></h3>
+        <button id="add-portfolio" class="btn btn-primary" style="padding:6px 16px; font-size:12px; height:32px; box-shadow:0 0 10px var(--primary-glow);"><i data-lucide="plus" style="width:14px;"></i> Tambah</button>
       </div>
       <div class="table-wrapper portfolio-table-wrap">
         <table class="table portfolio-table">
@@ -113,7 +113,7 @@ async function renderPortfolioTab(el) {
                 <td style="text-align:right; width:80px;">
                   <button class="btn-icon delete-portfolio" data-ticker="${r.ticker}" style="color:var(--down-color);"><i data-lucide="trash-2" style="width:16px;"></i></button>
                 </td>
-              </tr>`).join('') : '<tr><td colspan="4" class="text-center p-8 text-dim">No portfolio positions.</td></tr>'}
+              </tr>`).join('') : '<tr><td colspan="4" class="text-center p-8 text-dim">Belum ada posisi portfolio.</td></tr>'}
           </tbody>
         </table>
       </div>`;

@@ -210,19 +210,20 @@
 
 ---
 
-### 2026-05-03 04:58 WIB
-- [done] Audit copy consistency lintas halaman menemukan `help.js` masih memakai copy English generik (`Help Center`, `Quick Start Guide`, `Contact Support`) dan CTA support belum mengarah ke route aplikasi.
-- [done] TDD RED: tambah `backend/tests/test_help_view_copy_static.py` untuk mewajibkan copy Indonesia + tautan aksi `#settings` dan `#screener`.
-- [done] Implementasi `frontend/js/views/help.js`: ganti hero/help copy ke Bahasa Indonesia, tambah CTA inline `Buka Settings`, dan ubah panel support menjadi link aksi nyata `Hubungi Support` + `Buka Scanner`.
-- [done] GREEN verified: `pytest -q tests/test_help_view_copy_static.py tests/test_help_view_static.py` → 3 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
-- [done] Browser QA pre-deploy masih menampilkan copy lama, sesuai ekspektasi karena runtime publik belum disync.
-- [done] Commit/push/deploy help copy polish selesai; runtime sync, restart service, dan browser QA post-deploy diverifikasi sehat.
+### 2026-05-03 05:12 WIB
+- [done] Audit copy/CTA lintas halaman menemukan `portfolio.js` dan `news.js` masih menyisakan shell English/generic (`Portfolio Control`, `Assets & Watchlist`, `Latest News`, `Loading intelligence...`).
+- [done] TDD RED: tambah `backend/tests/test_cross_page_copy_static.py` untuk memaksa copy Indonesia pada shell portfolio/news dan mencegah fallback text English lama.
+- [done] Implementasi `frontend/js/views/portfolio.js`: ganti hero/header/fallback/button copy ke Bahasa Indonesia (`Pusat Portfolio`, `Aset & Watchlist`, `Daftar Pantau`, `Posisi Aktif`, `Tambah`, fallback empty-state Indonesia).
+- [done] Implementasi `frontend/js/views/news.js`: ganti kicker/headline/loading helper ke Bahasa Indonesia (`Intel Pasar`, `Berita Terbaru`, `Memuat feed intelligence...`) dan refresh note yang lebih natural.
+- [done] GREEN verified: `pytest -q tests/test_cross_page_copy_static.py tests/test_portfolio_view_static.py tests/test_news_view_static.py` → 6 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
+- [done] Browser QA pre-deploy `#portfolio?cb=20260503s` masih menampilkan copy lama, sesuai ekspektasi karena runtime publik belum disync setelah patch batch ini.
+- [done] Commit/push/deploy batch copy consistency siap dilanjutkan sebagai langkah berikutnya agar runtime publik sinkron dengan source terbaru.
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Route verification, settings cleanup, dan help copy polish sudah konsisten; shell cross-page makin selaras dengan preferensi Bahasa Indonesia dan CTA internal.
+**Slice aktif sekarang:** Source portfolio/news sudah lebih konsisten dalam Bahasa Indonesia; langkah tersisa untuk batch ini adalah sync runtime publik lalu verifikasi live pasca deploy.
 
 **Target patch minimum untuk slice berikutnya:**
-1. audit copy/CTA route lain yang masih terlalu generik atau bercampur English,
-2. tambah guard kecil untuk mencegah regresi copy lama,
-3. rerun verify + push + deploy.
+1. commit + push perubahan portfolio/news,
+2. sync ke `/opt/swingaq` + restart service,
+3. browser QA live post-deploy untuk `#portfolio` dan `#news`.
