@@ -14,7 +14,9 @@ copy_item() {
 
 echo "[1/6] Syncing backend and frontend..."
 copy_item "$REPO_DIR/backend/main.py" "$PROD_DIR/backend/main.py"
+copy_item "$REPO_DIR/backend/indicators_extended.py" "$PROD_DIR/backend/indicators_extended.py"
 copy_item "$REPO_DIR/backend/routes/user.py" "$PROD_DIR/backend/routes/user.py"
+copy_item "$REPO_DIR/backend/routes/stock_detail.py" "$PROD_DIR/backend/routes/stock_detail.py"
 copy_item "$REPO_DIR/backend/services/openrouter_llm.py" "$PROD_DIR/backend/services/openrouter_llm.py"
 copy_item "$REPO_DIR/backend/services/idx_response_factory.py" "$PROD_DIR/backend/services/idx_response_factory.py"
 copy_item "$REPO_DIR/frontend/index.html" "$PROD_DIR/frontend/index.html"

@@ -8,6 +8,31 @@ except ModuleNotFoundError:
     from backend.database import OHLCVDaily
 
 
+STATUS_LOCALIZATION = {
+    "Insufficient": "data belum cukup",
+    "Overbought": "jenuh beli",
+    "Oversold": "tekanan jual sudah dalam",
+    "Neutral": "netral",
+    "Bullish Crossover": "momentum berbalik naik",
+    "Bearish Crossover": "momentum berbalik melemah",
+    "Bullish": "momentum naik",
+    "Bearish": "momentum melemah",
+    "Strong Uptrend": "uptrend kuat",
+    "Strong Downtrend": "downtrend kuat",
+    "Mild Uptrend": "tren naik bertahap",
+    "Mild Downtrend": "tren turun bertahap",
+    "Above SMA20": "harga berada di atas SMA20",
+    "Below SMA20": "harga berada di bawah SMA20",
+    "Volatile": "volatilitas tinggi",
+    "Normal": "normal",
+    "Spike": "lonjakan volume",
+}
+
+
+def _localize_status(value: str | None) -> str:
+    return STATUS_LOCALIZATION.get(value or '', value or '')
+
+
 def _safe_round(value, digits=2):
     try:
         if pd.isna(value):
@@ -25,13 +50,13 @@ def empty_technical_summary(message: str = "Belum ada data OHLCV yang cukup untu
         "rating": "NO DATA",
         "score": 50,
         "indicators": {
-            "rsi": {"value": None, "status": "Insufficient"},
-            "macd": {"macd_line": None, "signal": None, "histogram": None, "status": "Insufficient"},
-            "trend": {"sma_5": None, "sma_10": None, "sma_20": None, "sma_50": None, "sma_200": None, "ema_20": None, "status": "Insufficient"},
+            "rsi": {"value": None, "status": _localize_status("Insufficient")},
+            "macd": {"macd_line": None, "signal": None, "histogram": None, "status": _localize_status("Insufficient")},
+            "trend": {"sma_5": None, "sma_10": None, "sma_20": None, "sma_50": None, "sma_200": None, "ema_20": None, "status": _localize_status("Insufficient")},
             "bollinger_bands": {"upper": None, "middle": None, "lower": None},
-            "stochastic": {"k": None, "d": None, "status": "Insufficient"},
-            "atr": {"value": None, "status": "Insufficient"},
-            "volume": {"latest": None, "avg_20": None, "ratio": None, "status": "Insufficient"},
+            "stochastic": {"k": None, "d": None, "status": _localize_status("Insufficient")},
+            "atr": {"value": None, "status": _localize_status("Insufficient")},
+            "volume": {"latest": None, "avg_20": None, "ratio": None, "status": _localize_status("Insufficient")},
             "support_resistance": {"support_20d": None, "resistance_20d": None},
         },
     }
@@ -172,7 +197,11 @@ def get_technical_summary(df: pd.DataFrame) -> dict:
     if "Downtrend" in trend or trend == "Below SMA20":
         bear += 1
     rating = "BULLISH" if bull > bear else "BEARISH" if bear > bull else "NEUTRAL"
-    summary = f"{rating}: harga {('naik' if (change_pct or 0) >= 0 else 'turun')} {_safe_round(change_pct) if change_pct is not None else 0}% vs sesi sebelumnya; trend {trend}; MACD {macd_status}; RSI {rsi_status}."
+    summary = (
+        f"{rating}: harga {('naik' if (change_pct or 0) >= 0 else 'turun')} "
+        f"{_safe_round(change_pct) if change_pct is not None else 0}% vs sesi sebelumnya; "
+        f"tren {_localize_status(trend)}; MACD {_localize_status(macd_status)}; RSI {_localize_status(rsi_status)}."
+    )
 
     return {
         "status": "ok",
@@ -183,13 +212,13 @@ def get_technical_summary(df: pd.DataFrame) -> dict:
         "summary": summary,
         "score": max(0, min(100, 50 + (bull - bear) * 12)),
         "indicators": {
-            "rsi": {"value": _safe_round(rsi_val), "status": rsi_status},
-            "macd": {"macd_line": _safe_round(latest.get('macd_line')), "signal": _safe_round(latest.get('macd_signal')), "histogram": _safe_round(macd_hist), "status": macd_status},
-            "trend": {"sma_5": _safe_round(latest.get('sma_5')), "sma_10": _safe_round(latest.get('sma_10')), "sma_20": _safe_round(sma20), "sma_50": _safe_round(sma50), "sma_200": _safe_round(sma200), "ema_20": _safe_round(latest.get('ema_20')), "status": trend},
+            "rsi": {"value": _safe_round(rsi_val), "status": _localize_status(rsi_status)},
+            "macd": {"macd_line": _safe_round(latest.get('macd_line')), "signal": _safe_round(latest.get('macd_signal')), "histogram": _safe_round(macd_hist), "status": _localize_status(macd_status)},
+            "trend": {"sma_5": _safe_round(latest.get('sma_5')), "sma_10": _safe_round(latest.get('sma_10')), "sma_20": _safe_round(sma20), "sma_50": _safe_round(sma50), "sma_200": _safe_round(sma200), "ema_20": _safe_round(latest.get('ema_20')), "status": _localize_status(trend)},
             "bollinger_bands": {"upper": _safe_round(latest.get('bb_high')), "middle": _safe_round(latest.get('bb_mid')), "lower": _safe_round(latest.get('bb_low'))},
-            "stochastic": {"k": _safe_round(latest.get('stoch_k')), "d": _safe_round(latest.get('stoch_d')), "status": "Overbought" if pd.notna(latest.get('stoch_k')) and latest.get('stoch_k') > 80 else "Oversold" if pd.notna(latest.get('stoch_k')) and latest.get('stoch_k') < 20 else "Neutral"},
-            "atr": {"value": _safe_round(latest.get('atr')), "status": "Volatile" if pd.notna(latest.get('atr')) and close_price and latest.get('atr') / close_price > 0.04 else "Normal"},
-            "volume": {"latest": int(volume_latest) if pd.notna(volume_latest) else None, "avg_20": int(volume_avg) if pd.notna(volume_avg) else None, "ratio": _safe_round(volume_ratio), "status": "Spike" if volume_ratio and volume_ratio >= 1.5 else "Normal"},
+            "stochastic": {"k": _safe_round(latest.get('stoch_k')), "d": _safe_round(latest.get('stoch_d')), "status": _localize_status("Overbought") if pd.notna(latest.get('stoch_k')) and latest.get('stoch_k') > 80 else _localize_status("Oversold") if pd.notna(latest.get('stoch_k')) and latest.get('stoch_k') < 20 else _localize_status("Neutral")},
+            "atr": {"value": _safe_round(latest.get('atr')), "status": _localize_status("Volatile") if pd.notna(latest.get('atr')) and close_price and latest.get('atr') / close_price > 0.04 else _localize_status("Normal")},
+            "volume": {"latest": int(volume_latest) if pd.notna(volume_latest) else None, "avg_20": int(volume_avg) if pd.notna(volume_avg) else None, "ratio": _safe_round(volume_ratio), "status": _localize_status("Spike") if volume_ratio and volume_ratio >= 1.5 else _localize_status("Normal")},
             "support_resistance": {"support_20d": _safe_round(low_window), "resistance_20d": _safe_round(high_window)},
         },
     }

@@ -25,6 +25,10 @@ def test_stock_detail_residual_operator_copy_is_more_indonesian():
         'Risiko relatif terkendali.',
         'RSI jenuh beli',
         'normal',
+        'Bias Saat Ini',
+        'Risiko Utama',
+        'Pemicu Perubahan Bias',
+        'Apa yang perlu ditunggu',
     ]
     banned = [
         'Technical summary belum tersedia lengkap.',

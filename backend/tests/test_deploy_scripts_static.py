@@ -48,3 +48,17 @@ def test_sync_script_runs_public_resource_chain_check_after_post_deploy_smoke():
 def test_deploy_doc_mentions_public_resource_chain_check():
     assert 'check_public_resource_chain.py' in DEPLOY_DOC
     assert 'public resource chain' in DEPLOY_DOC.lower()
+
+
+def test_sync_script_copies_backend_indicator_and_route_dependencies():
+    required = [
+        'copy_item "$REPO_DIR/backend/indicators_extended.py" "$PROD_DIR/backend/indicators_extended.py"',
+        'copy_item "$REPO_DIR/backend/routes/stock_detail.py" "$PROD_DIR/backend/routes/stock_detail.py"',
+    ]
+    for marker in required:
+        assert marker in SYNC_SCRIPT
+
+
+def test_deploy_doc_mentions_backend_dependency_sync_for_stock_analysis():
+    assert 'backend/indicators_extended.py' in DEPLOY_DOC
+    assert 'backend/routes/stock_detail.py' in DEPLOY_DOC

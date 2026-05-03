@@ -12,6 +12,8 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
    - `git pull origin main`
 2. Sync app files to runtime dir:
    - `cp backend/main.py /opt/swingaq/backend/main.py`
+   - `cp backend/indicators_extended.py /opt/swingaq/backend/indicators_extended.py`
+   - `cp backend/routes/stock_detail.py /opt/swingaq/backend/routes/stock_detail.py`
    - `cp backend/database.py /opt/swingaq/backend/database.py`
    - `cp frontend/js/api.js /opt/swingaq/frontend/js/api.js`
    - `cp frontend/js/i18n.js /opt/swingaq/frontend/js/i18n.js`
