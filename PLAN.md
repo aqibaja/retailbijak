@@ -277,6 +277,7 @@
 - [done] Verification sweep pasca-push didokumentasikan lagi sebagai commit `fc74fa1 docs: record post-cleanup verification sweep`, sehingga log repo dan `PLAN.md` sinkron penuh.
 - [done] Browser QA live terbaru untuk `#ai-picks` dijalankan ulang setelah cleanup hygiene repo guna memastikan tidak ada efek samping pada SPA publik. Hasilnya kini jauh lebih sehat dibanding sesi blank sebelumnya: route `#ai-picks` termuat, `h1` = `AI Picks Hari Ini`, `.ai-picks-page` ada, `#app-root` terisi (`innerHTML.length=3143`), dan shell tombol mode/refresh tampil normal.
 - [done] Evidence browser juga menunjukkan nuance penting: elemen page AI Picks sudah hidup meski `document.body.dataset.activeView/routePath` masih `null` pada snapshot automation ini. Karena render aktual sudah sukses dan tidak ada gejala blank main-content pada pass ini, saya mencatatnya sebagai observasi automation, bukan defect aplikasi baru.
+- [done] Browser QA companion untuk `#dashboard` juga dijalankan pada sesi yang sama agar perbandingan lintas-route tetap grounded. Dashboard publik termuat normal dengan `h1 = Dashboard Intelijen Pasar`, chart canvas ada, widget `Top AI Pick Today` muncul, serta `#app-root` terisi penuh; ini memperkuat bahwa blank-main-content sebelumnya memang tidak lagi reproduktif di pass terbaru.
 - [next] Persist dokumentasi QA browser terbaru ke git (commit + push) agar `PLAN.md` tetap sejajar dengan verifikasi lapangan terakhir.
 
 ---
