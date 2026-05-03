@@ -1,5 +1,5 @@
 import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260503b';
-import { observeElements, animateValue } from '../main.js?v=20260503y';
+import { observeElements, animateValue } from '../main.js?v=20260503aa';
 
 const SUGGESTION_PRESETS = [
   { ticker: 'BBCA', reason: 'Relative strength bertahan di atas pivot harian.' },

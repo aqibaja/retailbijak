@@ -265,11 +265,20 @@
 - [done] Runtime parity verified: sync `frontend/js/i18n.js` ke `/opt/swingaq/frontend/js/i18n.js`, lalu jalankan `python scripts/check_frontend_runtime_parity.py` → seluruh core assets + routed views `PASS`.
 - [done] Browser QA live `/?cb=20260503aa#settings`: route tetap render normal dengan `activeView=settings`; resource entries live kini eksplisit memuat `js/i18n.js` bersama chain modul frontend lain.
 
+### 2026-05-03 13:08 WIB
+- [done] Audit guard berikutnya untuk resource chain/version drift: ditemukan celah bahwa static tests belum memaksa semua `views/*.js` mengikuti token `main.js` aktif dan token `api.js` aktif, sehingga import lama seperti `../main.js?v=20260503y` dan `../api.js?v=20260502a` masih bisa lolos meski shell utama sudah memakai chain baru.
+- [done] TDD RED: tambah `backend/tests/test_frontend_import_chain_static.py` untuk mengekstrak token aktif dari `frontend/index.html` + `frontend/js/main.js`, lalu memaksa seluruh `frontend/js/views/*.js` yang mengimpor `../main.js?v=` / `../api.js?v=` memakai token yang sama; test juga melarang residu `20260502a` di router maupun semua views.
+- [done] RED verified: `pytest -q backend/tests/test_frontend_import_chain_static.py` awalnya gagal pada `dashboard.js`, membuktikan drift token lintas import chain memang masih ada.
+- [done] Implementasi minimum: rapikan import chain seluruh views agar konsisten ke `../main.js?v=20260503aa` dan `../api.js?v=20260503b` sesuai boot chain aktif; termasuk `dashboard.js`, `stock_detail.js`, `screener.js`, `portfolio.js`, `market.js`, `news.js`, `settings.js`, dan `help.js`.
+- [done] GREEN verified lokal: `pytest -q backend/tests/test_frontend_import_chain_static.py backend/tests/test_runtime_parity_i18n_static.py backend/tests/test_frontend_runtime_scripts_static.py` → `6 passed`; `python -m compileall -q frontend/js` → pass; `node --check` untuk seluruh view target → pass.
+- [done] Runtime parity verified lagi: sync ulang seluruh `/home/rich27/retailbijak/frontend/js/views/*.js` ke `/opt/swingaq/frontend/js/views/`, lalu `python scripts/check_frontend_runtime_parity.py` menunjukkan semua core assets + routed views `PASS`.
+- [done] Browser QA live `/?cb=20260503aa#dashboard`: route render normal dengan `activeView=dashboard`; resource entries hanya memuat `api.js?v=20260503b` dan tidak lagi memuat `api.js?v=20260502a`, sehingga drift import lama sudah hilang dari chain aktif.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** deploy helper + parity guard sekarang sudah mencakup `frontend/js/i18n.js`, sehingga chain aset frontend inti lebih lengkap dan risiko runtime drift setelah deploy berkurang.
+**Slice aktif sekarang:** static guard kini menutup celah version drift lintas import chain (`index` → `main` → `router` → `views` → `api/main`), dan resource chain live sudah tidak lagi memuat token API lama.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch hardening deploy/parity ini,
-2. pertimbangkan helper parity berikutnya untuk mendeteksi import versi lama lintas resource chain bila masih muncul di browser QA,
-3. lanjutkan cleanup copy minor/high-signal per-route setelah guard deploy stabil.
+1. commit + push batch guard import-chain ini,
+2. bila perlu tambah smoke helper yang memeriksa resource chain publik per-route secara otomatis,
+3. lanjut ke cleanup copy minor/high-signal route berikutnya setelah guard deploy tetap hijau.
