@@ -4,7 +4,8 @@ import re
 INDEX = Path('/home/rich27/retailbijak/frontend/index.html')
 MAIN = Path('/home/rich27/retailbijak/frontend/js/main.js')
 ROUTER = Path('/home/rich27/retailbijak/frontend/js/router.js')
-VIEWS_DIR = Path('/home/rich27/retailbijak/frontend/js/views')
+JS_DIR = Path('/home/rich27/retailbijak/frontend/js')
+VIEWS_DIR = JS_DIR / 'views'
 
 
 def test_cache_bust_chain_uses_current_20260503y_token():
@@ -28,6 +29,15 @@ def test_cache_bust_chain_uses_current_20260503y_token():
 def test_view_files_do_not_contain_line_number_prefix_corruption():
     offenders = []
     for path in VIEWS_DIR.glob('*.js'):
+        text = path.read_text()
+        if re.search(r'^\s*\d+\|', text, flags=re.MULTILINE):
+            offenders.append(path.name)
+    assert offenders == []
+
+
+def test_frontend_core_js_files_do_not_contain_line_number_prefix_corruption():
+    offenders = []
+    for path in sorted(JS_DIR.glob('*.js')):
         text = path.read_text()
         if re.search(r'^\s*\d+\|', text, flags=re.MULTILINE):
             offenders.append(path.name)

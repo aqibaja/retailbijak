@@ -227,11 +227,18 @@
 - [done] Browser QA live `#market?cb=20260503y`: halaman tidak blank lagi; `Ikhtisar Pasar`, `Ringkasan IHSG`, `Denyut Pasar`, `Breadth Pasar`, `Saham Penguat Teratas`, `Arus Investor Asing`, dan `Aksi Korporasi` tampil normal dengan nav aktif `market`.
 - [done] Readback publik memastikan asset live sudah bersih: `market.js?v=20260503x` dan `dashboard.js?v=20260503y` kini terkirim tanpa prefix line-number, dan runtime `/opt/swingaq/frontend/js/views` juga lolos guard anti-korupsi.
 
+### 2026-05-03 11:56 WIB
+- [done] Audit lanjutan source + runtime: `search_files` pada `/home/rich27/retailbijak/frontend/js` dan `/opt/swingaq/frontend/js` tidak lagi menemukan prefix korupsi `^\s*[0-9]+\|`; `node --check` untuk `main.js`, `router.js`, `api.js`, `theme.js`, dan semua `views/*.js` lulus di repo maupun runtime.
+- [done] TDD GREEN tambahan: perluas `backend/tests/test_cache_bust_chain_static.py` agar juga menjaga file inti `frontend/js/*.js` dari korupsi prefix line-number, bukan hanya `views/*.js`.
+- [done] Verifikasi lokal penuh: `pytest -q backend/tests/test_cache_bust_chain_static.py` lulus (`3 passed`) dan health endpoint publik tetap sehat (`{"status":"ok","version":"1.0.0"}`).
+- [done] Browser QA live multi-route dengan cache-bust `20260503y`: `#dashboard`, `#market`, `#screener`, `#portfolio`, `#news`, `#settings`, dan `#help` semuanya render normal dengan heading + shell route yang sesuai; tidak ada blank state baru yang terdeteksi.
+- [done] Catatan QA: route `#help` tetap merender normal, tetapi browser automation sempat tidak menandai nav aktif walau heading dan shell route sudah benar. Indikasi ini tampak sebagai quirk snapshot/active-state observer, bukan blank-route regression.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** route `#market` sudah pulih dari blank state. Root cause-nya adalah korupsi prefix line-number (`1|`, `2|`, dst.) di beberapa file `frontend/js/views/*.js` yang membuat module route gagal dieksekusi walau cache-bust chain sudah benar.
+**Slice aktif sekarang:** source dan runtime SPA sudah lolos audit korupsi prefix line-number untuk file inti dan semua view, serta smoke QA live lintas route utama tidak menemukan blank state baru.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch perbaikan market/cache-bust ini,
-2. pertahankan guard anti-korupsi prefix line-number di static tests,
-3. audit route lain hanya jika ada gejala blank state atau mixed-language baru.
+1. commit + push batch audit lanjutan ini,
+2. bila mau lanjut, fokus ke cleanup copy minor/high-signal UX per route daripada stabilitas render,
+3. pertahankan guard anti-korupsi prefix line-number pada file inti + seluruh view di batch frontend berikutnya.
