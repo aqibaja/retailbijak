@@ -9,6 +9,13 @@ STOCK_DETAIL = ROOT / 'frontend/js/views/stock_detail.js'
 STYLE = ROOT / 'frontend/style.css'
 
 
+def test_api_exposes_fetch_analysis_helper_with_optional_llm_query():
+    content = API.read_text()
+    assert 'export async function fetchAnalysis(ticker, options = {}) {' in content
+    assert "const withLlm = options?.llm ? '?llm=1' : '';" in content
+    assert "return apiFetch(`/stocks/${ticker}/analysis${withLlm}`);" in content
+
+
 def test_api_exposes_fetch_ai_picks_helper_with_safe_fallback_shape():
     content = API.read_text()
     assert 'export async function fetchAiPicks(mode = \'swing\', limit = 5, options = {})' in content

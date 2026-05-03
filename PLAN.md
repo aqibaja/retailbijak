@@ -225,6 +225,17 @@
 
 ---
 
+### 2026-05-04 00:04 CST
+- [done] TDD RED untuk bug stock-detail live: tambah guard `test_api_exposes_fetch_analysis_helper_with_optional_llm_query()` di `backend/tests/test_ai_picks_view_static.py` agar helper frontend wajib membentuk URL `?llm=1` yang valid untuk endpoint `/api/stocks/{ticker}/analysis`.
+- [done] RED verified: guard baru gagal secara semantik terhadap implementasi lama karena `frontend/js/api.js` masih menyusun URL `.../analysis&llm=1`, sehingga request browser jatuh ke fallback non-LLM dan runtime message invalid OpenRouter tidak pernah muncul di detail saham.
+- [done] Implementasi minimal: ubah `fetchAnalysis()` di `frontend/js/api.js` dari suffix `&llm=1` menjadi `?llm=1`.
+- [done] GREEN verified: `pytest -q backend/tests/test_ai_picks_view_static.py -k fetch_analysis_helper_with_optional_llm_query` → `1 passed`; full `pytest -q backend/tests/test_ai_picks_view_static.py` → `15 passed`; `python3 -m compileall -q frontend/js` → pass.
+- [done] Sync runtime statis: `frontend/js/api.js` dan test guard terkait disalin ke `/opt/swingaq/...`.
+- [done] Browser QA publik final: `#settings` tetap menampilkan `OpenRouter perlu dicek`; `#stock/BBCA` sekarang menampilkan `ASISTEN AI TERTUNDA` + pesan live `API key OpenRouter ditolak provider: User not found.` dan tidak lagi jatuh ke copy fallback `OpenRouter belum aktif`; fetch langsung `/api/stocks/BBCA/analysis?llm=1` juga mengembalikan `llm.runtime_state="invalid"`.
+- [done] Kesimpulan: surface invalid-key kini konsisten di settings, AI Picks, dan stock detail; blocker tersisa tetap hanya penggantian API key OpenRouter yang valid.
+
+---
+
 ### 2026-05-03 23:52 CST
 - [done] TDD RED: perluas guard `backend/tests/test_ai_picks_api.py`, `backend/tests/test_stock_analysis_llm_api.py`, dan `backend/tests/test_ai_picks_view_static.py` agar payload/UX `llm` wajib membawa `runtime_state` + `runtime_message`, termasuk saat runtime invalid (`API key OpenRouter ditolak provider: User not found.`).
 - [done] Implementasi backend `backend/services/openrouter_llm.py`: builder `build_ai_picks_llm_payload()` dan `build_stock_analysis_llm_payload()` kini selalu menyertakan `runtime_state`/`runtime_message`; saat OpenRouter invalid/unknown, `summary` error tidak lagi generik `LLM gagal: ...` tetapi memakai pesan provider yang jujur.

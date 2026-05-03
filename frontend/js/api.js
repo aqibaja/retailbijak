@@ -25,7 +25,7 @@ export async function fetchTechnical(ticker) {
 }
 
 export async function fetchAnalysis(ticker, options = {}) {
-    const withLlm = options?.llm ? '&llm=1' : '';
+    const withLlm = options?.llm ? '?llm=1' : '';
     return apiFetch(`/stocks/${ticker}/analysis${withLlm}`);
 }
 
