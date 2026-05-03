@@ -219,23 +219,19 @@
 - [done] Browser QA live `#settings?cb=20260503w`: snapshot, DOM, dan visual check menunjukkan `PUSAT PENGATURAN`, `Kontrol Ruang Kerja`, `Simpan Konfigurasi`, `Catatan Terminal`, serta resource aktif `main.js/router.js/settings.js?v=20260503w`.
 - [done] Health endpoint publik tetap sehat: `https://retailbijak.rich27.my.id/api/health` → `{"status":"ok","version":"1.0.0"}`.
 
-## Current Slice Notes
-
-**Slice aktif sekarang:** route `#settings` sudah sinkron antara source dan runtime publik, serta mixed-language yang paling jelas sudah dibersihkan.
-
-**Target patch minimum untuk slice berikutnya:**
-1. commit + push batch settings localization ini,
-2. lanjut audit route berikutnya yang masih berpotensi campur bahasa atau stale initial paint,
-3. pertahankan guard cache-bust/settings copy pada batch frontend berikutnya.
-
-
-
+### 2026-05-03 11:32 WIB
+- [done] TDD RED: tambah guard baru di `backend/tests/test_cache_bust_chain_static.py` untuk melarang korupsi prefix line-number (`^\\s*\\d+\\|`) pada seluruh `frontend/js/views/*.js`; test sengaja gagal dan mengungkap 8 file view yang rusak.
+- [done] Root cause confirmed: beberapa view module (`dashboard.js`, `market.js`, `portfolio.js`, `screener.js`, `settings.js`, `help.js`, `stock_detail.js`, plus runtime copy terkait) berisi prefix line-number literal sehingga browser gagal merender route dengan benar walau cache-bust chain sudah benar.
+- [done] Implementasi minimal: bersihkan prefix line-number dari source tree `/home/rich27/retailbijak/frontend/js/views/*.js` dan runtime `/opt/swingaq/frontend/js/views/*.js`, tanpa mengubah logic route lain.
+- [done] GREEN verified: `pytest -q backend/tests/test_cache_bust_chain_static.py backend/tests/test_market_view_copy_static.py` → `3 passed`; `python -m compileall -q frontend/js`; `node --check` untuk `main.js`, `router.js`, dan seluruh view modules lokal/runtime lulus.
+- [done] Browser QA live `#market?cb=20260503y`: halaman tidak blank lagi; `Ikhtisar Pasar`, `Ringkasan IHSG`, `Denyut Pasar`, `Breadth Pasar`, `Saham Penguat Teratas`, `Arus Investor Asing`, dan `Aksi Korporasi` tampil normal dengan nav aktif `market`.
+- [done] Readback publik memastikan asset live sudah bersih: `market.js?v=20260503x` dan `dashboard.js?v=20260503y` kini terkirim tanpa prefix line-number, dan runtime `/opt/swingaq/frontend/js/views` juga lolos guard anti-korupsi.
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** routing SPA sudah dipadatkan supaya initial hash tidak mudah kalah oleh render dashboard lama; snapshot live untuk `#settings` dan `#portfolio` kini sesuai route, walau satu snapshot awal bisa tetap misleading sebelum paint selesai.
+**Slice aktif sekarang:** route `#market` sudah pulih dari blank state. Root cause-nya adalah korupsi prefix line-number (`1|`, `2|`, dst.) di beberapa file `frontend/js/views/*.js` yang membuat module route gagal dieksekusi walau cache-bust chain sudah benar.
 
 **Target patch minimum untuk slice berikutnya:**
-1. kalau perlu, rapikan lagi cache-bust parity test agar mengikuti versi asset baru,
-2. audit apakah ada route lain yang masih terasa lambat saat initial load,
-3. lanjutkan deploy/push hygiene dan pastikan runtime tetap sinkron.
+1. commit + push batch perbaikan market/cache-bust ini,
+2. pertahankan guard anti-korupsi prefix line-number di static tests,
+3. audit route lain hanya jika ada gejala blank state atau mixed-language baru.

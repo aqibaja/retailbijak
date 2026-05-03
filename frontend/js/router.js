@@ -1,11 +1,11 @@
-import { renderDashboard } from './views/dashboard.js?v=20260503b';
-import { renderStockDetail } from './views/stock_detail.js?v=20260502c';
-import { renderScreener } from './views/screener.js?v=20260502c';
-import { renderPortfolio } from './views/portfolio.js?v=20260503u';
-import { renderMarket } from './views/market.js?v=20260502c';
+import { renderDashboard } from './views/dashboard.js?v=20260503y';
+import { renderStockDetail } from './views/stock_detail.js?v=20260503x';
+import { renderScreener } from './views/screener.js?v=20260503x';
+import { renderPortfolio } from './views/portfolio.js?v=20260503x';
+import { renderMarket } from './views/market.js?v=20260503x';
 import { renderNews } from './views/news.js?v=20260503u';
-import { renderSettings } from './views/settings.js?v=20260503w';
-import { renderHelp } from './views/help.js?v=20260503u';
+import { renderSettings } from './views/settings.js?v=20260503x';
+import { renderHelp } from './views/help.js?v=20260503x';
 
 let routeToken = 0;
 
