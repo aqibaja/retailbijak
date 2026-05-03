@@ -210,23 +210,26 @@
 
 ---
 
-### 2026-05-03 05:24 WIB
-- [done] Audit live mismatch menemukan perubahan copy source `portfolio/news/help/settings` belum ikut terbaca runtime publik karena chain cache-bust `index.html -> main.js -> router.js -> view imports` masih memakai token lama.
-- [done] TDD RED: tambah `backend/tests/test_cache_bust_chain_static.py` untuk memaksa entrypoint memakai token `20260503u` pada `index.html`, `main.js`, dan import view relevan di `router.js`.
-- [done] Implementasi cache-bust chain: bump `frontend/index.html`, `frontend/js/main.js`, dan import `portfolio/news/help/settings` di `frontend/js/router.js` ke token `20260503u` sambil mempertahankan guard routing terbaru.
-- [done] Update test router statik agar sesuai implementasi normalizeRoute/route token terbaru (`normalizeRoute(hash)`, `baseRoute`, `rest`) tanpa mundur ke parser lama.
-- [done] GREEN verified: `pytest -q tests/test_cache_bust_chain_static.py tests/test_cross_page_copy_static.py tests/test_portfolio_view_static.py tests/test_news_view_static.py tests/test_help_view_copy_static.py tests/test_settings_view_cleanup_static.py tests/test_router_markers_static.py tests/test_router_static.py` → 11 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
-- [done] Commit/push/deploy runtime sync selesai; restart sempat memberi `connection refused` sesaat tetapi health check ulang menunjukkan service aktif sehat (`/api/health` OK).
-- [done] Browser QA live pasca deploy masih perlu satu putaran verifikasi final untuk memastikan token baru sudah dipakai Browserbase pada `#portfolio` dan `#news`.
+### 2026-05-03 10:50 WIB
+- [done] Lanjutan slice `#settings`: bump cache-bust chain ke token `20260503w` pada `frontend/index.html`, `frontend/js/main.js`, `frontend/js/router.js`, dan import `views/settings.js` agar runtime publik pasti memuat copy settings terbaru.
+- [done] TDD RED/GREEN lanjutan: perluas `backend/tests/test_settings_view_static.py` untuk melarang sisa mixed-language yang masih kentara (`Workspace`, `command palette`, `ticker`, `backend`) dan menuntut copy Indonesia yang lebih natural (`Kontrol Ruang Kerja`, `Sinkron ke layanan lokal`, `basis data`, `Pembaruan Otomatis Pemindai`, `palet perintah`, `kode saham`, `aliran data premium`).
+- [done] Implementasi `frontend/js/views/settings.js`: rapikan semua string campuran yang tersisa sehingga shell settings lebih konsisten Indonesia, termasuk hero, rail status, toggle copy, note cards, dan status text runtime.
+- [done] GREEN verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_cache_bust_chain_static.py /home/rich27/retailbijak/backend/tests/test_settings_view_static.py` lulus (`4 passed` total bersama guard baru) dan `python -m compileall -q /home/rich27/retailbijak/frontend/js` lulus.
+- [done] Sync runtime `/opt/swingaq` selesai untuk `index.html`, `main.js`, `router.js`, `views/settings.js`, dan static tests terkait; parity readback mengonfirmasi token/settings copy baru sudah ada di runtime tree.
+- [done] Browser QA live `#settings?cb=20260503w`: snapshot, DOM, dan visual check menunjukkan `PUSAT PENGATURAN`, `Kontrol Ruang Kerja`, `Simpan Konfigurasi`, `Catatan Terminal`, serta resource aktif `main.js/router.js/settings.js?v=20260503w`.
+- [done] Health endpoint publik tetap sehat: `https://retailbijak.rich27.my.id/api/health` → `{"status":"ok","version":"1.0.0"}`.
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Source, tests, dan cache-bust chain sudah sinkron; fokus tersisa adalah final live verification setelah asset token baru menyebar di edge/browser automation.
+**Slice aktif sekarang:** route `#settings` sudah sinkron antara source dan runtime publik, serta mixed-language yang paling jelas sudah dibersihkan.
 
 **Target patch minimum untuk slice berikutnya:**
-1. browser QA final `#portfolio` + `#news` dengan token `20260503u`,
-2. jika masih stale, audit resource chain live sekali lagi,
-3. tutup batch setelah live snapshot selaras.
+1. commit + push batch settings localization ini,
+2. lanjut audit route berikutnya yang masih berpotensi campur bahasa atau stale initial paint,
+3. pertahankan guard cache-bust/settings copy pada batch frontend berikutnya.
+
+
+
 
 ## Current Slice Notes
 

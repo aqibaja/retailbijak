@@ -4,7 +4,7 @@ import { renderScreener } from './views/screener.js?v=20260502c';
 import { renderPortfolio } from './views/portfolio.js?v=20260503u';
 import { renderMarket } from './views/market.js?v=20260502c';
 import { renderNews } from './views/news.js?v=20260503u';
-import { renderSettings } from './views/settings.js?v=20260503u';
+import { renderSettings } from './views/settings.js?v=20260503w';
 import { renderHelp } from './views/help.js?v=20260503u';
 
 let routeToken = 0;
