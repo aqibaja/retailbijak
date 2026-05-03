@@ -258,7 +258,9 @@
 - [done] Deploy/runtime sync juga sudah dijalankan via `bash scripts/sync_production.sh` dan seluruh parity + smoke check produksi kembali hijau.
 - [done] Smoke check publik sesudah deploy menunjukkan nuance penting: endpoint default `GET /api/ai-picks?...` masih membaca report lama `source=db` dengan label tanggal lama, tetapi `GET /api/ai-picks?...&refresh=1` meregenerasi briefing dan kini mengembalikan `trading_date/as_of_label` sesuai tanggal Jakarta aktif. Jadi patch kode sudah benar; cache data report lama baru akan tersapu otomatis pada generate berikutnya atau saat operator memicu refresh.
 - [done] Git working tree diaudit sebelum finalisasi: perubahan terfokus hanya di `backend/ai_picks.py`, `backend/tests/test_ai_picks_api.py`, dan `PLAN.md`; beberapa file `.hermes/plans/*.md` tetap dibiarkan untracked karena artefak planning lokal, bukan bagian patch produk.
-- [next] Finalisasi git hygiene: stage file patch terverifikasi, commit, push, lalu catat hash commit di `PLAN.md`.
+- [done] Git hygiene final selesai: patch di-stage selektif, di-commit sebagai `9121d55 fix: align ai picks briefing date with jakarta trading day`, lalu berhasil di-push ke `origin/main`.
+- [done] Post-push status bersih untuk patch produk; sisa untracked hanya file planning lokal di `.hermes/plans/`, tidak memengaruhi runtime maupun repo produk.
+- [done] Scope batch ini tuntas end-to-end: audit requirement, TDD RED→GREEN, compile, deploy, smoke check publik, dokumentasi `PLAN.md`, commit, dan push semuanya selesai.
 
 ---
 
