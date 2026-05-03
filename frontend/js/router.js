@@ -12,7 +12,8 @@ export function handleRoute(hash) {
     if (!root) return;
 
     const path = hash.replace(/^#\/?/, '') || 'dashboard';
-    const baseRoute = path.split('/')[0];
+    const cleanPath = path.split('?')[0].split('&')[0];
+    const baseRoute = cleanPath.split('/')[0];
 
     // Update active state in desktop and mobile nav
     document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
@@ -26,7 +27,7 @@ export function handleRoute(hash) {
     setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
         
-        const segments = path.split('/');
+        const segments = cleanPath.split('/');
         const view = segments[0];
 
         try {

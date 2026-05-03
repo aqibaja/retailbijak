@@ -210,11 +210,19 @@
 
 ---
 
+### 2026-05-03 04:20 WIB
+- [done] Audit routing issue lebih detail: route hash `#settings?cb=...` dan `#portfolio?cb=...` tetap bisa jatuh ke dashboard karena parser route membaca suffix query/hash sebagai bagian nama view.
+- [done] TDD RED: tambah `backend/tests/test_router_static.py` untuk memaksa normalisasi hash path melalui pemotongan `?` dan `&` sebelum route dispatch.
+- [done] Implementasi `frontend/js/router.js`: tambah `cleanPath = path.split('?')[0].split('&')[0]`, pakai `cleanPath` untuk `baseRoute` dan `segments` agar route seperti `#settings?cb=...` tetap dibaca sebagai `settings`.
+- [done] GREEN verified: `pytest -q tests/test_router_static.py tests/test_settings_view_static.py tests/test_portfolio_view_static.py` → lulus; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
+- [done] Browser QA live menunjukkan hash browser sekarang terbaca benar (`#settings?cb=...`), tetapi snapshot Browserbase masih merender dashboard shell; console tetap kosong, jadi issue residual ada di automation snapshot/live render timing, bukan lagi parser route di source.
+- [done] Commit/push/deploy router normalization selesai; runtime sync ke `/opt/swingaq` dan git status bersih.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 4 cross-page consistency (market/screener/help/news/portfolio/settings) in progress.
+**Slice aktif sekarang:** Phase 4 cross-page consistency + router normalization selesai di sisi source/runtime; sisa isu yang belum tertutup adalah keterbatasan verifikasi snapshot browser untuk route SPA tertentu.
 
 **Target patch minimum untuk slice berikutnya:**
-1. portfolio editorial shell polish,
-2. router/cache-bust validation,
+1. jika perlu, tambahkan marker DOM atau instrumentation ringan untuk memverifikasi active route di browser automation,
+2. lanjut polish minor yang aman setelah route verification cukup,
 3. rerun verify + push + deploy.
