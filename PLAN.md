@@ -306,6 +306,15 @@
 
 ---
 
+### 2026-05-04 02:26 CST
+- [done] Batch QA shell coverage dilanjutkan lagi dengan fokus pada route recovery dari halaman detail dan cakupan bottom-nav; seluruh proses batch ini dicatat langsung ke `PLAN.md` sesuai instruksi user.
+- [done] Verifikasi logo/home link dari route detail: fresh-open `#stock/BBCA` lalu klik branding `RetailBijak` sukses mengembalikan user ke `#dashboard`, `h1 = Dashboard Intelijen Pasar`, dan hero dashboard ter-render normal. Jadi jalur pulang utama dari detail saham tervalidasi sehat.
+- [done] Verifikasi bottom-nav coverage pada route `#portfolio`: klik item sidebar/route `Aset` membuka `#portfolio`, `h1 = Aset & Daftar Pantau`, dan state aktif tetap sinkron di shell ganda (`#portfolio` aktif pada sidebar + bottom nav). Snapshot juga menegaskan coverage mobile shell berisi 5 route utama: `#dashboard`, `#screener`, `#market`, `#news`, `#portfolio`.
+- [done] Verifikasi parity item bottom-nav `Berita`: klik route `#news` berhasil membuka `h1 = Berita Terbaru`, sementara active-state bottom nav berpindah bersih ke `#news` tanpa residu active class pada item lain.
+- [done] Kesimpulan batch coverage: route recovery via logo/home link dan coverage 5 route utama di bottom-nav tervalidasi sehat; tidak ditemukan kebutuhan patch kode pada batch QA ini.
+
+---
+
 ### 2026-05-04 02:18 CST
 - [done] Lanjut QA shell/nav parity di domain live sesuai instruksi user untuk terus jalan dan mencatat **setiap proses** ke `PLAN.md`.
 - [done] Audit awal landing dashboard: running ticker header terdeteksi sehat dengan `8` anchor render (`4` simbol unik diduplikasi untuk marquee scroll) dan semua href mengarah ke route hash `#stock/{ticker}` yang valid (`SDMU`, `HERO`, `ADHI`, `INDS`).
