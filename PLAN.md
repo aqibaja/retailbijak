@@ -210,19 +210,19 @@
 
 ---
 
-### 2026-05-03 04:44 WIB
-- [done] Audit cross-page minor inconsistency: `settings.js` masih menyisakan legacy DOM injection `document.createElement('div')` + selector `.col-span-8 .flex.justify-between.items-center.pt-2` dari layout lama, berisiko gagal diam-diam setelah redesign shell.
-- [done] TDD RED: tambah `backend/tests/test_settings_view_cleanup_static.py` untuk melarang legacy status injection dan selector lama.
-- [done] Implementasi minimal di `frontend/js/views/settings.js`: pakai node `#settings-status` yang sudah ada di markup baru, lalu update text menjadi `CONNECTED TO LOCAL BACKEND` atau `USING FALLBACK SETTINGS` tanpa membuat elemen baru.
-- [done] GREEN verified: `pytest -q tests/test_settings_view_cleanup_static.py tests/test_settings_view_static.py tests/test_router_markers_static.py tests/test_router_static.py` → 5 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
-- [done] Browser QA live `#settings?cb=20260503o`: `settingsStatusCount=1`, `settingsStatusText=CONNECTED TO LOCAL BACKEND`, `hasLegacySelector=false`, console tetap kosong.
-- [done] Commit/push/deploy cleanup settings shell selesai; runtime sync dan restart service diverifikasi sehat.
+### 2026-05-03 04:58 WIB
+- [done] Audit copy consistency lintas halaman menemukan `help.js` masih memakai copy English generik (`Help Center`, `Quick Start Guide`, `Contact Support`) dan CTA support belum mengarah ke route aplikasi.
+- [done] TDD RED: tambah `backend/tests/test_help_view_copy_static.py` untuk mewajibkan copy Indonesia + tautan aksi `#settings` dan `#screener`.
+- [done] Implementasi `frontend/js/views/help.js`: ganti hero/help copy ke Bahasa Indonesia, tambah CTA inline `Buka Settings`, dan ubah panel support menjadi link aksi nyata `Hubungi Support` + `Buka Scanner`.
+- [done] GREEN verified: `pytest -q tests/test_help_view_copy_static.py tests/test_help_view_static.py` → 3 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
+- [done] Browser QA pre-deploy masih menampilkan copy lama, sesuai ekspektasi karena runtime publik belum disync.
+- [done] Commit/push/deploy help copy polish selesai; runtime sync, restart service, dan browser QA post-deploy diverifikasi sehat.
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Router verification dan settings shell cleanup sudah stabil; cross-page shell makin konsisten dan bebas sisa selector layout lama.
+**Slice aktif sekarang:** Route verification, settings cleanup, dan help copy polish sudah konsisten; shell cross-page makin selaras dengan preferensi Bahasa Indonesia dan CTA internal.
 
 **Target patch minimum untuk slice berikutnya:**
-1. audit route/view lain untuk leftover selector atau DOM injection lama,
-2. tambah guard statik kecil bila ketemu,
+1. audit copy/CTA route lain yang masih terlalu generik atau bercampur English,
+2. tambah guard kecil untuk mencegah regresi copy lama,
 3. rerun verify + push + deploy.
