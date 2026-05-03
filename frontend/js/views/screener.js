@@ -3,8 +3,8 @@ import { observeElements } from '../main.js?v=20260503y';
 
 const renderEmptyState = ({
   title = 'Belum ada hasil scan',
-  body = 'Pilih timeframe di panel kiri lalu klik Run Institutional Scan untuk melihat sinyal beli institusional secara live.',
-  action = 'Sorting tersedia setelah hasil scan muncul.',
+  body = 'Pilih timeframe di panel kiri lalu klik Jalankan Pemindaian SwingAQ untuk melihat sinyal beli institusional secara live.',
+  action = 'Pengurutan tersedia setelah hasil scan muncul.',
 } = {}) => `
   <div class="scanner-empty scanner-empty-rich">
     <div class="scanner-empty-icon">
@@ -69,17 +69,17 @@ export async function renderScreener(root) {
       <section class="stagger-reveal">
         <div class="mb-6 screener-hero">
           <div class="screener-kicker">SwingAQ Intelligence</div>
-          <h1 class="text-3xl strong mb-2" style="letter-spacing:-0.02em;">Institutional BUY Scanner</h1>
+          <h1 class="text-3xl strong mb-2" style="letter-spacing:-0.02em;">Pemindai Akumulasi Institusi</h1>
         </div>
 
         <div class="scanner-layout">
           <div class="scanner-form flex-col" style="gap:20px;">
-            <div class="scanner-header-text">CONFIGURATION</div>
-            <select id="screener-tf" class="scanner-select"><option value="1d">Daily (1D)</option></select>
-            <p class="scanner-form-note">Run Institutional Scan untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
-            <button id="btn-run-screener" class="scanner-btn-primary">Run Institutional Scan</button>
-            <div id="screener-progress" style="display:none;" class="panel-lite p-4">
-              <div class="flex justify-between text-xs mb-2"><span id="sp-text">Analysing...</span><span id="sp-percent">0%</span></div>
+            <div class="scanner-header-text">PUSAT KONTROL</div>
+            <select id="screener-tf" class="scanner-select"><option value="1d">Harian (1D)</option></select>
+            <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
+            <button id="btn-run-screener" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
+            <div id="screener-progress" style="display:none;" class="panel-lite p-4 scanner-progress">
+              <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
               <div style="height:4px; background:var(--border-subtle); border-radius:2px;"><div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color);"></div></div>
             </div>
           </div>
@@ -87,21 +87,21 @@ export async function renderScreener(root) {
           <div class="scanner-results flex-col">
             <div class="flex justify-between items-center p-5 border-b border-subtle">
               <div class="flex items-center gap-3">
-                <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main);">Live Signals</h3>
+                <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main);">Sinyal Live</h3>
                 <span class="badge" id="screener-count">BELUM SCAN</span>
               </div>
               <div class="flex gap-2 screener-toolbar">
                 <div class="scanner-control-stack">
                   <select id="screener-sort" class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
-                      <option value="cci">Sort by CCI</option>
-                      <option value="volume">Sort by Volume</option>
-                      <option value="ma">Sort by MA</option>
+                      <option value="cci">Urutkan berdasarkan CCI</option>
+                      <option value="volume">Urutkan berdasarkan Volume</option>
+                      <option value="ma">Urutkan berdasarkan MA</option>
                   </select>
-                  <small class="scanner-toolbar-hint">Sorting tersedia setelah hasil scan muncul.</small>
+                  <small class="scanner-toolbar-hint">Pengurutan tersedia setelah hasil scan muncul.</small>
                 </div>
                 <div class="scanner-control-stack">
-                  <input type="text" id="screener-search" placeholder="Search..." class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
-                  <small class="scanner-toolbar-hint">Search ticker tersedia setelah hasil scan muncul.</small>
+                  <input type="text" id="screener-search" placeholder="Cari kode saham..." class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
+                  <small class="scanner-toolbar-hint">Pencarian kode saham tersedia setelah hasil scan muncul.</small>
                 </div>
               </div>
             </div>
@@ -179,19 +179,19 @@ function runScreener() {
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            document.getElementById('sp-text').textContent = `Scanning ${data.ticker}...`;
+            document.getElementById('sp-text').textContent = `Memindai ${data.ticker}...`;
             document.getElementById('sp-percent').textContent = `${data.percent}%`;
             document.getElementById('sp-fill').style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
             currentResults.push(data.data);
-            countBadge.textContent = `${currentResults.length} DETECTED`;
+            countBadge.textContent = `${currentResults.length} TERDETEKSI`;
             renderList(currentResults);
         } else if (data.type === 'done') {
             btn.disabled = false;
             progBox.style.display = 'none';
-            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} DETECTED` : 'TIDAK ADA SINYAL';
+            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
-            showToast(`Scan complete. Found ${currentResults.length} BUY signals.`, 'success');
+            showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal BUY.`, 'success');
             es.close();
         }
     };
@@ -199,8 +199,8 @@ function runScreener() {
         es.close();
         btn.disabled = false;
         progBox.style.display = 'none';
-        countBadge.textContent = 'SCAN ERROR';
+        countBadge.textContent = 'GALAT PEMINDAIAN';
         renderList([]);
-        showToast(`Scan error.`, 'error');
+        showToast(`Pemindaian gagal.`, 'error');
     };
 }

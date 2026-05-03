@@ -34,3 +34,25 @@ def test_screener_rows_and_progress_have_editorial_and_mobile_hooks():
     assert '.scanner-row-note {' in style
     assert '.scanner-progress {' in style
     assert '@media (max-width: 767px) {' in style
+
+
+def test_screener_uses_indonesian_operator_copy_and_status_labels():
+    content = FRONTEND_SCREENER_VIEW.read_text()
+    assert 'Pemindai Akumulasi Institusi' in content
+    assert 'PUSAT KONTROL' in content
+    assert 'Jalankan Pemindaian SwingAQ' in content
+    assert 'Sinyal Live' in content
+    assert 'Urutkan berdasarkan CCI' in content
+    assert 'Cari kode saham...' in content
+    assert 'Memindai ' in content
+    assert 'TERDETEKSI' in content
+    assert 'Pemindaian selesai.' in content
+    assert 'Institutional BUY Scanner' not in content
+    assert 'CONFIGURATION' not in content
+    assert 'Run Institutional Scan' not in content
+    assert 'Live Signals' not in content
+    assert 'Sort by CCI' not in content
+    assert 'Search...' not in content
+    assert 'Scanning ' not in content
+    assert 'DETECTED' not in content
+    assert 'Scan complete.' not in content

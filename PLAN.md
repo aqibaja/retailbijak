@@ -234,11 +234,23 @@
 - [done] Browser QA live multi-route dengan cache-bust `20260503y`: `#dashboard`, `#market`, `#screener`, `#portfolio`, `#news`, `#settings`, dan `#help` semuanya render normal dengan heading + shell route yang sesuai; tidak ada blank state baru yang terdeteksi.
 - [done] Catatan QA: route `#help` tetap merender normal, tetapi browser automation sempat tidak menandai nav aktif walau heading dan shell route sudah benar. Indikasi ini tampak sebagai quirk snapshot/active-state observer, bukan blank-route regression.
 
+### 2026-05-03 12:18 WIB
+- [done] Pilih slice lanjutan berbasis `PLAN.md`: cleanup copy operasional Indonesia pada route `#screener` dan `#help` karena stabilitas render/live sudah aman, sehingga fokus bergeser ke high-signal UX consistency.
+- [done] TDD RED: perluas `backend/tests/test_screener_view_static.py` untuk melarang copy campuran pada shell/operator status screener (`Institutional BUY Scanner`, `CONFIGURATION`, `Run Institutional Scan`, `Live Signals`, `Sort by`, `Search...`, `Scanning`, `DETECTED`, `Scan complete`), dan `backend/tests/test_help_view_copy_static.py` untuk memaksa terminologi Indonesia konsisten (`pemindai`, `daftar pantau`, `pengaturan ruang kerja`, `pemindaian SwingAQ`, `analisis hasil`, `jalur bantuan internal`).
+- [done] RED verified: `pytest -q backend/tests/test_screener_view_static.py backend/tests/test_help_view_copy_static.py` awalnya gagal `2 failed`, mengonfirmasi source masih berisi copy campuran bahasa di kedua route.
+- [done] Implementasi `frontend/js/views/screener.js`: lokalisasi shell menjadi `Pemindai Akumulasi Institusi`, `PUSAT KONTROL`, `Jalankan Pemindaian SwingAQ`, `Sinyal Live`, opsi urut Indonesia, placeholder pencarian Indonesia, progress/status/error toast Indonesia, serta hint toolbar/empty-state yang lebih konsisten.
+- [done] Implementasi `frontend/js/views/help.js`: lokalisasi copy operasional menjadi `pemindai`, `daftar pantau`, `portofolio`, `pengaturan ruang kerja`, `penanganan kendala`, `pemindaian SwingAQ`, `Analisis Hasil`, `jalur bantuan internal`, dan CTA `Buka Pemindai`.
+- [done] GREEN verified: `pytest -q backend/tests/test_screener_view_static.py backend/tests/test_help_view_copy_static.py` → `5 passed`; `python -m compileall -q frontend/js` → pass; grep residual English/campuran pada dua file target → bersih.
+- [done] Cache-bust chain baru: bump `frontend/index.html`, `frontend/js/main.js`, `frontend/js/router.js`, serta import `views/screener.js` dan `views/help.js` ke token `20260503z` agar runtime publik memuat copy baru.
+- [done] Sync runtime `/opt/swingaq/frontend` untuk `index.html`, `main.js`, `router.js`, `views/screener.js`, dan `views/help.js`; readback runtime mengonfirmasi token `20260503z` dan string baru sudah tertulis.
+- [done] Browser QA live final dengan URL `/?cb=20260503z#screener` dan `/?cb=20260503z#help`: screener kini menampilkan `Pemindai Akumulasi Institusi`, `PUSAT KONTROL`, `Jalankan Pemindaian SwingAQ`, `Sinyal Live`, `Urutkan berdasarkan CCI`, `Cari kode saham...`; help kini menampilkan `Mulai pemindaian...`, `Buka Pemindai`, dan `Analisis Hasil`.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** source dan runtime SPA sudah lolos audit korupsi prefix line-number untuk file inti dan semua view, serta smoke QA live lintas route utama tidak menemukan blank state baru.
+**Slice aktif sekarang:** stabilitas render SPA lintas route tetap aman, dan copy operasional Indonesia pada route `#screener` + `#help` sudah dirapikan serta tervalidasi live lewat cache-bust chain `20260503z`.
 
 **Target patch minimum untuk slice berikutnya:**
 1. commit + push batch audit lanjutan ini,
 2. bila mau lanjut, fokus ke cleanup copy minor/high-signal UX per route daripada stabilitas render,
-3. pertahankan guard anti-korupsi prefix line-number pada file inti + seluruh view di batch frontend berikutnya.
+3. pertahankan guard anti-korupsi prefix line-number pada file inti + seluruh view di batch frontend berikutnya,
+4. rapikan copy operasional Indonesia pada route `#screener` dan `#help`, lalu verifikasi live dengan cache-bust chain baru.

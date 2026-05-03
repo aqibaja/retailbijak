@@ -7,11 +7,11 @@ export function renderHelp(root) {
           <div class="help-hero-copy">
             <div class="help-meta-pill">PANDUAN</div>
             <h1>Pusat Bantuan</h1>
-            <p>Panduan ringkas untuk alur scanner, portfolio, watchlist, dan troubleshooting operasional RetailBijak.</p>
+            <p>Panduan ringkas untuk alur pemindai, portofolio, daftar pantau, dan penanganan kendala operasional RetailBijak.</p>
           </div>
           <div class="help-hero-side">
             <div class="help-side-label">Jalur cepat</div>
-            <div class="help-side-value">Mulai scan, simpan kandidat, lalu atur workspace</div>
+            <div class="help-side-value">Mulai pemindaian, simpan kandidat, lalu atur pengaturan ruang kerja</div>
           </div>
         </div>
 
@@ -25,22 +25,22 @@ export function renderHelp(root) {
                 <div class="help-step-card">
                     <div class="help-step-index">01</div>
                     <div>
-                        <h3>Buka Scanner</h3>
-                        <p>Masuk ke halaman scanner, pilih timeframe aktif, lalu jalankan institutional scan untuk membaca kandidat terkuat.</p>
+                        <h3>Buka Pemindai</h3>
+                        <p>Masuk ke halaman pemindai, pilih timeframe aktif, lalu jalankan pemindaian SwingAQ untuk membaca kandidat terkuat.</p>
                     </div>
                 </div>
                 <div class="help-step-card">
                     <div class="help-step-index">02</div>
                     <div>
-                        <h3>Analisa Hasil</h3>
-                        <p>Cek CCI, magic line, dan volume spike dari hasil scan, lalu buka detail ticker untuk validasi struktur harga.</p>
+                        <h3>Analisis Hasil</h3>
+                        <p>Periksa CCI, magic line, dan lonjakan volume dari hasil scan, lalu buka detail ticker untuk validasi struktur harga.</p>
                     </div>
                 </div>
                 <div class="help-step-card">
                     <div class="help-step-index">03</div>
                     <div>
                         <h3>Kelola Kandidat</h3>
-                        <p>Simpan saham pilihan ke watchlist atau portfolio agar monitoring berikutnya lebih cepat dan konsisten.</p>
+                        <p>Simpan saham pilihan ke daftar pantau atau portofolio agar pemantauan berikutnya lebih cepat dan konsisten.</p>
                     </div>
                 </div>
             </div>
@@ -51,10 +51,10 @@ export function renderHelp(root) {
                 <i data-lucide="life-buoy" style="width:24px; height:24px;"></i>
             </div>
             <h3>Butuh Bantuan?</h3>
-            <p>Gunakan jalur support internal untuk pengecekan pengaturan workspace atau kembali ke scanner untuk mengulang proses inti.</p>
+            <p>Gunakan jalur bantuan internal untuk pengecekan pengaturan ruang kerja atau kembali ke pemindai untuk mengulang proses inti.</p>
             <div class="flex gap-3" style="flex-wrap:wrap; justify-content:center;">
               <a href="#settings" class="btn btn-primary help-support-btn">Hubungi Support</a>
-              <a href="#screener" class="btn btn-secondary help-support-btn">Buka Scanner</a>
+              <a href="#screener" class="btn btn-secondary help-support-btn">Buka Pemindai</a>
             </div>
           </div>
         </div>
