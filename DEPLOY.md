@@ -32,12 +32,16 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
    - `/` should contain `RetailBijak`
    - `/#dashboard`, `/#market`, `/#screener`, `/#portfolio` should return the SPA shell markers
    - `python scripts/post_deploy_smoke_check.py`
+7. Validate public resource chain:
+   - `python scripts/check_public_resource_chain.py`
+   - This must confirm the active `index.html -> main.js -> router.js -> views/*.js -> api.js` chain on the public domain with no token drift.
 
 ## Preferred one-command deploy
 - `bash scripts/sync_production.sh`
 - Script sekarang menjalankan **pre-restart parity check** otomatis sebelum service restart.
 - Parity sync wajib mencakup `frontend/js/i18n.js` selain core assets dan seluruh `frontend/js/views/*.js`.
 - Setelah restart, script juga menjalankan **post-deploy smoke check** via `python scripts/post_deploy_smoke_check.py`.
+- Setelah smoke check lulus, jalankan **public resource chain** verification via `python scripts/check_public_resource_chain.py` untuk memastikan token aktif di domain publik tetap sinkron.
 
 ## Test before shipping
 - `cd backend && pytest -q test_api_e2e.py`

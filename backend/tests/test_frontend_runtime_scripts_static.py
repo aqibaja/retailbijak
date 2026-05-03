@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PARITY_SCRIPT = (ROOT / 'scripts' / 'check_frontend_runtime_parity.py').read_text()
 SMOKE_SCRIPT = (ROOT / 'scripts' / 'post_deploy_smoke_check.py').read_text()
+PUBLIC_CHAIN_SCRIPT = (ROOT / 'scripts' / 'check_public_resource_chain.py').read_text()
 
 
 def test_parity_script_covers_all_routed_view_files():
@@ -25,3 +26,20 @@ def test_smoke_script_checks_spa_route_markers():
     expected_markers = ['app-root', 'bottom-nav', 'topbar']
     for marker in expected_hashes + expected_markers:
         assert marker in SMOKE_SCRIPT
+
+
+def test_public_chain_script_checks_core_and_route_modules():
+    expected_markers = [
+        'index.html',
+        'js/main.js',
+        'js/router.js',
+        'js/api.js',
+        'js/views/dashboard.js',
+        'js/views/portfolio.js',
+        'main.js?v=',
+        'api.js?v=',
+        'renderDashboard',
+        'renderPortfolio',
+    ]
+    for marker in expected_markers:
+        assert marker in PUBLIC_CHAIN_SCRIPT

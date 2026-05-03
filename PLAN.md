@@ -274,11 +274,20 @@
 - [done] Runtime parity verified lagi: sync ulang seluruh `/home/rich27/retailbijak/frontend/js/views/*.js` ke `/opt/swingaq/frontend/js/views/`, lalu `python scripts/check_frontend_runtime_parity.py` menunjukkan semua core assets + routed views `PASS`.
 - [done] Browser QA live `/?cb=20260503aa#dashboard`: route render normal dengan `activeView=dashboard`; resource entries hanya memuat `api.js?v=20260503b` dan tidak lagi memuat `api.js?v=20260502a`, sehingga drift import lama sudah hilang dari chain aktif.
 
+### 2026-05-03 13:18 WIB
+- [done] Audit slice lanjutan fokus deploy verification publik: parity hash repo/runtime sudah ada dan post-deploy smoke shell sudah ada, tetapi belum ada helper yang benar-benar menelusuri chain publik aktif `index.html -> main.js -> router.js -> views/*.js -> api.js` untuk mendeteksi token drift setelah deploy.
+- [done] TDD RED: tambah guard baru `backend/tests/test_public_resource_chain_static.py` untuk memaksa adanya script `scripts/check_public_resource_chain.py`, memastikan sync script menyalin + mengeksekusinya setelah `post_deploy_smoke_check.py`, dan mewajibkan `DEPLOY.md` menyebut verifikasi `public resource chain`.
+- [done] RED verified: `pytest -q backend/tests/test_public_resource_chain_static.py` awalnya gagal saat collection karena `scripts/check_public_resource_chain.py` belum ada, membuktikan helper publik memang belum tersedia.
+- [done] Implementasi helper minimum: buat `scripts/check_public_resource_chain.py` yang mengambil `https://retailbijak.rich27.my.id/index.html`, mengekstrak token aktif `main.js`, lalu mengikuti import chain ke `router.js`, `api.js`, dan seluruh routed view (`dashboard`, `stock`, `screener`, `portfolio`, `market`, `news`, `settings`, `help`) sambil memverifikasi marker eksport dan kesesuaian token `../main.js?v=` / `../api.js?v=`.
+- [done] Hardening deploy docs/scripts: update `scripts/sync_production.sh` agar menyalin `check_public_resource_chain.py` ke runtime production dan menjalankannya sebagai langkah `[6/7]` setelah `post_deploy_smoke_check.py`; update `DEPLOY.md` agar runbook manual + one-command deploy eksplisit mewajibkan verifikasi `public resource chain`.
+- [done] GREEN verified lokal: `pytest -q backend/tests/test_public_resource_chain_static.py backend/tests/test_deploy_scripts_static.py backend/tests/test_frontend_runtime_scripts_static.py` → `14 passed`; `python -m py_compile scripts/check_public_resource_chain.py scripts/check_frontend_runtime_parity.py scripts/post_deploy_smoke_check.py` → pass; `bash -n scripts/sync_production.sh` → pass.
+- [done] Verification repo/runtime + publik: `python scripts/check_frontend_runtime_parity.py` tetap `PASS`; `cp scripts/check_public_resource_chain.py /opt/swingaq/scripts/check_public_resource_chain.py` selesai; `python scripts/check_public_resource_chain.py` menelusuri domain publik dan mengonfirmasi chain aktif `main=20260503aa`, `api=20260503b`, serta semua routed views publik lolos tanpa drift token.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** static guard kini menutup celah version drift lintas import chain (`index` → `main` → `router` → `views` → `api/main`), dan resource chain live sudah tidak lagi memuat token API lama.
+**Slice aktif sekarang:** deploy verification kini punya tiga lapis: parity hash repo/runtime, shell/API smoke setelah restart, dan chain publik aktif yang menelusuri token nyata di domain produksi per-route.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch guard import-chain ini,
-2. bila perlu tambah smoke helper yang memeriksa resource chain publik per-route secara otomatis,
-3. lanjut ke cleanup copy minor/high-signal route berikutnya setelah guard deploy tetap hijau.
+1. commit + push batch helper `public resource chain` ini,
+2. bila perlu perluas helper publik untuk juga memeriksa marker copy kritikal/high-signal per-route,
+3. lanjut ke cleanup copy minor/high-signal route berikutnya setelah deploy guards tetap hijau.

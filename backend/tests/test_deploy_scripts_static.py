@@ -34,3 +34,17 @@ def test_deploy_doc_mentions_post_deploy_smoke_check():
     assert '#market' in DEPLOY_DOC
     assert '#screener' in DEPLOY_DOC
     assert '#portfolio' in DEPLOY_DOC
+
+
+def test_sync_script_copies_public_resource_chain_script_to_production():
+    assert 'cp "$REPO_DIR/scripts/check_public_resource_chain.py" "$PROD_DIR/scripts/check_public_resource_chain.py"' in SYNC_SCRIPT
+
+
+def test_sync_script_runs_public_resource_chain_check_after_post_deploy_smoke():
+    assert 'python "$REPO_DIR/scripts/check_public_resource_chain.py"' in SYNC_SCRIPT
+    assert SYNC_SCRIPT.index('python "$REPO_DIR/scripts/post_deploy_smoke_check.py"') < SYNC_SCRIPT.index('python "$REPO_DIR/scripts/check_public_resource_chain.py"')
+
+
+def test_deploy_doc_mentions_public_resource_chain_check():
+    assert 'check_public_resource_chain.py' in DEPLOY_DOC
+    assert 'public resource chain' in DEPLOY_DOC.lower()

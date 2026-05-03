@@ -29,6 +29,7 @@ copy_item "$REPO_DIR/frontend/js/views/." "$PROD_DIR/frontend/js/views"
 
 cp "$REPO_DIR/scripts/check_frontend_runtime_parity.py" "$PROD_DIR/scripts/check_frontend_runtime_parity.py"
 cp "$REPO_DIR/scripts/post_deploy_smoke_check.py" "$PROD_DIR/scripts/post_deploy_smoke_check.py"
+cp "$REPO_DIR/scripts/check_public_resource_chain.py" "$PROD_DIR/scripts/check_public_resource_chain.py"
 
 echo "[2/6] Running pre-restart frontend parity check..."
 python "$REPO_DIR/scripts/check_frontend_runtime_parity.py"
@@ -41,7 +42,10 @@ sleep 2
 echo "[4/6] Health check..."
 curl -fsS http://127.0.0.1:8000/api/health >/dev/null
 
-echo "[5/6] Running post-deploy smoke check..."
+echo "[5/7] Running post-deploy smoke check..."
 python "$REPO_DIR/scripts/post_deploy_smoke_check.py"
 
-echo "[6/6] Done. Production is healthy."
+echo "[6/7] Running public resource chain check..."
+python "$REPO_DIR/scripts/check_public_resource_chain.py"
+
+echo "[7/7] Done. Production is healthy."
