@@ -269,7 +269,9 @@
 - [done] Audit lanjutan menemukan nuance kedua: walau `.hermes/plans/` sudah di-ignore untuk file baru, masih ada **dua file plan lama yang sudah terlanjur tracked** di git (`.hermes/plans/2026-05-01_093500-retailbijak-phase-2.md` dan `.hermes/plans/2026-05-01_mobile-dark-mode-rescue.md`), sehingga hygiene repo belum sepenuhnya final.
 - [done] Cleanup tracked artifact dijalankan dengan `git rm --cached` pada dua file `.hermes/plans/*` lama, sehingga file lokal tetap ada di workspace tetapi keluar dari index/repo.
 - [done] Verifikasi pasca-cleanup: `git ls-files '.hermes/plans/*'` sekarang kosong; `git status --short` hanya menunjukkan deletion terstage untuk dua file lama plus perubahan dokumentasi `PLAN.md`.
-- [next] Commit + push cleanup tracked artifact ini, lalu catat status akhir di `PLAN.md`.
+- [done] Cleanup tracked artifact selesai di-commit sebagai `359ef1e chore: drop tracked hermes planning artifacts` dan berhasil di-push ke `origin/main`.
+- [done] Hasil akhir hygiene repo: artefak `.hermes/plans/` kini tidak lagi tracked dan juga tidak lagi muncul sebagai untracked baru, sehingga working tree proyek bersih dari noise planning lokal secara permanen.
+- [done] Scope batch lanjutan ini tuntas: cleanup `.gitignore`, removal tracked-local-artifacts, verifikasi repo state, dokumentasi `PLAN.md`, commit, dan push semuanya selesai.
 
 ---
 
