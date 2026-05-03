@@ -260,7 +260,8 @@
 - [done] Git working tree diaudit sebelum finalisasi: perubahan terfokus hanya di `backend/ai_picks.py`, `backend/tests/test_ai_picks_api.py`, dan `PLAN.md`; beberapa file `.hermes/plans/*.md` tetap dibiarkan untracked karena artefak planning lokal, bukan bagian patch produk.
 - [done] Git hygiene final selesai: patch di-stage selektif, di-commit sebagai `9121d55 fix: align ai picks briefing date with jakarta trading day`, lalu berhasil di-push ke `origin/main`.
 - [done] Post-push status bersih untuk patch produk; sisa untracked hanya file planning lokal di `.hermes/plans/`, tidak memengaruhi runtime maupun repo produk.
-- [done] Scope batch ini tuntas end-to-end: audit requirement, TDD RED→GREEN, compile, deploy, smoke check publik, dokumentasi `PLAN.md`, commit, dan push semuanya selesai.
+- [done] Audit lanjutan hygiene repo: `.gitignore` belum mengabaikan artefak planning lokal `.hermes/plans/`, sehingga setiap sesi kerja masih meninggalkan noise `git status` walau patch produk sudah selesai.
+- [next] Rapikan hygiene repo dengan mengabaikan `.hermes/plans/`, verifikasi `git status`, lalu dokumentasikan hasilnya di `PLAN.md`.
 
 ---
 

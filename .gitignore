@@ -18,3 +18,6 @@ Thumbs.db
 .vscode/
 .idea/
 .gemini/
+
+# Local agent planning artifacts
+.hermes/plans/
