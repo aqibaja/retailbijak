@@ -214,6 +214,19 @@
 - [done] Hard verification `#ai-picks` dijalankan ulang lewat fresh browser context independen untuk menghindari cache/session drift dari automation sebelumnya.
 - [done] Fresh QA terverifikasi hijau: `.ai-picks-page` render (`count=1`), H1 = `AI Picks`, dan hook mode `[data-ai-picks-mode]` terbaca `3`.
 - [done] Fresh QA tidak menemukan error import/runtime yang aktif; route selesai render normal pada `readyState=complete`.
+- [done] Public resource checker & cache-bust chain final dirapikan: static guard `test_cache_bust_chain_static.py` hijau dan semua import view utama sudah mengarah ke `main.js?v=20260503ab` aktif.
+- [done] Audit integrasi LLM: `stock_detail` memakai `fetchAnalysis()` ke `/api/stocks/{ticker}/analysis`, `#ai-picks` memakai `fetchAiPicks()` ke `/api/ai-picks`, dan keduanya sebelumnya belum punya payload OpenRouter nyata walau test monkeypatch sudah ada.
+- [done] Implementasi OpenRouter dasar: tambah service `backend/services/openrouter_llm.py`, aktifkan query `?llm=1` untuk `/api/stocks/{ticker}/analysis` dan `/api/ai-picks`, plus model default gratis `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` dan `openai/gpt-oss-120b:free`.
+- [done] Frontend helper `fetchAnalysis()` dan `fetchAiPicks()` sekarang mendukung opsi `{ llm: true }` untuk konsumsi payload LLM bertahap tanpa memutus kontrak lama.
+- [done] Lanjutan frontend AI Picks/detail saham: static guard `backend/tests/test_ai_picks_view_static.py` diperluas untuk memaksa hook LLM (`options={}`, `&llm=1`, `renderAiDeskBrief`, `ai-picks-llm-brief`, status `Asisten AI aktif`/`OpenRouter belum aktif`).
+- [done] RED→GREEN verified: guard AI Picks sempat gagal `2 failed`, lalu `frontend/js/views/ai_picks.js` diperbarui agar memanggil `fetchAiPicks(mode, 5, { llm: true })`, menampilkan panel `AI Desk Brief`, dan tetap punya fallback disabled/error yang hidup.
+- [done] `frontend/js/views/stock_detail.js` kini menampilkan status ringkasan LLM di blok `Asisten AI` via `analysis?.llm` sehingga detail saham memberi sinyal jelas saat OpenRouter aktif/tertunda/belum aktif.
+- [done] Verifikasi batch ini hijau: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_view_static.py` → `13 passed`; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → pass.
+- [done] Regression suite lanjutan hijau sebelum deploy: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py /home/rich27/retailbijak/backend/tests/test_stock_analysis_llm_api.py /home/rich27/retailbijak/backend/test_api_e2e.py /home/rich27/retailbijak/backend/tests/test_public_resource_chain_static.py /home/rich27/retailbijak/backend/tests/test_cache_bust_chain_static.py` → `34 passed`.
+- [done] Deploy runtime dijalankan via `bash /home/rich27/retailbijak/scripts/sync_production.sh`; parity repo/runtime `PASS`, service `swingaq-backend` restart sukses, smoke check endpoint publik `PASS`, dan `public resource chain` juga `PASS`.
+- [done] Browser QA publik pasca-deploy: route `#stock/BBCA` menampilkan tile LLM di blok `Asisten AI` dengan status `OpenRouter belum aktif`, sehingga fallback status live terbukti muncul.
+- [done] Browser QA publik `#ai-picks` pasca-deploy: shell route render, panel `AI Desk Brief` muncul dengan status disabled yang eksplisit (`OpenRouter belum aktif`), dan compare tray tetap tampil hidup.
+- [done] Verifikasi hijau: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_cache_bust_chain_static.py backend/tests/test_ai_picks_api.py backend/tests/test_stock_analysis_llm_api.py backend/test_api_e2e.py` → `30 passed`; compile check backend/frontend juga lulus.
 - [done] Resource chain fresh session menunjukkan path utama baru aktif: `main.js?v=20260503ab`, `router.js?v=20260503ab`, dan `views/ai_picks.js?v=20260503ai`.
 - [warn] Fresh resource list masih mencatat `main.js?v=20260503aa` lama sebagai resource tambahan historis, tetapi stale router lama tidak ikut termuat dan route `#ai-picks` tetap render benar.
 - [done] Kesimpulan verifikasi publik: deploy AI Picks sekarang valid secara fungsional; isu tersisa hanya jejak resource lama di browser list, bukan blocker render route.
@@ -402,6 +415,496 @@
 **Slice aktif sekarang:** AI Picks MVP end-to-end sudah aktif di backend + frontend, lengkap dengan ranking explainable, compare tray, route `#ai-picks`, dan verifikasi browser fresh-session bahwa view publik sudah render normal.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch AI Picks MVP ini,
-2. sync runtime `/opt/swingaq` bila ada delta repo baru sebelum deploy berikutnya,
-3. lanjut polish copy/UX AI Picks atau tambah action lanjutan (mis. pin/history) di iterasi berikutnya.
+1. deploy/runtime sync final AI Picks ke `/opt/swingaq` + smoke test publik,
+2. polish UX AI Picks (pin/history/loading/empty/risk badges),
+3. perkuat scoring + coverage test + integrasi dashboard secara bertahap mengikuti breakdown plan di bawah.
+
+---
+
+## Planned Next Phase — AI Picks Hardening & Productization (`PLANNED`)
+
+### Goal
+Menyelesaikan pasca-MVP AI Picks sampai benar-benar production-ready: runtime sinkron, UX lebih matang, scoring lebih kuat, coverage test naik, dan widget ringkas masuk ke dashboard.
+
+### Architecture / Scope
+- Backend tetap mempertahankan pola `backend/ai_picks.py` sebagai pusat ranking + payload composition.
+- Frontend tetap mempertahankan route mandiri `#ai-picks` di `frontend/js/views/ai_picks.js`, lalu menambahkan state persistence, action lanjutan, dan widget dashboard kecil tanpa mengubah kontrak besar SPA.
+- Semua task berikut bersifat breakdown plan dulu; belum dieksekusi pada fase ini.
+
+### Execution Order
+1. Phase A — deploy/runtime parity final
+2. Phase B — UX polish AI Picks
+3. Phase C — backend scoring hardening
+4. Phase D — test hardening & regression guards
+5. Phase E — dashboard integration
+
+### Phase A — Deploy / Runtime Parity Final
+
+#### Micro-task breakdown (2–5 menit per item)
+- [planned] A1.1 — baca ulang file repo AI Picks utama: `frontend/index.html`, `frontend/js/api.js`, `frontend/js/main.js`, `frontend/js/router.js`, `frontend/js/views/ai_picks.js`, `frontend/style.css`, `backend/main.py`, `backend/ai_picks.py`.
+- [planned] A1.2 — baca file runtime pasangan di `/opt/swingaq/frontend/...` dan `/opt/swingaq/backend/...`.
+- [planned] A1.3 — catat file yang identik vs file yang masih delta.
+- [planned] A1.4 — verifikasi chain cache-bust `index.html` → `main.js` → `router.js` → `ai_picks.js` pada repo.
+- [planned] A1.5 — verifikasi chain cache-bust yang sama pada runtime.
+- [planned] A1.6 — verifikasi `fetchAiPicks` benar-benar diexport di `api.js` runtime.
+- [planned] A1.7 — verifikasi route `/api/ai-picks` benar-benar teregistrasi pada `backend/main.py` runtime.
+- [planned] A1.8 — tulis ringkasan delta runtime sebelum copy.
+- [planned] A2.1 — bersihkan direktori runtime `frontend/js/views` bila ada risiko nested/stale path.
+- [planned] A2.2 — copy `frontend/index.html` ke runtime.
+- [planned] A2.3 — copy `frontend/js/api.js` ke runtime.
+- [planned] A2.4 — copy `frontend/js/main.js` ke runtime.
+- [planned] A2.5 — copy `frontend/js/router.js` ke runtime.
+- [planned] A2.6 — copy `frontend/js/views/ai_picks.js` ke runtime.
+- [planned] A2.7 — copy `frontend/style.css` ke runtime.
+- [planned] A2.8 — copy `backend/main.py` ke runtime.
+- [planned] A2.9 — copy `backend/ai_picks.py` ke runtime.
+- [planned] A2.10 — readback marker `renderAiPicks`, `fetchAiPicks`, `/api/ai-picks` dari runtime.
+- [planned] A3.1 — restart `swingaq-backend`.
+- [planned] A3.2 — cek `systemctl status` singkat.
+- [planned] A3.3 — hit `/api/health` dan simpan hasilnya.
+- [planned] A3.4 — hit `/api/ai-picks?mode=swing&limit=5`.
+- [planned] A3.5 — hit `/api/ai-picks?mode=defensive&limit=5`.
+- [planned] A3.6 — hit `/api/ai-picks?mode=catalyst&limit=5`.
+- [planned] A3.7 — cek payload top-level shape + `data` non-error.
+- [planned] A4.1 — buka `#ai-picks` di fresh browser context.
+- [planned] A4.2 — verifikasi H1 `AI Picks`.
+- [planned] A4.3 — verifikasi mode switch tampil lengkap.
+- [planned] A4.4 — verifikasi featured card render.
+- [planned] A4.5 — verifikasi ranked list render.
+- [planned] A4.6 — verifikasi compare tray render.
+- [planned] A4.7 — cek console/import/runtime errors.
+- [planned] A4.8 — cek resource chain aktif dan token cache-bust.
+- [planned] A4.9 — catat hasil smoke test publik ke `PLAN.md` setelah eksekusi.
+
+#### Task A1 — Audit delta repo vs runtime
+**Objective:** memastikan file AI Picks yang baru di repo memang sama atau jelas beda dengan runtime `/opt/swingaq`.
+
+**Files to audit:**
+- Repo: `frontend/index.html`
+- Repo: `frontend/js/api.js`
+- Repo: `frontend/js/main.js`
+- Repo: `frontend/js/router.js`
+- Repo: `frontend/js/views/ai_picks.js`
+- Repo: `frontend/style.css`
+- Repo: `backend/main.py`
+- Repo: `backend/ai_picks.py`
+- Runtime: `/opt/swingaq/frontend/...`
+- Runtime: `/opt/swingaq/backend/...`
+
+**Planned checklist:**
+- bandingkan hash / diff file repo vs runtime
+- pastikan chain cache-bust aktif konsisten (`index.html` → `main.js` → `router.js` → `ai_picks.js`)
+- pastikan `api.js` runtime memang punya export `fetchAiPicks`
+- pastikan `backend/main.py` runtime sudah register `/api/ai-picks`
+
+**Acceptance criteria:**
+- daftar delta runtime jelas dan terdokumentasi
+- tidak ada ambiguity file mana yang belum tersync
+
+#### Task A2 — Sync runtime `/opt/swingaq`
+**Objective:** menyalin delta repo yang relevan ke runtime production tree dengan urutan aman.
+
+**Files to modify/copy:**
+- `/opt/swingaq/frontend/index.html`
+- `/opt/swingaq/frontend/js/api.js`
+- `/opt/swingaq/frontend/js/main.js`
+- `/opt/swingaq/frontend/js/router.js`
+- `/opt/swingaq/frontend/js/views/ai_picks.js`
+- `/opt/swingaq/frontend/style.css`
+- `/opt/swingaq/backend/main.py`
+- `/opt/swingaq/backend/ai_picks.py`
+
+**Planned checklist:**
+- bersihkan path view runtime jika perlu agar tidak ada nested/stale copy
+- copy file frontend/backend yang berubah saja
+- readback file runtime untuk marker penting (`renderAiPicks`, `fetchAiPicks`, `/api/ai-picks`)
+
+**Acceptance criteria:**
+- runtime tree memuat source yang identik/expected
+- tidak ada nested `views/views` atau asset stale yang jelas salah target
+
+#### Task A3 — Restart service + smoke test backend
+**Objective:** memastikan service production membaca kode backend terbaru.
+
+**Files/targets:**
+- systemd service `swingaq-backend`
+- endpoint `https://retailbijak.rich27.my.id/api/health`
+- endpoint `https://retailbijak.rich27.my.id/api/ai-picks?mode=swing&limit=5`
+
+**Planned checklist:**
+- restart service
+- cek status service dan log singkat bila perlu
+- hit `/api/health`
+- hit `/api/ai-picks` untuk tiga mode (`swing`, `defensive`, `catalyst`)
+
+**Acceptance criteria:**
+- health hijau
+- payload AI Picks valid untuk semua mode target
+
+#### Task A4 — Browser QA publik fresh-session
+**Objective:** verifikasi route publik `#ai-picks` benar-benar render dari session segar.
+
+**Files/targets:**
+- URL `https://retailbijak.rich27.my.id/#ai-picks`
+- resource chain browser
+- console runtime
+
+**Planned checklist:**
+- buka fresh browser context
+- cek H1, mode switch, featured card, ranked list, compare tray
+- cek console/import error
+- cek resource aktif sesuai token cache-bust terbaru
+
+**Acceptance criteria:**
+- route render tanpa blank state salah
+- tidak ada import/runtime error aktif
+- resource chain terbaru terkonfirmasi
+
+### Phase B — UX Polish AI Picks
+
+#### Micro-task breakdown (2–5 menit per item)
+- [planned] B1.1 — audit state mode aktif saat reload route `#ai-picks`.
+- [planned] B1.2 — pilih media persist paling kecil: `localStorage` atau setting ringan yang sudah ada.
+- [planned] B1.3 — tambahkan test/static guard bila perlu untuk key persist mode.
+- [planned] B1.4 — implement simpan mode aktif saat tombol mode diklik.
+- [planned] B1.5 — implement restore mode saat `renderAiPicks()` dijalankan.
+- [planned] B1.6 — audit perilaku compare tray saat mode berubah.
+- [planned] B1.7 — tentukan apakah compare tray di-reset atau dipertahankan lintas mode.
+- [planned] B1.8 — update copy/hint compare tray agar perilakunya jelas.
+- [planned] B2.1 — definisikan scope `pin` minimum (frontend-only vs persisted).
+- [planned] B2.2 — tentukan lokasi tombol/badge `pin` di featured card.
+- [planned] B2.3 — tentukan lokasi tombol/badge `pin` di ranked card.
+- [planned] B2.4 — implement state visual pinned.
+- [planned] B2.5 — tambahkan toast/feedback sukses-gagal untuk pin.
+- [planned] B2.6 — cek agar CTA pin tidak bentrok dengan watchlist CTA.
+- [planned] B3.1 — audit loading state existing di AI Picks.
+- [planned] B3.2 — desain skeleton minimum untuk hero/featured/list.
+- [planned] B3.3 — implement empty state dengan alasan + action.
+- [planned] B3.4 — implement error state dengan retry CTA.
+- [planned] B3.5 — tambahkan fallback content yang believable pada data tipis.
+- [planned] B3.6 — verifikasi state mobile tidak terasa kosong.
+- [planned] B4.1 — audit label risk/reward/confidence yang sekarang.
+- [planned] B4.2 — tentukan skema warna badge yang konsisten dengan design system.
+- [planned] B4.3 — implement badge confidence.
+- [planned] B4.4 — implement badge risk note / rr cue.
+- [planned] B4.5 — rapikan label factor meter agar lebih cepat dipahami.
+- [planned] B4.6 — rapikan comparison points agar tidak terlalu verbose.
+- [planned] B4.7 — cek hierarchy visual desktop.
+- [planned] B4.8 — cek hierarchy visual mobile.
+
+#### Task B1 — Persist mode & compare selection
+**Objective:** menjaga mode terakhir dan kandidat compare agar pengalaman user tidak reset terus.
+
+**Files to modify:**
+- `frontend/js/views/ai_picks.js`
+- kemungkinan `frontend/js/api.js` bila butuh helper kecil
+
+**Planned checklist:**
+- simpan mode aktif ke local storage / setting ringan
+- restore mode saat route dibuka ulang
+- pertahankan compare tray pada interaksi mode yang konsisten atau reset eksplisit dengan copy jelas
+
+**Acceptance criteria:**
+- mode terakhir kembali otomatis
+- perilaku compare tray konsisten dan tidak membingungkan
+
+#### Task B2 — Tambah action pin/save yang lebih kaya
+**Objective:** memberi action lanjutan selain sekadar tambah ke watchlist.
+
+**Files to modify:**
+- `frontend/js/views/ai_picks.js`
+- `frontend/js/views/portfolio.js` bila perlu hookup badge/pin preview
+- `backend/main.py` / storage helper hanya jika benar-benar perlu endpoint baru
+
+**Planned checklist:**
+- definisikan perilaku `pin` minimum (frontend-only atau persisted)
+- tampilkan status pinned pada card
+- pastikan tidak duplikasi CTA dengan watchlist lama
+
+**Acceptance criteria:**
+- user bisa menandai kandidat prioritas dengan feedback jelas
+- UX tetap ringkas, tidak ramai
+
+#### Task B3 — Hidupkan loading/empty/error states
+**Objective:** mengurangi kesan kosong dan meningkatkan trust pada page AI Picks.
+
+**Files to modify:**
+- `frontend/js/views/ai_picks.js`
+- `frontend/style.css`
+
+**Planned checklist:**
+- skeleton/loading state lebih hidup
+- empty state berisi alasan + next action
+- error state punya retry CTA
+- fallback content tetap believable, bukan blank card
+
+**Acceptance criteria:**
+- semua state utama (loading, success, empty, error) punya visual yang jelas
+- page tidak terasa kosong saat data tipis/gagal
+
+#### Task B4 — Rapikan badge risk/reward & factor explanation
+**Objective:** membuat explainability lebih cepat dipahami tanpa baca semua teks.
+
+**Files to modify:**
+- `frontend/js/views/ai_picks.js`
+- `frontend/style.css`
+
+**Planned checklist:**
+- tambah badge warna untuk confidence / risk note / rr state
+- perjelas label factor meter dan comparison points
+- jaga layout mobile tetap rapi
+
+**Acceptance criteria:**
+- reason utama bisa dipahami sekilas
+- tidak merusak hierarchy visual existing
+
+### Phase C — Backend Scoring Hardening
+
+#### Micro-task breakdown (2–5 menit per item)
+- [planned] C1.1 — baca ulang `backend/ai_picks.py` dan petakan faktor yang sudah ada.
+- [planned] C1.2 — audit kolom runtime yang tersedia dari `ohlcv_daily`.
+- [planned] C1.3 — audit kolom runtime yang tersedia dari `fundamentals`.
+- [planned] C1.4 — audit sinyal katalis yang realistis dari tabel `news`.
+- [planned] C1.5 — shortlist faktor tambahan `relative strength` sederhana.
+- [planned] C1.6 — shortlist faktor tambahan `trend consistency`.
+- [planned] C1.7 — shortlist faktor tambahan `breadth alignment`.
+- [planned] C1.8 — putuskan faktor mana yang masuk fase ini tanpa menambah ingestion baru.
+- [planned] C2.1 — definisikan rule kecil penyesuaian bobot saat `market_context.tone=bullish`.
+- [planned] C2.2 — definisikan rule kecil penyesuaian bobot saat `market_context.tone=defensive`.
+- [planned] C2.3 — definisikan penalty/bonus yang tetap mudah dijelaskan.
+- [planned] C2.4 — tulis RED test untuk perilaku regime-aware scoring.
+- [planned] C2.5 — implement minimal scoring adjustment.
+- [planned] C2.6 — verifikasi output score tetap stabil/deterministik.
+- [planned] C2.7 — review apakah explainability payload masih masuk akal.
+- [planned] C3.1 — audit `reason_labels` existing yang terlalu generik.
+- [planned] C3.2 — audit `comparison_points` existing yang terlalu tipis/berulang.
+- [planned] C3.3 — buat matriks label per mode (`swing`, `defensive`, `catalyst`).
+- [planned] C3.4 — tulis RED test untuk reason/comparison point baru.
+- [planned] C3.5 — implement reason labels yang lebih granular.
+- [planned] C3.6 — sinkronkan `comparison_points` dengan faktor yang tampil di frontend.
+- [planned] C3.7 — cek payload akhir agar tidak terlalu verbose.
+
+#### Task C1 — Audit faktor baru yang realistis dari data saat ini
+**Objective:** memilih faktor tambahan yang bisa dihitung dari dataset existing tanpa menambah dependensi berat.
+
+**Files to audit:**
+- `backend/ai_picks.py`
+- `backend/database.py`
+- tabel runtime `ohlcv_daily`, `fundamentals`, `news`, `stocks`
+
+**Planned checklist:**
+- evaluasi relative strength sederhana, consistency trend, breadth alignment, news intensity
+- identifikasi faktor yang feasible dari data yang sudah ada
+- hindari ketergantungan ke tabel `signals`
+
+**Acceptance criteria:**
+- shortlist faktor baru jelas dengan rumus kasar dan sumber data
+- tidak ada asumsi yang butuh ingestion baru untuk fase ini
+
+#### Task C2 — Normalisasi scoring per mode / regime market
+**Objective:** membuat ranking lebih adaptif terhadap kondisi breadth market.
+
+**Files to modify:**
+- `backend/ai_picks.py`
+- tests baru/eksisting di `backend/tests/test_ai_picks_scoring.py`
+
+**Planned checklist:**
+- gunakan `market_context` untuk sedikit mengubah bobot/penalty
+- jaga scoring tetap explainable dan deterministik
+- dokumentasikan trade-off agar tidak terasa magic
+
+**Acceptance criteria:**
+- mode tetap stabil, tapi responsif terhadap regime market
+- test scoring baru mengunci perilaku utama
+
+#### Task C3 — Perkaya reason labels & comparison points
+**Objective:** menghasilkan alasan ranking yang lebih spesifik dan operasional.
+
+**Files to modify:**
+- `backend/ai_picks.py`
+- `backend/tests/test_ai_picks_api.py`
+- `backend/tests/test_ai_picks_candidates.py`
+
+**Planned checklist:**
+- tambah label alasan yang lebih granular
+- sinkronkan `comparison_points` dengan faktor yang tampil di frontend
+- hindari label generik berulang antar mode
+
+**Acceptance criteria:**
+- payload lebih explainable
+- frontend tidak perlu banyak heuristik tambahan untuk menjelaskan kandidat
+
+### Phase D — Test Hardening & Regression Guards
+
+#### Micro-task breakdown (2–5 menit per item)
+- [planned] D1.1 — audit static guards AI Picks yang sudah ada.
+- [planned] D1.2 — tentukan marker wajib route AI Picks yang harus dijaga.
+- [planned] D1.3 — tentukan token/import chain yang wajib dijaga.
+- [planned] D1.4 — tulis RED static test untuk marker/chain yang belum dijaga.
+- [planned] D1.5 — update static test existing bila perlu.
+- [planned] D1.6 — verifikasi guard `fetchAiPicks` export tetap aktif.
+- [planned] D2.1 — tulis daftar edge case backend prioritas.
+- [planned] D2.2 — buat RED test untuk `fundamentals` kosong.
+- [planned] D2.3 — buat RED test untuk `news` nol.
+- [planned] D2.4 — buat RED test untuk `bars_count` mepet threshold.
+- [planned] D2.5 — buat RED test untuk `limit` kecil dan besar.
+- [planned] D2.6 — implement perbaikan minimum bila ada test yang gagal.
+- [planned] D2.7 — jalankan suite backend AI Picks penuh.
+- [planned] D3.1 — audit `scripts/check_public_resource_chain.py` apakah sudah paham route AI Picks.
+- [planned] D3.2 — tentukan marker publik AI Picks minimum untuk checker.
+- [planned] D3.3 — update checker publik.
+- [planned] D3.4 — update static tests checker publik.
+- [planned] D3.5 — update `DEPLOY.md` bila langkah verifikasi AI Picks belum terdokumentasi.
+- [planned] D3.6 — jalankan checker parity/resource-chain setelah update.
+
+#### Task D1 — Static regression untuk route AI Picks
+**Objective:** mengunci chain import/cache-bust dan marker view AI Picks agar tidak regress saat deploy berikutnya.
+
+**Files to modify/create:**
+- `backend/tests/test_ai_picks_view_static.py`
+- kemungkinan test static baru untuk resource chain
+- bila perlu `scripts/check_public_resource_chain.py`
+
+**Planned checklist:**
+- guard token import route `ai_picks`
+- guard marker compare tray / mode switch / loading state
+- guard agar `fetchAiPicks` tetap diexport
+
+**Acceptance criteria:**
+- regresi sederhana pada route AI Picks tertangkap lewat static tests
+
+#### Task D2 — Edge-case backend tests
+**Objective:** mengunci perilaku saat data runtime tipis atau tidak sempurna.
+
+**Files to modify/create:**
+- `backend/tests/test_ai_picks_api.py`
+- `backend/tests/test_ai_picks_candidates.py`
+- `backend/tests/test_ai_picks_scoring.py`
+
+**Planned checklist:**
+- skenario fundamental kosong
+- skenario `news` nol
+- skenario history minim di ambang `min_bars`
+- skenario mode invalid / limit kecil / limit besar
+
+**Acceptance criteria:**
+- edge cases penting punya guard test
+- fallback/derived payload tetap stabil
+
+#### Task D3 — Public verification helper updates
+**Objective:** memastikan checker publik juga memahami route AI Picks sebagai route prioritas.
+
+**Files to modify:**
+- `scripts/check_public_resource_chain.py`
+- static tests terkait checker tersebut
+- mungkin `DEPLOY.md`
+
+**Planned checklist:**
+- tambahkan marker publik AI Picks
+- verifikasi resource chain route baru di checker
+- dokumentasikan langkah verifikasi di deploy runbook
+
+**Acceptance criteria:**
+- deploy checklist publik mencakup AI Picks secara resmi
+
+### Phase E — Dashboard Integration
+
+#### Micro-task breakdown (2–5 menit per item)
+- [planned] E1.1 — audit layout dashboard existing untuk slot widget baru.
+- [planned] E1.2 — tentukan ukuran minimum widget `Top AI Pick Today`.
+- [planned] E1.3 — tentukan data minimum yang boleh ditarik dari `/api/ai-picks`.
+- [planned] E1.4 — tentukan fallback content yang believable saat data kosong.
+- [planned] E1.5 — tentukan CTA utama menuju `#ai-picks`.
+- [planned] E1.6 — tentukan apakah widget memakai data live atau helper ringkas di `api.js`.
+- [planned] E2.1 — tulis RED/static test bila perlu untuk marker widget dashboard.
+- [planned] E2.2 — implement helper fetch ringkas di `frontend/js/api.js` bila dibutuhkan.
+- [planned] E2.3 — implement markup widget di `frontend/js/views/dashboard.js`.
+- [planned] E2.4 — implement styling widget di `frontend/style.css`.
+- [planned] E2.5 — sambungkan CTA ke route `#ai-picks`.
+- [planned] E2.6 — verifikasi widget tidak merusak hierarchy dashboard desktop.
+- [planned] E2.7 — verifikasi widget tidak merusak hierarchy dashboard mobile.
+- [planned] E2.8 — verifikasi fallback widget saat API kosong/gagal.
+
+#### Task E1 — Desain widget `Top AI Pick Today`
+**Objective:** menentukan versi minimum widget dashboard tanpa membuat dashboard terlalu padat.
+
+**Files to audit/modify:**
+- `frontend/js/views/dashboard.js`
+- `frontend/style.css`
+- `frontend/js/api.js`
+
+**Planned checklist:**
+- tentukan placement widget
+- tentukan data minimum yang dipakai dari `/api/ai-picks`
+- tentukan fallback content saat AI Picks kosong
+
+**Acceptance criteria:**
+- scope widget jelas dan kecil
+- tidak mengganggu hierarchy dashboard existing
+
+#### Task E2 — Implement widget dashboard + shortcut route
+**Objective:** menambahkan teaser AI Picks pada dashboard untuk discovery cepat.
+
+**Files to modify:**
+- `frontend/js/views/dashboard.js`
+- `frontend/js/api.js`
+- `frontend/style.css`
+
+**Planned checklist:**
+- fetch pick unggulan ringkas
+- tampilkan CTA ke `#ai-picks`
+- pastikan performa dashboard tetap aman
+
+**Acceptance criteria:**
+- dashboard punya entry-point jelas ke AI Picks
+- widget tetap graceful saat API kosong/gagal
+
+### Progress block
+- [done] Requirement capture untuk fase pasca-MVP AI Picks.
+- [done] Breakdown task detail ditulis ke `PLAN.md`.
+- [done] Phase A1 audit delta repo vs runtime selesai: seluruh file frontend AI Picks sudah identik; delta runtime hanya tersisa di `backend/main.py` (berbeda) dan `backend/ai_picks.py` (belum ada di runtime saat audit awal).
+- [done] Phase A2 sync runtime selesai: `backend/main.py` dan `backend/ai_picks.py` sudah dicopy ke `/opt/swingaq/backend/` dan hash repo/runtime kembali identik.
+- [done] Temuan kritis deploy: restart awal gagal karena runtime `/opt/swingaq/backend/routes/` belum sinkron dengan repo; module baru seperti `routes.system`, `routes.reference`, `routes.market`, `routes.market_summary`, `routes.news`, `routes.stocks`, `routes.stock_detail`, dan `routes.scanner_stream` belum ada di runtime tree.
+- [done] Hotfix runtime route tree selesai: seluruh direktori `backend/routes/` berhasil disinkronkan ke `/opt/swingaq/backend/routes/`, import smoke test lokal untuk semua router target kembali hijau.
+- [done] Phase A3 restart + smoke test backend selesai: `swingaq-backend` aktif normal, `https://retailbijak.rich27.my.id/api/health` kembali `{"status":"ok","version":"1.0.0"}`, dan `/api/ai-picks` publik valid untuk mode `swing`, `defensive`, `catalyst` dengan source `derived` dan count `5`.
+- [done] Phase A4 browser QA publik fresh-session selesai: route `#ai-picks` render normal, H1 `AI Picks` muncul, mode switch/featured card/ranked list/compare tray aktif, console tidak menunjukkan import/runtime error aktif, dan resource chain publik memuat `main.js?v=20260503ab`, `router.js?v=20260503ab`, `api.js?v=20260503b`, `views/ai_picks.js?v=20260503ai`.
+- [warn] Browser resource list fresh session masih mencatat `main.js?v=20260503aa` lama sebagai entri historis tambahan, tetapi chain aktif yang dipakai page sudah versi baru dan tidak memblokir render.
+- [done] Phase D harness hotfix selesai: `backend/test_api_e2e.py` sekarang memaksa `sys.path` ke `/opt/swingaq/backend` lebih dulu dan import `_sqlite_datetime_literal` langsung dari `routes.shared_sqlite_helpers`, sehingga runtime pytest tidak lagi nyasar ke `/opt/swingaq/main.py`.
+- [done] Phase D runtime verification selesai: dari `/opt/swingaq/backend`, suite `pytest -q test_api_e2e.py /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py /home/rich27/retailbijak/backend/tests/test_ai_picks_candidates.py /home/rich27/retailbijak/backend/tests/test_ai_picks_scoring.py /home/rich27/retailbijak/backend/tests/test_ai_picks_view_static.py` kembali hijau dengan hasil `39 passed`.
+- [warn] Runtime pytest masih mengeluarkan `PytestCacheWarning` karena tidak bisa menulis cache ke `/.pytest_cache`; ini non-blocking untuk validitas suite tetapi layak dibersihkan pada hardening slice berikutnya bila ingin output benar-benar bersih.
+- [done] Phase D execution slice untuk stabilisasi runtime test harness selesai.
+- [done] Phase B1/B3 UX polish AI Picks selesai di repo: mode terakhir sekarang dipersist via `localStorage`, loading state dirender ulang setiap pergantian mode, dan empty/error state memakai marker eksplisit plus CTA retry.
+- [done] Static guard Phase B ditambah di `backend/tests/test_ai_picks_view_static.py` untuk persistence token, state markers (`loading`/`empty`/`error`), serta selector CSS state card.
+- [done] Verifikasi repo slice Phase B hijau: `pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `25 passed`, lalu `python -m compileall -q frontend/js` dan `python -m py_compile backend/main.py backend/ai_picks.py` juga hijau.
+- [done] Phase C1 quick action + context handoff selesai di repo: tombol `Buka Detail` dari AI Picks sekarang menyimpan context kandidat ke `sessionStorage`, lalu stock detail menampilkan banner `Datang dari AI Picks` berisi mode, score, confidence, alasan singkat, dan risk note saat user datang dari shortlist tersebut.
+- [done] Static guard Phase C ditambah di `backend/tests/test_ai_picks_view_static.py` untuk session-context handoff pada `ai_picks.js`, banner context pada `stock_detail.js`, dan selector CSS `stock-ai-pick-context*`.
+- [done] Verifikasi repo slice Phase C1 hijau: `pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `30 passed`, `python -m compileall -q frontend/js` hijau, `python -m py_compile backend/main.py backend/ai_picks.py` hijau, dan scan korupsi prefix JS (`^\s*[0-9]+\|`) tetap bersih.
+- [done] Phase E1 dashboard discovery widget selesai di repo: dashboard sekarang memuat `Top AI Pick Today`, menarik candidate teratas via `fetchAiPicks('swing', 3)`, punya CTA jelas ke `#ai-picks`, dan fallback empty state tetap hidup saat data belum tersedia.
+- [done] Static guard Phase E ditambah di `backend/tests/test_ai_picks_view_static.py` untuk hook dashboard widget (`fetchAiPicks`, `loadAiPickWidget`, selector `dash-ai-pick-*`) dan coverage CSS widget baru.
+- [done] Verifikasi repo slice Phase E hijau: `pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `27 passed`, `python -m compileall -q frontend/js` hijau, `python -m py_compile backend/main.py backend/ai_picks.py` hijau, dan scan korupsi prefix JS (`^\s*[0-9]+\|`) bersih.
+- [done] Phase C2 richer context AI Picks selesai di repo: context handoff sekarang ikut membawa `fit_label`, `entry_zone`, `target_zone`, dan `invalidation`, lalu banner di stock detail menampilkan level plan yang lebih kaya plus CTA `Kembali ke AI Picks` agar user bisa pulang ke shortlist tanpa kehilangan konteks.
+- [done] Static guard Phase C2 ditambah di `backend/tests/test_ai_picks_view_static.py` untuk memastikan payload handoff richer context, banner stock detail memuat `fit_label`/`Entry`/`Target`/`Invalidasi`, dan hook CTA balik `#ai-picks` + `stock-ai-pick-context-cta` tetap ada.
+- [done] Verifikasi repo slice Phase C2 hijau: `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `30 passed`, `python -m compileall -q frontend/js` hijau, `python -m py_compile backend/main.py backend/ai_picks.py` hijau, dan scan korupsi prefix JS (`^\s*[0-9]+\|`) tetap bersih.
+- [done] Phase E2 dashboard quick-detail context selesai di repo: widget `Top AI Pick Today` sekarang punya tombol `Buka Detail` yang menyimpan context AI Picks kaya (mode, score, fit label, level entry/target/invalidation, alasan, risk note) ke `sessionStorage` sebelum lompat ke `#stock/{ticker}`.
+- [done] Static guard Phase E2 ditambah di `backend/tests/test_ai_picks_view_static.py` untuk memastikan widget dashboard memuat `AI_PICKS_CONTEXT_KEY`, helper `buildAiPickContext`, storage handoff, tombol `data-dash-ai-pick-open-detail`, dan navigasi detail berbasis hash.
+- [done] Verifikasi repo slice Phase E2 hijau: `pytest -q backend/tests/test_ai_picks_view_static.py` lulus `13 passed`, `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `30 passed`, `python -m compileall -q frontend/js` hijau, `python -m py_compile backend/main.py backend/ai_picks.py` hijau, dan scan korupsi prefix JS (`^\s*[0-9]+\|`) tetap bersih.
+- [done] Phase E3 dashboard alternate picks selesai di repo: widget `Top AI Pick Today` sekarang menampilkan dua alternatif cepat dari `picks.slice(1, 3)` dalam tray `dash-ai-pick-alt-list`, masing-masing bisa langsung buka detail sambil membawa context AI Picks kaya ke stock detail.
+- [done] Static guard Phase E3 ditambah di `backend/tests/test_ai_picks_view_static.py` untuk memastikan tray alternatif dashboard (`dash-ai-pick-alt-list`, `dash-ai-pick-alt-item`, `data-dash-ai-pick-alt-detail`) dan style hook terkait tetap ada.
+- [done] Verifikasi repo slice Phase E3 hijau: `pytest -q backend/tests/test_ai_picks_view_static.py` lulus `13 passed`, `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `30 passed`, `python -m compileall -q frontend/js` hijau, `python -m py_compile backend/main.py backend/ai_picks.py` hijau, dan scan korupsi prefix JS (`^\s*[0-9]+\|`) tetap bersih.
+- [done] Phase C3 origin-aware return CTA selesai di repo: payload context AI Picks/dashboard sekarang menyimpan `source_route` + `source_label`, lalu stock detail menampilkan asal shortlist dan CTA `Kembali ke shortlist asal` yang kembali ke sumber sebenarnya (AI Picks atau Dashboard) alih-alih selalu hardcoded ke `#ai-picks`.
+- [done] Static guard Phase C3 ditambah di `backend/tests/test_ai_picks_view_static.py` untuk memastikan field `source_route`/`source_label`, perhitungan `returnHref`, copy `Kembali ke shortlist asal`, dan selector style `stock-ai-pick-context-origin` tetap ada.
+- [done] Verifikasi repo slice Phase C3 hijau: `pytest -q backend/tests/test_ai_picks_view_static.py` lulus `13 passed`, `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` lulus `30 passed`, `python -m compileall -q frontend/js` hijau, `python -m py_compile backend/main.py backend/ai_picks.py` hijau, dan scan korupsi prefix JS (`^\s*[0-9]+\|`) tetap bersih.
+- [done] Phase C3.1 origin-aware hero back selesai di repo: tombol back hero pada stock detail sekarang mengikuti `source_route` dari context AI Picks/dashboard, jadi user kembali ke shortlist asal yang benar alih-alih default `#dashboard`.
+- [done] TDD RED/GREEN Phase C3.1: static guard `backend/tests/test_ai_picks_view_static.py` diperluas dengan `heroBackHref` dan marker `data-stock-origin-back`; RED terverifikasi gagal sebelum implementasi, lalu GREEN lewat `pytest -q backend/tests/test_ai_picks_view_static.py::test_stock_detail_can_render_ai_pick_context_banner` → `1 passed`.
+- [done] Verifikasi repo quick pass setelah patch: `pytest -q backend/tests/test_ai_picks_view_static.py && python -m compileall -q frontend/js` → `13 passed`, memastikan banner context, CTA balik, dan widget dashboard tetap aman.
+- [done] Audit slice berikutnya setelah Phase C3.1 mengonfirmasi gap terbesar sekarang ada di backend explainability: `reason_labels` masih seragam lintas mode, dan `comparison_points` belum punya headline/risk/timing yang cukup operasional untuk frontend.
+- [done] TDD RED Phase C3.2: tambah guard di `backend/tests/test_ai_picks_scoring.py` agar profil faktor yang sama menghasilkan alasan berbeda per mode (`swing`/`defensive`/`catalyst`), plus perluas `backend/tests/test_ai_picks_candidates.py` untuk mewajibkan `comparison_points.headline`, `risk_label`, dan `timing_label`.
+- [done] RED verified Phase C3.2: `pytest -q backend/tests/test_ai_picks_scoring.py::test_reason_labels_shift_by_mode_for_same_factor_profile` awalnya gagal karena label defensif/katalis masih sama dengan swing; guard candidate shape juga ditulis untuk mengunci payload explainability yang lebih kaya.
+- [done] Implementasi Phase C3.2 di `backend/ai_picks.py`: `reason_labels_from_factors()` sekarang memakai prioritas label per mode, sementara `compose_pick_payload()` menambah `comparison_points.headline`, `risk_label`, dan `timing_label` agar frontend bisa menjelaskan ranking tanpa heuristik tambahan.
+- [done] GREEN verified Phase C3.2: `pytest -q backend/tests/test_ai_picks_scoring.py::test_reason_labels_shift_by_mode_for_same_factor_profile` → `1 passed`; `python -m py_compile backend/ai_picks.py && pytest -q backend/tests/test_ai_picks_scoring.py` → `6 passed`.
+- [done] Hardening pass berikutnya mengaudit runtime venv AI Picks secara penuh; hasilnya menemukan satu regresi nyata: test API lama untuk `comparison_points` masih mengasumsikan 4 key lama, padahal Phase C3.2 menambah `headline`, `risk_label`, dan `timing_label`.
+- [done] Runtime RED verified: `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` awalnya gagal `1 failed, 17 passed` pada `test_ai_picks_endpoint_live_rows_include_explainable_metrics_and_compare_points`, sehingga suite runtime kembali sinkron dengan kontrak explainability terbaru.
+- [done] TDD RED edge-case baru di `backend/tests/test_ai_picks_api.py`: tambahkan guard untuk `limit <= 0` agar tetap kosong/stabil, dan guard `limit=1000` agar endpoint tidak mengembalikan ratusan row sekaligus.
+- [done] RED verified tambahan: `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_api.py::test_ai_picks_endpoint_caps_excessive_limit_to_small_safe_window` awalnya gagal karena route masih mengembalikan `958` row untuk `limit=1000`.
+- [done] Implementasi minimum hardening di `backend/main.py`: route `/api/ai-picks` sekarang clamp `limit` ke rentang aman `0..20` sebelum memanggil `build_ai_picks_payload()`, sehingga payload publik tetap ringan dan tidak berisiko membanjiri frontend.
+- [done] GREEN verified runtime hardening: `python -m py_compile backend/main.py` lulus; `/opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_candidates.py backend/tests/test_ai_picks_scoring.py` sekarang hijau penuh `20 passed`.

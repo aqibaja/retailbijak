@@ -1,17 +1,66 @@
 import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260503b';
-import { observeElements, flashUpdate } from '../main.js?v=20260503aa';
+import { observeElements, flashUpdate } from '../main.js?v=20260503ab';
 
+const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const nf = (n, d = 2) => n == null || Number.isNaN(Number(n)) ? '—' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => n == null || Number.isNaN(Number(n)) ? '—' : `${Number(n) >= 0 ? '+' : ''}${Number(n).toFixed(2)}%`;
 const money = (n) => n == null || Number.isNaN(Number(n)) ? '—' : `Rp ${nf(n, 0)}`;
 
+function safeSessionStorageGet(key) {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSessionStorageRemove(key) {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // ignore session cleanup issues
+  }
+}
+
+function renderAiPickContextBanner(symbol) {
+  const raw = safeSessionStorageGet(AI_PICKS_CONTEXT_KEY);
+  if (!raw) return '';
+
+  try {
+    const data = JSON.parse(raw);
+    if (!data || String(data.ticker || '').toUpperCase() !== String(symbol || '').toUpperCase()) return '';
+    safeSessionStorageRemove(AI_PICKS_CONTEXT_KEY);
+    const labels = Array.isArray(data.reason_labels) ? data.reason_labels.filter(Boolean).slice(0, 2).join(' · ') : '';
+    const fit = data.fit_label || 'Explainable candidate siap ditelaah lebih dalam.';
+    const levels = [
+      `Entry ${money(data.entry_zone)}`,
+      `Target ${money(data.target_zone)}`,
+      `Invalidasi ${money(data.invalidation)}`,
+    ].join(' · ');
+    const sourceLabel = data.source_label || 'AI Picks';
+    const returnHref = data.source_route || '#ai-picks';
+    const heroBackHref = returnHref;
+    return {
+      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">Datang dari AI Picks</div><strong>${symbol} masuk radar mode ${data.mode || 'swing'}.</strong></div><span class="badge badge-up">Score ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">Asal shortlist: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>Confidence ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || 'Tetap validasi risk/reward sebelum eksekusi.'}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">Kembali ke shortlist asal</a></div></div>`,
+      heroBackHref,
+    };
+  } catch {
+    safeSessionStorageRemove(AI_PICKS_CONTEXT_KEY);
+    return { bannerHtml: '', heroBackHref: '#dashboard' };
+  }
+}
+
 export async function renderStockDetail(root, ticker) {
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
+  const aiPickContext = renderAiPickContextBanner(symbol);
+  const aiPickContextBanner = aiPickContext?.bannerHtml || '';
+  const heroBackHref = aiPickContext?.heroBackHref || '#dashboard';
   root.innerHTML = `
     <section class="stock-detail-pro stock-detail-compact stagger-reveal">
+      ${aiPickContextBanner}
       <div class="stock-hero panel">
         <div class="flex items-center gap-4">
-          <a href="#dashboard" class="btn btn-icon"><i data-lucide="arrow-left"></i></a>
+          <a href="${heroBackHref}" class="btn btn-icon" data-stock-origin-back="1"><i data-lucide="arrow-left"></i></a>
           <div>
             <div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EKUITAS</span><span class="badge badge-up" id="live-badge">DB</span></div>
             <div class="text-sm text-muted" id="stock-name">Memuat data emiten...</div>
@@ -204,7 +253,14 @@ function renderAiPreview(symbol, d, candles, tech, analysis){
   const quickTake = rsi >= 70 ? `${symbol} mulai panas; utamakan disiplin entry dan jangan chasing.` : `${symbol} masih layak dipantau untuk setup berikutnya.`;
   const tradeMap = `Pantau ${money(levels.entry)} · invalid ${money(levels.stop)} · target ${money(levels.target)}.`;
   const catalyst = analysis?.valuation?.label || analysis?.swing?.label || 'belum ada katalis dominan';
-  host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Setup</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Bacaan valuasi</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Lensa Katalis</span><div class="text-sm text-muted mt-1">AI akan merangkum katalis terbaru; saat ini ${catalyst}.</div></div>`;
+  const llmStatus = analysis?.llm?.status || 'disabled';
+  const llmHeadline = llmStatus === 'ok'
+    ? (analysis?.llm?.summary || 'Asisten AI aktif, ringkasan terbaru siap dibaca.')
+    : llmStatus === 'error'
+      ? (analysis?.llm?.summary || 'Asisten AI aktif tetapi respons terbaru gagal dimuat.')
+      : 'OpenRouter belum aktif. Aktifkan API key untuk membuka ringkasan AI penuh.';
+  const llmBadge = llmStatus === 'ok' ? 'Asisten AI aktif' : llmStatus === 'error' ? 'Asisten AI tertunda' : 'OpenRouter belum aktif';
+  host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Setup</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Bacaan valuasi</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Lensa Katalis</span><div class="text-sm text-muted mt-1">AI akan merangkum katalis terbaru; saat ini ${catalyst}.</div></div><div class="stat-tile ${llmStatus === 'ok' ? 'metric-good' : llmStatus === 'error' ? 'metric-warn' : 'metric-neutral'}"><span>${llmBadge}</span><div class="text-sm text-muted mt-1">${llmHeadline}</div></div>`;
 }
 
 function renderBelowChartFill(candles, tech){

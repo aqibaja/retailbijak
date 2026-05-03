@@ -1,8 +1,51 @@
 import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260503b';
 import { observeElements } from '../main.js?v=20260503ab';
 
+const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
+const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const nf = (n, d = 0) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pct = (n) => `${Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
+
+function safeLocalStorageGet(key, fallback = null) {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // ignore storage issues in private/incognito or restricted contexts
+  }
+}
+
+function safeSessionStorageSet(key, value) {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // ignore session storage issues
+  }
+}
+
+function buildAiPickContext(item, mode) {
+  return JSON.stringify({
+    ticker: item?.ticker || '',
+    mode,
+    source_route: '#ai-picks',
+    source_label: 'AI Picks',
+    score: item?.score ?? null,
+    confidence: item?.confidence || null,
+    fit_label: item?.fit_label || '',
+    entry_zone: item?.entry_zone ?? null,
+    target_zone: item?.target_zone ?? null,
+    invalidation: item?.invalidation ?? null,
+    reason_labels: Array.isArray(item?.reason_labels) ? item.reason_labels.slice(0, 3) : [],
+    risk_note: item?.risk_note || '',
+  });
+}
 
 function renderReasonChips(labels = []) {
   return labels.map(label => `<span class="ai-picks-reason-chip">${label}</span>`).join('');
@@ -30,7 +73,7 @@ function renderMetricStrip(item) {
 function renderCompareTray(items = []) {
   if (!items.length) {
     return `
-      <div class="panel">
+      <div class="panel ai-picks-state-card" data-ai-picks-state="empty">
         <h3 class="panel-title">Compare Lite</h3>
         <div class="ai-picks-empty">Pilih kandidat untuk membandingkan score, alasan utama, dan risk note.</div>
       </div>`;
@@ -67,6 +110,30 @@ function renderCompareTray(items = []) {
     </div>`;
 }
 
+function renderAiDeskBrief(llm = null) {
+  const status = llm?.status || 'disabled';
+  const title = status === 'ok' ? 'AI Desk Brief' : status === 'error' ? 'AI Desk Brief tertunda' : 'AI Desk Brief belum aktif';
+  const note = status === 'ok'
+    ? (llm?.summary || 'Ringkasan AI belum terisi.')
+    : status === 'error'
+      ? (llm?.summary || 'OpenRouter gagal menjawab sesi ini.')
+      : 'OpenRouter belum aktif. Isi API key untuk mengaktifkan ringkasan kurasi.';
+  const chips = [];
+  if (llm?.model) chips.push(`<span class="ai-picks-reason-chip">${llm.model}</span>`);
+  if (llm?.market_bias) chips.push(`<span class="ai-picks-reason-chip">${llm.market_bias}</span>`);
+  const notes = llm?.pick_notes && typeof llm.pick_notes === 'object'
+    ? Object.entries(llm.pick_notes).slice(0, 3).map(([ticker, text]) => `<li><strong>${ticker}</strong> · ${text}</li>`).join('')
+    : '';
+  return `
+    <div class="panel ai-picks-llm-brief ai-picks-state-card" data-ai-picks-state="${status === 'ok' ? 'ready' : status}">
+      <div class="screener-kicker">Asisten AI</div>
+      <h3 class="panel-title">${title}</h3>
+      <p class="dashboard-widget-state-note">${note}</p>
+      ${chips.length ? `<div class="ai-picks-reason-row">${chips.join('')}</div>` : ''}
+      ${notes ? `<ul class="ai-picks-compare-points">${notes}</ul>` : ''}
+    </div>`;
+}
+
 function renderRankCard(item, mode) {
   return `
     <article class="ai-picks-rank-card panel">
@@ -93,14 +160,68 @@ function renderRankCard(item, mode) {
         ${renderFactorMeter('Likuiditas', item.factor_scores?.liquidity)}
       </div>
       <div class="ai-picks-rank-actions">
-        <a href="#stock/${item.ticker}" class="btn">Buka Detail</a>
+        <button class="btn" data-ai-picks-open-detail="${item.ticker}">Buka Detail</button>
         <button class="btn" data-ai-picks-compare="${item.ticker}">Bandingkan</button>
         <button class="btn btn-primary" data-ai-picks-save="${item.ticker}" data-ai-picks-mode="${mode}">Tambah ke Daftar Pantau</button>
       </div>
     </article>`;
 }
 
-async function wireQuickActions(root, mode, picks = []) {
+function renderLoadingState(title, note) {
+  return `
+    <div class="panel ai-picks-state-card" data-ai-picks-state="loading">
+      <div class="ai-picks-state-stack">
+        <span class="ai-picks-state-pulse skeleton-shimmer"></span>
+        <strong class="dashboard-widget-state-title">${title}</strong>
+        <span class="dashboard-widget-state-note">${note}</span>
+      </div>
+    </div>`;
+}
+
+function renderEmptyState(title, note) {
+  return `
+    <div class="panel ai-picks-state-card" data-ai-picks-state="empty">
+      <div class="ai-picks-state-stack">
+        <strong class="dashboard-widget-state-title">${title}</strong>
+        <span class="dashboard-widget-state-note">${note}</span>
+      </div>
+    </div>`;
+}
+
+function renderErrorState(title, note) {
+  return `
+    <div class="panel ai-picks-state-card" data-ai-picks-state="error">
+      <div class="ai-picks-state-stack">
+        <strong class="dashboard-widget-state-title">${title}</strong>
+        <span class="dashboard-widget-state-note">${note}</span>
+        <button class="btn ai-picks-retry-btn" data-ai-picks-retry="1">Coba Lagi</button>
+      </div>
+    </div>`;
+}
+
+function renderLoadingShell(featuredEl, listEl, compareEl) {
+  featuredEl.innerHTML = renderLoadingState('Menyiapkan pick unggulan', 'Menghitung score, confidence, dan kandidat teratas.');
+  listEl.innerHTML = renderLoadingState('Menarik ranked list', 'Shell ini tetap hidup walau data masih dimuat.');
+  compareEl.innerHTML = renderCompareTray([]);
+}
+
+function setModeButtons(modeSwitch, mode) {
+  modeSwitch.dataset.aiPicksActiveMode = mode;
+  modeSwitch.querySelectorAll('[data-ai-picks-mode]').forEach(btn => {
+    btn.classList.toggle('btn-primary', btn.getAttribute('data-ai-picks-mode') === mode);
+  });
+}
+
+function getDefaultCompareItems(picks = [], activeTicker = null) {
+  if (!Array.isArray(picks) || !picks.length) return [];
+  if (activeTicker) {
+    const focused = picks.filter(item => item.ticker === activeTicker || item.rank <= 2);
+    if (focused.length) return focused.slice(0, 2);
+  }
+  return picks.slice(0, 2);
+}
+
+async function wireQuickActions(root, mode, picks = [], loadMode) {
   const compareEl = root.querySelector('#ai-picks-compare');
 
   root.querySelectorAll('[data-ai-picks-save]').forEach(button => {
@@ -115,16 +236,33 @@ async function wireQuickActions(root, mode, picks = []) {
     });
   });
 
+  root.querySelectorAll('[data-ai-picks-open-detail]').forEach(button => {
+    button.addEventListener('click', () => {
+      const ticker = button.getAttribute('data-ai-picks-open-detail');
+      const item = picks.find(candidate => candidate.ticker === ticker);
+      if (!ticker || !item) return;
+      safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
+      window.location.hash = `#stock/${ticker}`;
+    });
+  });
+
   root.querySelectorAll('[data-ai-picks-compare]').forEach(button => {
     button.addEventListener('click', () => {
       const ticker = button.getAttribute('data-ai-picks-compare');
-      const selected = picks.filter(item => item.ticker === ticker || item.rank <= 2).slice(0, 2);
-      compareEl.innerHTML = renderCompareTray(selected);
+      compareEl.innerHTML = renderCompareTray(getDefaultCompareItems(picks, ticker));
+    });
+  });
+
+  root.querySelectorAll('[data-ai-picks-retry]').forEach(button => {
+    button.addEventListener('click', () => {
+      loadMode(mode);
     });
   });
 }
 
 export async function renderAiPicks(root) {
+  const initialMode = safeLocalStorageGet(AI_PICKS_MODE_KEY, 'swing') || 'swing';
+
   root.innerHTML = `
     <section class="ai-picks-page stagger-reveal">
       <div class="ai-picks-hero panel">
@@ -133,10 +271,10 @@ export async function renderAiPicks(root) {
           <h1>AI Picks</h1>
           <p>Kurasi kandidat saham berbasis ranking engine explainable dari data market, kualitas, dan katalis.</p>
         </div>
-        <div class="ai-picks-mode-switch" data-ai-picks-active-mode="swing">
-          <button class="btn btn-primary" data-ai-picks-mode="swing">Swing</button>
-          <button class="btn" data-ai-picks-mode="defensive">Defensive</button>
-          <button class="btn" data-ai-picks-mode="catalyst">Catalyst</button>
+        <div class="ai-picks-mode-switch" data-ai-picks-active-mode="${initialMode}">
+          <button class="btn ${initialMode === 'swing' ? 'btn-primary' : ''}" data-ai-picks-mode="swing">Swing</button>
+          <button class="btn ${initialMode === 'defensive' ? 'btn-primary' : ''}" data-ai-picks-mode="defensive">Defensive</button>
+          <button class="btn ${initialMode === 'catalyst' ? 'btn-primary' : ''}" data-ai-picks-mode="catalyst">Catalyst</button>
         </div>
       </div>
 
@@ -148,29 +286,17 @@ export async function renderAiPicks(root) {
 
       <div class="ai-picks-layout">
         <section class="ai-picks-featured" id="ai-picks-featured">
-          <div class="ai-picks-featured-card panel">
-            <div class="dashboard-widget-state">
-              <strong class="dashboard-widget-state-title">Menyiapkan pick unggulan</strong>
-              <span class="dashboard-widget-state-note">Menghitung score, confidence, dan kandidat teratas.</span>
-            </div>
-          </div>
+          ${renderLoadingState('Menyiapkan pick unggulan', 'Menghitung score, confidence, dan kandidat teratas.')}
         </section>
 
         <aside class="ai-picks-compare ai-picks-compare-tray" id="ai-picks-compare">
-          <div class="panel">
-            <h3 class="panel-title">Compare Lite</h3>
-            <div class="ai-picks-empty">Pilih kandidat untuk membandingkan score, alasan utama, dan risk note.</div>
-          </div>
+          ${renderCompareTray([])}
+          ${renderAiDeskBrief(null)}
         </aside>
       </div>
 
       <section class="ai-picks-ranked-list" id="ai-picks-ranked-list">
-        <div class="panel ai-picks-rank-card">
-          <div class="dashboard-widget-state">
-            <strong class="dashboard-widget-state-title">Menarik ranked list</strong>
-            <span class="dashboard-widget-state-note">Shell ini tetap hidup walau data masih dimuat.</span>
-          </div>
-        </div>
+        ${renderLoadingState('Menarik ranked list', 'Shell ini tetap hidup walau data masih dimuat.')}
       </section>
     </section>`;
 
@@ -186,67 +312,81 @@ export async function renderAiPicks(root) {
   const updatedEl = root.querySelector('#ai-picks-updated');
 
   const loadMode = async (mode = 'swing') => {
-    modeSwitch.dataset.aiPicksActiveMode = mode;
-    modeSwitch.querySelectorAll('[data-ai-picks-mode]').forEach(btn => {
-      btn.classList.toggle('btn-primary', btn.getAttribute('data-ai-picks-mode') === mode);
-    });
+    setModeButtons(modeSwitch, mode);
+    safeLocalStorageSet(AI_PICKS_MODE_KEY, mode);
+    renderLoadingShell(featuredEl, listEl, compareEl);
+    toneEl.textContent = 'Menyusun tone';
+    universeEl.textContent = 'Menyaring kandidat';
+    updatedEl.textContent = 'Sinkronisasi';
 
-    const payload = await fetchAiPicks(mode, 5);
-    toneEl.textContent = payload?.market_context?.breadth_label || 'data belum cukup';
-    universeEl.textContent = `${payload?.summary?.eligible_count || 0} kandidat`;
-    updatedEl.textContent = payload?.updated_at ? String(payload.updated_at).slice(0, 10) : 'Belum ada';
+    try {
+      const payload = await fetchAiPicks(mode, 5, { llm: true });
+      toneEl.textContent = payload?.market_context?.breadth_label || 'data belum cukup';
+      universeEl.textContent = `${payload?.summary?.eligible_count || 0} kandidat`;
+      updatedEl.textContent = payload?.updated_at ? String(payload.updated_at).slice(0, 10) : 'Belum ada';
 
-    const picks = Array.isArray(payload?.data) ? payload.data : [];
-    const featured = picks[0];
-    if (!featured) {
-      featuredEl.innerHTML = `<div class="ai-picks-featured-card panel"><div class="ai-picks-empty">Belum ada kandidat yang cukup kuat untuk mode ini.</div></div>`;
-      compareEl.innerHTML = renderCompareTray([]);
-      listEl.innerHTML = `<div class="panel ai-picks-rank-card"><div class="ai-picks-empty">Ranked list akan muncul saat universe kandidat tersedia.</div></div>`;
-      return;
+      const picks = Array.isArray(payload?.data) ? payload.data : [];
+      const featured = picks[0];
+      if (!featured) {
+        featuredEl.innerHTML = renderEmptyState('Belum ada pick unggulan siap pakai', 'Mode ini belum menemukan kandidat yang cukup kuat. Coba mode lain atau tunggu update sesi berikutnya.');
+        compareEl.innerHTML = `${renderCompareTray([])}${renderAiDeskBrief(payload?.llm)}`;
+        listEl.innerHTML = renderEmptyState('Ranked list belum terisi', 'Universe kandidat masih tipis. Sistem akan menampilkan daftar saat coverage market cukup.');
+        await wireQuickActions(root, mode, picks, loadMode);
+        return;
+      }
+
+      featuredEl.innerHTML = `
+        <div class="ai-picks-featured-card panel">
+          <div class="ai-picks-rank-head">
+            <div>
+              <div class="screener-kicker">Pick Unggulan · ${featured.ticker}</div>
+              <h2>${featured.name}</h2>
+              <p>${featured.fit_label}</p>
+            </div>
+            <div class="ai-picks-score-stack">
+              <strong>${nf(featured.score, 1)}</strong>
+              <small>Confidence ${featured.confidence}</small>
+            </div>
+          </div>
+          ${renderMetricStrip(featured)}
+          <div class="ai-picks-reason-row">${renderReasonChips(featured.reason_labels || [])}</div>
+          <div class="ai-picks-rank-meta">
+            <span>Entry ${nf(featured.entry_zone)}</span>
+            <span>Target ${nf(featured.target_zone)}</span>
+            <span>Invalidasi ${nf(featured.invalidation)}</span>
+          </div>
+          <div class="ai-picks-factor-list">
+            ${renderFactorMeter('Teknikal', featured.factor_scores?.technical)}
+            ${renderFactorMeter('Likuiditas', featured.factor_scores?.liquidity)}
+            ${renderFactorMeter('Fundamental', featured.factor_scores?.fundamental)}
+            ${renderFactorMeter('Katalis', featured.factor_scores?.catalyst)}
+          </div>
+          <p><strong>Risiko Utama:</strong> ${featured.risk_note}</p>
+          <div class="ai-picks-rank-actions">
+            <button class="btn" data-ai-picks-open-detail="${featured.ticker}">Buka Detail</button>
+            <button class="btn" data-ai-picks-compare="${featured.ticker}">Bandingkan</button>
+            <button class="btn btn-primary" data-ai-picks-save="${featured.ticker}" data-ai-picks-mode="${mode}">Tambah ke Daftar Pantau</button>
+          </div>
+        </div>`;
+
+      compareEl.innerHTML = `${renderCompareTray(getDefaultCompareItems(picks))}${renderAiDeskBrief(payload?.llm)}`;
+      listEl.innerHTML = picks.slice(1).map(item => renderRankCard(item, mode)).join('') || renderEmptyState('Kandidat tambahan belum tersedia', 'Pick unggulan sudah siap, tetapi antrian lanjutan masih tipis untuk mode ini.');
+      await wireQuickActions(root, mode, picks, loadMode);
+    } catch {
+      toneEl.textContent = 'Perlu retry';
+      universeEl.textContent = 'API belum stabil';
+      updatedEl.textContent = 'Gagal memuat';
+      featuredEl.innerHTML = renderErrorState('Gagal memuat pick unggulan', 'Koneksi atau API sedang bermasalah. Retry akan mencoba memuat ulang mode aktif tanpa meninggalkan halaman ini.');
+      compareEl.innerHTML = `${renderCompareTray([])}${renderAiDeskBrief({ status: 'error', summary: 'OpenRouter atau endpoint AI Picks sedang bermasalah.' })}`;
+      listEl.innerHTML = renderErrorState('Ranked list belum bisa ditarik', 'Data ranking tidak tersedia untuk sementara. Coba lagi beberapa detik lagi.');
+      await wireQuickActions(root, mode, [], loadMode);
+      showToast('AI Picks gagal dimuat. Silakan coba lagi.', 'error');
     }
-
-    featuredEl.innerHTML = `
-      <div class="ai-picks-featured-card panel">
-        <div class="ai-picks-rank-head">
-          <div>
-            <div class="screener-kicker">Pick Unggulan · ${featured.ticker}</div>
-            <h2>${featured.name}</h2>
-            <p>${featured.fit_label}</p>
-          </div>
-          <div class="ai-picks-score-stack">
-            <strong>${nf(featured.score, 1)}</strong>
-            <small>Confidence ${featured.confidence}</small>
-          </div>
-        </div>
-        ${renderMetricStrip(featured)}
-        <div class="ai-picks-reason-row">${renderReasonChips(featured.reason_labels || [])}</div>
-        <div class="ai-picks-rank-meta">
-          <span>Entry ${nf(featured.entry_zone)}</span>
-          <span>Target ${nf(featured.target_zone)}</span>
-          <span>Invalidasi ${nf(featured.invalidation)}</span>
-        </div>
-        <div class="ai-picks-factor-list">
-          ${renderFactorMeter('Teknikal', featured.factor_scores?.technical)}
-          ${renderFactorMeter('Likuiditas', featured.factor_scores?.liquidity)}
-          ${renderFactorMeter('Fundamental', featured.factor_scores?.fundamental)}
-          ${renderFactorMeter('Katalis', featured.factor_scores?.catalyst)}
-        </div>
-        <p><strong>Risiko Utama:</strong> ${featured.risk_note}</p>
-        <div class="ai-picks-rank-actions">
-          <a href="#stock/${featured.ticker}" class="btn">Buka Detail</a>
-          <button class="btn" data-ai-picks-compare="${featured.ticker}">Bandingkan</button>
-          <button class="btn btn-primary" data-ai-picks-save="${featured.ticker}" data-ai-picks-mode="${mode}">Tambah ke Daftar Pantau</button>
-        </div>
-      </div>`;
-
-    compareEl.innerHTML = renderCompareTray(picks.slice(0, 2));
-    listEl.innerHTML = picks.slice(1).map(item => renderRankCard(item, mode)).join('') || `<div class="panel ai-picks-rank-card"><div class="ai-picks-empty">Kandidat tambahan belum tersedia.</div></div>`;
-    await wireQuickActions(root, mode, picks);
   };
 
   modeSwitch.querySelectorAll('[data-ai-picks-mode]').forEach(button => {
     button.addEventListener('click', () => loadMode(button.getAttribute('data-ai-picks-mode') || 'swing'));
   });
 
-  await loadMode('swing');
+  await loadMode(initialMode);
 }
