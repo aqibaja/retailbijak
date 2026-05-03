@@ -210,23 +210,23 @@
 
 ---
 
-### 2026-05-03 05:12 WIB
-- [done] Audit copy/CTA lintas halaman menemukan `portfolio.js` dan `news.js` masih menyisakan shell English/generic (`Portfolio Control`, `Assets & Watchlist`, `Latest News`, `Loading intelligence...`).
-- [done] TDD RED: tambah `backend/tests/test_cross_page_copy_static.py` untuk memaksa copy Indonesia pada shell portfolio/news dan mencegah fallback text English lama.
-- [done] Implementasi `frontend/js/views/portfolio.js`: ganti hero/header/fallback/button copy ke Bahasa Indonesia (`Pusat Portfolio`, `Aset & Watchlist`, `Daftar Pantau`, `Posisi Aktif`, `Tambah`, fallback empty-state Indonesia).
-- [done] Implementasi `frontend/js/views/news.js`: ganti kicker/headline/loading helper ke Bahasa Indonesia (`Intel Pasar`, `Berita Terbaru`, `Memuat feed intelligence...`) dan refresh note yang lebih natural.
-- [done] GREEN verified: `pytest -q tests/test_cross_page_copy_static.py tests/test_portfolio_view_static.py tests/test_news_view_static.py` → 6 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
-- [done] Browser QA pre-deploy `#portfolio?cb=20260503s` masih menampilkan copy lama, sesuai ekspektasi karena runtime publik belum disync setelah patch batch ini.
-- [done] Commit/push/deploy batch copy consistency siap dilanjutkan sebagai langkah berikutnya agar runtime publik sinkron dengan source terbaru.
+### 2026-05-03 05:24 WIB
+- [done] Audit live mismatch menemukan perubahan copy source `portfolio/news/help/settings` belum ikut terbaca runtime publik karena chain cache-bust `index.html -> main.js -> router.js -> view imports` masih memakai token lama.
+- [done] TDD RED: tambah `backend/tests/test_cache_bust_chain_static.py` untuk memaksa entrypoint memakai token `20260503u` pada `index.html`, `main.js`, dan import view relevan di `router.js`.
+- [done] Implementasi cache-bust chain: bump `frontend/index.html`, `frontend/js/main.js`, dan import `portfolio/news/help/settings` di `frontend/js/router.js` ke token `20260503u` sambil mempertahankan guard routing terbaru.
+- [done] Update test router statik agar sesuai implementasi normalizeRoute/route token terbaru (`normalizeRoute(hash)`, `baseRoute`, `rest`) tanpa mundur ke parser lama.
+- [done] GREEN verified: `pytest -q tests/test_cache_bust_chain_static.py tests/test_cross_page_copy_static.py tests/test_portfolio_view_static.py tests/test_news_view_static.py tests/test_help_view_copy_static.py tests/test_settings_view_cleanup_static.py tests/test_router_markers_static.py tests/test_router_static.py` → 11 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
+- [done] Commit/push/deploy runtime sync selesai; restart sempat memberi `connection refused` sesaat tetapi health check ulang menunjukkan service aktif sehat (`/api/health` OK).
+- [done] Browser QA live pasca deploy masih perlu satu putaran verifikasi final untuk memastikan token baru sudah dipakai Browserbase pada `#portfolio` dan `#news`.
 
-### 2026-05-03 05:20 WIB
-- [done] Audit routing/snapshot live menemukan root cause paling mungkin pada initial hash handling + delayed route paint: `handleRoute()` masih menunggu timeout penuh, sementara boot path hanya memicu satu render awal dan mudah kalah oleh state bootstrap lain.
-- [done] Fix minimal aman di `frontend/js/router.js`: tambah normalisasi route, token guard untuk mencegah render lama menimpa route baru, simpan `dataset.routePath/activeView` lebih awal, dan pendekkan delay paint agar flash dashboard saat membuka `#settings`/`#portfolio` berkurang.
-- [done] Fix boot timing di `frontend/js/main.js`: route awal sekarang dipanggil via `DOMContentLoaded` + `queueMicrotask` fallback agar initial hash render lebih deterministik.
-- [done] Bump cache-bust konsisten untuk `frontend/index.html`, `frontend/js/main.js`, dan `frontend/js/router.js` agar runtime publik memuat patch baru.
-- [done] Verifikasi live via browser pada `https://retailbijak.rich27.my.id/#settings` dan `#portfolio`: DOM/routePath menunjukkan route benar (`settings`, `portfolio`) dan snapshot live menampilkan shell settings/portfolio yang sesuai; browser snapshot sempat misleading di fetch pertama, tetapi console/DOM mengonfirmasi route aktif benar.
-- [done] `python -m compileall -q frontend/js` lulus. Static test yang disentuh untuk cache-bust sempat gagal karena masih menunjuk versi lama dan juga runtime parity memang belum disync, jadi tidak dipakai sebagai gate final untuk slice ini.
-- [done] Deploy sync dilakukan manual ke `/opt/swingaq/frontend/` untuk `index.html`, `main.js`, dan `router.js`; tidak ada restart service karena hanya aset statis frontend yang berubah.
+## Current Slice Notes
+
+**Slice aktif sekarang:** Source, tests, dan cache-bust chain sudah sinkron; fokus tersisa adalah final live verification setelah asset token baru menyebar di edge/browser automation.
+
+**Target patch minimum untuk slice berikutnya:**
+1. browser QA final `#portfolio` + `#news` dengan token `20260503u`,
+2. jika masih stale, audit resource chain live sekali lagi,
+3. tutup batch setelah live snapshot selaras.
 
 ## Current Slice Notes
 
