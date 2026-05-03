@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 try:
@@ -26,6 +26,11 @@ try:
 except ModuleNotFoundError:
     from backend.services.idx_response_factory import ok as _resp_ok
 
+try:
+    from services.openrouter_llm import build_stock_analysis_llm_payload
+except ModuleNotFoundError:
+    from backend.services.openrouter_llm import build_stock_analysis_llm_payload
+
 router = APIRouter()
 
 
@@ -39,7 +44,7 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
 
 
 @router.get('/api/stocks/{ticker}/analysis')
-def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
+def get_stock_analysis(ticker: str, llm: bool = Query(False), db: Session = Depends(get_db)):
     try:
         from backend.services.scanner_engine import analyze_stock
     except ModuleNotFoundError:
@@ -49,7 +54,13 @@ def get_stock_analysis(ticker: str, db: Session = Depends(get_db)):
     metrics = _compute_analysis_metrics_from_ohlcv(db, row['ticker'])
     row.update(metrics)
     analysis = analyze_stock(row)
-    return _resp_ok(analysis, source='scanner_engine')
+    response = _resp_ok(analysis, source='scanner_engine')
+    if llm:
+        try:
+            response['llm'] = build_stock_analysis_llm_payload(ticker=row['ticker'], row=row, analysis=analysis, db=db)
+        except TypeError:
+            response['llm'] = build_stock_analysis_llm_payload(ticker=row['ticker'], row=row, analysis=analysis)
+    return response
 
 
 @router.get('/api/stocks/{ticker}/fundamental')

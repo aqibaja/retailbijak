@@ -12,6 +12,7 @@ INDEX_PATH = 'index.html'
 CORE_PATHS = ['js/main.js', 'js/router.js', 'js/api.js']
 ROUTE_VIEW_MARKERS = {
     'dashboard': ('js/views/dashboard.js', 'renderDashboard'),
+    'ai-picks': ('js/views/ai_picks.js', 'renderAiPicks'),
     'stock': ('js/views/stock_detail.js', 'renderStockDetail'),
     'screener': ('js/views/screener.js', 'renderScreener'),
     'portfolio': ('js/views/portfolio.js', 'renderPortfolio'),
@@ -21,12 +22,13 @@ ROUTE_VIEW_MARKERS = {
     'help': ('js/views/help.js', 'renderHelp'),
 }
 ROUTE_COPY_MARKERS = {
-    'dashboard': ['Dashboard Intelijen Pasar', 'Jalankan Pemindai', 'Penggerak Teratas', 'Berita Terbaru'],
+    'dashboard': ['Dashboard Intelijen Pasar', 'Jalankan Pemindai', 'Penggerak Teratas', 'Berita Terbaru', 'Top AI Pick Today'],
+    'ai-picks': ['AI Picks', 'Pick Unggulan', 'Bandingkan', 'Tambah ke Daftar Pantau'],
     'stock': ['Grafik Harga', 'Ringkasan Sesi', 'Tambah ke Daftar Pantau', 'Jalankan Pemindai', 'Katalis Terbaru', 'Tautan Katalis', 'Skor Swing', 'Zona Entry', 'Ringkasan teknikal belum tersedia lengkap.', 'Keyakinan', 'Panel Keputusan', 'TAHAN / PANTAU', 'Volatilitas', 'Level Kunci', 'Rasio Volume', 'Risiko'],
     'news': ['Berita Terbaru', 'Memuat feed intel pasar...', 'Gagal memuat berita: '],
     'screener': ['Pemindai Akumulasi Institusi', 'Jalankan Pemindaian SwingAQ', 'Sinyal Live', 'Urutkan berdasarkan CCI', 'Cari kode saham...', 'Sedang memindai'],
     'portfolio': ['Pusat Portofolio', 'Aset & Daftar Pantau', 'Tambah ke Daftar Pantau', 'Posisi Aktif', 'Harga Beli Rata-Rata'],
-    'settings': ['PUSAT PENGATURAN', 'Kontrol Ruang Kerja', 'Mesin Antarmuka', 'Catatan Terminal', 'aliran data lanjutan'],
+    'settings': ['PUSAT PENGATURAN', 'Kontrol Ruang Kerja', 'Mesin Antarmuka', 'OpenRouter AI', 'Catatan Terminal', 'aliran data premium lanjutan'],
 }
 
 

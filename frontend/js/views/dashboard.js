@@ -1,5 +1,7 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth } from '../api.js?v=20260503b';
-import { observeElements, animateValue } from '../main.js?v=20260503aa';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260503b';
+import { observeElements, animateValue } from '../main.js?v=20260503ab';
+
+const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
 const SUGGESTION_PRESETS = [
   { ticker: 'BBCA', reason: 'Relative strength bertahan di atas pivot harian.' },
@@ -12,6 +14,32 @@ const SUGGESTION_PRESETS = [
 
 const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
+
+function safeSessionStorageSet(key, value) {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // ignore session storage issues
+  }
+}
+
+function buildAiPickContext(item, mode = 'swing') {
+  return JSON.stringify({
+    ticker: item?.ticker || '',
+    mode,
+    source_route: '#dashboard',
+    source_label: 'Top AI Pick Today',
+    score: item?.score ?? null,
+    confidence: item?.confidence || null,
+    fit_label: item?.fit_label || '',
+    entry_zone: item?.entry_zone ?? null,
+    target_zone: item?.target_zone ?? null,
+    invalidation: item?.invalidation ?? null,
+    reason_labels: Array.isArray(item?.reason_labels) ? item.reason_labels.slice(0, 3) : [],
+    risk_note: item?.risk_note || '',
+  });
+}
+
 const FALLBACK_NEWS = [
   { title: 'IHSG stabil, rotasi sektor mulai terlihat di perbankan dan energi', source: 'MARKET INTEL', link: '#market' },
   { title: 'Watchlist hari ini: BBCA, BMRI, GOTO, BRPT untuk momentum intraday', source: 'IDEA', link: '#screener' },
@@ -74,13 +102,13 @@ export async function renderDashboard(root) {
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
       <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan pasar</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan garis rencana intraday.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Saran Cepat</h3><div class="suggestion-grid">${SUGGESTION_PRESETS.slice(0,4).map(({ ticker, reason })=>`<a href="#stock/${ticker}" class="suggestion-pill"><span>${ticker}</span><small>Buka detail</small><em class="dash-suggestion-reason">${reason}</em></a>`).join('')}</div></div>
+      <div class="panel dash-ai-pick-card"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Top AI Pick Today</h3><div class="dash-ai-pick-summary" id="dash-ai-pick-summary">Menyiapkan pick unggulan untuk discovery cepat.</div></div><a href="#ai-picks" class="text-xs text-primary strong dash-ai-pick-cta">Buka AI Picks</a></div><div id="dash-ai-pick-widget"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick unggulan</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi agar dashboard tetap terasa hidup.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita pasar</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>
     </div>
   </section>`;
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-  const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers()]);
+  const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
   initChart(market);
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }
@@ -107,6 +135,7 @@ async function loadMarketSummary(){
   if (biasNote) biasNote.textContent = v == null ? 'Ringkasan market belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} sehingga defense dan selektivitas lebih penting.`;
   return summary;
 }
+
 async function loadIntel(){
   const [summary, breadthRes, gainersRes, losersRes, sectorRes] = await Promise.all([
     fetchMarketSummary().catch(() => null),
@@ -171,6 +200,93 @@ async function loadMovers(){
   })).join('');
 }
 
+async function loadAiPickWidget() {
+  const mount = document.getElementById('dash-ai-pick-widget');
+  const summaryEl = document.getElementById('dash-ai-pick-summary');
+  if (!mount) return;
+
+  const wireFeaturedPickDetail = (featured, mode = 'swing') => {
+    const detailButton = mount.querySelector('[data-dash-ai-pick-open-detail]');
+    if (!detailButton || !featured?.ticker) return;
+    detailButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const ticker = detailButton.getAttribute('data-dash-ai-pick-open-detail');
+      if (!ticker) return;
+      safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(featured, mode));
+      window.location.hash = `#stock/${ticker}`;
+    });
+  };
+
+  const wireAltPickDetails = (alternatives = [], mode = 'swing') => {
+    mount.querySelectorAll('[data-dash-ai-pick-alt-detail]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const ticker = button.getAttribute('data-dash-ai-pick-alt-detail');
+        const item = alternatives.find(candidate => candidate.ticker === ticker);
+        if (!ticker || !item) return;
+        safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
+        window.location.hash = `#stock/${ticker}`;
+      });
+    });
+  };
+
+  const payload = await fetchAiPicks('swing', 3).catch(() => null);
+  const picks = Array.isArray(payload?.data) ? payload.data : [];
+  const featured = picks[0];
+
+  if (!featured) {
+    if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan live. Widget tetap memberi jalur cepat ke halaman AI Picks.';
+    mount.innerHTML = `
+      <div class="dashboard-widget-state dash-ai-pick-featured" data-ai-picks-state="empty">
+        <strong class="dashboard-widget-state-title">Top AI Pick Today belum siap</strong>
+        <span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk melihat mode lain dan fallback yang lebih lengkap.</span>
+      </div>`;
+    return;
+  }
+
+  if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter · fokus cepat ke ide dengan score tertinggi.`;
+  const alternatives = picks.slice(1, 3);
+  mount.innerHTML = `
+    <div class="dash-ai-pick-featured">
+      <a href="#ai-picks" class="dash-ai-pick-featured-link">
+        <div class="dash-ai-pick-head">
+          <div>
+            <span class="dash-intel-kicker">Featured · ${featured.ticker}</span>
+            <strong>${featured.name}</strong>
+          </div>
+          <div class="dash-ai-pick-score">${nf(featured.score, 1)}</div>
+        </div>
+        <p class="dash-ai-pick-fit">${featured.fit_label || 'Explainable ranking engine memilih kandidat ini untuk mode swing.'}</p>
+        <div class="dash-ai-pick-metrics">
+          <div><span>Conf</span><strong>${featured.confidence || '-'}</strong></div>
+          <div><span>Change</span><strong>${pf(featured.change_pct ?? 0)}</strong></div>
+          <div><span>Vol Ratio</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
+        </div>
+        <div class="dash-ai-pick-summary">
+          <span>${featured.reason_labels?.[0] || 'Likuiditas dan teknikal masih mendukung.'}</span>
+          <small>${featured.risk_note || 'Tetap validasi entry dan invalidasi sebelum eksekusi.'}</small>
+        </div>
+      </a>
+      ${alternatives.length ? `
+        <div class="dash-ai-pick-alt-list">
+          ${alternatives.map(item => `
+            <button class="dash-ai-pick-alt-item" data-dash-ai-pick-alt-detail="${item.ticker}">
+              <span class="dash-ai-pick-alt-ticker">${item.ticker}</span>
+              <strong>${nf(item.score, 1)}</strong>
+              <small>${item.reason_labels?.[0] || item.fit_label || 'Alternatif cepat untuk review berikutnya.'}</small>
+            </button>`).join('')}
+        </div>` : ''}
+      <div class="dash-ai-pick-cta-row">
+        <button class="btn" data-dash-ai-pick-open-detail="${featured.ticker}">Buka Detail</button>
+        <a href="#ai-picks" class="dash-ai-pick-cta">Buka AI Picks</a>
+      </div>
+    </div>`;
+  wireFeaturedPickDetail(featured, payload?.mode || 'swing');
+  wireAltPickDetails(alternatives, payload?.mode || 'swing');
+}
+
 async function loadNews(){
   const res = await fetchNews(3); const items = (Array.isArray(res?.data)&&res.data.length?res.data:FALLBACK_NEWS);
   document.getElementById('news-container').innerHTML = items.slice(0,3).map((n, index)=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><span class="dash-news-meta">${index===0?'Headline utama':'Quick brief'} · ${n.source||'NEWS'}</span><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,72) : 'Buka Market Intelligence'}</small></a>`).join('');
@@ -201,7 +317,6 @@ function initChart(summary) {
     let labels, data;
 
     if (chartRes && chartRes.data.length > 0) {
-      // Use real IDX chart data
       labels = chartRes.data.map(p => {
         const d = new Date(p.date);
         if (range === '1Q' || range === '1Y') {
@@ -217,7 +332,6 @@ function initChart(summary) {
         sub.textContent = `IDX ${chartRes.period} · ${chartRes.count} points · ${first} → ${last}`;
       }
     } else {
-      // Fallback: generate synthetic from current value
       const base = Number(summary?.value || 7000);
       const points = range === '1Q' ? 55 : range === '1W' ? 5 : 22;
       labels = Array.from({ length: points }, (_, i) => {
@@ -227,7 +341,6 @@ function initChart(summary) {
       const amp = range === '1Q' ? 0.06 : range === '1W' ? 0.01 : 0.018;
       data = labels.map((_, i) => Number((base * (1 + Math.sin(i * 1.4) * amp + (i - labels.length + 1) * amp / labels.length)).toFixed(2)));
       data[data.length - 1] = Number(base.toFixed(2));
-      // No subtitle on synthetic fallback
     }
 
     const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 320);

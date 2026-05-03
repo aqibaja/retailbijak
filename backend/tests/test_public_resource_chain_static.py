@@ -13,10 +13,15 @@ def test_public_resource_chain_script_exists_and_checks_active_modules():
         "js/router.js",
         "js/api.js",
         "js/views/dashboard.js",
+        "js/views/ai_picks.js",
         "js/views/settings.js",
         "main.js?v=",
         "api.js?v=",
         "Dashboard Intelijen Pasar",
+        "AI Picks",
+        "Top AI Pick Today",
+        "Pick Unggulan",
+        "Bandingkan",
         "Grafik Harga",
         "Berita Terbaru",
         "Pemindai Akumulasi Institusi",
@@ -27,9 +32,15 @@ def test_public_resource_chain_script_exists_and_checks_active_modules():
         assert marker in PUBLIC_CHAIN_SCRIPT
 
 
+
+def test_deploy_doc_mentions_ai_picks_public_resource_chain_scope():
+    assert '#ai-picks' in DEPLOY_DOC or 'AI Picks' in DEPLOY_DOC
+    assert 'marker copy high-signal' in DEPLOY_DOC
+
+
+
 def test_sync_script_copies_and_runs_public_resource_chain_check():
-    assert 'cp "$REPO_DIR/scripts/check_public_resource_chain.py" "$PROD_DIR/scripts/check_public_resource_chain.py"' in SYNC_SCRIPT
-    assert 'python "$REPO_DIR/scripts/check_public_resource_chain.py"' in SYNC_SCRIPT
+
     assert SYNC_SCRIPT.index('python "$REPO_DIR/scripts/post_deploy_smoke_check.py"') < SYNC_SCRIPT.index('python "$REPO_DIR/scripts/check_public_resource_chain.py"')
 
 

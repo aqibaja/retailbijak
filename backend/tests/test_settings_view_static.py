@@ -13,6 +13,9 @@ def test_settings_view_uses_editorial_workspace_shell_and_status_rail():
     assert 'settings-toggle-grid' in content
     assert 'settings-note-rail' in content
     assert 'settings-status' in content
+    assert 'setting-openrouter-key' in content
+    assert 'setting-openrouter-stock-model' in content
+    assert 'setting-openrouter-picks-model' in content
 
 
 def test_settings_view_uses_indonesian_copy_for_labels_actions_and_notes():
@@ -22,6 +25,11 @@ def test_settings_view_uses_indonesian_copy_for_labels_actions_and_notes():
     assert 'Tersambung' in content
     assert 'Sinkron ke layanan lokal' in content
     assert 'Mesin Antarmuka' in content
+    assert 'OpenRouter AI' in content
+    assert 'API key OpenRouter' in content
+    assert 'Model Analisis Saham' in content
+    assert 'Model AI Picks' in content
+    assert 'Model gratis default' in content
     assert 'Kontrol yang tersimpan di basis data' in content
     assert 'Tabel Lebih Rapat' in content
     assert 'Pembaruan Otomatis Pemindai' in content

@@ -30,12 +30,12 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
    - `/api/watchlist`
    - `/api/portfolio`
    - `/` should contain `RetailBijak`
-   - `/#dashboard`, `/#market`, `/#screener`, `/#portfolio` should return the SPA shell markers
+   - `/#dashboard`, `/#market`, `/#screener`, `/#portfolio`, `/#ai-picks` should return the SPA shell markers
    - `python scripts/post_deploy_smoke_check.py`
 7. Validate public resource chain:
    - `python scripts/check_public_resource_chain.py`
    - This must confirm the active `index.html -> main.js -> router.js -> views/*.js -> api.js` chain on the public domain with no token drift.
-   - Guard juga harus memeriksa marker copy high-signal untuk route publik prioritas seperti `dashboard`, `stock`, dan `news`.
+   - Guard juga harus memeriksa marker copy high-signal untuk route publik prioritas seperti `dashboard`, `ai-picks`, `stock`, dan `news`.
 
 ## Preferred one-command deploy
 - `bash scripts/sync_production.sh`

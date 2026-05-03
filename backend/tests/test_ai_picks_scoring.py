@@ -140,3 +140,29 @@ def test_reason_labels_are_never_empty_for_eligible_pick():
     assert isinstance(labels, list)
     assert labels
     assert all(isinstance(label, str) and label.strip() for label in labels)
+
+
+
+def test_reason_labels_shift_by_mode_for_same_factor_profile():
+    factors = {
+        'technical': 0.78,
+        'liquidity': 0.74,
+        'fundamental': 0.82,
+        'catalyst': 0.68,
+        'risk': 0.22,
+        'volume_ratio': 1.6,
+        'trend_ok': True,
+        'rr_ok': True,
+        'quality_ok': True,
+        'catalyst_ok': True,
+    }
+
+    swing_labels = reason_labels_from_factors(factors, mode='swing')
+    defensive_labels = reason_labels_from_factors(factors, mode='defensive')
+    catalyst_labels = reason_labels_from_factors(factors, mode='catalyst')
+
+    assert any('tren' in label or 'pullback' in label for label in swing_labels)
+    assert any('fundamental' in label or 'dividen' in label for label in defensive_labels)
+    assert any('katalis' in label or 'sentimen' in label for label in catalyst_labels)
+    assert swing_labels != defensive_labels
+    assert defensive_labels != catalyst_labels

@@ -1,4 +1,4 @@
-import { observeElements } from '../main.js?v=20260503aa';
+import { observeElements } from '../main.js?v=20260503ab';
 
 export function renderHelp(root) {
     root.innerHTML = `

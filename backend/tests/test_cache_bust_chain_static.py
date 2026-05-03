@@ -14,6 +14,7 @@ def test_cache_bust_chain_follows_current_tokens():
     router = ROUTER.read_text()
     main_token = re.search(r'js/main\.js\?v=([A-Za-z0-9_-]+)', index).group(1)
     router_token = re.search(r"\.\/router\.js\?v=([A-Za-z0-9_-]+)", main).group(1)
+    api_token = re.search(r"\.\/api\.js\?v=([A-Za-z0-9_-]+)", main).group(1)
 
     assert main_token == router_token
     assert f'js/main.js?v={main_token}' in index
@@ -31,7 +32,12 @@ def test_cache_bust_chain_follows_current_tokens():
         'settings.js',
         'help.js',
     ]:
+        view_text = (VIEWS_DIR / view_name).read_text()
         assert f"./views/{view_name}?v=" in router
+        if "../main.js?v=" in view_text:
+            assert f"../main.js?v={main_token}" in view_text
+        if "../api.js?v=" in view_text:
+            assert f"../api.js?v={api_token}" in view_text
 
 
 def test_view_files_do_not_contain_line_number_prefix_corruption():

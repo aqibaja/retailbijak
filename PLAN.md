@@ -210,6 +210,23 @@
 
 ---
 
+### 2026-05-03 22:13 CST
+- [done] Audit ulang queue/progress: plan backlog tetap di `.hermes/plans/`, implementasi LLM/OpenRouter aktif di `backend/services/openrouter_llm.py`, tetapi runtime sebelumnya belum punya surface konfigurasi user dan script deploy belum menyalin service file LLM baru.
+- [done] TDD RED: tambah guard baru di `backend/tests/test_user_route_runtime.py` dan `backend/tests/test_settings_view_static.py` untuk memaksa `/api/settings` mengekspos config OpenRouter tanpa membocorkan API key, plus memaksa view `#settings` punya field `API key OpenRouter`, `Model Analisis Saham`, dan `Model AI Picks`.
+- [done] RED verified: `pytest -q backend/tests/test_user_route_runtime.py backend/tests/test_settings_view_static.py` awalnya gagal `3 failed` sebelum implementasi surface konfigurasi.
+- [done] Implementasi backend `backend/routes/user.py`: tambah payload/settings fields OpenRouter (`openrouter_api_key`, `openrouter_site_url`, `openrouter_app_name`, `openrouter_stock_analysis_model`, `openrouter_ai_picks_model`), masking key, safe upsert, dan response settings yang tidak membocorkan secret mentah.
+- [done] Implementasi frontend `frontend/js/api.js` + `frontend/js/views/settings.js`: fallback fetchSettings diperluas, panel `OpenRouter AI` ditambahkan ke route `#settings`, default free models ditampilkan/editable, dan save flow mempertahankan masked key bila user tidak mengganti secret.
+- [done] Implementasi styling `frontend/style.css`: tambah `settings-openrouter-stack`, `settings-field-card`, `settings-field-label`, dan `settings-text-input` agar panel konfigurasi baru tetap konsisten dengan shell settings saat ini.
+- [done] Wiring runtime/data: default OpenRouter free-model settings diisi ke `/opt/swingaq/backend/swingaq.db` (`site_url`, `app_name`, `stock_analysis_model`, `ai_picks_model`), sementara API key tetap kosong/disabled sampai user isi sendiri.
+- [done] Fix deploy regression: `scripts/sync_production.sh` sekarang ikut menyalin `backend/services/openrouter_llm.py`; tanpa ini service produksi sempat crash `ModuleNotFoundError` saat restart.
+- [done] Fix verifier drift: `scripts/check_public_resource_chain.py` diperbarui agar marker route settings mengikuti copy terbaru (`OpenRouter AI`, `aliran data premium lanjutan`).
+- [done] GREEN verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_user_route_runtime.py backend/tests/test_settings_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_stock_analysis_llm_api.py backend/test_api_e2e.py backend/tests/test_cache_bust_chain_static.py backend/tests/test_public_resource_chain_static.py` → `39 passed`.
+- [done] Compile/runtime verified: `python -m py_compile backend/main.py backend/database.py backend/routes/user.py backend/services/openrouter_llm.py && python -m compileall -q frontend/js` lulus.
+- [done] Deploy production verified: `bash scripts/sync_production.sh` berhasil hijau penuh setelah fix deploy script; parity, restart service, smoke check, dan public resource chain semuanya `PASS`.
+- [done] Browser QA publik `#settings`: panel `OpenRouter AI` render live, status tetap `TERSAMBUNG KE LAYANAN LOKAL` saat key kosong, placeholder key tampil, dan kedua model default gratis (`nvidia/nemotron...:free`, `openai/gpt-oss-120b:free`) terbaca benar.
+
+---
+
 ### 2026-05-03 16:45 WIB
 - [done] Hard verification `#ai-picks` dijalankan ulang lewat fresh browser context independen untuk menghindari cache/session drift dari automation sebelumnya.
 - [done] Fresh QA terverifikasi hijau: `.ai-picks-page` render (`count=1`), H1 = `AI Picks`, dan hook mode `[data-ai-picks-mode]` terbaca `3`.

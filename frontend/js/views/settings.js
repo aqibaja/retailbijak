@@ -1,5 +1,12 @@
 import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260503b';
-import { observeElements } from '../main.js?v=20260503aa';
+import { observeElements } from '../main.js?v=20260503ab';
+
+const DEFAULT_STOCK_MODEL = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+const DEFAULT_PICKS_MODEL = 'openai/gpt-oss-120b:free';
+
+function normalizeMaskedKey(value) {
+  return (value || '').trim();
+}
 
 export async function renderSettings(root) {
     root.innerHTML = `
@@ -41,6 +48,39 @@ export async function renderSettings(root) {
                 </label>
             </div>
 
+            <div class="settings-section-head" style="margin-top:0.5rem;">
+              <h2>OpenRouter AI</h2>
+              <span>Aktifkan ringkasan AI untuk analisis saham dan AI Picks dengan model gratis default.</span>
+            </div>
+
+            <div class="settings-openrouter-stack">
+              <label class="settings-field-card" for="setting-openrouter-key">
+                <span class="settings-field-label">API key OpenRouter</span>
+                <input id="setting-openrouter-key" class="settings-text-input" type="password" placeholder="opsional · isi hanya bila ingin mengaktifkan AI" autocomplete="off" />
+                <small class="text-xs text-dim">Kosongkan bila ingin mempertahankan key yang sudah tersimpan.</small>
+              </label>
+
+              <label class="settings-field-card" for="setting-openrouter-site-url">
+                <span class="settings-field-label">Site URL</span>
+                <input id="setting-openrouter-site-url" class="settings-text-input" type="text" placeholder="https://retailbijak.rich27.my.id" autocomplete="off" />
+              </label>
+
+              <label class="settings-field-card" for="setting-openrouter-app-name">
+                <span class="settings-field-label">Nama Aplikasi</span>
+                <input id="setting-openrouter-app-name" class="settings-text-input" type="text" placeholder="RetailBijak" autocomplete="off" />
+              </label>
+
+              <label class="settings-field-card" for="setting-openrouter-stock-model">
+                <span class="settings-field-label">Model Analisis Saham</span>
+                <input id="setting-openrouter-stock-model" class="settings-text-input" type="text" placeholder="${DEFAULT_STOCK_MODEL}" autocomplete="off" />
+              </label>
+
+              <label class="settings-field-card" for="setting-openrouter-picks-model">
+                <span class="settings-field-label">Model AI Picks</span>
+                <input id="setting-openrouter-picks-model" class="settings-text-input" type="text" placeholder="${DEFAULT_PICKS_MODEL}" autocomplete="off" />
+              </label>
+            </div>
+
             <div class="settings-actions-row">
                 <span id="settings-status" class="text-xs text-dim mono strong" style="letter-spacing:0.05em;">TERSAMBUNG KE LAYANAN LOKAL</span>
                 <button id="save-settings" class="btn btn-primary settings-save-btn">Simpan Konfigurasi</button>
@@ -57,8 +97,11 @@ export async function renderSettings(root) {
                     Tema menyesuaikan otomatis. Penyesuaian manual tetap tersedia di pojok kanan atas.
                 </div>
                 <div class="settings-note-card">
-                    Hasil pemindai tertunda 15 menit kecuali ruang kerja terhubung ke aliran data lanjutan.
+                    Hasil pemindai tertunda 15 menit kecuali ruang kerja terhubung ke aliran data premium lanjutan.
                 </div>
+              <div class="settings-note-card">
+                  Model gratis default: <strong>${DEFAULT_STOCK_MODEL}</strong> untuk analisis saham dan <strong>${DEFAULT_PICKS_MODEL}</strong> untuk AI Picks.
+              </div>
             </div>
           </div>
         </div>
@@ -70,12 +113,29 @@ export async function renderSettings(root) {
     const settings = await fetchSettings();
     const compact = document.getElementById('setting-compact');
     const refresh = document.getElementById('setting-refresh');
+    const openrouterKey = document.getElementById('setting-openrouter-key');
+    const openrouterSiteUrl = document.getElementById('setting-openrouter-site-url');
+    const openrouterAppName = document.getElementById('setting-openrouter-app-name');
+    const openrouterStockModel = document.getElementById('setting-openrouter-stock-model');
+    const openrouterPicksModel = document.getElementById('setting-openrouter-picks-model');
+
     compact.checked = !!settings?.compact_table_rows;
     refresh.checked = !!settings?.auto_refresh_screener;
     compact.disabled = false;
     refresh.disabled = false;
+
+    openrouterKey.value = normalizeMaskedKey(settings?.openrouter_api_key_masked);
+    openrouterSiteUrl.value = settings?.openrouter_site_url || '';
+    openrouterAppName.value = settings?.openrouter_app_name || 'RetailBijak';
+    openrouterStockModel.value = settings?.openrouter_stock_analysis_model || DEFAULT_STOCK_MODEL;
+    openrouterPicksModel.value = settings?.openrouter_ai_picks_model || DEFAULT_PICKS_MODEL;
+
     const status = document.getElementById('settings-status');
-    if (status) status.textContent = settings ? 'TERSAMBUNG KE LAYANAN LOKAL' : 'MEMAKAI PENGATURAN CADANGAN';
+    if (status) {
+      status.textContent = settings
+        ? (settings?.openrouter_enabled ? 'OPENROUTER AKTIF' : 'TERSAMBUNG KE LAYANAN LOKAL')
+        : 'MEMAKAI PENGATURAN CADANGAN';
+    }
 
     if (!settings) showToast('Sedang memakai pengaturan cadangan', 'info');
     
@@ -87,6 +147,11 @@ export async function renderSettings(root) {
         const payload = {
             compact_table_rows: compact.checked,
             auto_refresh_screener: refresh.checked,
+            openrouter_api_key: openrouterKey.value.trim(),
+            openrouter_site_url: openrouterSiteUrl.value.trim(),
+            openrouter_app_name: openrouterAppName.value.trim() || 'RetailBijak',
+            openrouter_stock_analysis_model: openrouterStockModel.value.trim() || DEFAULT_STOCK_MODEL,
+            openrouter_ai_picks_model: openrouterPicksModel.value.trim() || DEFAULT_PICKS_MODEL,
         };
         const saved = await updateSettings(payload);
         
@@ -96,6 +161,11 @@ export async function renderSettings(root) {
         if (!saved || saved.ok !== true) {
             showToast('Konfigurasi gagal disinkronkan', 'error');
             return;
+        }
+
+        openrouterKey.value = normalizeMaskedKey(saved?.openrouter_api_key_masked || payload.openrouter_api_key);
+        if (status) {
+          status.textContent = saved?.openrouter_enabled ? 'OPENROUTER AKTIF' : 'TERSAMBUNG KE LAYANAN LOKAL';
         }
         showToast('Konfigurasi berhasil disinkronkan', 'success');
     });

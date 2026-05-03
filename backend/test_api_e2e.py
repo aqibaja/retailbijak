@@ -1,12 +1,19 @@
 from datetime import datetime
+from pathlib import Path
+import sys
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
-try:
-    from main import app, _sqlite_datetime_literal
-except ModuleNotFoundError:
-    from backend.main import app, _sqlite_datetime_literal
+BACKEND_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BACKEND_DIR.parent
+for candidate in (BACKEND_DIR, PROJECT_ROOT):
+    candidate_str = str(candidate)
+    if candidate_str not in sys.path:
+        sys.path.insert(0, candidate_str)
+
+from main import app
+from routes.shared_sqlite_helpers import _sqlite_datetime_literal
 
 
 def test_health():

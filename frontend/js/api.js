@@ -24,8 +24,9 @@ export async function fetchTechnical(ticker) {
     return apiFetch(`/stocks/${ticker}/technical`);
 }
 
-export async function fetchAnalysis(ticker) {
-    return apiFetch(`/stocks/${ticker}/analysis`);
+export async function fetchAnalysis(ticker, options = {}) {
+    const withLlm = options?.llm ? '&llm=1' : '';
+    return apiFetch(`/stocks/${ticker}/analysis${withLlm}`);
 }
 
 
@@ -69,7 +70,17 @@ export async function fetchScan(timeframe = '1d') {
 
 export async function fetchSettings() {
     const data = await apiFetch('/settings');
-    return data || { compact_table_rows: false, auto_refresh_screener: false };
+    return data || {
+        compact_table_rows: false,
+        auto_refresh_screener: false,
+        openrouter_enabled: false,
+        openrouter_has_api_key: false,
+        openrouter_api_key_masked: '',
+        openrouter_site_url: '',
+        openrouter_app_name: 'RetailBijak',
+        openrouter_stock_analysis_model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+        openrouter_ai_picks_model: 'openai/gpt-oss-120b:free',
+    };
 }
 
 export async function updateSettings(settings) {
@@ -100,10 +111,11 @@ export async function fetchPortfolio() {
     return apiFetch('/portfolio') || { count: 0, data: [] };
 }
 
-export async function fetchAiPicks(mode = 'swing', limit = 5) {
+export async function fetchAiPicks(mode = 'swing', limit = 5, options = {}) {
     const safeMode = encodeURIComponent(mode || 'swing');
     const safeLimit = Number(limit || 5);
-    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}`) || {
+    const withLlm = options?.llm ? '&llm=1' : '';
+    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}`) || {
         mode: mode || 'swing',
         updated_at: null,
         source: 'no_data',

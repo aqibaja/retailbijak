@@ -73,11 +73,37 @@ def test_ai_picks_endpoint_live_rows_include_explainable_metrics_and_compare_poi
     first = data['data'][0]
     assert EXPLAINABILITY_KEYS.issubset(first.keys())
     assert set(first['factor_scores'].keys()) == {'technical', 'liquidity', 'fundamental', 'catalyst', 'risk'}
-    assert set(first['comparison_points'].keys()) == {'technical_label', 'liquidity_label', 'fundamental_label', 'catalyst_label'}
+    assert set(first['comparison_points'].keys()) == {
+        'headline', 'technical_label', 'liquidity_label', 'fundamental_label', 'catalyst_label', 'risk_label', 'timing_label'
+    }
     assert isinstance(first['latest_close'], (int, float))
     assert isinstance(first['change_pct'], (int, float))
     assert isinstance(first['volume_ratio'], (int, float))
     assert first['bars_count'] >= 30
+
+
+
+def test_ai_picks_endpoint_returns_empty_ranked_rows_for_zero_or_negative_limit():
+    with TestClient(app) as client:
+        for limit in (0, -2):
+            res = client.get(f'/api/ai-picks?mode=swing&limit={limit}')
+            assert res.status_code == 200
+            data = res.json()
+            assert data['mode'] == 'swing'
+            assert data['data'] == []
+            assert data['summary']['featured_ticker'] is None
+
+
+
+def test_ai_picks_endpoint_caps_excessive_limit_to_small_safe_window():
+    with TestClient(app) as client:
+        res = client.get('/api/ai-picks?mode=swing&limit=1000')
+
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data['data']) <= 20
+    if data['data']:
+        assert data['summary']['featured_ticker'] == data['data'][0]['ticker']
 
 
 
@@ -91,6 +117,30 @@ def test_ai_picks_endpoint_honors_limit_on_ranked_rows():
     if data['source'] == 'derived' and data['data']:
         assert len(data['data']) == 2
         assert [row['rank'] for row in data['data']] == [1, 2]
+
+
+
+def test_ai_picks_endpoint_optionally_includes_llm_payload(monkeypatch):
+    from backend import ai_picks as ai_picks_module
+
+    def fake_llm_payload(*, mode, picks, market_context):
+        return {
+            'status': 'ok',
+            'model': 'openai/gpt-oss-120b:free',
+            'summary': f'{mode} picks siap dibaca',
+            'pick_notes': {'BBCA': 'leader defensif'},
+        }
+
+    monkeypatch.setattr(ai_picks_module, 'build_ai_picks_llm_payload', fake_llm_payload)
+
+    with TestClient(app) as client:
+        res = client.get('/api/ai-picks?mode=swing&limit=2&llm=1')
+
+    assert res.status_code == 200
+    data = res.json()
+    assert data['llm']['status'] == 'ok'
+    assert data['llm']['model'] == 'openai/gpt-oss-120b:free'
+    assert data['llm']['summary']
 
 
 

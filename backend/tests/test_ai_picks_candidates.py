@@ -46,6 +46,10 @@ def test_compose_pick_payload_returns_ranked_explainable_shape():
     assert 'invalidation' in payload
     assert 'target_zone' in payload
     assert payload['source'] == 'derived'
+    assert 'comparison_points' in payload
+    assert 'headline' in payload['comparison_points']
+    assert 'risk_label' in payload['comparison_points']
+    assert 'timing_label' in payload['comparison_points']
 
 
 

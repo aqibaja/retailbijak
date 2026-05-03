@@ -21,24 +21,10 @@ from sqlalchemy.orm import Session
 
 VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
 try:
-    from stocks import get_all_tickers, get_ticker_display
-except ModuleNotFoundError:
     from backend.stocks import get_all_tickers, get_ticker_display
-try:
-    from database import (
-        Base,
-        engine,
-        Signal,
-        Stock,
-        Fundamental,
-        OHLCVDaily,
-        BrokerSummary,
-        UserSetting,
-        WatchlistItem,
-        PortfolioPosition,
-        get_db,
-    )
 except ModuleNotFoundError:
+    from stocks import get_all_tickers, get_ticker_display
+try:
     from backend.database import (
         Base,
         engine,
@@ -52,34 +38,38 @@ except ModuleNotFoundError:
         PortfolioPosition,
         get_db,
     )
-try:
-    from scheduler import init_scheduler, scheduler
 except ModuleNotFoundError:
+    from database import (
+        Base,
+        engine,
+        Signal,
+        Stock,
+        Fundamental,
+        OHLCVDaily,
+        BrokerSummary,
+        UserSetting,
+        WatchlistItem,
+        PortfolioPosition,
+        get_db,
+    )
+try:
     from backend.scheduler import init_scheduler, scheduler
-try:
-    from ai_picks import build_ai_picks_payload
 except ModuleNotFoundError:
+    from scheduler import init_scheduler, scheduler
+try:
     from backend.ai_picks import build_ai_picks_payload
-try:
-    from services.idx_api_client import get_idx_client, parse_idx_number
 except ModuleNotFoundError:
+    from ai_picks import build_ai_picks_payload
+try:
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
-try:
-    from services.idx_response_factory import ok as _resp_ok
 except ModuleNotFoundError:
+    from services.idx_api_client import get_idx_client, parse_idx_number
+try:
     from backend.services.idx_response_factory import ok as _resp_ok
+except ModuleNotFoundError:
+    from services.idx_response_factory import ok as _resp_ok
 
 try:
-    from routes.user import router as user_router
-    from routes.system import router as system_router
-    from routes.reference import router as reference_router
-    from routes.stocks import router as stock_router, _display_ticker, _company_name, _stock_row_from_static
-    from routes.stock_detail import router as stock_detail_router
-    from routes.market import router as market_router
-    from routes.market_summary import router as market_summary_router
-    from routes.news import router as news_router
-    from routes.scanner_stream import router as scanner_stream_router
-except ModuleNotFoundError:
     from backend.routes.user import router as user_router
     from backend.routes.system import router as system_router
     from backend.routes.reference import router as reference_router
@@ -89,6 +79,16 @@ except ModuleNotFoundError:
     from backend.routes.market_summary import router as market_summary_router
     from backend.routes.news import router as news_router
     from backend.routes.scanner_stream import router as scanner_stream_router
+except ModuleNotFoundError:
+    from routes.user import router as user_router
+    from routes.system import router as system_router
+    from routes.reference import router as reference_router
+    from routes.stocks import router as stock_router, _display_ticker, _company_name, _stock_row_from_static
+    from routes.stock_detail import router as stock_detail_router
+    from routes.market import router as market_router
+    from routes.market_summary import router as market_summary_router
+    from routes.news import router as news_router
+    from routes.scanner_stream import router as scanner_stream_router
 
 
 @asynccontextmanager
@@ -132,8 +132,29 @@ async def root():
 
 
 @app.get("/api/ai-picks")
-def get_ai_picks(mode: str = "swing", limit: int = 5):
-    return build_ai_picks_payload(mode=mode, limit=limit)
+def get_ai_picks(mode: str = "swing", limit: int = 5, llm: bool = False, db: Session = Depends(get_db)):
+    safe_limit = max(0, min(int(limit or 0), 20))
+    payload = build_ai_picks_payload(mode=mode, limit=safe_limit)
+    if llm:
+        try:
+            from backend import ai_picks as ai_picks_module
+        except ModuleNotFoundError:
+            import ai_picks as ai_picks_module
+
+        try:
+            payload['llm'] = ai_picks_module.build_ai_picks_llm_payload(
+                mode=payload.get('mode') or mode,
+                picks=payload.get('data') or [],
+                market_context=payload.get('market_context') or {},
+                db=db,
+            )
+        except TypeError:
+            payload['llm'] = ai_picks_module.build_ai_picks_llm_payload(
+                mode=payload.get('mode') or mode,
+                picks=payload.get('data') or [],
+                market_context=payload.get('market_context') or {},
+            )
+    return payload
 
 
 class SettingsPayload(BaseModel):

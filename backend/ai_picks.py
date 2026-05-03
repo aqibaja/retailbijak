@@ -4,6 +4,11 @@ from typing import Any
 import sqlite3
 from pathlib import Path
 
+try:
+    from backend.services.openrouter_llm import build_ai_picks_llm_payload
+except ModuleNotFoundError:
+    from services.openrouter_llm import build_ai_picks_llm_payload
+
 VALID_AI_PICK_MODES = {"swing", "defensive", "catalyst"}
 MODE_WEIGHTS = {
     "swing": {
@@ -69,19 +74,55 @@ def label_confidence(score: float, factors: dict[str, Any]) -> int:
 def reason_labels_from_factors(factors: dict[str, Any], mode: str) -> list[str]:
     safe_mode = normalize_ai_pick_mode(mode)
     labels: list[str] = []
+    technical = _factor_value(factors, 'technical')
+    liquidity = _factor_value(factors, 'liquidity')
+    fundamental = _factor_value(factors, 'fundamental')
+    catalyst = _factor_value(factors, 'catalyst')
+    risk = _factor_value(factors, 'risk')
+    volume_ratio = float(factors.get('volume_ratio', 0) or 0)
 
-    if factors.get('trend_ok') or _factor_value(factors, 'technical') >= 0.65:
-        labels.append('tren relatif rapi')
-    if (factors.get('volume_ratio') or 0) >= 1.2:
-        labels.append('dukungan volume sehat')
-    if _factor_value(factors, 'liquidity') >= 0.60:
-        labels.append('likuiditas kuat')
-    if factors.get('quality_ok') or _factor_value(factors, 'fundamental') >= 0.70:
-        labels.append('kualitas fundamental solid')
-    if factors.get('catalyst_ok') or _factor_value(factors, 'catalyst') >= 0.65:
-        labels.append('katalis jangka pendek terlihat')
-    if factors.get('rr_ok') or _factor_value(factors, 'risk') <= 0.30:
-        labels.append('risk/reward masih masuk akal')
+    mode_priorities = {
+        'swing': [
+            ((factors.get('trend_ok') or technical >= 0.7), 'tren di atas rata-rata 20 hari'),
+            ((volume_ratio >= 1.2), 'volume dorong breakout tetap sehat'),
+            ((factors.get('rr_ok') or risk <= 0.3), 'pullback masih memberi risk/reward rapih'),
+            ((liquidity >= 0.6), 'likuiditas cukup tebal untuk swing trader'),
+            ((catalyst >= 0.65 or factors.get('catalyst_ok')), 'sentimen ikut menguatkan momentum dekat entry'),
+        ],
+        'defensive': [
+            ((factors.get('quality_ok') or fundamental >= 0.7), 'fundamental kuat menopang profil defensif'),
+            ((risk <= 0.28), 'drawdown relatif jinak untuk posisi bertahap'),
+            ((liquidity >= 0.55), 'likuiditas stabil untuk akumulasi tenang'),
+            ((volume_ratio >= 1.0), 'arus volume tetap disiplin tanpa euforia'),
+            ((factors.get('trend_ok') or technical >= 0.6), 'tren harga tetap rapi untuk entry defensif'),
+        ],
+        'catalyst': [
+            ((catalyst >= 0.65 or factors.get('catalyst_ok')), 'katalis dekat berpotensi memicu re-rating'),
+            ((volume_ratio >= 1.15), 'volume mulai mengonfirmasi respons pelaku pasar'),
+            ((factors.get('trend_ok') or technical >= 0.62), 'harga sudah mulai sinkron dengan sentimen'),
+            ((risk <= 0.35 or factors.get('rr_ok')), 'risk/reward masih logis jika katalis gagal lanjut'),
+            ((liquidity >= 0.55), 'likuiditas memadai bila skenario katalis aktif'),
+        ],
+    }
+
+    for ok, label in mode_priorities[safe_mode]:
+        if ok and label not in labels:
+            labels.append(label)
+        if len(labels) == 3:
+            return labels
+
+    shared_fallbacks = [
+        ((technical >= 0.65), 'struktur teknikal masih layak dipantau'),
+        ((liquidity >= 0.6), 'likuiditas harian mendukung eksekusi'),
+        ((fundamental >= 0.7), 'fundamental tetap memberi bantalan kualitas'),
+        ((catalyst >= 0.65), 'sentimen berita belum sepenuhnya dingin'),
+        ((risk <= 0.3), 'risiko relatif masih terkontrol'),
+    ]
+    for ok, label in shared_fallbacks:
+        if ok and label not in labels:
+            labels.append(label)
+        if len(labels) == 3:
+            return labels
 
     if not labels:
         fallback = {
@@ -275,13 +316,34 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str) -> dic
     volume_ratio = float(candidate['factors'].get('volume_ratio') or 0.0)
     risk_buffer = max(latest_close * 0.04, 1)
     reward_buffer = max(latest_close * 0.08, 1)
+    factor_scores = {
+        'technical': round(_factor_value(candidate['factors'], 'technical'), 3),
+        'liquidity': round(_factor_value(candidate['factors'], 'liquidity'), 3),
+        'fundamental': round(_factor_value(candidate['factors'], 'fundamental'), 3),
+        'catalyst': round(_factor_value(candidate['factors'], 'catalyst'), 3),
+        'risk': round(_factor_value(candidate['factors'], 'risk'), 3),
+    }
+    safe_mode = normalize_ai_pick_mode(mode)
+    comparison_points = {
+        'headline': {
+            'swing': 'momentum teknikal paling siap dieksekusi',
+            'defensive': 'profil kualitas paling tahan goyangan',
+            'catalyst': 'pemicu sentimen paling dekat ke harga',
+        }[safe_mode],
+        'technical_label': 'tren di atas SMA20' if candidate['factors'].get('trend_ok') else 'tren belum rapi',
+        'liquidity_label': 'volume di atas rata-rata' if volume_ratio >= 1.0 else 'volume belum meyakinkan',
+        'fundamental_label': 'ROE/debt profile sehat' if candidate['factors'].get('quality_ok') else 'fundamental netral',
+        'catalyst_label': 'ada mention katalis/news' if candidate['factors'].get('catalyst_ok') else 'katalis eksplisit tipis',
+        'risk_label': 'risiko relatif jinak' if factor_scores['risk'] <= 0.3 else 'invalidasi perlu disiplin ketat',
+        'timing_label': 'timing entry masih enak dicicil' if candidate['factors'].get('rr_ok') else 'lebih aman tunggu pullback rapih',
+    }
     return {
         'ticker': candidate['ticker'],
         'name': candidate['name'],
         'rank': rank,
         'score': scored['score'],
         'confidence': scored['confidence'],
-        'horizon': normalize_ai_pick_mode(mode),
+        'horizon': safe_mode,
         'fit_label': scored['fit_label'],
         'reason_codes': [label.lower().replace('/', '_').replace(' ', '_') for label in scored['reason_labels']],
         'reason_labels': scored['reason_labels'],
@@ -294,19 +356,8 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str) -> dic
         'change_pct': round(change_pct, 2),
         'volume_ratio': round(volume_ratio, 2),
         'bars_count': int(candidate['bars_count'] or 0),
-        'factor_scores': {
-            'technical': round(_factor_value(candidate['factors'], 'technical'), 3),
-            'liquidity': round(_factor_value(candidate['factors'], 'liquidity'), 3),
-            'fundamental': round(_factor_value(candidate['factors'], 'fundamental'), 3),
-            'catalyst': round(_factor_value(candidate['factors'], 'catalyst'), 3),
-            'risk': round(_factor_value(candidate['factors'], 'risk'), 3),
-        },
-        'comparison_points': {
-            'technical_label': 'tren di atas SMA20' if candidate['factors'].get('trend_ok') else 'tren belum rapi',
-            'liquidity_label': 'volume di atas rata-rata' if volume_ratio >= 1.0 else 'volume belum meyakinkan',
-            'fundamental_label': 'ROE/debt profile sehat' if candidate['factors'].get('quality_ok') else 'fundamental netral',
-            'catalyst_label': 'ada mention katalis/news' if candidate['factors'].get('catalyst_ok') else 'katalis eksplisit tipis',
-        },
+        'factor_scores': factor_scores,
+        'comparison_points': comparison_points,
         'catalyst': {
             'available': bool(candidate['factors'].get('catalyst_ok')),
             'label': 'pengumuman emiten tersedia' if candidate['factors'].get('catalyst_ok') else 'katalis eksplisit belum dominan',
