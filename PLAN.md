@@ -210,6 +210,21 @@
 
 ---
 
+### 2026-05-03 23:55 CST
+- [done] Root-cause investigation OpenRouter live 401 selesai: token di `~/.hermes/.env` dan DB memang ada (`sk-or-v1-...`, length 73), endpoint publik `GET /api/v1/models` tetap `200`, tetapi semua endpoint autentikasi/LLM (`/auth/key`, `/credits`, `/chat/completions`) mengembalikan `401 {"error":{"message":"User not found."}}`; jadi masalah bukan wiring request RetailBijak, melainkan API key OpenRouter yang invalid/tidak lagi terasosiasi ke user provider.
+- [done] TDD RED: tambah guard `backend/tests/test_user_route_runtime.py` dan `backend/tests/test_settings_view_static.py` untuk memaksa `/api/settings` mengekspos status runtime OpenRouter (`openrouter_runtime_state`, `openrouter_runtime_message`) dan view `#settings` menampilkan state peringatan `OpenRouter perlu dicek` saat key ditolak provider.
+- [done] RED verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_user_route_runtime.py backend/tests/test_settings_view_static.py` awalnya gagal karena route/settings belum punya status runtime OpenRouter.
+- [done] Implementasi backend: `backend/services/openrouter_llm.py` menambah `get_openrouter_runtime_status()` yang memvalidasi key ke `/api/v1/auth/key`, lalu `backend/routes/user.py` mengembalikan `openrouter_runtime_state` + `openrouter_runtime_message` di GET/PUT `/api/settings`.
+- [done] Implementasi frontend: `frontend/js/views/settings.js` kini membedakan status `OPENROUTER AKTIF`, `OpenRouter perlu dicek`, atau `TERSAMBUNG KE LAYANAN LOKAL`, plus tooltip status memuat pesan runtime provider agar invalid key langsung terlihat di UI.
+- [done] GREEN verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_openrouter_env_static.py backend/tests/test_user_route_runtime.py backend/tests/test_settings_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_stock_analysis_llm_api.py backend/tests/test_sync_production_static.py backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_scoring.py` → `41 passed`.
+- [done] Compile verified: `python3 -m py_compile backend/main.py backend/routes/user.py backend/services/openrouter_llm.py backend/ai_picks.py && python3 -m compileall -q frontend/js` lulus.
+- [done] Deploy production verified: `bash /home/rich27/retailbijak/scripts/sync_production.sh` kembali `PASS` penuh (parity, restart, smoke check, public resource chain).
+- [done] Live runtime verified sesudah deploy: `/api/settings` sekarang mengembalikan `openrouter_runtime_state="invalid"` dan `openrouter_runtime_message="API key OpenRouter ditolak provider: User not found."`; endpoint `/api/ai-picks?...&llm=1` dan `/api/stocks/BBCA/analysis?llm=1` tetap gagal `401`, konsisten dengan diagnosis credential invalid.
+- [done] Browser QA publik: `#settings` live kini menampilkan status `OpenRouter perlu dicek`; `#ai-picks` tetap menampilkan `AI Desk Brief tertunda`; `#stock/BBCA` tetap menampilkan fallback/status AI tertunda secara jujur.
+- [warn] Blocker tersisa bukan di kode RetailBijak: agar LLM benar-benar aktif, user harus mengganti `OPENROUTER_API_KEY` dengan key OpenRouter yang valid untuk account aktif. Setelah key baru tersedia, cukup simpan ulang di `#settings` atau update DB/env lalu re-run smoke check.
+
+---
+
 ### 2026-05-03 23:30 CST
 - [done] TDD RED deploy guard: tambah `backend/tests/test_sync_production_static.py` untuk memaksa `scripts/sync_production.sh` ikut menyalin `backend/ai_picks.py` ke runtime produksi.
 - [done] RED verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_sync_production_static.py` awalnya gagal `1 failed`, membuktikan deploy script belum menyalin modul backend AI Picks terbaru.

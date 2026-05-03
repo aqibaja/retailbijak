@@ -16,12 +16,14 @@ try:
         DEFAULT_AI_PICKS_MODEL,
         DEFAULT_STOCK_ANALYSIS_MODEL,
         get_openrouter_config,
+        get_openrouter_runtime_status,
     )
 except ModuleNotFoundError:
     from backend.services.openrouter_llm import (
         DEFAULT_AI_PICKS_MODEL,
         DEFAULT_STOCK_ANALYSIS_MODEL,
         get_openrouter_config,
+        get_openrouter_runtime_status,
     )
 
 router = APIRouter()
@@ -70,12 +72,15 @@ def get_settings(db: Session = Depends(get_db)):
     compact = db.query(UserSetting).filter(UserSetting.key == 'compact_table_rows').first()
     auto_refresh = db.query(UserSetting).filter(UserSetting.key == 'auto_refresh_screener').first()
     openrouter = get_openrouter_config(db)
+    openrouter_runtime = get_openrouter_runtime_status(openrouter)
     return {
         'compact_table_rows': compact.value == 'true' if compact else False,
         'auto_refresh_screener': auto_refresh.value == 'true' if auto_refresh else False,
         'openrouter_enabled': openrouter['enabled'],
         'openrouter_has_api_key': bool(openrouter['api_key']),
         'openrouter_api_key_masked': _mask_secret(openrouter['api_key']),
+        'openrouter_runtime_state': openrouter_runtime['state'],
+        'openrouter_runtime_message': openrouter_runtime['message'],
         'openrouter_site_url': openrouter['site_url'] or '',
         'openrouter_app_name': openrouter['app_name'] or 'RetailBijak',
         'openrouter_stock_analysis_model': openrouter['stock_analysis_model'] or DEFAULT_STOCK_ANALYSIS_MODEL,
@@ -103,6 +108,7 @@ def update_settings(payload: SettingsPayload, db: Session = Depends(get_db)):
 
     db.commit()
     config = get_openrouter_config(db)
+    runtime = get_openrouter_runtime_status(config)
     return {
         'ok': True,
         'compact_table_rows': payload.compact_table_rows,
@@ -110,6 +116,8 @@ def update_settings(payload: SettingsPayload, db: Session = Depends(get_db)):
         'openrouter_enabled': config['enabled'],
         'openrouter_has_api_key': bool(config['api_key']),
         'openrouter_api_key_masked': _mask_secret(config['api_key']),
+        'openrouter_runtime_state': runtime['state'],
+        'openrouter_runtime_message': runtime['message'],
         'openrouter_site_url': config['site_url'] or '',
         'openrouter_app_name': config['app_name'] or 'RetailBijak',
         'openrouter_stock_analysis_model': config['stock_analysis_model'] or DEFAULT_STOCK_ANALYSIS_MODEL,

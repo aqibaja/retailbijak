@@ -132,9 +132,15 @@ export async function renderSettings(root) {
 
     const status = document.getElementById('settings-status');
     if (status) {
+      const runtimeState = settings?.openrouter_runtime_state || 'disabled';
       status.textContent = settings
-        ? (settings?.openrouter_enabled ? 'OPENROUTER AKTIF' : 'TERSAMBUNG KE LAYANAN LOKAL')
+        ? (runtimeState === 'ok'
+          ? 'OPENROUTER AKTIF'
+          : runtimeState === 'invalid'
+            ? 'OpenRouter perlu dicek'
+            : 'TERSAMBUNG KE LAYANAN LOKAL')
         : 'MEMAKAI PENGATURAN CADANGAN';
+      status.title = settings?.openrouter_runtime_message || '';
     }
 
     if (!settings) showToast('Sedang memakai pengaturan cadangan', 'info');
@@ -165,7 +171,13 @@ export async function renderSettings(root) {
 
         openrouterKey.value = normalizeMaskedKey(saved?.openrouter_api_key_masked || payload.openrouter_api_key);
         if (status) {
-          status.textContent = saved?.openrouter_enabled ? 'OPENROUTER AKTIF' : 'TERSAMBUNG KE LAYANAN LOKAL';
+          const runtimeState = saved?.openrouter_runtime_state || 'disabled';
+          status.textContent = runtimeState === 'ok'
+            ? 'OPENROUTER AKTIF'
+            : runtimeState === 'invalid'
+              ? 'OpenRouter perlu dicek'
+              : 'TERSAMBUNG KE LAYANAN LOKAL';
+          status.title = saved?.openrouter_runtime_message || '';
         }
         showToast('Konfigurasi berhasil disinkronkan', 'success');
     });

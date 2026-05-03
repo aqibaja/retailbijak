@@ -42,6 +42,25 @@ def get_openrouter_config(db: Session | None = None) -> dict[str, Any]:
     }
 
 
+def get_openrouter_runtime_status(config: dict[str, Any]) -> dict[str, str]:
+    api_key = str(config.get('api_key') or '').strip()
+    if not api_key:
+        return {'state': 'disabled', 'message': 'OpenRouter belum dikonfigurasi.'}
+    try:
+        response = requests.get(f'{OPENROUTER_BASE_URL}/auth/key', headers={'Authorization': f'Bearer {api_key}'}, timeout=10)
+        if response.status_code == 200:
+            return {'state': 'ok', 'message': 'API key OpenRouter tervalidasi.'}
+        data = {}
+        try:
+            data = response.json()
+        except Exception:
+            data = {}
+        message = data.get('error', {}).get('message') or response.text or 'validasi key gagal'
+        return {'state': 'invalid', 'message': f'API key OpenRouter ditolak provider: {message}'}
+    except Exception as exc:
+        return {'state': 'unknown', 'message': f'Validasi OpenRouter gagal: {exc}'}
+
+
 def _chat_completion(*, api_key: str, model: str, system_prompt: str, user_prompt: str, site_url: str | None, app_name: str, timeout: int = 20) -> dict[str, Any]:
     headers = {
         'Authorization': f'Bearer {api_key}',

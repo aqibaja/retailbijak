@@ -58,3 +58,11 @@ def test_settings_view_styles_define_cards_and_mobile_stack():
     assert '.settings-toggle-card {' in content
     assert '.settings-note-rail {' in content
     assert '@media (max-width: 768px) {' in content
+
+
+def test_settings_view_contains_openrouter_runtime_state_copy():
+    content = FRONTEND_SETTINGS_VIEW.read_text()
+    assert 'OPENROUTER AKTIF' in content
+    assert 'OpenRouter perlu dicek' in content
+    assert 'settings?.openrouter_runtime_message' in content
+    assert 'openrouter_runtime_state' in content
