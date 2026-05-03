@@ -22,7 +22,7 @@ ROUTE_VIEW_MARKERS = {
 }
 ROUTE_COPY_MARKERS = {
     'dashboard': ['Dashboard Intelijen Pasar', 'Jalankan Pemindai', 'Penggerak Teratas', 'Berita Terbaru'],
-    'stock': ['Grafik Harga', 'Ringkasan Sesi', 'Tambah ke Daftar Pantau', 'Jalankan Pemindai', 'Katalis Terbaru', 'Tautan Katalis', 'Skor Swing', 'Zona Entry'],
+    'stock': ['Grafik Harga', 'Ringkasan Sesi', 'Tambah ke Daftar Pantau', 'Jalankan Pemindai', 'Katalis Terbaru', 'Tautan Katalis', 'Skor Swing', 'Zona Entry', 'Ringkasan teknikal belum tersedia lengkap.', 'Keyakinan', 'Panel Keputusan', 'TAHAN / PANTAU', 'Volatilitas', 'Level Kunci', 'Rasio Volume', 'Risiko'],
     'news': ['Berita Terbaru', 'Memuat feed intel pasar...', 'Gagal memuat berita: '],
     'screener': ['Pemindai Akumulasi Institusi', 'Jalankan Pemindaian SwingAQ', 'Sinyal Live', 'Urutkan berdasarkan CCI', 'Cari kode saham...', 'Sedang memindai'],
     'portfolio': ['Pusat Portofolio', 'Aset & Daftar Pantau', 'Tambah ke Daftar Pantau', 'Posisi Aktif', 'Harga Beli Rata-Rata'],

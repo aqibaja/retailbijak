@@ -314,11 +314,20 @@
 - [done] GREEN verified lokal: `pytest -q backend/tests/test_low_signal_copy_cleanup_static.py` → lulus; `python -m compileall -q frontend/js` → pass.
 - [done] Hardening checker publik: `scripts/check_public_resource_chain.py` diperluas agar route `stock` juga memverifikasi marker publik baru (`Katalis Terbaru`, `Tautan Katalis`, `Skor Swing`, `Zona Entry`).
 
+### 2026-05-03 14:20 WIB
+- [done] Audit batch lanjutan `frontend/js/views/stock_detail.js` untuk residual operator-copy yang masih bercampur (`Technical summary`, `Confidence`, `Trend/Volatility/Levels`, `Decision Panel`, `WATCH`, `Risk`).
+- [done] TDD RED: tambah `backend/tests/test_stock_detail_residual_copy_static.py` untuk mewajibkan marker Indonesia baru dan melarang string operator-copy Inggris yang masih tersisa.
+- [done] RED verified: `pytest -q backend/tests/test_stock_detail_residual_copy_static.py` gagal sebelum implementasi karena copy lama masih aktif.
+- [done] Implementasi cleanup `stock_detail.js`: ganti summary/signal copy ke `Ringkasan teknikal`, `Keyakinan`, `Tren`, `Volatilitas`, `Level Kunci`, `Rasio Volume`, `Panel Keputusan`, `TAHAN / PANTAU`, `PANTAU`, dan catatan `Risiko` yang lebih konsisten Indonesia.
+- [done] Rapikan microcopy action/notes: `Kendali risiko`, `Zona pullback`, `Zona reward`, `RSI jenuh beli`, serta pertahankan label operasional yang memang sengaja dibiarkan (`support`, `resistance`, `normal`) agar tidak memutus heuristik/semantik panel lain.
+- [done] GREEN verified lokal: `pytest -q backend/tests/test_stock_detail_residual_copy_static.py backend/tests/test_low_signal_copy_cleanup_static.py` → lulus; `python -m compileall -q frontend/js` dan `python -m py_compile scripts/check_public_resource_chain.py` → lulus.
+- [done] Runtime/public verification: sync `stock_detail.js`, checker publik, dan static test baru ke `/opt/swingaq/...`; `python scripts/check_frontend_runtime_parity.py` → `PASS`; `python scripts/check_public_resource_chain.py` → `PASS`; browser QA live `#stock/BBCA` menampilkan `Panel Keputusan`, `Kendali risiko`, `Zona pullback`, `Zona reward`, dan marker baru tanpa console issue.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** guard deploy publik kini mengawasi dua kelas regresi sekaligus: drift token/import chain dan copy high-signal pada route paling terlihat user (`dashboard`, `stock`, `news`).
+**Slice aktif sekarang:** guard deploy publik untuk route `stock` kini menjaga batch copy terlokalisasi level operator juga, bukan hanya marker high-signal batch awal.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch guard copy publik ini,
-2. bila perlu perluas marker high-signal ke `screener`/`portfolio`/`settings`,
-3. lanjutkan cleanup copy minor atau states yang masih mixed-language setelah guard deploy tetap hijau.
+1. commit + push batch cleanup operator-copy stock detail ini,
+2. audit residual mixed-language berikutnya di summary teknikal backend-driven (`Below SMA20`, `Oversold`, `fair`) bila ingin copy makin natural,
+3. pertahankan checker publik tetap hijau sebelum menyentuh route lain.

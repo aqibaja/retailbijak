@@ -131,13 +131,13 @@ function sentimentClass(label, value, metric = ''){
 function tile(label, value, status = '', cls = ''){ return `<div class="stat-tile ${cls || sentimentClass(status, value)}"><span>${label}</span><strong class="mono metric-value">${value}</strong>${status ? `<small>${status}</small>` : ''}</div>`; }
 function renderTechnicalPanel(t){
   const ind = t.indicators || {}; const isNoData = String(t.rating || '').toUpperCase().includes('NO DATA'); const score = isNoData ? null : Number(t.score ?? 0); const ratingCls = isNoData ? 'metric-neutral' : sentimentClass(t.rating, score);
-  document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NEUTRAL'}</span><div class="mt-2 text-sm text-muted">${t.summary || 'Technical summary belum tersedia lengkap.'}</div>`;
-  const signal = document.getElementById('signal-card'); signal.classList.add(ratingCls); signal.querySelector('strong').textContent = t.rating || 'NEUTRAL'; signal.querySelector('small').textContent = score == null ? 'Confidence —' : `Confidence ${nf(score,0)}/100`;
+  document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NETRAL'}</span><div class="mt-2 text-sm text-muted">${t.summary || 'Ringkasan teknikal belum tersedia lengkap.'}</div>`;
+  const signal = document.getElementById('signal-card'); signal.classList.add(ratingCls); signal.querySelector('strong').textContent = t.rating || 'NETRAL'; signal.querySelector('small').textContent = score == null ? 'Keyakinan —' : `Keyakinan ${nf(score,0)}/100`;
   const groups = [
     ['Momentum', [['RSI 14', nf(ind.rsi?.value,2), ind.rsi?.status, sentimentClass(ind.rsi?.status, ind.rsi?.value, 'rsi')], ['Stoch %K', nf(ind.stochastic?.k,2), ind.stochastic?.status], ['MACD', nf(ind.macd?.histogram,2), ind.macd?.status]]],
-    ['Trend', filterValidCards([['SMA 20', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'medium'], ['SMA 200', nf(ind.trend?.sma_200,2), 'long']])],
-    ['Volatility', filterValidCards([['ATR 14', nf(ind.atr?.value,2), ind.atr?.status], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good']])],
-    ['Levels', filterValidCards([['Volume Ratio', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support', isValidLevel(ind.support_resistance?.support_20d) ? money(ind.support_resistance.support_20d) : '—', 'support', 'metric-good'], ['Resistance', isValidLevel(ind.support_resistance?.resistance_20d) ? money(ind.support_resistance.resistance_20d) : '—', 'resistance', 'metric-warn']])],
+    ['Tren', filterValidCards([['SMA 20', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'Menengah'], ['SMA 200', nf(ind.trend?.sma_200,2), 'Panjang']])],
+    ['Volatilitas', filterValidCards([['ATR 14', nf(ind.atr?.value,2), ind.atr?.status], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good']])],
+    ['Level Kunci', filterValidCards([['Rasio Volume', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support', isValidLevel(ind.support_resistance?.support_20d) ? money(ind.support_resistance.support_20d) : '—', 'support', 'metric-good'], ['Resistance', isValidLevel(ind.support_resistance?.resistance_20d) ? money(ind.support_resistance.resistance_20d) : '—', 'resistance', 'metric-warn']])],
   ];
   document.getElementById('technical-panel').innerHTML = groups.map(([title, cards]) => renderMetricGroup(title, cards)).join('');
 }
@@ -154,18 +154,18 @@ function getLevels(candles, tech){
   return { entry, stop: Math.max(1, stop), target, support: isValidLevel(sr.support_20d) ? Number(sr.support_20d) : null, resistance: isValidLevel(sr.resistance_20d) ? Number(sr.resistance_20d) : null, atr };
 }
 function renderDecisionPanel(candles, tech){
-  const levels = getLevels(candles, tech); const rsi = tech?.indicators?.rsi?.value; const rating = tech?.rating || 'NEUTRAL';
+  const levels = getLevels(candles, tech); const rsi = tech?.indicators?.rsi?.value; const rating = tech?.rating || 'NETRAL';
   const risk = Math.max(levels.entry - levels.stop, 1), reward = Math.max(levels.target - levels.entry, 0); const rr = reward/risk;
-  const action = rating === 'BEARISH' ? 'HINDARI DULU' : (rsi >= 70 || rr < 1) ? 'TAHAN / WATCH' : rating === 'BULLISH' ? 'AKUMULASI BERTAHAP' : 'WATCH';
-  const caution = rr < 1 ? 'Risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.' : 'Setup boleh dipantau, tetap tunggu konfirmasi volume dan candle.';
-  document.getElementById('decision-panel').innerHTML = `<div class="decision-hero"><div class="text-xs text-dim uppercase strong">Decision Panel</div><div class="flex justify-between items-center mt-2"><strong class="text-main">${action}</strong><span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">R/R ${nf(rr,2)}x</span></div><div class="text-sm text-muted mt-2">${caution}</div><div class="text-xs text-dim mt-2">Area pantau ${money(levels.entry)} · invalid bawah ${money(levels.stop)} · target ${money(levels.target)}</div></div>`;
+  const action = rating === 'BEARISH' ? 'HINDARI DULU' : (rsi >= 70 || rr < 1) ? 'TAHAN / PANTAU' : rating === 'BULLISH' ? 'AKUMULASI BERTAHAP' : 'PANTAU';
+  const caution = rr < 1 ? 'Rasio risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.' : 'Setup boleh dipantau, tetap tunggu konfirmasi volume dan candle.';
+  document.getElementById('decision-panel').innerHTML = `<div class="decision-hero"><div class="text-xs text-dim uppercase strong">Panel Keputusan</div><div class="flex justify-between items-center mt-2"><strong class="text-main">${action}</strong><span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">R/R ${nf(rr,2)}x</span></div><div class="text-sm text-muted mt-2">${caution}</div><div class="text-xs text-dim mt-2">Area pantau ${money(levels.entry)} · invalid bawah ${money(levels.stop)} · target ${money(levels.target)}</div></div>`;
 }
 function renderLevelOverlay(candles, tech){
   const overlay=document.getElementById('level-overlay'); if(!overlay) return; overlay.innerHTML = '';
 }
 function renderLevelSuggestions(candles, tech){
   const el=document.getElementById('level-suggestions'); if(!el) return; const levels=getLevels(candles, tech);
-  const items=[['STOP', levels.stop, 'risk control', 'metric-bad'], ['ENTRY', levels.entry, 'pullback zone', 'metric-good'], ['TARGET', levels.target, 'reward zone', 'metric-warn']];
+  const items=[['STOP', levels.stop, 'Kendali risiko', 'metric-bad'], ['ENTRY', levels.entry, 'Zona pullback', 'metric-good'], ['TARGET', levels.target, 'Zona reward', 'metric-warn']];
   el.innerHTML = items.map(([label, price, note, cls]) => `<span class="sugg-chip ${cls}"><strong>${label}</strong> ${money(price)} <small>${note}</small></span>`).join('');
 }
 function renderFundamentalPanel(d, candles, tech){
@@ -217,7 +217,7 @@ function renderBelowChartFill(candles, tech){
     ['Rentang 7H', rangePct == null ? '—' : pf(rangePct), `${money(Math.min(...lows))} - ${money(Math.max(...highs))}`, rangePct >= 0 ? 'metric-good' : 'metric-bad'],
     ['Konteks Volume', volumeRatio ? `${nf(volumeRatio,2)}x rata-rata` : '—', volumeRatio >= 1.5 ? 'aktif' : 'normal', volumeRatio >= 1.5 ? 'metric-good' : 'metric-neutral'],
     ['Rencana Level', `${money(levels.stop)} / ${money(levels.target)}`, 'stop / target', 'metric-neutral'],
-    ['Pembacaan Cepat', rsi >= 70 ? 'Tunggu pullback' : (tech.rating || 'Pantau'), rsi >= 70 ? 'overbought' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
+    ['Pembacaan Cepat', rsi >= 70 ? 'Tunggu pullback' : (tech.rating || 'Pantau'), rsi >= 70 ? 'RSI jenuh beli' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
   ];
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
@@ -298,7 +298,7 @@ function renderInsightCards(candles, tech, data){
   const notes = [
     {t:'Momentum', v: pct >= 0 ? `Harga naik ${pf(pct)}; trend sedang kuat.` : `Harga turun ${pf(pct)}; tunggu konfirmasi.`, c: pct >= 0 ? 'metric-good' : 'metric-bad'},
     {t:'Volume', v: vol ? `Volume ${nf(vol,2)}x rata-rata 20 hari.` : 'Volume belum lengkap.', c: vol >= 1.5 ? 'metric-good' : 'metric-neutral'},
-    {t:'Risk', v: rsi >= 70 ? 'RSI overbought — jangan chasing, tunggu pullback.' : 'Risk relatif terkendali.', c: rsi >= 70 ? 'metric-warn' : 'metric-good'}
+    {t:'Risiko', v: rsi >= 70 ? 'RSI jenuh beli — jangan chasing, tunggu pullback.' : 'Risiko relatif terkendali.', c: rsi >= 70 ? 'metric-warn' : 'metric-good'}
   ];
   document.getElementById('insight-cards').innerHTML = notes.map(n => `<div class="stat-tile ${n.c}"><span>${n.t}</span><div class="text-sm text-muted mt-1">${n.v}</div></div>`).join('');
 }
