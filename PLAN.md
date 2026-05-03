@@ -283,11 +283,23 @@
 - [done] GREEN verified lokal: `pytest -q backend/tests/test_public_resource_chain_static.py backend/tests/test_deploy_scripts_static.py backend/tests/test_frontend_runtime_scripts_static.py` → `14 passed`; `python -m py_compile scripts/check_public_resource_chain.py scripts/check_frontend_runtime_parity.py scripts/post_deploy_smoke_check.py` → pass; `bash -n scripts/sync_production.sh` → pass.
 - [done] Verification repo/runtime + publik: `python scripts/check_frontend_runtime_parity.py` tetap `PASS`; `cp scripts/check_public_resource_chain.py /opt/swingaq/scripts/check_public_resource_chain.py` selesai; `python scripts/check_public_resource_chain.py` menelusuri domain publik dan mengonfirmasi chain aktif `main=20260503aa`, `api=20260503b`, serta semua routed views publik lolos tanpa drift token.
 
+### 2026-05-03 13:31 WIB
+- [done] Audit lanjutan pada helper `public resource chain`: guard publik baru sudah memeriksa token/import chain, tetapi belum menjaga marker copy high-signal di route paling terlihat user. Audit source menunjukkan campuran bahasa masih ada terutama di `dashboard.js`, `news.js`, dan `stock_detail.js` (mis. `Run Scanner`, `Top Movers`, `Failed to load news`, `Price Chart`, `Add Watchlist`).
+- [done] TDD RED: tambah `backend/tests/test_high_signal_route_copy_static.py` untuk memaksa marker Indonesia prioritas di tiga route publik high-signal (`dashboard`, `news`, `stock_detail`) dan melarang string Inggris yang masih paling terlihat user.
+- [done] RED verified: `pytest -q backend/tests/test_high_signal_route_copy_static.py` awalnya gagal `3 failed`, membuktikan ketiga route tersebut memang masih menyisakan copy Inggris pada shell/CTA/error states.
+- [done] Implementasi minimum `frontend/js/views/dashboard.js`: lokalisasi hero dan CTA (`Dashboard Intelijen Pasar`, `Jalankan Pemindai`, `Ikhtisar Pasar`), freshness copy menjadi `Sinkronisasi terakhir`, panel `Penggerak Teratas`, CTA `Lihat Semua`, `Saran Cepat`, `Berita Terbaru`, dan `Buka detail`.
+- [done] Implementasi minimum `frontend/js/views/news.js`: lokalisasi loading/error/count high-signal menjadi `Memuat feed intel pasar...`, `ITEM INTEL`, dan `Gagal memuat berita: ...`.
+- [done] Implementasi minimum `frontend/js/views/stock_detail.js`: lokalisasi shell utama `Grafik Harga`, `Ringkasan Sesi`, `Ringkasan Teknikal`, `Statistik Kunci`, `Catatan Aksi`, `Tambah ke Daftar Pantau`, `Atur Peringatan`, `Jalankan Pemindai`, plus toast/placeholder high-signal Indonesia.
+- [done] Perluasan helper publik: `scripts/check_public_resource_chain.py` sekarang tidak hanya memverifikasi token/import chain, tetapi juga marker copy high-signal untuk route prioritas `dashboard`, `stock`, dan `news`; static guards terkait (`backend/tests/test_public_resource_chain_static.py`, `backend/tests/test_frontend_runtime_scripts_static.py`) ikut diperbarui.
+- [done] Hardening runbook: `DEPLOY.md` kini mendokumentasikan bahwa verifikasi `public resource chain` juga harus mengecek marker copy high-signal pada route prioritas agar regresi bahasa terlihat langsung di domain publik.
+- [done] GREEN verified lokal + publik: `pytest -q backend/tests/test_high_signal_route_copy_static.py backend/tests/test_public_resource_chain_static.py backend/tests/test_frontend_runtime_scripts_static.py backend/tests/test_deploy_scripts_static.py` → `17 passed`; `python -m py_compile scripts/check_public_resource_chain.py` → pass; `python -m compileall -q frontend/js` → pass.
+- [done] Runtime/public verification: sync `dashboard.js`, `news.js`, `stock_detail.js`, dan `check_public_resource_chain.py` ke `/opt/swingaq/...`; `python scripts/check_frontend_runtime_parity.py` tetap `PASS`; `python scripts/check_public_resource_chain.py` kembali `PASS` sambil memverifikasi marker copy high-signal publik bersama token chain aktif.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** deploy verification kini punya tiga lapis: parity hash repo/runtime, shell/API smoke setelah restart, dan chain publik aktif yang menelusuri token nyata di domain produksi per-route.
+**Slice aktif sekarang:** guard deploy publik kini mengawasi dua kelas regresi sekaligus: drift token/import chain dan copy high-signal pada route paling terlihat user (`dashboard`, `stock`, `news`).
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch helper `public resource chain` ini,
-2. bila perlu perluas helper publik untuk juga memeriksa marker copy kritikal/high-signal per-route,
-3. lanjut ke cleanup copy minor/high-signal route berikutnya setelah deploy guards tetap hijau.
+1. commit + push batch guard copy publik ini,
+2. bila perlu perluas marker high-signal ke `screener`/`portfolio`/`settings`,
+3. lanjutkan cleanup copy minor atau states yang masih mixed-language setelah guard deploy tetap hijau.

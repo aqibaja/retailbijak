@@ -35,6 +35,7 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
 7. Validate public resource chain:
    - `python scripts/check_public_resource_chain.py`
    - This must confirm the active `index.html -> main.js -> router.js -> views/*.js -> api.js` chain on the public domain with no token drift.
+   - Guard juga harus memeriksa marker copy high-signal untuk route publik prioritas seperti `dashboard`, `stock`, dan `news`.
 
 ## Preferred one-command deploy
 - `bash scripts/sync_production.sh`
@@ -42,6 +43,7 @@ This project is deployed from `/opt/swingaq` and served via nginx -> uvicorn on 
 - Parity sync wajib mencakup `frontend/js/i18n.js` selain core assets dan seluruh `frontend/js/views/*.js`.
 - Setelah restart, script juga menjalankan **post-deploy smoke check** via `python scripts/post_deploy_smoke_check.py`.
 - Setelah smoke check lulus, jalankan **public resource chain** verification via `python scripts/check_public_resource_chain.py` untuk memastikan token aktif di domain publik tetap sinkron.
+- Verifikasi public resource chain juga harus mengecek marker copy high-signal pada route prioritas agar regresi bahasa/copy terlihat langsung di domain publik.
 
 ## Test before shipping
 - `cd backend && pytest -q test_api_e2e.py`

@@ -16,7 +16,7 @@ export async function renderNews(root) {
         </div>
         
         <div id="news-list" class="news-grid news-grid-pro">
-            <div id="news-status" class="news-status-shell">Memuat feed intelligence...</div>
+            <div id="news-status" class="news-status-shell">Memuat feed intel pasar...</div>
         </div>
       </section>`;
 
@@ -30,7 +30,7 @@ export async function renderNews(root) {
             { title:'Perbankan, energi, dan teknologi masuk radar rotasi sektor', source:'RetailBijak', summary:'Gunakan scanner untuk validasi momentum dan risiko.', link:'#screener', published_at:new Date().toISOString() }
         ];
         
-        document.getElementById('news-count').textContent = `${items.length} INTEL ITEMS`;
+        document.getElementById('news-count').textContent = `${items.length} ITEM INTEL`;
         status.style.display = 'none';
 
         list.innerHTML = items.map((n, index) => {
@@ -69,6 +69,6 @@ export async function renderNews(root) {
         }, 50);
         
     } catch (err) {
-        document.getElementById('news-status').textContent = 'Failed to load news: ' + err.message;
+        document.getElementById('news-status').textContent = 'Gagal memuat berita: ' + err.message;
     }
 }

@@ -16,6 +16,9 @@ def test_public_resource_chain_script_exists_and_checks_active_modules():
         "js/views/portfolio.js",
         "main.js?v=",
         "api.js?v=",
+        "Dashboard Intelijen Pasar",
+        "Grafik Harga",
+        "Berita Terbaru",
     ]
     for marker in expected_markers:
         assert marker in PUBLIC_CHAIN_SCRIPT

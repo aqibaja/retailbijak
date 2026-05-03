@@ -14,7 +14,7 @@ export async function renderStockDetail(root, ticker) {
           <a href="#dashboard" class="btn btn-icon"><i data-lucide="arrow-left"></i></a>
           <div>
             <div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EQUITY</span><span class="badge badge-up" id="live-badge">DB</span></div>
-            <div class="text-sm text-muted" id="stock-name">Loading issuer data...</div>
+            <div class="text-sm text-muted" id="stock-name">Memuat data emiten...</div>
           </div>
         </div>
         <div class="text-right"><div class="mono text-3xl strong text-main" id="stock-price">—</div><div class="mono text-base mt-1" id="stock-change">—</div></div>
@@ -22,7 +22,7 @@ export async function renderStockDetail(root, ticker) {
       <div class="stock-layout">
         <div class="panel stock-chart-card">
           <div class="flex justify-between items-center mb-3">
-            <div><h3 class="panel-title">Price Chart</h3><p class="text-xs text-dim" id="chart-subtitle">OHLCV dari DB lokal IDX</p></div>
+            <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">OHLCV dari DB lokal IDX</p></div>
             <div class="dashboard-chip-row"><button class="btn btn-primary btn-mini stock-range" data-limit="7">7D</button><button class="btn btn-mini stock-range" data-limit="30">30D</button><button class="btn btn-mini stock-range" data-limit="120">ALL</button></div>
           </div>
           <div class="chart-top-spacing"></div>
@@ -38,22 +38,22 @@ export async function renderStockDetail(root, ticker) {
           <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">AI Assistant</div><div class="text-sm text-main strong mt-1">Ask AI about this stock</div><div class="text-xs text-muted mt-1">Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.</div></div><span class="signal-pill pill-good">AI Preview</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Ask Risk</span><strong>Kenapa watch?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Ask Entry</span><strong>Area masuk?</strong><small>pullback plan</small></div><div class="stat-tile metric-neutral"><span>Ask News</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Ask Explain</span><strong>Alasan sinyal</strong><small>AI summary</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risk, entry, news, atau alasan sinyal...</div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
-          <div class="panel"><h3 class="panel-title mb-3">Session Snapshot</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
-          <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Technical Summary</h3><div id="technical-summary" class="intel-item">Loading technical...</div></div><div id="signal-card" class="signal-card"><span>Signal</span><strong>—</strong><small>Confidence —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Key Statistics</h3><div id="fundamental-panel" class="stats-grid right-uniform-grid compact-grid-3"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Analysis Snapshot</h3><div id="analysis-panel" class="insight-grid right-uniform-grid compact-grid-3"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Action Notes</h3><div id="insight-cards" class="compact-notes flex-col gap-2"></div></div>
-          <div class="panel accent-top"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Add Watchlist</button><button id="btn-set-alert" class="btn" style="height:36px;">Set Alert</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Run Scanner</a></div></div>
+          <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
+          <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item">Memuat ringkasan teknikal...</div></div><div id="signal-card" class="signal-card"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
+          <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid right-uniform-grid compact-grid-3"></div></div>
+          <div class="panel"><h3 class="panel-title mb-3">Snapshot Analisis</h3><div id="analysis-panel" class="insight-grid right-uniform-grid compact-grid-3"></div></div>
+          <div class="panel"><h3 class="panel-title mb-3">Catatan Aksi</h3><div id="insight-cards" class="compact-notes flex-col gap-2"></div></div>
+          <div class="panel accent-top"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
         </div>
       </div>
     </section>`;
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
   document.getElementById('btn-add-watchlist').addEventListener('click', async () => {
-    const res = await saveWatchlistItem({ ticker: symbol, notes: 'Added from detail page' });
-    showToast(res?.ok ? `${symbol} added to Watchlist` : `Failed to add ${symbol}`, res?.ok ? 'success' : 'error');
+    const res = await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
+    showToast(res?.ok ? `${symbol} ditambahkan ke Daftar Pantau` : `Gagal menambahkan ${symbol}`, res?.ok ? 'success' : 'error');
   });
-  document.getElementById('btn-set-alert').addEventListener('click', () => showToast(`Alert placeholder for ${symbol}: use entry/stop/target levels`, 'info'));
+  document.getElementById('btn-set-alert').addEventListener('click', () => showToast(`Placeholder peringatan untuk ${symbol}: gunakan level entry/stop/target`, 'info'));
 
   const [detail, fund, tech, chart, analysis, news, announcements] = await Promise.all([
     fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol).catch(()=>null),

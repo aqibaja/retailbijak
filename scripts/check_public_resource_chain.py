@@ -20,6 +20,11 @@ ROUTE_VIEW_MARKERS = {
     'settings': ('js/views/settings.js', 'renderSettings'),
     'help': ('js/views/help.js', 'renderHelp'),
 }
+ROUTE_COPY_MARKERS = {
+    'dashboard': ['Dashboard Intelijen Pasar', 'Jalankan Pemindai', 'Penggerak Teratas', 'Berita Terbaru'],
+    'stock': ['Grafik Harga', 'Ringkasan Sesi', 'Tambah ke Daftar Pantau', 'Jalankan Pemindai'],
+    'news': ['Berita Terbaru', 'Memuat feed intel pasar...', 'Gagal memuat berita: '],
+}
 
 
 def fetch_text(url: str) -> str:
@@ -79,6 +84,8 @@ def main() -> int:
                 assert_contains(view_text, f'../api.js?v={api_token}', asset_path)
             if "../main.js?v=" in view_text:
                 assert_contains(view_text, f'../main.js?v={main_token}', asset_path)
+            for copy_marker in ROUTE_COPY_MARKERS.get(route_name, []):
+                assert_contains(view_text, copy_marker, asset_path)
             print(f'OK {route_name} {asset_path}?v={view_token}')
     except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
         failures.append(str(exc))

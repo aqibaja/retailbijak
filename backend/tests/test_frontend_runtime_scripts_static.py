@@ -28,7 +28,7 @@ def test_smoke_script_checks_spa_route_markers():
         assert marker in SMOKE_SCRIPT
 
 
-def test_public_chain_script_checks_core_and_route_modules():
+def test_public_chain_script_checks_core_route_modules_and_copy_markers():
     expected_markers = [
         'index.html',
         'js/main.js',
@@ -40,6 +40,9 @@ def test_public_chain_script_checks_core_and_route_modules():
         'api.js?v=',
         'renderDashboard',
         'renderPortfolio',
+        'Dashboard Intelijen Pasar',
+        'Grafik Harga',
+        'Memuat feed intel pasar...',
     ]
     for marker in expected_markers:
         assert marker in PUBLIC_CHAIN_SCRIPT
