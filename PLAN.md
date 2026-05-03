@@ -210,19 +210,19 @@
 
 ---
 
-### 2026-05-03 04:32 WIB
-- [done] TDD RED: tambah `backend/tests/test_router_markers_static.py` untuk mewajibkan router menulis marker DOM `data-route-path` dan `data-active-view` pada `#app-root`.
-- [done] Implementasi minimal di `frontend/js/router.js`: set `root.dataset.routePath = cleanPath` dan `root.dataset.activeView = view || 'dashboard'` sebelum dispatch view.
-- [done] GREEN verified: `pytest -q tests/test_router_markers_static.py tests/test_router_static.py tests/test_settings_view_static.py tests/test_portfolio_view_static.py` → 6 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
-- [done] Browser QA pre-deploy: konten `#portfolio` dan `#news` sudah tampil benar, tetapi marker dataset masih `null` di runtime lama sehingga perlu sync/deploy untuk evidence automation yang konsisten.
-- [done] Commit/push/deploy marker instrumentation selesai; runtime sync dan restart service sudah diverifikasi.
-- [done] Browser QA post-deploy: route automation sekarang bisa dibuktikan via DOM marker + shell page (`#portfolio`/`#news` tidak lagi ambigu dengan dashboard).
+### 2026-05-03 04:44 WIB
+- [done] Audit cross-page minor inconsistency: `settings.js` masih menyisakan legacy DOM injection `document.createElement('div')` + selector `.col-span-8 .flex.justify-between.items-center.pt-2` dari layout lama, berisiko gagal diam-diam setelah redesign shell.
+- [done] TDD RED: tambah `backend/tests/test_settings_view_cleanup_static.py` untuk melarang legacy status injection dan selector lama.
+- [done] Implementasi minimal di `frontend/js/views/settings.js`: pakai node `#settings-status` yang sudah ada di markup baru, lalu update text menjadi `CONNECTED TO LOCAL BACKEND` atau `USING FALLBACK SETTINGS` tanpa membuat elemen baru.
+- [done] GREEN verified: `pytest -q tests/test_settings_view_cleanup_static.py tests/test_settings_view_static.py tests/test_router_markers_static.py tests/test_router_static.py` → 5 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
+- [done] Browser QA live `#settings?cb=20260503o`: `settingsStatusCount=1`, `settingsStatusText=CONNECTED TO LOCAL BACKEND`, `hasLegacySelector=false`, console tetap kosong.
+- [done] Commit/push/deploy cleanup settings shell selesai; runtime sync dan restart service diverifikasi sehat.
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Router verification instrumentation selesai dan browser QA lintas route sudah lebih deterministik.
+**Slice aktif sekarang:** Router verification dan settings shell cleanup sudah stabil; cross-page shell makin konsisten dan bebas sisa selector layout lama.
 
 **Target patch minimum untuk slice berikutnya:**
-1. tambah marker/guard serupa bila ada shell global yang masih ambigu,
-2. lanjut polish minor cross-page yang belum seragam,
+1. audit route/view lain untuk leftover selector atau DOM injection lama,
+2. tambah guard statik kecil bila ketemu,
 3. rerun verify + push + deploy.

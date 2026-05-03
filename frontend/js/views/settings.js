@@ -74,12 +74,8 @@ export async function renderSettings(root) {
     refresh.checked = !!settings?.auto_refresh_screener;
     compact.disabled = false;
     refresh.disabled = false;
-    const status = document.createElement('div');
-    status.id = 'settings-status';
-    status.className = 'text-xs text-dim mono strong';
-    status.style.cssText = 'letter-spacing:0.05em;';
-    status.textContent = 'CONNECTED TO LOCAL BACKEND';
-    root.querySelector('.col-span-8 .flex.justify-between.items-center.pt-2').prepend(status);
+    const status = document.getElementById('settings-status');
+    if (status) status.textContent = settings ? 'CONNECTED TO LOCAL BACKEND' : 'USING FALLBACK SETTINGS';
 
     if (!settings) showToast('Using fallback settings state', 'info');
     
