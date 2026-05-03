@@ -274,7 +274,10 @@
 - [done] Audit follow-up pasca-cleanup: `git status --short` bersih, HEAD berada di `6aa764f`, tidak ada `TODO/FIXME/XXX/HACK` tersisa di tree proyek, dan tidak ada lagi file `.hermes/plans/*` yang tracked.
 - [done] Regression verification penuh dijalankan ulang untuk memastikan hygiene cleanup tidak menimbulkan regresi produk: `pytest -q backend/test_api_e2e.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_scheduler_static.py backend/tests/test_database_config.py` → `52 passed`; compile check backend/frontend juga lulus.
 - [done] Deploy/smoke follow-up juga dijalankan ulang: `bash scripts/sync_production.sh` kembali hijau penuh, dan smoke publik mengonfirmasi `GET /api/ai-picks?mode=swing&limit=3` tetap sehat dengan `source=db`, `trading_date=2026-05-04`, serta `freshness=Briefing baru`.
-- [done] Scope batch lanjutan ini tuntas: cleanup `.gitignore`, removal tracked-local-artifacts, verifikasi repo state, regression retest, deploy recheck, dokumentasi `PLAN.md`, commit, dan push semuanya selesai.
+- [done] Verification sweep pasca-push didokumentasikan lagi sebagai commit `fc74fa1 docs: record post-cleanup verification sweep`, sehingga log repo dan `PLAN.md` sinkron penuh.
+- [done] Browser QA live terbaru untuk `#ai-picks` dijalankan ulang setelah cleanup hygiene repo guna memastikan tidak ada efek samping pada SPA publik. Hasilnya kini jauh lebih sehat dibanding sesi blank sebelumnya: route `#ai-picks` termuat, `h1` = `AI Picks Hari Ini`, `.ai-picks-page` ada, `#app-root` terisi (`innerHTML.length=3143`), dan shell tombol mode/refresh tampil normal.
+- [done] Evidence browser juga menunjukkan nuance penting: elemen page AI Picks sudah hidup meski `document.body.dataset.activeView/routePath` masih `null` pada snapshot automation ini. Karena render aktual sudah sukses dan tidak ada gejala blank main-content pada pass ini, saya mencatatnya sebagai observasi automation, bukan defect aplikasi baru.
+- [next] Persist dokumentasi QA browser terbaru ke git (commit + push) agar `PLAN.md` tetap sejajar dengan verifikasi lapangan terakhir.
 
 ---
 
