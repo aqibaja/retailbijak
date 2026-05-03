@@ -105,7 +105,7 @@ export async function renderStockDetail(root, ticker) {
   document.getElementById('btn-set-alert').addEventListener('click', () => showToast(`Placeholder peringatan untuk ${symbol}: gunakan level entry/stop/target`, 'info'));
 
   const [detail, fund, tech, chart, analysis, news, announcements] = await Promise.all([
-    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol).catch(()=>null),
+    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol, { llm: true }).catch(()=>null),
     fetchNews(6).catch(()=>null), apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
   ]);
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
@@ -118,6 +118,7 @@ export async function renderStockDetail(root, ticker) {
   }));
   const technical = tech?.technical || {};
   const analysisData = analysis?.data || analysis?.analysis || {};
+  const analysisPayload = { ...(analysisData || {}), llm: analysis?.llm || analysisData?.llm || null };
   renderTechnicalPanel(technical);
   renderSnapshotPanel(fund?.data || detail?.data || {}, candles, technical);
   renderFundamentalPanel(fund?.data || detail?.data || {}, candles, technical);
@@ -125,9 +126,9 @@ export async function renderStockDetail(root, ticker) {
   renderDecisionPanel(candles, technical);
   renderBelowChartFill(candles, technical);
   renderCatalystStrip(symbol, news, announcements);
-  renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisData);
+  renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
-  renderInsightCards(candles, technical, analysisData);
+  renderInsightCards(candles, technical, analysisPayload);
   renderLevelSuggestions(candles, technical);
   renderLevelOverlay(candles, technical);
 

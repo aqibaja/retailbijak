@@ -1,6 +1,39 @@
 from backend.ai_picks import label_confidence, reason_labels_from_factors, score_pick
 
 
+def test_score_pick_tilts_toward_swing_when_market_is_bullish():
+    factors = {
+        'technical': 0.78,
+        'liquidity': 0.74,
+        'fundamental': 0.58,
+        'catalyst': 0.44,
+        'risk': 0.24,
+        'volume_ratio': 1.4,
+        'trend_ok': True,
+        'rr_ok': True,
+    }
+    bullish = score_pick(factors, mode='swing', market_tone='bullish')
+    defensive = score_pick(factors, mode='swing', market_tone='defensive')
+
+    assert bullish['score'] > defensive['score']
+
+
+def test_score_pick_tilts_toward_defensive_when_market_is_defensive():
+    factors = {
+        'technical': 0.54,
+        'liquidity': 0.65,
+        'fundamental': 0.88,
+        'catalyst': 0.25,
+        'risk': 0.16,
+        'quality_ok': True,
+        'rr_ok': True,
+    }
+    defensive = score_pick(factors, mode='defensive', market_tone='defensive')
+    bullish = score_pick(factors, mode='defensive', market_tone='bullish')
+
+    assert defensive['score'] > bullish['score']
+
+
 def test_score_pick_prefers_stronger_technical_and_liquidity_for_swing():
     stronger = score_pick(
         {

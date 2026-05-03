@@ -3,6 +3,7 @@ import { observeElements } from '../main.js?v=20260503ab';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
+const AI_PICKS_PINNED_KEY = 'retailbijak.ai_picks.pinned';
 const nf = (n, d = 0) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pct = (n) => `${Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
 
@@ -17,6 +18,23 @@ function safeLocalStorageGet(key, fallback = null) {
 function safeLocalStorageSet(key, value) {
   try {
     localStorage.setItem(key, value);
+  } catch {
+    // ignore storage issues in private/incognito or restricted contexts
+  }
+}
+
+function safeLocalStorageGetJson(key, fallback = []) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeLocalStorageSetJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // ignore storage issues in private/incognito or restricted contexts
   }
@@ -75,6 +93,35 @@ function confidenceNarrative(value) {
   if (score >= 75) return 'konfirmasi teknikal cukup kuat untuk akumulasi bertahap';
   if (score >= 55) return 'cukup layak dipantau, tetapi belum konfirmasi kuat';
   return 'masih butuh validasi tambahan sebelum masuk radar utama';
+}
+
+function getPinnedTickers() {
+  const rows = safeLocalStorageGetJson(AI_PICKS_PINNED_KEY, []);
+  return Array.isArray(rows) ? rows.filter(Boolean) : [];
+}
+
+function isPinnedTicker(ticker) {
+  return getPinnedTickers().includes(String(ticker || '').toUpperCase());
+}
+
+function togglePinnedTicker(ticker) {
+  const safeTicker = String(ticker || '').toUpperCase();
+  if (!safeTicker) return false;
+  const next = getPinnedTickers().filter(Boolean);
+  const idx = next.indexOf(safeTicker);
+  if (idx >= 0) {
+    next.splice(idx, 1);
+    safeLocalStorageSetJson(AI_PICKS_PINNED_KEY, next);
+    return false;
+  }
+  next.unshift(safeTicker);
+  safeLocalStorageSetJson(AI_PICKS_PINNED_KEY, next.slice(0, 8));
+  return true;
+}
+
+function renderPinButton(ticker) {
+  const active = isPinnedTicker(ticker);
+  return `<button class="btn ${active ? 'btn-primary ai-picks-pin-active' : ''}" data-ai-picks-pin="${ticker}" title="Pin Prioritas">${active ? 'Pin aktif' : 'Pin Prioritas'}</button>`;
 }
 
 function renderCompareTray(items = []) {
@@ -169,6 +216,7 @@ function renderRankCard(item, mode) {
       <div class="ai-picks-rank-actions">
         <button class="btn" data-ai-picks-open-detail="${item.ticker}">Buka Detail</button>
         <button class="btn" data-ai-picks-compare="${item.ticker}">Bandingkan</button>
+        ${renderPinButton(item.ticker)}
         <button class="btn btn-primary" data-ai-picks-save="${item.ticker}" data-ai-picks-mode="${mode}">Tambah ke Daftar Pantau</button>
       </div>
     </article>`;
@@ -250,6 +298,17 @@ async function wireQuickActions(root, mode, picks = [], loadMode) {
       if (!ticker || !item) return;
       safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
       window.location.hash = `#stock/${ticker}`;
+    });
+  });
+
+  root.querySelectorAll('[data-ai-picks-pin]').forEach(button => {
+    button.addEventListener('click', () => {
+      const ticker = button.getAttribute('data-ai-picks-pin');
+      const active = togglePinnedTicker(ticker);
+      button.classList.toggle('btn-primary', active);
+      button.classList.toggle('ai-picks-pin-active', active);
+      button.textContent = active ? 'Pin aktif' : 'Pin Prioritas';
+      showToast(active ? `${ticker} dipin sebagai prioritas.` : `${ticker} dilepas dari prioritas.`, 'success');
     });
   });
 
@@ -372,6 +431,7 @@ export async function renderAiPicks(root) {
           <div class="ai-picks-rank-actions">
             <button class="btn" data-ai-picks-open-detail="${featured.ticker}">Buka Detail</button>
             <button class="btn" data-ai-picks-compare="${featured.ticker}">Bandingkan</button>
+            ${renderPinButton(featured.ticker)}
             <button class="btn btn-primary" data-ai-picks-save="${featured.ticker}" data-ai-picks-mode="${mode}">Tambah ke Daftar Pantau</button>
           </div>
         </div>`;

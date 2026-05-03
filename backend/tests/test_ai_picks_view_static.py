@@ -65,11 +65,18 @@ def test_ai_picks_view_persists_mode_and_exposes_richer_state_markers():
     assert 'data-ai-picks-retry' in content
 
 
-def test_ai_picks_view_supports_detail_context_handoff():
+def test_ai_picks_view_supports_detail_context_handoff_and_pin_state():
     content = VIEW.read_text()
     assert 'const AI_PICKS_CONTEXT_KEY =' in content
+    assert 'const AI_PICKS_PINNED_KEY =' in content
     assert 'safeSessionStorageSet(' in content
+    assert 'safeLocalStorageGetJson(' in content
+    assert 'safeLocalStorageSetJson(' in content
     assert 'data-ai-picks-open-detail' in content
+    assert 'data-ai-picks-pin' in content
+    assert 'ai-picks-pin-active' in content
+    assert 'Pin Prioritas' in content
+    assert 'Pin aktif' in content
     assert "window.location.hash = `#stock/${ticker}`" in content
     assert 'reason_labels' in content
     assert 'risk_note' in content
@@ -130,6 +137,7 @@ def test_stock_detail_can_render_ai_pick_context_banner():
     assert 'safeSessionStorageRemove(' in content
     assert 'renderAiPickContextBanner' in content
     assert 'renderAiPreview(' in content
+    assert 'fetchAnalysis(symbol, { llm: true })' in content
     assert 'analysis?.llm' in content
     assert 'Asisten AI aktif' in content
     assert 'OpenRouter belum aktif' in content

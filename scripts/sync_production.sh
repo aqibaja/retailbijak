@@ -14,6 +14,7 @@ copy_item() {
 
 echo "[1/6] Syncing backend and frontend..."
 copy_item "$REPO_DIR/backend/main.py" "$PROD_DIR/backend/main.py"
+copy_item "$REPO_DIR/backend/ai_picks.py" "$PROD_DIR/backend/ai_picks.py"
 copy_item "$REPO_DIR/backend/indicators_extended.py" "$PROD_DIR/backend/indicators_extended.py"
 copy_item "$REPO_DIR/backend/routes/user.py" "$PROD_DIR/backend/routes/user.py"
 copy_item "$REPO_DIR/backend/routes/stock_detail.py" "$PROD_DIR/backend/routes/stock_detail.py"
@@ -42,8 +43,23 @@ sudo systemctl restart "$SERVICE_NAME"
 
 sleep 2
 
-echo "[4/6] Health check..."
-curl -fsS http://127.0.0.1:8000/api/health >/dev/null
+echo "[4/6] Health check (with warm-up retries)..."
+python3 - <<'PY'
+import time
+import urllib.request
+
+url = 'http://127.0.0.1:8000/api/health'
+last_error = None
+for _ in range(15):
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            if response.status == 200:
+                raise SystemExit(0)
+    except Exception as exc:
+        last_error = exc
+        time.sleep(2)
+raise SystemExit(f'health check failed: {last_error}')
+PY
 
 echo "[5/7] Running post-deploy smoke check..."
 python "$REPO_DIR/scripts/post_deploy_smoke_check.py"

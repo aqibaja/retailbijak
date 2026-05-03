@@ -210,6 +210,21 @@
 
 ---
 
+### 2026-05-03 23:30 CST
+- [done] TDD RED deploy guard: tambah `backend/tests/test_sync_production_static.py` untuk memaksa `scripts/sync_production.sh` ikut menyalin `backend/ai_picks.py` ke runtime produksi.
+- [done] RED verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_sync_production_static.py` awalnya gagal `1 failed`, membuktikan deploy script belum menyalin modul backend AI Picks terbaru.
+- [done] Implementasi deploy hardening: `scripts/sync_production.sh` sekarang menyalin `backend/ai_picks.py` dan health check restart diganti ke warm-up retry loop agar tidak false-negative saat uvicorn baru naik.
+- [done] Implementasi AI Picks/runtime hardening: scoring `backend/ai_picks.py` sekarang mempertimbangkan `market_tone` saat ranking, `frontend/js/views/ai_picks.js` menambah pin state lokal (`Pin Prioritas` / `Pin aktif`), dan `frontend/js/views/stock_detail.js` selalu meminta payload `llm=1` agar status OpenRouter tampil live di detail saham.
+- [done] GREEN verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_sync_production_static.py backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_scoring.py backend/tests/test_ai_picks_api.py backend/tests/test_settings_view_static.py backend/tests/test_stock_analysis_llm_api.py` → `37 passed`.
+- [done] Compile/runtime verified: `python3 -m py_compile backend/main.py backend/ai_picks.py backend/services/openrouter_llm.py && python3 -m compileall -q frontend/js` lulus.
+- [done] Deploy production verified: `bash /home/rich27/retailbijak/scripts/sync_production.sh` sekarang hijau penuh; parity repo/runtime `PASS`, restart service `swingaq-backend` sukses, smoke check `PASS`, dan public resource chain `PASS`.
+- [done] Runtime sync verified: `/opt/swingaq/backend/ai_picks.py` kini memuat `build_ai_picks_llm_payload` (`has_llm_builder=True`), sehingga bug `AttributeError` pada route `/api/ai-picks?llm=1` di runtime sudah hilang.
+- [done] Wiring secret/runtime: nilai `OPENROUTER_API_KEY` dari `~/.hermes/.env` sudah di-upsert ke `/opt/swingaq/backend/swingaq.db` bersama `site_url`, `app_name`, dan default free models; `/api/settings` kini mengembalikan `openrouter_enabled=true` dan `openrouter_has_api_key=true`.
+- [warn] Verifikasi end-to-end provider masih terblokir credential: call live `/api/ai-picks?mode=swing&limit=2&llm=1` dan `/api/stocks/BBCA/analysis?llm=1` sama-sama mengembalikan `401 Client Error: Unauthorized` dari OpenRouter, jadi model free belum benar-benar menghasilkan ringkasan. UI publik sudah menampilkan state error/disabled secara jujur (`AI Desk Brief tertunda` di `#ai-picks`, `OPENROUTER BELUM AKTIF` fallback di `#stock/BBCA`), tetapi agar fitur benar-benar aktif user perlu mengganti API key OpenRouter yang valid.
+- [done] Browser QA publik: `#settings` menampilkan panel `OpenRouter AI` live dengan masked key + kedua free model default; `#ai-picks` menampilkan ranked cards, `5` tombol pin, dan panel `AI Desk Brief tertunda`; `#stock/BBCA` menampilkan blok `Asisten AI` dengan status OpenRouter/fallback yang hidup.
+
+---
+
 ### 2026-05-03 22:13 CST
 - [done] Audit ulang queue/progress: plan backlog tetap di `.hermes/plans/`, implementasi LLM/OpenRouter aktif di `backend/services/openrouter_llm.py`, tetapi runtime sebelumnya belum punya surface konfigurasi user dan script deploy belum menyalin service file LLM baru.
 - [done] TDD RED: tambah guard baru di `backend/tests/test_user_route_runtime.py` dan `backend/tests/test_settings_view_static.py` untuk memaksa `/api/settings` mengekspos config OpenRouter tanpa membocorkan API key, plus memaksa view `#settings` punya field `API key OpenRouter`, `Model Analisis Saham`, dan `Model AI Picks`.

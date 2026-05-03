@@ -136,7 +136,7 @@ def reason_labels_from_factors(factors: dict[str, Any], mode: str) -> list[str]:
 
 
 
-def score_pick(factors: dict[str, Any], mode: str) -> dict[str, Any]:
+def score_pick(factors: dict[str, Any], mode: str, market_tone: str | None = None) -> dict[str, Any]:
     safe_mode = normalize_ai_pick_mode(mode)
     weights = MODE_WEIGHTS[safe_mode]
     technical = _factor_value(factors, 'technical')
@@ -153,7 +153,24 @@ def score_pick(factors: dict[str, Any], mode: str) -> dict[str, Any]:
         + (1 - risk) * weights['risk']
     ) * 100
 
-    score = round(_clamp(raw_score, 0, 100), 1)
+    tone = str(market_tone or '').strip().lower()
+    regime_bonus = 0.0
+    if tone == 'bullish':
+        if safe_mode == 'swing':
+            regime_bonus += technical * 5 + max(0.0, liquidity - 0.5) * 2
+        elif safe_mode == 'defensive':
+            regime_bonus -= max(0.0, risk - 0.2) * 2
+        elif safe_mode == 'catalyst':
+            regime_bonus += catalyst * 3
+    elif tone == 'defensive':
+        if safe_mode == 'defensive':
+            regime_bonus += fundamental * 5 + (1 - risk) * 3
+        elif safe_mode == 'swing':
+            regime_bonus -= max(0.0, technical - 0.55) * 3 + risk * 2
+        elif safe_mode == 'catalyst':
+            regime_bonus -= risk * 3
+
+    score = round(_clamp(raw_score + regime_bonus, 0, 100), 1)
     return {
         'mode': safe_mode,
         'score': score,
@@ -308,8 +325,8 @@ def build_candidate_universe(limit_universe: int | None = None, mode: str = 'swi
 
 
 
-def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str) -> dict[str, Any]:
-    scored = score_pick(candidate['factors'], mode)
+def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market_tone: str | None = None) -> dict[str, Any]:
+    scored = score_pick(candidate['factors'], mode, market_tone=market_tone)
     latest_close = float(candidate['latest_close'])
     prev_close = float(candidate['prev_close'] or latest_close)
     change_pct = _safe_ratio(latest_close - prev_close, prev_close) * 100 if prev_close else 0.0
@@ -369,17 +386,25 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str) -> dic
 
 def build_ai_picks_payload(mode: str | None = 'swing', limit: int = 5) -> dict[str, Any]:
     safe_mode = normalize_ai_pick_mode(mode)
+    market_context = summarize_market_context()
     candidates = build_candidate_universe(limit_universe=max(int(limit or 5) * 4, 12), mode=safe_mode)
     if not candidates:
         return build_ai_picks_fallback_payload(safe_mode)
 
-    ranked = sorted(candidates, key=lambda item: score_pick(item['factors'], safe_mode)['score'], reverse=True)
-    picks = [compose_pick_payload(candidate, idx + 1, safe_mode) for idx, candidate in enumerate(ranked[: max(0, int(limit or 0))])]
+    ranked = sorted(
+        candidates,
+        key=lambda item: score_pick(item['factors'], safe_mode, market_tone=market_context.get('tone'))['score'],
+        reverse=True,
+    )
+    picks = [
+        compose_pick_payload(candidate, idx + 1, safe_mode, market_tone=market_context.get('tone'))
+        for idx, candidate in enumerate(ranked[: max(0, int(limit or 0))])
+    ]
     return {
         'mode': safe_mode,
         'updated_at': candidates[0]['latest_date'],
         'source': 'derived',
-        'market_context': summarize_market_context(),
+        'market_context': market_context,
         'summary': {
             'candidates_analyzed': len(candidates),
             'eligible_count': len(ranked),
