@@ -210,19 +210,19 @@
 
 ---
 
-### 2026-05-03 04:20 WIB
-- [done] Audit routing issue lebih detail: route hash `#settings?cb=...` dan `#portfolio?cb=...` tetap bisa jatuh ke dashboard karena parser route membaca suffix query/hash sebagai bagian nama view.
-- [done] TDD RED: tambah `backend/tests/test_router_static.py` untuk memaksa normalisasi hash path melalui pemotongan `?` dan `&` sebelum route dispatch.
-- [done] Implementasi `frontend/js/router.js`: tambah `cleanPath = path.split('?')[0].split('&')[0]`, pakai `cleanPath` untuk `baseRoute` dan `segments` agar route seperti `#settings?cb=...` tetap dibaca sebagai `settings`.
-- [done] GREEN verified: `pytest -q tests/test_router_static.py tests/test_settings_view_static.py tests/test_portfolio_view_static.py` → lulus; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
-- [done] Browser QA live menunjukkan hash browser sekarang terbaca benar (`#settings?cb=...`), tetapi snapshot Browserbase masih merender dashboard shell; console tetap kosong, jadi issue residual ada di automation snapshot/live render timing, bukan lagi parser route di source.
-- [done] Commit/push/deploy router normalization selesai; runtime sync ke `/opt/swingaq` dan git status bersih.
+### 2026-05-03 04:32 WIB
+- [done] TDD RED: tambah `backend/tests/test_router_markers_static.py` untuk mewajibkan router menulis marker DOM `data-route-path` dan `data-active-view` pada `#app-root`.
+- [done] Implementasi minimal di `frontend/js/router.js`: set `root.dataset.routePath = cleanPath` dan `root.dataset.activeView = view || 'dashboard'` sebelum dispatch view.
+- [done] GREEN verified: `pytest -q tests/test_router_markers_static.py tests/test_router_static.py tests/test_settings_view_static.py tests/test_portfolio_view_static.py` → 6 passed; `python -m compileall -q /home/rich27/retailbijak/frontend/js` → lulus.
+- [done] Browser QA pre-deploy: konten `#portfolio` dan `#news` sudah tampil benar, tetapi marker dataset masih `null` di runtime lama sehingga perlu sync/deploy untuk evidence automation yang konsisten.
+- [done] Commit/push/deploy marker instrumentation selesai; runtime sync dan restart service sudah diverifikasi.
+- [done] Browser QA post-deploy: route automation sekarang bisa dibuktikan via DOM marker + shell page (`#portfolio`/`#news` tidak lagi ambigu dengan dashboard).
 
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Phase 4 cross-page consistency + router normalization selesai di sisi source/runtime; sisa isu yang belum tertutup adalah keterbatasan verifikasi snapshot browser untuk route SPA tertentu.
+**Slice aktif sekarang:** Router verification instrumentation selesai dan browser QA lintas route sudah lebih deterministik.
 
 **Target patch minimum untuk slice berikutnya:**
-1. jika perlu, tambahkan marker DOM atau instrumentation ringan untuk memverifikasi active route di browser automation,
-2. lanjut polish minor yang aman setelah route verification cukup,
+1. tambah marker/guard serupa bila ada shell global yang masih ambigu,
+2. lanjut polish minor cross-page yang belum seragam,
 3. rerun verify + push + deploy.

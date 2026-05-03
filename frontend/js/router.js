@@ -29,6 +29,8 @@ export function handleRoute(hash) {
         
         const segments = cleanPath.split('/');
         const view = segments[0];
+        root.dataset.routePath = cleanPath;
+        root.dataset.activeView = view || 'dashboard';
 
         try {
             if (view === 'dashboard') renderDashboard(root);
