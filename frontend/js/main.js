@@ -1,4 +1,4 @@
-import { handleRoute } from './router.js?v=20260503i';
+import { handleRoute } from './router.js?v=20260503j';
 import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260503b';
 import { initTheme } from './theme.js?v=20260430n';
 // ================= ANIMATION ENGINE =================
@@ -239,4 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Routing
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
-handleRoute(window.location.hash || '#dashboard');
+window.addEventListener('DOMContentLoaded', () => handleRoute(window.location.hash || '#dashboard'), { once: true });
+if (document.readyState !== 'loading') {
+   queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
+}

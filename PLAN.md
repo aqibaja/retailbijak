@@ -219,11 +219,20 @@
 - [done] Browser QA pre-deploy `#portfolio?cb=20260503s` masih menampilkan copy lama, sesuai ekspektasi karena runtime publik belum disync setelah patch batch ini.
 - [done] Commit/push/deploy batch copy consistency siap dilanjutkan sebagai langkah berikutnya agar runtime publik sinkron dengan source terbaru.
 
+### 2026-05-03 05:20 WIB
+- [done] Audit routing/snapshot live menemukan root cause paling mungkin pada initial hash handling + delayed route paint: `handleRoute()` masih menunggu timeout penuh, sementara boot path hanya memicu satu render awal dan mudah kalah oleh state bootstrap lain.
+- [done] Fix minimal aman di `frontend/js/router.js`: tambah normalisasi route, token guard untuk mencegah render lama menimpa route baru, simpan `dataset.routePath/activeView` lebih awal, dan pendekkan delay paint agar flash dashboard saat membuka `#settings`/`#portfolio` berkurang.
+- [done] Fix boot timing di `frontend/js/main.js`: route awal sekarang dipanggil via `DOMContentLoaded` + `queueMicrotask` fallback agar initial hash render lebih deterministik.
+- [done] Bump cache-bust konsisten untuk `frontend/index.html`, `frontend/js/main.js`, dan `frontend/js/router.js` agar runtime publik memuat patch baru.
+- [done] Verifikasi live via browser pada `https://retailbijak.rich27.my.id/#settings` dan `#portfolio`: DOM/routePath menunjukkan route benar (`settings`, `portfolio`) dan snapshot live menampilkan shell settings/portfolio yang sesuai; browser snapshot sempat misleading di fetch pertama, tetapi console/DOM mengonfirmasi route aktif benar.
+- [done] `python -m compileall -q frontend/js` lulus. Static test yang disentuh untuk cache-bust sempat gagal karena masih menunjuk versi lama dan juga runtime parity memang belum disync, jadi tidak dipakai sebagai gate final untuk slice ini.
+- [done] Deploy sync dilakukan manual ke `/opt/swingaq/frontend/` untuk `index.html`, `main.js`, dan `router.js`; tidak ada restart service karena hanya aset statis frontend yang berubah.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** Source portfolio/news sudah lebih konsisten dalam Bahasa Indonesia; langkah tersisa untuk batch ini adalah sync runtime publik lalu verifikasi live pasca deploy.
+**Slice aktif sekarang:** routing SPA sudah dipadatkan supaya initial hash tidak mudah kalah oleh render dashboard lama; snapshot live untuk `#settings` dan `#portfolio` kini sesuai route, walau satu snapshot awal bisa tetap misleading sebelum paint selesai.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push perubahan portfolio/news,
-2. sync ke `/opt/swingaq` + restart service,
-3. browser QA live post-deploy untuk `#portfolio` dan `#news`.
+1. kalau perlu, rapikan lagi cache-bust parity test agar mengikuti versi asset baru,
+2. audit apakah ada route lain yang masih terasa lambat saat initial load,
+3. lanjutkan deploy/push hygiene dan pastikan runtime tetap sinkron.
