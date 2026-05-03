@@ -266,7 +266,10 @@
 - [done] Git hygiene lanjutan selesai: perubahan di-commit sebagai `6010700 chore: ignore local hermes planning artifacts`.
 - [done] Push final hygiene commit berhasil ke `origin/main`; status HEAD kini `6010700`.
 - [done] Setelah push, working tree yang tersisa hanya `PLAN.md` karena dokumentasi step final ini baru saja ditambahkan; artefak `.hermes/plans/` sudah benar-benar tidak muncul lagi di `git status`.
-- [done] Scope batch lanjutan ini juga tuntas: hygiene repo untuk file planning lokal kini permanen lebih bersih tanpa mengganggu patch produk.
+- [done] Audit lanjutan menemukan nuance kedua: walau `.hermes/plans/` sudah di-ignore untuk file baru, masih ada **dua file plan lama yang sudah terlanjur tracked** di git (`.hermes/plans/2026-05-01_093500-retailbijak-phase-2.md` dan `.hermes/plans/2026-05-01_mobile-dark-mode-rescue.md`), sehingga hygiene repo belum sepenuhnya final.
+- [done] Cleanup tracked artifact dijalankan dengan `git rm --cached` pada dua file `.hermes/plans/*` lama, sehingga file lokal tetap ada di workspace tetapi keluar dari index/repo.
+- [done] Verifikasi pasca-cleanup: `git ls-files '.hermes/plans/*'` sekarang kosong; `git status --short` hanya menunjukkan deletion terstage untuk dua file lama plus perubahan dokumentasi `PLAN.md`.
+- [next] Commit + push cleanup tracked artifact ini, lalu catat status akhir di `PLAN.md`.
 
 ---
 
