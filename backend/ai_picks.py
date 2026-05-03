@@ -4,6 +4,7 @@ from typing import Any
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -44,6 +45,12 @@ FIT_LABELS = {
     "catalyst": "kandidat katalis",
 }
 DB_PATH = Path('/opt/swingaq/backend/swingaq.db')
+JAKARTA_TZ = ZoneInfo('Asia/Jakarta')
+
+
+def _current_jakarta_trading_date(now: datetime | None = None) -> str:
+    current = now.astimezone(JAKARTA_TZ) if now else datetime.now(JAKARTA_TZ)
+    return current.date().isoformat()
 
 
 def _clamp(value: float, lower: float, upper: float) -> float:
@@ -420,7 +427,7 @@ def build_ai_picks_payload(mode: str | None = 'swing', limit: int = 5) -> dict[s
     safe_mode = normalize_ai_pick_mode(mode)
     market_context = summarize_market_context()
     candidates = build_candidate_universe(limit_universe=max(int(limit or 5) * 4, 12), mode=safe_mode)
-    trading_date = market_context.get('latest_date')
+    trading_date = _current_jakarta_trading_date()
     generated_at = datetime.utcnow()
     if not candidates:
         return build_ai_picks_fallback_payload(safe_mode, trading_date=trading_date)

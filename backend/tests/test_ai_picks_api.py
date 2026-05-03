@@ -173,6 +173,46 @@ def test_ai_picks_endpoint_exposes_daily_briefing_freshness_metadata():
     assert set(data['freshness'].keys()) == {'label', 'is_stale', 'generated_at'}
 
 
+def test_ai_picks_payload_uses_current_jakarta_trading_day_for_premarket_label(monkeypatch):
+    from backend import ai_picks as ai_picks_module
+
+    monkeypatch.setattr(ai_picks_module, 'summarize_market_context', lambda: {
+        'tone': 'bullish',
+        'breadth_label': 'breadth menguat',
+        'latest_date': '2026-04-30',
+    })
+    monkeypatch.setattr(ai_picks_module, 'build_candidate_universe', lambda **kwargs: [{
+        'ticker': 'BBCA',
+        'name': 'Bank Central Asia',
+        'latest_date': '2026-04-30 00:00:00.000000',
+        'latest_close': 1000.0,
+        'prev_close': 980.0,
+        'avg_volume_20': 2_500_000.0,
+        'bars_count': 60,
+        'mode': 'swing',
+        'factors': {
+            'technical': 0.8,
+            'liquidity': 0.8,
+            'fundamental': 0.7,
+            'catalyst': 0.6,
+            'risk': 0.2,
+            'volume_ratio': 1.4,
+            'trend_ok': True,
+            'rr_ok': True,
+            'quality_ok': True,
+            'catalyst_ok': True,
+        },
+    }])
+    monkeypatch.setattr(ai_picks_module, '_current_jakarta_trading_date', lambda now=None: '2026-05-04')
+
+    payload = ai_picks_module.build_ai_picks_payload(mode='swing', limit=1)
+
+    assert payload['trading_date'] == '2026-05-04'
+    assert payload['as_of_label'] == 'Premarket briefing 2026-05-04'
+    assert payload['updated_at'] == '2026-04-30 00:00:00.000000'
+    assert payload['market_context']['latest_date'] == '2026-04-30'
+
+
 
 def test_ai_picks_endpoint_optionally_includes_llm_payload(monkeypatch):
     from backend import ai_picks as ai_picks_module

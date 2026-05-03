@@ -248,6 +248,48 @@
 
 ---
 
+### 2026-05-04 02:02 CST
+- [done] Re-audit requirement AI Picks harian 08:00 selesai: scheduler `daily_ai_picks` memang sudah jalan Senin-Jumat jam `08:00 Asia/Jakarta`, payload actionable (`entry/stop/TP/RR`) dan storage briefing persisten juga sudah ada, tetapi saya menemukan gap semantik pada penanggalan briefing.
+- [done] Evidence gap: payload `build_ai_picks_payload()` masih memakai `market_context.latest_date` (tanggal trading snapshot OHLCV terakhir) sebagai `trading_date/as_of_label`, sehingga briefing premarket 08:00 pada hari kerja baru bisa tetap berlabel tanggal sesi lama bila market data terakhir belum berganti. Endpoint publik saat audit juga menunjukkan pola ini (`generated_at` baru, tetapi `trading_date/as_of_label` masih `2026-04-30`).
+- [done] TDD RED: tambah regression test `test_ai_picks_payload_uses_current_jakarta_trading_day_for_premarket_label()` di `backend/tests/test_ai_picks_api.py` untuk memaksa briefing memakai **tanggal trading Jakarta saat briefing dibuat**, sambil tetap mempertahankan `market_context.latest_date` sebagai tanggal snapshot data sumber.
+- [done] RED verified: test baru awalnya gagal dengan `AttributeError` karena helper penanggalan Jakarta belum ada; ini mengonfirmasi gap requirement nyata, bukan sekadar asumsi.
+- [done] Implementasi minimal di `backend/ai_picks.py`: tambah `ZoneInfo('Asia/Jakarta')` + helper `_current_jakarta_trading_date()`, lalu ubah `build_ai_picks_payload()` agar `trading_date`/`as_of_label` memakai tanggal Jakarta saat generate briefing, bukan tanggal OHLCV terakhir.
+- [done] GREEN verified: `pytest -q backend/tests/test_ai_picks_api.py -k jakarta_trading_day` → `1 passed`; full suite fokus AI Picks (`test_ai_picks_api.py`, `test_ai_picks_view_static.py`, `test_ai_picks_scheduler_static.py`, `test_database_config.py`) → `36 passed`; `python3 -m py_compile backend/ai_picks.py && python3 -m compileall -q frontend/js` → pass.
+- [done] Deploy/runtime sync juga sudah dijalankan via `bash scripts/sync_production.sh` dan seluruh parity + smoke check produksi kembali hijau.
+- [done] Smoke check publik sesudah deploy menunjukkan nuance penting: endpoint default `GET /api/ai-picks?...` masih membaca report lama `source=db` dengan label tanggal lama, tetapi `GET /api/ai-picks?...&refresh=1` meregenerasi briefing dan kini mengembalikan `trading_date/as_of_label` sesuai tanggal Jakarta aktif. Jadi patch kode sudah benar; cache data report lama baru akan tersapu otomatis pada generate berikutnya atau saat operator memicu refresh.
+- [done] Git working tree diaudit sebelum finalisasi: perubahan terfokus hanya di `backend/ai_picks.py`, `backend/tests/test_ai_picks_api.py`, dan `PLAN.md`; beberapa file `.hermes/plans/*.md` tetap dibiarkan untracked karena artefak planning lokal, bukan bagian patch produk.
+- [next] Finalisasi git hygiene: stage file patch terverifikasi, commit, push, lalu catat hash commit di `PLAN.md`.
+
+---
+
+### 2026-05-04 01:44 CST
+- [done] Git hygiene selesai: perubahan AI Picks briefing harian di-commit sebagai `7ff073c Add daily AI picks briefing workflow` dan berhasil di-push ke `origin/main`.
+- [done] Scope task ini tuntas end-to-end: test, compile, deploy runtime, smoke test lokal/publik, dokumentasi `PLAN.md`, commit, dan push semuanya beres.
+
+---
+
+### 2026-05-04 01:52 CST
+- [done] Investigasi lanjutan blank main-content dilanjutkan dengan fresh browser context baru di `?cb=qa20260504c#ai-picks` untuk memastikan apakah issue benar-benar spesifik AI Picks atau global pada SPA render.
+- [done] Browser evidence konsisten: `location.hash` tetap `#ai-picks`, resource JS view lengkap termuat (`main/router/api/theme/dashboard/.../ai_picks/i18n`), tetapi `#app-root` masih kosong (`innerHTML.length=0`), `data-route-path`/`data-active-view` tidak pernah terpasang, dan nav aktif tetap `dashboard`; ini menunjukkan `handleRoute()` tidak benar-benar menulis DOM pada sesi automation meski chain resource publik sudah benar.
+- [done] Visual QA ulang mengonfirmasi blank main area tanpa empty/error state; header dan sidebar tetap render. Jadi gejala yang terlihat user-facing di automation memang blank content region, bukan salah hash URL.
+- [done] Verifikasi runtime/API independen dari browser tetap sehat: `/api/health` = `ok`; `/api/settings` live mengembalikan `openrouter_runtime_state="ok"`; `/api/ai-picks?mode=swing&limit=5` mengembalikan briefing `source=db`, `freshness=Briefing baru`, `generated_at` valid, dan `2` kandidat; `/api/ai-picks?...&llm=1` juga `200` dengan `llm.status="ok"`; `refresh=1` sukses memperbarui briefing menjadi `5` kandidat.
+- [done] Verifikasi filesystem/runtime juga sehat: `/opt/swingaq/frontend/index.html`, `js/main.js`, `js/router.js`, `js/api.js`, dan `js/views/ai_picks.js` semuanya ada dengan ukuran sesuai deploy saat ini.
+- [done] Cross-check source publik lewat script terpisah menegaskan kontrak deploy benar: `index.html` memang memuat `main.js?v=20260503ab`, `main.js` mengimpor `router.js?v=20260503ab` dan `api.js?v=20260503b`, sementara `router.js` punya dispatch `ai-picks` dan setter dataset route. Jadi tidak ada bukti drift file publik/repo pada batch ini.
+- [done] Kesimpulan sementara batch lanjutan: AI Picks live **backend/runtime/resource-chain** tervalidasi sehat, tetapi browser automation Hermes masih gagal mengeksekusi render SPA sampai mengisi `#app-root`. Karena root cause app-side belum terbukti dan tidak ada patch yang bisa diverifikasi aman, saya **menahan code-change** dan hanya mendokumentasikan evidence ini.
+- [done] Todo lanjutan diperbarui: `g8` investigasi blank render selesai dengan evidence lebih kuat; `g9` verifikasi AI Picks live lintas endpoint/runtime juga selesai dan seluruh proses sudah dicatat di `PLAN.md`.
+
+---
+
+### 2026-05-04 01:47 CST
+- [done] Browser QA ulang untuk `#ai-picks` dan `#dashboard` dari fresh browser context dijalankan khusus untuk memverifikasi briefing harian publik/live.
+- [done] Hasil browser automation sesi ini menunjukkan shell/topbar/sidebar termuat tetapi `#app-root` tetap kosong di kedua route; jadi temuan awal bukan spesifik AI Picks, melainkan blank main-content di context browser automation saat ini.
+- [done] Triangulasi dilakukan sebelum patch kode: resource chain publik tetap `200` untuk `index.html`, `main.js?v=20260503ab`, `router.js?v=20260503ab`, `views/ai_picks.js?v=20260503ai`, `api.js?v=20260503b`, dan `style.css?v=20260503i`; file runtime `/opt/swingaq/frontend/js/views/ai_picks.js` juga ada dan ukurannya sesuai repo.
+- [done] Cross-check import lokal via Node shim berhasil memuat `frontend/js/main.js` tanpa syntax/export error aplikasi; kegagalan yang tampak hanya `fetch('/api/...')` relatif karena environment Node tidak punya base URL, jadi tidak mengindikasikan bug source frontend.
+- [done] Kesimpulan QA batch ini: tidak ditemukan bukti baru bahwa deploy AI Picks briefing harian rusak di source/runtime; blank state yang terlihat terlokalisasi pada sesi browser automation ini sendiri. Karena tidak ada defect aplikasi yang tervalidasi lintas-check, **tidak ada patch kode tambahan** yang dilakukan untuk g7.
+- [done] Status task diperbarui: g6 selesai dengan catatan evidence QA + triangulasi; g7 ditutup tanpa code-change karena tidak ada temuan app-side yang tervalidasi.
+
+---
+
 ### 2026-05-04 01:41 CST
 - [done] Deploy briefing harian AI Picks ke runtime `/opt/swingaq`: sync `backend/{ai_picks,database,main,scheduler}.py`, `frontend/js/{api,views/ai_picks}.js`, dan `frontend/style.css`; service `swingaq-backend` berhasil restart dengan status `active`.
 - [done] Smoke test runtime lokal + publik lulus: `/api/health` tetap `ok`, `/api/ai-picks?mode=swing&limit=2` publik mengembalikan payload briefing `source=db` + `freshness=Briefing baru`, dan refresh lokal `refresh=1&llm=1` mengembalikan `llm_state=ok`.
