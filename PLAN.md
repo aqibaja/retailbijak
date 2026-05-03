@@ -305,6 +305,15 @@
 - [done] GREEN verified lokal: `pytest -q backend/tests/test_cache_bust_chain_static.py backend/tests/test_frontend_import_chain_static.py backend/tests/test_public_resource_chain_static.py backend/tests/test_high_signal_route_copy_static.py backend/tests/test_high_signal_route_copy_batch2_static.py` → `13 passed`; `python -m compileall -q frontend/js` dan `python -m py_compile scripts/check_public_resource_chain.py` → pass.
 - [done] Runtime/public verification: sync `screener.js`, `portfolio.js`, `settings.js`, checker publik, dan static tests terkait ke `/opt/swingaq/...`; `python scripts/check_frontend_runtime_parity.py` → `PASS`; `python scripts/check_public_resource_chain.py` → `PASS` sambil mengonfirmasi route publik `screener`, `portfolio`, `settings` ikut lolos marker copy baru.
 
+### 2026-05-03 14:05 WIB
+- [done] Audit batch low-signal copy berikutnya memusat ke `frontend/js/views/stock_detail.js` dan `dashboard.js`; hasil audit menunjukkan marker Inggris residual paling terlihat tersisa di strip katalis, panel snapshot/ringkasan, dan trade-plan stock detail.
+- [done] TDD RED: buat `backend/tests/test_low_signal_copy_cleanup_static.py` untuk mewajibkan marker Indonesia baru (`Katalis Terbaru`, `Tautan Katalis`, `Pemantau Pengumuman`, `Cek Sumber`, `Skor Swing`, `Zona Entry`, dst.) dan melarang string Inggris residual batch ini.
+- [done] RED verified: `pytest -q backend/tests/test_low_signal_copy_cleanup_static.py` awalnya gagal pada marker stock detail yang belum dilokalisasi.
+- [done] Implementasi `frontend/js/views/stock_detail.js`: lokalisasi snapshot panel, below-chart context, strip katalis, analysis panel, trade plan, dan fallback issuer label; dashboard batch sebelumnya tetap dipertahankan.
+- [done] Update cache-bust import `frontend/js/router.js` untuk `stock_detail.js` ke token `20260503ab` agar runtime publik memuat asset baru.
+- [done] GREEN verified lokal: `pytest -q backend/tests/test_low_signal_copy_cleanup_static.py` → lulus; `python -m compileall -q frontend/js` → pass.
+- [done] Hardening checker publik: `scripts/check_public_resource_chain.py` diperluas agar route `stock` juga memverifikasi marker publik baru (`Katalis Terbaru`, `Tautan Katalis`, `Skor Swing`, `Zona Entry`).
+
 ## Current Slice Notes
 
 **Slice aktif sekarang:** guard deploy publik kini mengawasi dua kelas regresi sekaligus: drift token/import chain dan copy high-signal pada route paling terlihat user (`dashboard`, `stock`, `news`).

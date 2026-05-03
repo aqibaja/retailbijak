@@ -30,7 +30,7 @@ export async function renderDashboard(root) {
   <section class="dashboard-pro stagger-reveal">
     <div class="dash-hero-pro panel">
       <div class="dash-copy">
-        <div class="screener-kicker">IDX LIVE WORKSPACE</div>
+        <div class="screener-kicker">RUANG KERJA LIVE IDX</div>
         <h1>Dashboard Intelijen Pasar</h1>
         <p class="dash-hero-lead">Pantau IHSG, breadth, penggerak utama, dan ide cepat dalam satu layar trading yang padat.</p>
         <div class="dash-hero-note">Satu glance untuk membaca bias tape, kualitas data, dan jalur aksi tercepat sebelum masuk ke pemindai.</div>
@@ -38,18 +38,18 @@ export async function renderDashboard(root) {
         <div class="dash-density-note">Mode briefing padat: lebih sedikit noise di top fold, lebih cepat masuk ke chart dan movers.</div>
         <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack">
           <div class="dash-summary-card">
-            <span>Market Bias</span>
-            <strong id="dash-bias-label">Loading...</strong>
-            <small id="dash-bias-note">Menyiapkan breadth dan tape context.</small>
+            <span>Bias Pasar</span>
+            <strong id="dash-bias-label">Memuat...</strong>
+            <small id="dash-bias-note">Menyiapkan breadth dan konteks tape.</small>
           </div>
           <div class="dash-summary-card">
-            <span>Lead Gainer</span>
-            <strong id="dash-lead-gainer">Loading...</strong>
+            <span>Penguat Utama</span>
+            <strong id="dash-lead-gainer">Memuat...</strong>
             <small id="dash-lead-gainer-note">Menunggu top movers valid.</small>
           </div>
           <div class="dash-summary-card dash-mobile-chip">
-            <span>Lead Sector</span>
-            <strong id="dash-lead-sector">Loading...</strong>
+            <span>Sektor Utama</span>
+            <strong id="dash-lead-sector">Memuat...</strong>
             <small id="dash-lead-sector-note">Snapshot rotasi sektor.</small>
           </div>
         </div>
@@ -69,13 +69,13 @@ export async function renderDashboard(root) {
         <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias sedang dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu summary dan chart range.</strong></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
-      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape loading</span><small id="dash-movers-summary-note">Membaca leader tape dan breadth support.</small></div></div><a href="#market" class="text-xs text-primary strong">Lihat Semua</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Preparing movers tape</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
+      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape sedang dimuat</span><small id="dash-movers-summary-note">Menyiapkan penggerak pasar dan dukungan breadth.</small></div></div><a href="#market" class="text-xs text-primary strong">Lihat Semua</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan penggerak pasar</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
     </div>
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
-      <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Building market brief</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan plan line intraday.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan pasar</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan garis rencana intraday.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Saran Cepat</h3><div class="suggestion-grid">${SUGGESTION_PRESETS.slice(0,4).map(({ ticker, reason })=>`<a href="#stock/${ticker}" class="suggestion-pill"><span>${ticker}</span><small>Buka detail</small><em class="dash-suggestion-reason">${reason}</em></a>`).join('')}</div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gathering market headlines</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita pasar</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>
     </div>
   </section>`;
   observeElements();
@@ -103,7 +103,7 @@ async function loadMarketSummary(){
   document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';
   const biasLabel = document.getElementById('dash-bias-label');
   const biasNote = document.getElementById('dash-bias-note');
-  if (biasLabel) biasLabel.textContent = v == null ? 'Waiting Snapshot' : c >= 0 ? 'Risk-On Tape' : 'Defensive Tape';
+  if (biasLabel) biasLabel.textContent = v == null ? 'Menunggu snapshot' : c >= 0 ? 'Tape Berisiko' : 'Tape Defensif';
   if (biasNote) biasNote.textContent = v == null ? 'Ringkasan market belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} sehingga defense dan selektivitas lebih penting.`;
   return summary;
 }
@@ -137,12 +137,12 @@ async function loadIntel(){
   const leadSectorNoteEl = document.getElementById('dash-lead-sector-note');
   const chartBiasChip = document.getElementById('dash-chart-bias-chip');
   const chartReadout = document.getElementById('dash-chart-readout');
-  if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? 'Need Breadth' : adv >= dec ? 'Risk-On Tape' : 'Defensive Tape';
-  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'No leader yet';
+  if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? 'Butuh breadth' : adv >= dec ? 'Tape Berisiko' : 'Tape Defensif';
+  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'Belum ada pemimpin';
   if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin tape hari ini.` : 'Top movers belum lengkap, fallback tetap aktif.';
   if (leadSectorEl) leadSectorEl.textContent = best?.sector || best?.name || 'Finance';
   if (leadSectorNoteEl) leadSectorNoteEl.textContent = `Rotasi ${pf(best?.change_pct ?? 1.2)} menjadi konteks sektor utama.`;
-  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? 'Breadth pending' : adv >= dec ? 'Breadth support' : 'Breadth bearish';
+  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? 'Breadth tertunda' : adv >= dec ? 'Breadth mendukung' : 'Breadth melemah';
   if (chartReadout) chartReadout.textContent = `IHSG ${pf(Number(summary?.change_pct ?? 0))} · ${adv} adv vs ${dec} dec · fokus ${best?.sector || 'sector leader'} sebagai konteks tape.`;
   document.getElementById('market-intel').innerHTML = [
     { kicker: 'Breadth', value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? 'Snapshot breadth belum valid.' : `${tapeBias} untuk first glance tape.` },
@@ -164,7 +164,7 @@ async function loadMovers(){
     : 'Perhatikan rotasi karena tidak semua leader bergerak searah.';
   document.getElementById('movers-list').innerHTML = items.slice(0,5).map((r, index) => row({
     ticker: r.ticker,
-    name: r.name || r.sector || 'IDX Equity',
+    name: r.name || r.sector || 'Ekuitas IDX',
     price: r.price ?? 0,
     change: r.change_pct ?? r.change ?? 0,
     rank: index + 1,

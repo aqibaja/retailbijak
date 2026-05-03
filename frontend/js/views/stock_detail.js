@@ -13,7 +13,7 @@ export async function renderStockDetail(root, ticker) {
         <div class="flex items-center gap-4">
           <a href="#dashboard" class="btn btn-icon"><i data-lucide="arrow-left"></i></a>
           <div>
-            <div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EQUITY</span><span class="badge badge-up" id="live-badge">DB</span></div>
+            <div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EKUITAS</span><span class="badge badge-up" id="live-badge">DB</span></div>
             <div class="text-sm text-muted" id="stock-name">Memuat data emiten...</div>
           </div>
         </div>
@@ -35,7 +35,7 @@ export async function renderStockDetail(root, ticker) {
           <div class="section-divider"></div>
           <div id="catalyst-strip" class="below-chart-fill"></div>
           <div class="section-divider"></div>
-          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">AI Assistant</div><div class="text-sm text-main strong mt-1">Ask AI about this stock</div><div class="text-xs text-muted mt-1">Preview AI berbasis chart, fundamental, berita, dan scanner RetailBijak.</div></div><span class="signal-pill pill-good">AI Preview</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Ask Risk</span><strong>Kenapa watch?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Ask Entry</span><strong>Area masuk?</strong><small>pullback plan</small></div><div class="stat-tile metric-neutral"><span>Ask News</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Ask Explain</span><strong>Alasan sinyal</strong><small>AI summary</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risk, entry, news, atau alasan sinyal...</div></div>
+          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">Asisten AI</div><div class="text-sm text-main strong mt-1">Tanya AI tentang saham ini</div><div class="text-xs text-muted mt-1">Pratinjau AI berbasis chart, fundamental, berita, dan pemindai RetailBijak.</div></div><span class="signal-pill pill-good">Pratinjau AI</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Tanya Risiko</span><strong>Kenapa pantau?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Tanya Entry</span><strong>Area masuk?</strong><small>rencana pullback</small></div><div class="stat-tile metric-neutral"><span>Tanya Berita</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Tanya Penjelasan</span><strong>Alasan sinyal</strong><small>ringkasan AI</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risiko, entry, berita, atau alasan sinyal...</div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
@@ -170,8 +170,11 @@ function renderLevelSuggestions(candles, tech){
 }
 function renderFundamentalPanel(d, candles, tech){
   const last = candles[candles.length-1] || {}; const volRatio = tech?.indicators?.volume?.ratio;
+  const peLabel = d.trailing_pe ? (d.trailing_pe < 12 ? 'murah' : d.trailing_pe > 25 ? 'mahal' : 'wajar') : 'belum ada data';
+  const pbLabel = d.price_to_book ? (d.price_to_book < 1.5 ? 'murah' : d.price_to_book > 3 ? 'mahal' : 'wajar') : 'belum ada data';
+  const revenueLabel = d.revenue ? 'sudah dilaporkan' : 'belum ada data';
   const stats = [
-    ['Last Price', money(last.close), tech?.rating || '', sentimentClass(tech?.rating, last.close)], ['Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x avg` : '', sentimentClass('spike', volRatio)], ['P/E', d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—', d.trailing_pe ? (d.trailing_pe < 12 ? 'cheap' : d.trailing_pe > 25 ? 'expensive' : 'fair') : 'no data'], ['P/B', d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—', d.price_to_book ? (d.price_to_book < 1.5 ? 'cheap' : d.price_to_book > 3 ? 'expensive' : 'fair') : 'no data'], ['ROE', d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—', 'profitability', sentimentClass('', d.roe, 'roe')], ['DER', nf(d.debt_to_equity,2), 'leverage', sentimentClass('', d.debt_to_equity, 'der')], ['Revenue', nf(d.revenue,0), d.revenue ? 'reported' : 'no data'], ['Updated', d.updated_at ? String(d.updated_at).slice(0,10) : 'DB IDX', 'source']
+    ['Harga Terakhir', money(last.close), tech?.rating || '', sentimentClass(tech?.rating, last.close)], ['Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x rata-rata` : '', sentimentClass('spike', volRatio)], ['P/E', d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—', peLabel], ['P/B', d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—', pbLabel], ['ROE', d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—', 'profitabilitas', sentimentClass('', d.roe, 'roe')], ['DER', nf(d.debt_to_equity,2), 'leverage', sentimentClass('', d.debt_to_equity, 'der')], ['Pendapatan', nf(d.revenue,0), revenueLabel], ['Pembaruan', d.updated_at ? String(d.updated_at).slice(0,10) : 'DB IDX', 'sumber']
   ];
   document.getElementById('fundamental-panel').innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
@@ -182,12 +185,12 @@ function renderSnapshotPanel(d, candles, tech){
   const delta = Number(last.close || 0) - Number(prev.close || 0); const pct = prev.close ? (delta / prev.close) * 100 : null;
   const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
   const cards = [
-    ['Open', money(last.open), 'today setup', 'metric-neutral'],
-    ['High / Low', `${money(last.high)} / ${money(last.low)}`, 'session range', 'metric-neutral'],
-    ['Prev Close', money(prev.close), pct == null ? 'daily baseline' : pf(pct), delta >= 0 ? 'metric-good' : 'metric-bad'],
-    ['Volume Pace', nf(last.volume,0), tech?.indicators?.volume?.ratio ? `${nf(tech.indicators.volume.ratio,2)}x avg` : 'flow monitor', sentimentClass('spike', tech?.indicators?.volume?.ratio)],
-    ['Fundamental Coverage', hasFundamental ? 'ready' : 'fundamental pending', hasFundamental ? 'db snapshot' : 'waiting richer DB', hasFundamental ? 'metric-good' : 'metric-warn'],
-    ['Trend Bias', tech?.rating || 'WATCH', tech?.summary || 'technical snapshot', sentimentClass(tech?.rating, tech?.score)],
+    ['Buka', money(last.open), 'setup hari ini', 'metric-neutral'],
+    ['Tinggi / Rendah', `${money(last.high)} / ${money(last.low)}`, 'rentang sesi', 'metric-neutral'],
+    ['Penutupan Sebelumnya', money(prev.close), pct == null ? 'baseline harian' : pf(pct), delta >= 0 ? 'metric-good' : 'metric-bad'],
+    ['Laju Volume', nf(last.volume,0), tech?.indicators?.volume?.ratio ? `${nf(tech.indicators.volume.ratio,2)}x rata-rata` : 'pantau aliran', sentimentClass('spike', tech?.indicators?.volume?.ratio)],
+    ['Cakupan Fundamental', hasFundamental ? 'siap dibaca' : 'fundamental menunggu', hasFundamental ? 'snapshot basis data' : 'menunggu basis data lebih kaya', hasFundamental ? 'metric-good' : 'metric-warn'],
+    ['Bias Tren', tech?.rating || 'PANTAU', tech?.summary || 'snapshot teknikal', sentimentClass(tech?.rating, tech?.score)],
   ];
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
@@ -196,12 +199,12 @@ function renderAiPreview(symbol, d, candles, tech, analysis){
   const host = document.querySelector('.ai-thread-mock'); if (!host) return;
   const levels = getLevels(candles, tech); const last = candles[candles.length-1] || {}; const rsi = Number(tech?.indicators?.rsi?.value);
   const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
-  const valuation = d.trailing_pe ? (d.trailing_pe < 12 ? 'valuasi murah' : d.trailing_pe > 25 ? 'valuasi premium' : 'valuasi fair') : 'valuasi belum lengkap';
+  const valuation = d.trailing_pe ? (d.trailing_pe < 12 ? 'valuasi murah' : d.trailing_pe > 25 ? 'valuasi premium' : 'valuasi wajar') : 'valuasi belum lengkap';
   const setupBias = tech?.rating === 'BULLISH' ? 'Bias bullish, fokus akumulasi bertahap.' : tech?.rating === 'BEARISH' ? 'Bias defensif, hindari entry agresif.' : 'Bias netral, tunggu konfirmasi lanjutan.';
   const quickTake = rsi >= 70 ? `${symbol} mulai panas; utamakan disiplin entry dan jangan chasing.` : `${symbol} masih layak dipantau untuk setup berikutnya.`;
   const tradeMap = `Pantau ${money(levels.entry)} · invalid ${money(levels.stop)} · target ${money(levels.target)}.`;
   const catalyst = analysis?.valuation?.label || analysis?.swing?.label || 'belum ada katalis dominan';
-  host.innerHTML = `<div class="stat-tile metric-neutral"><span>AI Quick Take</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Setup Bias</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Valuation Read</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Trade Map</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Catalyst Lens</span><div class="text-sm text-muted mt-1">AI akan merangkum catalyst terbaru; saat ini ${catalyst}.</div></div>`;
+  host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Setup</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Bacaan valuasi</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Lensa Katalis</span><div class="text-sm text-muted mt-1">AI akan merangkum katalis terbaru; saat ini ${catalyst}.</div></div>`;
 }
 
 function renderBelowChartFill(candles, tech){
@@ -211,10 +214,10 @@ function renderBelowChartFill(candles, tech){
   const rangePct = first?.close ? ((last.close - first.close) / first.close) * 100 : null;
   const volumeRatio = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value; const levels = getLevels(candles, tech);
   const cards = [
-    ['Range 7D', rangePct == null ? '—' : pf(rangePct), `${money(Math.min(...lows))} - ${money(Math.max(...highs))}`, rangePct >= 0 ? 'metric-good' : 'metric-bad'],
-    ['Volume Context', volumeRatio ? `${nf(volumeRatio,2)}x avg` : '—', volumeRatio >= 1.5 ? 'active' : 'normal', volumeRatio >= 1.5 ? 'metric-good' : 'metric-neutral'],
-    ['Level Plan', `${money(levels.stop)} / ${money(levels.target)}`, 'stop / target', 'metric-neutral'],
-    ['Quick Read', rsi >= 70 ? 'Wait pullback' : (tech.rating || 'Watch'), rsi >= 70 ? 'overbought' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
+    ['Rentang 7H', rangePct == null ? '—' : pf(rangePct), `${money(Math.min(...lows))} - ${money(Math.max(...highs))}`, rangePct >= 0 ? 'metric-good' : 'metric-bad'],
+    ['Konteks Volume', volumeRatio ? `${nf(volumeRatio,2)}x rata-rata` : '—', volumeRatio >= 1.5 ? 'aktif' : 'normal', volumeRatio >= 1.5 ? 'metric-good' : 'metric-neutral'],
+    ['Rencana Level', `${money(levels.stop)} / ${money(levels.target)}`, 'stop / target', 'metric-neutral'],
+    ['Pembacaan Cepat', rsi >= 70 ? 'Tunggu pullback' : (tech.rating || 'Pantau'), rsi >= 70 ? 'overbought' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
   ];
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
@@ -222,7 +225,7 @@ function renderBelowChartFill(candles, tech){
 function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news://pending', meta = ''){
   const safeHref = href || 'news://pending';
   const cardHref = safeHref;
-  return `<div class="stat-tile ${cls}" style="position:relative"><span>${label}</span><strong>${title}</strong><small>${body}</small><small>${meta || `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`}</small><a class="stretched-link" href="${cardHref}" target="_blank" rel="noopener noreferrer" aria-label="Open catalyst source"></a></div>`;
+  return `<div class="stat-tile ${cls}" style="position:relative"><span>${label}</span><strong>${title}</strong><small>${body}</small><small>${meta || `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`}</small><a class="stretched-link" href="${cardHref}" target="_blank" rel="noopener noreferrer" aria-label="Buka sumber katalis"></a></div>`;
 }
 
 function scoreCatalystRow(row, symbolUpper){
@@ -242,9 +245,9 @@ function rankCatalystRows(rows, symbolUpper){
 }
 
 function formatRelativeCatalystTime(value){
-  if (!value) return 'source live';
+  if (!value) return 'sumber live';
   const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return 'source live';
+  if (Number.isNaN(dt.getTime())) return 'sumber live';
   const diffMs = Date.now() - dt.getTime();
   const diffMin = Math.max(0, Math.floor(diffMs / 60000));
   if (diffMin < 60) return `${diffMin || 1}m lalu`;
@@ -263,17 +266,17 @@ function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const latestAnnouncement = announcementRows[0]?.score > 0 ? announcementRows[0] : announcementRows[0] || null;
   const newsHref = relevantNews?.link || 'news://pending';
   const annHref = latestAnnouncement?.link || 'news://pending';
-  const newsMeta = `${formatRelativeCatalystTime(relevantNews?.published_at)} · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`;
-  const annMeta = `${formatRelativeCatalystTime(latestAnnouncement?.date)} · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`;
+  const newsMeta = `${formatRelativeCatalystTime(relevantNews?.published_at)} · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
+  const annMeta = `${formatRelativeCatalystTime(latestAnnouncement?.date)} · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
   const cards = [
     relevantNews
-      ? catalystTile('Latest Catalysts', 'News Pulse', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref, newsMeta)
-      : catalystTile('Latest Catalysts', 'News Pulse', `Menunggu catalyst terbaru untuk ${symbolUpper} · source ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref, newsMeta),
+      ? catalystTile('Katalis Terbaru', 'Denyut Berita', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref, newsMeta)
+      : catalystTile('Katalis Terbaru', 'Denyut Berita', `Menunggu katalis terbaru untuk ${symbolUpper} · sumber ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref, newsMeta),
     latestAnnouncement
-      ? catalystTile('Latest Catalysts', 'Announcement Monitor', `${latestAnnouncement.title || latestAnnouncement.subject || 'Announcement'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref, annMeta)
-      : catalystTile('Latest Catalysts', 'Announcement Monitor', `Belum ada announcement baru · source ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, annMeta),
-    catalystTile('Latest Catalysts', 'Catalyst Lens', `Sinyal teknikal tetap jadi basis utama sambil menunggu news/announcement issuer ${symbolUpper}.`, 'metric-neutral', newsHref, `Bias monitoring · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`),
-    catalystTile('Latest Catalysts', 'Source Check', `News ${newsPayload?.source || 'no_data'} · Ann ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, `Source map · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Catalyst Link</a>`),
+      ? catalystTile('Katalis Terbaru', 'Pemantau Pengumuman', `${latestAnnouncement.title || latestAnnouncement.subject || 'Pengumuman'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref, annMeta)
+      : catalystTile('Katalis Terbaru', 'Pemantau Pengumuman', `Belum ada pengumuman baru · sumber ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, annMeta),
+    catalystTile('Katalis Terbaru', 'Lensa Katalis', `Sinyal teknikal tetap jadi basis utama sambil menunggu berita/pengumuman emiten ${symbolUpper}.`, 'metric-neutral', newsHref, `Bias pemantauan · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`),
+    catalystTile('Katalis Terbaru', 'Cek Sumber', `Berita ${newsPayload?.source || 'no_data'} · Pengumuman ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, `Peta sumber · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`),
   ];
   el.innerHTML = cards.join('');
 }
@@ -281,14 +284,14 @@ function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
 function renderAnalysisPanel(data, tech){
   const noData = String(tech.rating || '').toUpperCase().includes('NO DATA');
   const rows = noData
-    ? [['Swing Score', '—', 'no data'], ['Signal', 'NO DATA', 'no data'], ['Valuation', '—', 'no data'], ['Quality', '—', 'no data'], ['Risk', '—', 'no data']]
-    : [['Swing Score', data.swing?.score ?? tech.score ?? '—', tech.score >= 60 ? 'bullish' : 'watch'], ['Signal', tech.rating || data.swing?.label || 'NEUTRAL', tech.rating], ['Valuation', data.valuation?.label || 'fair', data.valuation?.label || 'fair'], ['Quality', data.dividend?.label || 'weak', data.dividend?.label || 'weak'], ['Risk', data.gorengan?.label || 'normal', data.gorengan?.label || 'normal']];
+    ? [['Skor Swing', '—', 'belum ada data'], ['Sinyal', 'BELUM ADA DATA', 'belum ada data'], ['Valuasi', '—', 'belum ada data'], ['Kualitas', '—', 'belum ada data'], ['Risiko', '—', 'belum ada data']]
+    : [['Skor Swing', data.swing?.score ?? tech.score ?? '—', tech.score >= 60 ? 'bullish' : 'pantau'], ['Sinyal', tech.rating || data.swing?.label || 'NETRAL', tech.rating], ['Valuasi', data.valuation?.label || 'wajar', data.valuation?.label || 'wajar'], ['Kualitas', data.dividend?.label || 'lemah', data.dividend?.label || 'lemah'], ['Risiko', data.gorengan?.label || 'normal', data.gorengan?.label || 'normal']];
   document.getElementById('analysis-panel').innerHTML = rows.map(([l,v,s]) => tile(l, v, s)).join('');
 }
 function renderTradePlan(candles, tech){
   const last = candles[candles.length-1] || {}; const sr = tech?.indicators?.support_resistance || {}; const atr = tech?.indicators?.atr?.value;
   const entry = last.close, stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : (entry - (atr || entry*.08)); const target = sr.resistance_20d || (entry + (atr || entry*.1));
-  const el = document.getElementById('trade-plan'); if (el) el.innerHTML = [ ['Entry Zone', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'wait pullback'], ['Stop Area', money(Math.max(1, stop)), 'risk control'], ['Target Near', money(target), 'resistance'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
+  const el = document.getElementById('trade-plan'); if (el) el.innerHTML = [ ['Zona Entry', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'tunggu pullback'], ['Area Stop', money(Math.max(1, stop)), 'kendali risiko'], ['Target Dekat', money(target), 'resistansi'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
 }
 function renderInsightCards(candles, tech, data){
   const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;
@@ -305,5 +308,5 @@ function renderFallbackSvgChart(data){
   const pts = vals.map((v,i)=>`${p+i*(w-2*p)/Math.max(vals.length-1,1)},${h-p-((v-min)/Math.max(max-min,1))*(h-2*p)}`).join(' ');
   container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="fallback-svg-chart"><polyline fill="none" stroke="#10b981" stroke-width="3" points="${pts}"/><text x="${p}" y="${p}" fill="#94a3b8">${nf(vals[vals.length-1],0)}</text></svg>`;
 }
-function fallbackIssuerName(ticker){ const names={GOTO:'GoTo Gojek Tokopedia Tbk.',BBCA:'Bank Central Asia Tbk.',BMRI:'Bank Mandiri Tbk.',BBRI:'Bank Rakyat Indonesia Tbk.',TLKM:'Telkom Indonesia Tbk.'}; return names[ticker] || `${ticker} — IDX Equity`; }
+function fallbackIssuerName(ticker){ const names={GOTO:'GoTo Gojek Tokopedia Tbk.',BBCA:'Bank Central Asia Tbk.',BMRI:'Bank Mandiri Tbk.',BBRI:'Bank Rakyat Indonesia Tbk.',TLKM:'Telkom Indonesia Tbk.'}; return names[ticker] || `${ticker} — Ekuitas IDX`; }
 function makeFallbackCandles(ticker){ const baseMap={GOTO:96,BBCA:9800,BMRI:5850,BBRI:4100,TLKM:3420}; const base=baseMap[ticker]||1000; const out=[]; for(let i=59;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const wave=Math.sin(i/3)*0.025; const close=Math.round(base*(1+wave+(60-i)*0.0008)); out.push({date:d.toISOString().slice(0,10),open:close-2,high:close+4,low:close-5,close,volume:10000000+i*123456}); } return out; }
