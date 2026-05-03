@@ -271,7 +271,10 @@
 - [done] Verifikasi pasca-cleanup: `git ls-files '.hermes/plans/*'` sekarang kosong; `git status --short` hanya menunjukkan deletion terstage untuk dua file lama plus perubahan dokumentasi `PLAN.md`.
 - [done] Cleanup tracked artifact selesai di-commit sebagai `359ef1e chore: drop tracked hermes planning artifacts` dan berhasil di-push ke `origin/main`.
 - [done] Hasil akhir hygiene repo: artefak `.hermes/plans/` kini tidak lagi tracked dan juga tidak lagi muncul sebagai untracked baru, sehingga working tree proyek bersih dari noise planning lokal secara permanen.
-- [done] Scope batch lanjutan ini tuntas: cleanup `.gitignore`, removal tracked-local-artifacts, verifikasi repo state, dokumentasi `PLAN.md`, commit, dan push semuanya selesai.
+- [done] Audit follow-up pasca-cleanup: `git status --short` bersih, HEAD berada di `6aa764f`, tidak ada `TODO/FIXME/XXX/HACK` tersisa di tree proyek, dan tidak ada lagi file `.hermes/plans/*` yang tracked.
+- [done] Regression verification penuh dijalankan ulang untuk memastikan hygiene cleanup tidak menimbulkan regresi produk: `pytest -q backend/test_api_e2e.py backend/tests/test_ai_picks_api.py backend/tests/test_ai_picks_view_static.py backend/tests/test_ai_picks_scheduler_static.py backend/tests/test_database_config.py` → `52 passed`; compile check backend/frontend juga lulus.
+- [done] Deploy/smoke follow-up juga dijalankan ulang: `bash scripts/sync_production.sh` kembali hijau penuh, dan smoke publik mengonfirmasi `GET /api/ai-picks?mode=swing&limit=3` tetap sehat dengan `source=db`, `trading_date=2026-05-04`, serta `freshness=Briefing baru`.
+- [done] Scope batch lanjutan ini tuntas: cleanup `.gitignore`, removal tracked-local-artifacts, verifikasi repo state, regression retest, deploy recheck, dokumentasi `PLAN.md`, commit, dan push semuanya selesai.
 
 ---
 
