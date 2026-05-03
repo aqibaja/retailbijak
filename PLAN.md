@@ -225,6 +225,19 @@
 
 ---
 
+### 2026-05-03 23:52 CST
+- [done] TDD RED: perluas guard `backend/tests/test_ai_picks_api.py`, `backend/tests/test_stock_analysis_llm_api.py`, dan `backend/tests/test_ai_picks_view_static.py` agar payload/UX `llm` wajib membawa `runtime_state` + `runtime_message`, termasuk saat runtime invalid (`API key OpenRouter ditolak provider: User not found.`).
+- [done] Implementasi backend `backend/services/openrouter_llm.py`: builder `build_ai_picks_llm_payload()` dan `build_stock_analysis_llm_payload()` kini selalu menyertakan `runtime_state`/`runtime_message`; saat OpenRouter invalid/unknown, `summary` error tidak lagi generik `LLM gagal: ...` tetapi memakai pesan provider yang jujur.
+- [done] Implementasi frontend `frontend/js/views/ai_picks.js` dan `frontend/js/views/stock_detail.js`: panel AI sekarang memprioritaskan `runtime_message` agar invalid key langsung terbaca di UI, plus chip state `invalid` tampil di AI Picks brief.
+- [done] Implementasi copy `frontend/js/views/settings.js`: tambahkan catatan operator bahwa status `OpenRouter perlu dicek` biasanya berarti `API key OpenRouter ditolak provider`, supaya user tidak perlu membuka log server.
+- [done] GREEN verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_settings_view_static.py backend/tests/test_ai_picks_api.py backend/tests/test_stock_analysis_llm_api.py backend/tests/test_ai_picks_view_static.py backend/tests/test_user_route_runtime.py` → `33 passed`.
+- [done] Compile verified: `python3 -m py_compile backend/services/openrouter_llm.py backend/routes/user.py backend/ai_picks.py backend/routes/stock_detail.py && python3 -m compileall -q frontend/js` lulus.
+- [done] Deploy production verified: `bash scripts/sync_production.sh` PASS penuh (parity, restart, smoke check, public resource chain).
+- [done] Live API verified: `/api/settings` tetap menunjukkan `openrouter_runtime_state="invalid"`; `/api/ai-picks?...&llm=1` dan `/api/stocks/BBCA/analysis?llm=1` sekarang mengembalikan `llm.runtime_message` + `summary` yang eksplisit `API key OpenRouter ditolak provider: User not found.` sehingga user tidak lagi melihat pesan generik.
+- [warn] Blocker tetap sama: aktivasi AI penuh menunggu penggantian API key OpenRouter yang valid.
+
+---
+
 ### 2026-05-03 23:30 CST
 - [done] TDD RED deploy guard: tambah `backend/tests/test_sync_production_static.py` untuk memaksa `scripts/sync_production.sh` ikut menyalin `backend/ai_picks.py` ke runtime produksi.
 - [done] RED verified: `PYTHONPATH=/home/rich27/retailbijak/backend:/home/rich27/retailbijak /opt/swingaq/backend/venv/bin/pytest -q backend/tests/test_sync_production_static.py` awalnya gagal `1 failed`, membuktikan deploy script belum menyalin modul backend AI Picks terbaru.

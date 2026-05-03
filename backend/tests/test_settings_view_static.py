@@ -66,3 +66,5 @@ def test_settings_view_contains_openrouter_runtime_state_copy():
     assert 'OpenRouter perlu dicek' in content
     assert 'settings?.openrouter_runtime_message' in content
     assert 'openrouter_runtime_state' in content
+    assert 'API key OpenRouter ditolak provider' in content
+

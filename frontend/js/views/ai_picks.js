@@ -166,15 +166,17 @@ function renderCompareTray(items = []) {
 
 function renderAiDeskBrief(llm = null) {
   const status = llm?.status || 'disabled';
+  const runtimeMessage = llm?.runtime_message || '';
   const title = status === 'ok' ? 'AI Desk Brief' : status === 'error' ? 'AI Desk Brief tertunda' : 'AI Desk Brief belum aktif';
   const note = status === 'ok'
     ? (llm?.summary || 'Ringkasan AI belum terisi.')
     : status === 'error'
-      ? (llm?.summary || 'OpenRouter gagal menjawab sesi ini.')
-      : 'OpenRouter belum aktif. Isi API key untuk mengaktifkan ringkasan kurasi.';
+      ? (runtimeMessage || llm?.summary || 'OpenRouter gagal menjawab sesi ini.')
+      : (runtimeMessage || 'OpenRouter belum aktif. Isi API key untuk mengaktifkan ringkasan kurasi.');
   const chips = [];
   if (llm?.model) chips.push(`<span class="ai-picks-reason-chip">${llm.model}</span>`);
   if (llm?.market_bias) chips.push(`<span class="ai-picks-reason-chip">${llm.market_bias}</span>`);
+  if (llm?.runtime_state && llm.runtime_state !== 'ok') chips.push(`<span class="ai-picks-reason-chip">${llm.runtime_state}</span>`);
   const notes = llm?.pick_notes && typeof llm.pick_notes === 'object'
     ? Object.entries(llm.pick_notes).slice(0, 3).map(([ticker, text]) => `<li><strong>${ticker}</strong> · ${text}</li>`).join('')
     : '';

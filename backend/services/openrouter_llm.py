@@ -89,12 +89,15 @@ def _chat_completion(*, api_key: str, model: str, system_prompt: str, user_promp
 def build_stock_analysis_llm_payload(*, ticker: str, row: dict[str, Any], analysis: dict[str, Any], db: Session | None = None) -> dict[str, Any]:
     config = get_openrouter_config(db)
     model = config['stock_analysis_model']
+    runtime = get_openrouter_runtime_status(config)
     if not config['enabled']:
         return {
             'status': 'disabled',
             'model': model,
-            'summary': 'OpenRouter belum dikonfigurasi.',
+            'summary': runtime['message'],
             'bullets': [],
+            'runtime_state': runtime['state'],
+            'runtime_message': runtime['message'],
         }
 
     system_prompt = (
@@ -123,25 +126,33 @@ def build_stock_analysis_llm_payload(*, ticker: str, row: dict[str, Any], analys
             'risk_note': str(parsed.get('risk_note') or '').strip(),
             'action_bias': str(parsed.get('action_bias') or '').strip(),
             'provider': parsed.get('_provider'),
+            'runtime_state': runtime['state'],
+            'runtime_message': runtime['message'],
         }
     except Exception as exc:
+        fallback_message = runtime['message'] if runtime['state'] in {'invalid', 'unknown'} else f'LLM gagal: {exc}'
         return {
             'status': 'error',
             'model': model,
-            'summary': f'LLM gagal: {exc}',
+            'summary': fallback_message,
             'bullets': [],
+            'runtime_state': runtime['state'] if runtime['state'] != 'ok' else 'unknown',
+            'runtime_message': fallback_message,
         }
 
 
 def build_ai_picks_llm_payload(*, mode: str, picks: list[dict[str, Any]], market_context: dict[str, Any], db: Session | None = None) -> dict[str, Any]:
     config = get_openrouter_config(db)
     model = config['ai_picks_model']
+    runtime = get_openrouter_runtime_status(config)
     if not config['enabled']:
         return {
             'status': 'disabled',
             'model': model,
-            'summary': 'OpenRouter belum dikonfigurasi.',
+            'summary': runtime['message'],
             'pick_notes': {},
+            'runtime_state': runtime['state'],
+            'runtime_message': runtime['message'],
         }
 
     compact_picks = [
@@ -184,11 +195,16 @@ def build_ai_picks_llm_payload(*, mode: str, picks: list[dict[str, Any]], market
             'market_bias': str(parsed.get('market_bias') or '').strip(),
             'pick_notes': pick_notes,
             'provider': parsed.get('_provider'),
+            'runtime_state': runtime['state'],
+            'runtime_message': runtime['message'],
         }
     except Exception as exc:
+        fallback_message = runtime['message'] if runtime['state'] in {'invalid', 'unknown'} else f'LLM gagal: {exc}'
         return {
             'status': 'error',
             'model': model,
-            'summary': f'LLM gagal: {exc}',
+            'summary': fallback_message,
             'pick_notes': {},
+            'runtime_state': runtime['state'] if runtime['state'] != 'ok' else 'unknown',
+            'runtime_message': fallback_message,
         }

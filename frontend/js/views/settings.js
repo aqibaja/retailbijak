@@ -102,6 +102,9 @@ export async function renderSettings(root) {
               <div class="settings-note-card">
                   Model gratis default: <strong>${DEFAULT_STOCK_MODEL}</strong> untuk analisis saham dan <strong>${DEFAULT_PICKS_MODEL}</strong> untuk AI Picks.
               </div>
+              <div class="settings-note-card">
+                  Jika status berubah jadi <strong>OpenRouter perlu dicek</strong>, biasanya provider membalas pesan seperti <strong>API key OpenRouter ditolak provider</strong> dan key perlu diganti.
+              </div>
             </div>
           </div>
         </div>

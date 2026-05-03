@@ -47,6 +47,8 @@ def test_ai_picks_view_contains_compare_tray_and_explainable_metric_hooks():
     assert 'ai-picks-factor-meter' in content
     assert 'ai-picks-metric-strip' in content
     assert 'ai-picks-llm-brief' in content
+    assert 'runtime_message' in content
+    assert 'runtime_state' in content
     assert 'change_pct' in content
     assert 'volume_ratio' in content
     assert 'comparison_points' in content
@@ -139,6 +141,7 @@ def test_stock_detail_can_render_ai_pick_context_banner():
     assert 'renderAiPreview(' in content
     assert 'fetchAnalysis(symbol, { llm: true })' in content
     assert 'analysis?.llm' in content
+    assert 'runtime_message' in content
     assert 'Asisten AI aktif' in content
     assert 'OpenRouter belum aktif' in content
     assert 'stock-ai-pick-context' in content

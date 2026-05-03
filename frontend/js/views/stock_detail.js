@@ -258,11 +258,12 @@ function renderAiPreview(symbol, d, candles, tech, analysis){
   const tradeMap = `Pantau ${money(levels.entry)} · invalid ${money(levels.stop)} · target ${money(levels.target)}.`;
   const catalyst = analysis?.valuation?.label || analysis?.swing?.label || 'belum ada katalis dominan';
   const llmStatus = analysis?.llm?.status || 'disabled';
+  const llmRuntimeMessage = analysis?.llm?.runtime_message || '';
   const llmHeadline = llmStatus === 'ok'
     ? (analysis?.llm?.summary || 'Asisten AI aktif, ringkasan terbaru siap dibaca.')
     : llmStatus === 'error'
-      ? (analysis?.llm?.summary || 'Asisten AI aktif tetapi respons terbaru gagal dimuat.')
-      : 'OpenRouter belum aktif. Aktifkan API key untuk membuka ringkasan AI penuh.';
+      ? (llmRuntimeMessage || analysis?.llm?.summary || 'Asisten AI aktif tetapi respons terbaru gagal dimuat.')
+      : (llmRuntimeMessage || 'OpenRouter belum aktif. Aktifkan API key untuk membuka ringkasan AI penuh.');
   const llmBadge = llmStatus === 'ok' ? 'Asisten AI aktif' : llmStatus === 'error' ? 'Asisten AI tertunda' : 'OpenRouter belum aktif';
   host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Saat Ini</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile metric-warn"><span>Risiko Utama</span><div class="text-sm text-muted mt-1">${riskNote}</div></div><div class="stat-tile metric-neutral"><span>Pemicu Perubahan Bias</span><div class="text-sm text-muted mt-1">${biasTrigger}</div></div><div class="stat-tile metric-good"><span>Apa yang perlu ditunggu</span><div class="text-sm text-muted mt-1">${waitingNote}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Bacaan valuasi</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Lensa Katalis</span><div class="text-sm text-muted mt-1">AI akan merangkum katalis terbaru; saat ini ${catalyst}.</div></div><div class="stat-tile ${llmStatus === 'ok' ? 'metric-good' : llmStatus === 'error' ? 'metric-warn' : 'metric-neutral'}"><span>${llmBadge}</span><div class="text-sm text-muted mt-1">${llmHeadline}</div></div>`;
 }
