@@ -6,6 +6,7 @@ import { renderMarket } from './views/market.js?v=20260503x';
 import { renderNews } from './views/news.js?v=20260503u';
 import { renderSettings } from './views/settings.js?v=20260503x';
 import { renderHelp } from './views/help.js?v=20260503z';
+import { renderAiPicks } from './views/ai_picks.js?v=20260503ai';
 
 let routeToken = 0;
 
@@ -51,6 +52,7 @@ export function handleRoute(hash) {
             else if (baseRoute === 'screener') renderScreener(root);
             else if (baseRoute === 'portfolio' || baseRoute === 'watchlist') renderPortfolio(root, baseRoute);
             else if (baseRoute === 'news') renderNews(root);
+            else if (baseRoute === 'ai-picks') renderAiPicks(root);
             else if (baseRoute === 'settings') renderSettings(root);
             else if (baseRoute === 'help') renderHelp(root);
             else renderDashboard(root); // Fallback

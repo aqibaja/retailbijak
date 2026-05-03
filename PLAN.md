@@ -210,14 +210,62 @@
 
 ---
 
-### 2026-05-03 10:50 WIB
-- [done] Lanjutan slice `#settings`: bump cache-bust chain ke token `20260503w` pada `frontend/index.html`, `frontend/js/main.js`, `frontend/js/router.js`, dan import `views/settings.js` agar runtime publik pasti memuat copy settings terbaru.
-- [done] TDD RED/GREEN lanjutan: perluas `backend/tests/test_settings_view_static.py` untuk melarang sisa mixed-language yang masih kentara (`Workspace`, `command palette`, `ticker`, `backend`) dan menuntut copy Indonesia yang lebih natural (`Kontrol Ruang Kerja`, `Sinkron ke layanan lokal`, `basis data`, `Pembaruan Otomatis Pemindai`, `palet perintah`, `kode saham`, `aliran data premium`).
-- [done] Implementasi `frontend/js/views/settings.js`: rapikan semua string campuran yang tersisa sehingga shell settings lebih konsisten Indonesia, termasuk hero, rail status, toggle copy, note cards, dan status text runtime.
-- [done] GREEN verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_cache_bust_chain_static.py /home/rich27/retailbijak/backend/tests/test_settings_view_static.py` lulus (`4 passed` total bersama guard baru) dan `python -m compileall -q /home/rich27/retailbijak/frontend/js` lulus.
-- [done] Sync runtime `/opt/swingaq` selesai untuk `index.html`, `main.js`, `router.js`, `views/settings.js`, dan static tests terkait; parity readback mengonfirmasi token/settings copy baru sudah ada di runtime tree.
-- [done] Browser QA live `#settings?cb=20260503w`: snapshot, DOM, dan visual check menunjukkan `PUSAT PENGATURAN`, `Kontrol Ruang Kerja`, `Simpan Konfigurasi`, `Catatan Terminal`, serta resource aktif `main.js/router.js/settings.js?v=20260503w`.
-- [done] Health endpoint publik tetap sehat: `https://retailbijak.rich27.my.id/api/health` → `{"status":"ok","version":"1.0.0"}`.
+### 2026-05-03 16:45 WIB
+- [done] Hard verification `#ai-picks` dijalankan ulang lewat fresh browser context independen untuk menghindari cache/session drift dari automation sebelumnya.
+- [done] Fresh QA terverifikasi hijau: `.ai-picks-page` render (`count=1`), H1 = `AI Picks`, dan hook mode `[data-ai-picks-mode]` terbaca `3`.
+- [done] Fresh QA tidak menemukan error import/runtime yang aktif; route selesai render normal pada `readyState=complete`.
+- [done] Resource chain fresh session menunjukkan path utama baru aktif: `main.js?v=20260503ab`, `router.js?v=20260503ab`, dan `views/ai_picks.js?v=20260503ai`.
+- [warn] Fresh resource list masih mencatat `main.js?v=20260503aa` lama sebagai resource tambahan historis, tetapi stale router lama tidak ikut termuat dan route `#ai-picks` tetap render benar.
+- [done] Kesimpulan verifikasi publik: deploy AI Picks sekarang valid secara fungsional; isu tersisa hanya jejak resource lama di browser list, bukan blocker render route.
+
+---
+
+### 2026-05-03 16:35 WIB
+- [done] Browser QA awal publik `#ai-picks` menemukan route belum benar-benar aktif walau `location.hash` dan `data-route-path` sudah mengarah ke `ai-picks`; snapshot masih jatuh ke dashboard/blank state.
+- [done] Root cause deploy drift 1: runtime `/opt/swingaq/frontend/js/router.js` belum memuat import/dispatch `renderAiPicks`, dan `/opt/swingaq/frontend/js/views/ai_picks.js` sempat belum ada.
+- [done] Root cause deploy drift 2: setelah sync router/view/style, chain cache-bust belum penuh karena publik masih memuat `main.js?v=20260503aa` / `router.js?v=20260503aa` lama; diperbaiki dengan bump `frontend/js/main.js` → import `router.js?v=20260503ab` dan `frontend/index.html` → `main.js?v=20260503ab`, lalu sync ke `/opt/swingaq/frontend`.
+- [done] Root cause deploy drift 3: `ai_picks.js` masih import `../main.js?v=20260503aa`; diperbaiki ke `../main.js?v=20260503ab` lalu disync ulang.
+- [done] Root cause deploy drift 4: modul publik `ai_picks.js` gagal resolve karena runtime `api.js` lama belum punya export `fetchAiPicks`; dibuktikan via import test browser (`does not provide an export named fetchAiPicks`) dan diperbaiki dengan sync `/opt/swingaq/frontend/js/api.js` dari repo.
+- [done] Verifikasi file publik sesudah sync: URL publik sekarang menyajikan `main.js?v=20260503ab`, `router.js?v=20260503ab`, `views/ai_picks.js?v=20260503ai`, dan `api.js?v=20260503b` dengan konten baru yang benar.
+- [warn] Browser session masih menunjukkan resource lama campuran (`main.js/router.js v20260503aa` dan `v20260503ab`) sehingga QA visual final route `#ai-picks` di automation belum bisa dinyatakan hijau penuh pada sesi ini meskipun source publik sudah benar; perlu re-check browser segar/hard refresh berikutnya.
+
+---
+
+### 2026-05-03 16:20 WIB
+- [done] TDD RED frontend `#ai-picks`: perluas `backend/tests/test_ai_picks_view_static.py` untuk memaksa compare tray hidup, metric strip explainable, factor meter, dan hook CSS visual baru.
+- [done] RED verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_view_static.py` gagal `2 failed` sebelum implementasi karena `renderCompareTray` dan styling compare/factor belum ada.
+- [done] Implementasi `frontend/js/views/ai_picks.js`: tambah `renderMetricStrip`, `renderFactorMeter`, `renderCompareTray`, tombol compare per kandidat, compare tray default top-2, dan expose `latest_close`, `change_pct`, `volume_ratio`, `bars_count`, `factor_scores`, `comparison_points` pada featured/ranked cards.
+- [done] Implementasi `frontend/style.css`: tambah visual `ai-picks-metric-strip`, `ai-picks-factor-list`, `ai-picks-factor-meter`, `ai-picks-factor-fill`, `ai-picks-compare-grid`, `ai-picks-compare-card`, dan responsive stacking.
+- [done] GREEN verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_view_static.py` → `6 passed`.
+- [done] Compile verified: `python -m compileall -q frontend/js` → pass.
+- [done] Hygiene verified: scan prefix line-number di `frontend/js/**/*.js` tetap bersih (`0` match).
+
+---
+
+### 2026-05-03 16:05 WIB
+- [done] TDD RED backend `#ai-picks`: perluas `backend/tests/test_ai_picks_api.py` untuk memaksa row live mengandung metrik explainable (`latest_close`, `change_pct`, `volume_ratio`, `bars_count`, `factor_scores`, `comparison_points`) dan memastikan `limit` benar-benar dihormati.
+- [done] RED verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` gagal pada guard explainability baru karena payload live belum mengembalikan metrik pembanding.
+- [done] Implementasi `backend/ai_picks.py`: perluas `compose_pick_payload()` agar endpoint `/api/ai-picks` mengembalikan metrik live explainable berbasis OHLCV/faktor turunan tanpa bergantung pada tabel `signals`.
+- [done] Payload live sekarang menyertakan `latest_close`, `change_pct`, `volume_ratio`, `bars_count`, `factor_scores`, dan `comparison_points` untuk dipakai compare tray / reason panel frontend berikutnya.
+- [done] GREEN verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` → `7 passed`.
+- [done] Regression verified: `pytest -q /home/rich27/retailbijak/backend/test_api_e2e.py /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` → `23 passed`.
+- [done] Compile verified: `python -m compileall -q /home/rich27/retailbijak/backend /home/rich27/retailbijak/frontend/js` → pass.
+- [done] Hygiene check: scan korupsi prefix line-number pada `frontend/js/*.js` tetap bersih (`0` match).
+
+---
+
+### 2026-05-03 15:45 WIB
+- [done] TDD RED untuk slice `#ai-picks`: tambah `backend/tests/test_ai_picks_view_static.py` guna memaksa helper API `fetchAiPicks`, route `#ai-picks`, shell view baru, dan hook CSS layout awal.
+- [done] RED verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_view_static.py` awalnya gagal `4 failed` sebelum implementasi.
+- [done] Implementasi `frontend/js/api.js`: tambah helper `fetchAiPicks(mode='swing', limit=5)` dengan fallback contract stabil saat backend belum siap.
+- [done] Implementasi `frontend/js/router.js`: daftarkan import view baru dan route dispatch `ai-picks`.
+- [done] Implementasi `frontend/js/views/ai_picks.js`: tambah shell page AI Picks dengan hero, mode switch, summary strip, featured card, ranked list, compare tray, empty state, dan quick action tambah watchlist.
+- [done] Implementasi `frontend/style.css`: tambah styling awal page AI Picks agar konsisten dengan design system existing.
+- [done] GREEN verified: `pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_view_static.py` → `4 passed`.
+- [done] Compile verified: `python -m compileall -q /home/rich27/retailbijak/frontend/js` → pass.
+- [done] Hygiene check: scan korupsi prefix line-number pada `frontend/js/*.js` → bersih (`0` match).
+
+---
 
 ### 2026-05-03 11:32 WIB
 - [done] TDD RED: tambah guard baru di `backend/tests/test_cache_bust_chain_static.py` untuk melarang korupsi prefix line-number (`^\\s*\\d+\\|`) pada seluruh `frontend/js/views/*.js`; test sengaja gagal dan mengungkap 8 file view yang rusak.
@@ -323,11 +371,37 @@
 - [done] GREEN verified lokal: `pytest -q backend/tests/test_stock_detail_residual_copy_static.py backend/tests/test_low_signal_copy_cleanup_static.py` → lulus; `python -m compileall -q frontend/js` dan `python -m py_compile scripts/check_public_resource_chain.py` → lulus.
 - [done] Runtime/public verification: sync `stock_detail.js`, checker publik, dan static test baru ke `/opt/swingaq/...`; `python scripts/check_frontend_runtime_parity.py` → `PASS`; `python scripts/check_public_resource_chain.py` → `PASS`; browser QA live `#stock/BBCA` menampilkan `Panel Keputusan`, `Kendali risiko`, `Zona pullback`, `Zona reward`, dan marker baru tanpa console issue.
 
+### 2026-05-03 15:20 WIB
+- [done] Mulai slice baru AI Picks MVP sesuai request lanjutan; review ulang `PLAN.md`, struktur `backend/main.py`, `backend/test_api_e2e.py`, dan kontrak frontend/backend untuk menentukan irisan TDD pertama yang aman.
+- [done] TDD RED: buat `backend/tests/test_ai_picks_api.py` untuk mengunci kontrak awal `GET /api/ai-picks` — top-level shape, mode `swing/defensive/catalyst`, fallback mode invalid ke `swing`, `data` selalu list, dan no-data summary stabil.
+- [done] RED verified di runtime venv: `/opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` awalnya gagal `5 failed` dengan `404 Not Found`, membuktikan route belum ada sebelum implementasi.
+- [done] Implementasi minimum backend: tambah `backend/ai_picks.py` dengan helper `normalize_ai_pick_mode()` + `build_ai_picks_fallback_payload()`, lalu register route tipis `GET /api/ai-picks` di `backend/main.py` dengan kontrak no-data yang stabil dan safe fallback mode.
+- [done] GREEN verified: `/opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` → `5 passed`.
+- [done] Catatan env: pytest lokal default sempat gagal collect karena dependency `ta` tidak tersedia di interpreter Hermes, jadi verifikasi backend AI Picks sementara memakai runtime venv produksi `/opt/swingaq/backend/venv` yang memang dipakai service.
+
+### 2026-05-03 15:32 WIB
+- [done] Lanjut slice AI Picks MVP ke scoring layer; pilih pendekatan pure-helper agar TDD bisa jalan tanpa bergantung ke route/API atau isi DB.
+- [done] TDD RED: buat `backend/tests/test_ai_picks_scoring.py` untuk mengunci perilaku `score_pick()`, `label_confidence()`, dan `reason_labels_from_factors()` pada tiga mode awal (`swing`, `defensive`, `catalyst`).
+- [done] RED verified: `/opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_scoring.py` awalnya gagal saat collection karena helper scoring belum ada di `backend/ai_picks.py`.
+- [done] Implementasi minimum scoring engine di `backend/ai_picks.py`: tambah `MODE_WEIGHTS`, `FIT_LABELS`, helper `_clamp()` / `_factor_value()`, lalu implement `label_confidence()`, `reason_labels_from_factors()`, dan `score_pick()` dengan hasil explainable per mode.
+- [done] GREEN verified: `/opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_scoring.py /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` → `10 passed`.
+- [done] Compile check backend helper: `python -m py_compile /home/rich27/retailbijak/backend/ai_picks.py /home/rich27/retailbijak/backend/main.py` lulus.
+
+### 2026-05-03 15:48 WIB
+- [done] Audit slice kandidat AI Picks: cek DB runtime `/opt/swingaq/backend/swingaq.db` dan konfirmasi `signals=0`, `ohlcv_daily=44048`, `fundamentals=958`, `stocks=974`, `news=85`; coverage aktual per ticker hanya `46` bar sehingga threshold histori awal perlu realistis agar MVP bisa hidup dari OHLCV, bukan tabel `signals`.
+- [done] TDD RED: buat `backend/tests/test_ai_picks_candidates.py` untuk mengunci `build_candidate_universe()`, `compose_pick_payload()`, dan endpoint `/api/ai-picks` saat data tersedia.
+- [done] RED verified: `/opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_candidates.py` awalnya gagal saat collection karena helper kandidat belum ada di `backend/ai_picks.py`.
+- [done] Implementasi minimum candidate layer di `backend/ai_picks.py`: tambah koneksi SQLite langsung ke runtime DB, `summarize_market_context()`, `build_candidate_universe()`, `compose_pick_payload()`, dan `build_ai_picks_payload()` berbasis `ohlcv_daily + fundamentals + stocks + news`, tanpa dependensi ke tabel `signals`.
+- [done] Penyesuaian route: `backend/main.py` sekarang memanggil `build_ai_picks_payload()` sehingga `/api/ai-picks` mengembalikan ranked picks derived saat data cukup, dan fallback no-data tetap tersedia via helper dedicated.
+- [done] RED tambahan sempat muncul di market-context query (`sqlite3.OperationalError: no such column: rowid`); akar masalah diperbaiki dengan query breadth berbasis `date` latest-session langsung, bukan pseudo-filter `rowid`.
+- [done] Update kontrak test fallback: `backend/tests/test_ai_picks_api.py` dipersempit agar no-data summary stabil diverifikasi lewat `build_ai_picks_fallback_payload()`; endpoint live kini memang diharapkan mengembalikan picks non-empty bila data runtime cukup.
+- [done] GREEN verified: `/opt/swingaq/backend/venv/bin/pytest -q /home/rich27/retailbijak/backend/tests/test_ai_picks_candidates.py /home/rich27/retailbijak/backend/tests/test_ai_picks_scoring.py /home/rich27/retailbijak/backend/tests/test_ai_picks_api.py` → `15 passed`; `python -m py_compile /home/rich27/retailbijak/backend/ai_picks.py /home/rich27/retailbijak/backend/main.py` → lulus.
+
 ## Current Slice Notes
 
-**Slice aktif sekarang:** guard deploy publik untuk route `stock` kini menjaga batch copy terlokalisasi level operator juga, bukan hanya marker high-signal batch awal.
+**Slice aktif sekarang:** AI Picks MVP end-to-end sudah aktif di backend + frontend, lengkap dengan ranking explainable, compare tray, route `#ai-picks`, dan verifikasi browser fresh-session bahwa view publik sudah render normal.
 
 **Target patch minimum untuk slice berikutnya:**
-1. commit + push batch cleanup operator-copy stock detail ini,
-2. audit residual mixed-language berikutnya di summary teknikal backend-driven (`Below SMA20`, `Oversold`, `fair`) bila ingin copy makin natural,
-3. pertahankan checker publik tetap hijau sebelum menyentuh route lain.
+1. commit + push batch AI Picks MVP ini,
+2. sync runtime `/opt/swingaq` bila ada delta repo baru sebelum deploy berikutnya,
+3. lanjut polish copy/UX AI Picks atau tambah action lanjutan (mis. pin/history) di iterasi berikutnya.

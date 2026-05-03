@@ -57,6 +57,10 @@ try:
 except ModuleNotFoundError:
     from backend.scheduler import init_scheduler, scheduler
 try:
+    from ai_picks import build_ai_picks_payload
+except ModuleNotFoundError:
+    from backend.ai_picks import build_ai_picks_payload
+try:
     from services.idx_api_client import get_idx_client, parse_idx_number
 except ModuleNotFoundError:
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
@@ -125,6 +129,11 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 @app.get("/")
 async def root():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+
+@app.get("/api/ai-picks")
+def get_ai_picks(mode: str = "swing", limit: int = 5):
+    return build_ai_picks_payload(mode=mode, limit=limit)
 
 
 class SettingsPayload(BaseModel):

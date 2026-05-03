@@ -100,6 +100,19 @@ export async function fetchPortfolio() {
     return apiFetch('/portfolio') || { count: 0, data: [] };
 }
 
+export async function fetchAiPicks(mode = 'swing', limit = 5) {
+    const safeMode = encodeURIComponent(mode || 'swing');
+    const safeLimit = Number(limit || 5);
+    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}`) || {
+        mode: mode || 'swing',
+        updated_at: null,
+        source: 'no_data',
+        market_context: { tone: 'unknown', breadth_label: 'data belum cukup', latest_date: null },
+        summary: { candidates_analyzed: 0, eligible_count: 0, featured_ticker: null },
+        data: [],
+    };
+}
+
 export async function savePortfolioPosition(payload) {
     return apiFetch('/portfolio', {
         method: 'POST',
