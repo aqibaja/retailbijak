@@ -166,6 +166,7 @@ export function showToast(message, type = 'info', duration = 4000) {
         <div class="toast-progress" style="animation-duration:${duration}ms"></div>
     `;
     
+    toast.style.animation = 'toastSlideIn 0.35s cubic-bezier(0.16,1,0.3,1)';
     container.appendChild(toast);
     
     // Auto dismiss

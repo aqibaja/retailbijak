@@ -11,10 +11,10 @@ export function initTheme() {
     function applyTheme() {
         if (isDark) {
             htmlEl.setAttribute('data-theme', 'dark');
-            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="sun" style="width:18px;"></i>';
+            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="sun"></i>';
         } else {
             htmlEl.setAttribute('data-theme', 'light');
-            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="moon" style="width:18px;"></i>';
+            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="moon"></i>';
         }
         localStorage.setItem('retail-theme', isDark ? 'dark' : 'light');
         if (typeof lucide !== 'undefined') lucide.createIcons();
