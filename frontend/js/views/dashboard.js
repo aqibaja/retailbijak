@@ -1,4 +1,4 @@
-     1|import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260505b';
+1|import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260505b';
      2|import { observeElements, animateValue } from '../main.js?v=20260504e';
      3|
      4|const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -224,7 +224,7 @@
    224|
    225|  if (!featured) {
    226|    if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
-   227|    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary portfolio-action-btn" class="mt-10">Buka AI Picks</a></div>';
+   227|    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary portfolio-action-btn mt-10">Buka AI Picks</a></div>';
    228|    return;
    229|  }
    230|

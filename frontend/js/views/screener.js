@@ -1,4 +1,4 @@
-     1|import { getScanEventSourceUrl, showToast } from '../api.js?v=20260505b';
+1|import { getScanEventSourceUrl, showToast } from '../api.js?v=20260505b';
      2|import { observeElements } from '../main.js?v=20260504e';
      3|
      4|const renderEmptyState = ({
@@ -21,8 +21,8 @@
     21|  </div>`;
     22|
     23|const renderSkeleton = () => `
-    24|  <div class="flex-col gap-2" class="p-4">
-    25|    ${Array(5).fill('<div class="skeleton skeleton-card" class="skeleton-h-80"></div>').join('')}
+    24|  <div class="flex-col gap-2 p-4">
+    25|    ${Array(5).fill('<div class="skeleton skeleton-card skeleton-h-80"></div>').join('')}
     26|  </div>
     27|`;
     28|
@@ -68,15 +68,15 @@
     68|      <section class="stagger-reveal">
     69|        <div class="mb-6 screener-hero">
     70|          <div class="screener-kicker">SwingAQ Intelligence</div>
-    71|          <h1 class="text-3xl strong mb-2" class="tracking-tight">Pemindai Akumulasi Institusi</h1>
+    71|          <h1 class="text-3xl strong mb-2 tracking-tight">Pemindai Akumulasi Institusi</h1>
     72|        </div>
     73|        <div class="scanner-layout">
-    74|          <div class="scanner-form flex-col" class="gap-5">
+    74|          <div class="scanner-form flex-col gap-5">
     75|            <div class="scanner-header-text">PUSAT KONTROL</div>
     76|            <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
     77|            <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
     78|            <button id="btn-run-screener" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
-    79|            <div id="screener-progress" style="display:none" class="panel-lite p-4 scanner-progress">
+    79|            <div id="screener-progress" class="hidden" class="panel-lite p-4 scanner-progress">
     80|              <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
     81|              <div class="screener-progress-track"><div id="sp-fill" class="screener-progress-fill"></div></div>
     82|            </div>
@@ -87,7 +87,7 @@
     87|                <h3 class="text-xs strong uppercase m-0 screener-signal-title">Sinyal Live</h3>
     88|                <span class="badge" id="screener-count">BELUM SCAN</span>
     89|              </div>
-    90|              <div id="screener-toolbar" class="flex gap-2 screener-toolbar" style="display:none">
+    90|              <div id="screener-toolbar" class="flex gap-2 screener-toolbar" class="hidden">
     91|                <div class="scanner-control-stack">
     92|                  <select id="screener-sort" class="scanner-select screener-control-select">
     93|                      <option value="cci">Urut: CCI</option>

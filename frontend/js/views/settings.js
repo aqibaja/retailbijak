@@ -1,4 +1,4 @@
-     1|import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260505b';
+1|import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260505b';
      2|import { observeElements } from '../main.js?v=20260504e';
      3|
      4|const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
@@ -49,7 +49,7 @@
     49|                </label>
     50|            </div>
     51|
-    52|            <div class="settings-section-head" style="margin-top:0.5rem;">
+    52|            <div class="settings-section-head" class="mt-8">
     53|              <h2>OpenRouter AI</h2>
     54|              <span>Aktifkan ringkasan AI untuk analisis saham dan AI Picks dengan model gratis default.</span>
     55|            </div>
@@ -92,7 +92,7 @@
     92|          </div>
     93|
     94|          <div class="settings-note-rail panel flex-col gap-4">
-    95|            <h2 class="settings-note-title"><i data-lucide="terminal" style="width:14px;"></i> Catatan Terminal</h2>
+    95|            <h2 class="settings-note-title"><i data-lucide="terminal" class="lucide-sm"></i> Catatan Terminal</h2>
     96|            <div class="settings-note-stack">
     97|                <div class="settings-note-card">
     98|                    <strong class="settings-note-strong">⌘K / Ctrl+K</strong> membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.

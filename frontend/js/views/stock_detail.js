@@ -1,4 +1,4 @@
-     1|import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260505f';
+1|import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260505f';
      2|import { observeElements, flashUpdate } from '../main.js?v=20260505f';
      3|
      4|const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -95,8 +95,8 @@
     95|          <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
     96|          <div id="level-suggestions" class="level-suggestions"></div>
     97|          <div id="decision-panel" class="decision-panel mt-3"></div>
-    98|          <div class="panel-flush" class="mt-16"><h3 class="panel-flush-title">Market Stats</h3><div id="market-stats-v2" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-    99|          <div class="panel-flush" class="mt-16"><h3 class="panel-flush-title">Katalis Terbaru</h3><div id="catalyst-strip-v2" class="catalyst-strip-v2"><div class="skeleton skeleton-text" class="skeleton-w-60"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
+    98|          <div class="panel-flush mt-16"><h3 class="panel-flush-title">Market Stats</h3><div id="market-stats-v2" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+    99|          <div class="panel-flush mt-16"><h3 class="panel-flush-title">Katalis Terbaru</h3><div id="catalyst-strip-v2" class="catalyst-strip-v2"><div class="skeleton skeleton-text skeleton-w-60"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
    100|        </div>
    101|        <div class="stock-side compact-right-scroll flex-col gap-2">
    102|          <div class="stock-tabs" data-stock-tabs="1">
