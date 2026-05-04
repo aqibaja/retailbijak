@@ -519,3 +519,145 @@
 | `backend/database.py` | Added `Alert` model |
 | `frontend/js/router.js` | Cache-bust bump |
 | `PLAN.md` | This progress log |
+
+---
+
+## Phase 4: UI/UX Pro — TradingView Chart, Layout Rebalance, News Redesign, Loading States, General Polish
+
+> **Model routing:** planning/reasoning → `deepseek-v4-pro` · coding/execution → `deepseek-v4-flash`
+
+**Status:** PLANNED  
+**Timeline:** 3-4 hari  
+**Goal:** Menyelesaikan 7 isu feedback user dari Phase 3
+
+---
+
+### 🔍 Issue Breakdown
+
+| # | Issue | Root Cause | Severity |
+|---|-------|------------|----------|
+| **1** | Topbar stock running tidak loop/hilang di mobile | CSS `@media(max-width:1100px) .topbar-ticker-wrap{display:none}` + duplikasi animasi | 🟡 Medium |
+| **2** | Detail stock: kiri bawah kosong, kanan terlalu panjang | Layout imbalance: chart area cuma chart+decision, sidebar overloaded | 🟡 Medium |
+| **3** | Berita: tanpa gambar, UI jelek, tanpa berita terkait | RSS feed tanpa `image_url`, tidak ada filter related news | 🟡 Medium |
+| **4** | Loading state di detail stock tidak ada | Hanya teks "Memuat...", tanpa skeleton animation | 🟡 Medium |
+| **5** | Chart jelek | LightweightCharts basic, perlu TradingView widget | 🔴 High |
+| **6** | AI Chat pakai model salah | Runtime setting `openrouter_stock_analysis_model` pakai `nvidia/...` bukan `google/gemma...` | 🟠 Low |
+| **7** | UI/UX jelek di semua fitur | Kurangnya konsistensi spacing, typography, card shadows | 🟡 Medium |
+
+---
+
+### 🎯 Target Perbaikan
+
+#### Issue 1 — Topbar Running Ticker
+- **Fix animation**: Hapus duplikasi `scroll-ticker` + `ticker-scroll`, pakai satu animasi `ticker-scroll 36s linear infinite` pada `.tape-row`
+- **Mobile visible**: Ubah `display:none` jadi `overflow-x:auto` dengan scroll horizontal + touch drag
+- **Wrap content**: Pastikan stock items duplicate untuk infinite scroll effect
+
+**Files:**
+- `frontend/style.css`: Fix `topbar-ticker-wrap` display di breakpoint mobile
+- `frontend/js/main.js`: Fix init running ticker (pastikan duplikasi array jalan)
+
+#### Issue 2 — Detail Stock Layout Rebalance
+- **Pindah content**: Pindahkan **Fundamental** dan **Catalyst Strip** ke kiri bawah (di bawah decision panel)
+- **Grid ratio**: Ubah dari `1fr 390px` jadi `1.2fr 1fr` biar lebih proporsional
+- **Collapsible sections**: Teknikal jadi collapsible <details> di sidebar
+- **Hapus spacing waste**: Hapus `decision-panel-gap` + `section-gap-large` yang kosong
+
+**Files:**
+- `frontend/js/views/stock_detail.js`: Restructure template, pindah fundamental+catalyst ke chart column
+- `frontend/style.css`: Adjust grid ratios, collapsible styles
+
+#### Issue 3 — News Page Redesign
+- **Related news**: Filter berita by sector/category dari data yang ada
+- **Images**: Fallback image generator dari ticker/name (gradient with text)
+- **Card redesign**: Compact cards dengan source badge, relative time, kategori
+- **Featured**: First story gets featured hero treatment
+
+**Files:**
+- `frontend/js/views/news.js`: Rewrite render with images, related, categories
+- `frontend/style.css`: New card styles, featured hero, image fallback
+- `backend/routes/news.py`: Add category/related endpoint jika perlu
+
+#### Issue 4 — Loading States
+- **Skeleton loader**: CSS skeleton shimmer animation
+- **Per-section loading**: Chart skeleton, technical skeleton, fundamental skeleton
+- **Progressive render**: Data yang cepat (detail) render dulu, yang lambat (analysis) belakangan
+
+**Files:**
+- `frontend/style.css`: Skeleton animation keyframes + classes
+- `frontend/js/views/stock_detail.js`: Skeleton HTML template, progressive loading
+
+#### Issue 5 — TradingView Chart
+- **TradingView Widget**: Embed TradingView's free Advanced Chart Widget
+- **Fallback**: LightweightCharts tetap sebagai fallback jika TradingView gagal load
+- **Custom toolbar**: Timeframe switcher + indicator toggle tetap dari kita
+
+**Implementation options:**
+1. **TradingView Charting Library** (free for embedded use, requires `charting_library` folder)
+2. **TradingView Widget** (simpler embed, less features)
+3. **Enhanced LightweightCharts** with more features
+
+**Recommended**: Opsi 2 — TradingView Widget via `<script>` tag (free, instant, no hosting needed)
+
+**Files:**
+- `frontend/index.html`: Add TradingView script
+- `frontend/js/views/stock_detail.js`: Render TradingView widget or fallback
+- `frontend/style.css`: TradingView container styles
+
+#### Issue 6 — AI Chat Model Fix
+- Update DB setting: `openrouter_stock_analysis_model` → `google/gemma-4-26b-a4b-it`
+
+**Files:**
+- Via API: `PUT /api/settings`
+
+#### Issue 7 — General UI/UX Polish
+- **Consistent spacing**: Card padding, gap uniformity
+- **Better typography**: Font sizing hierarchy
+- **Card shadows/glows**: Subtle glow pada panel aktif
+- **Loading micro-interactions**: Smooth fade-in, staggered reveal
+- **Empty states**: Better empty state design with icons
+- **Button consistency**: All buttons same height, border-radius, font
+
+**Files:**
+- `frontend/style.css`: Design token refinement, utility classes
+- All view files: Consistent class usage
+
+---
+
+### ⚙️ Execution Plan
+
+| Hari | Fokus | Task |
+|------|-------|------|
+| **1** | Chart + Topbar | (1) Embed TradingView widget, (2) Fix running ticker CSS + mobile, (3) Update AI Chat model |
+| **2** | Layout + Loading | (4) Rebalance stock detail layout, (5) Add skeleton loading states |
+| **3** | News + Polish | (6) Redesign news page with images + related, (7) General UI/UX pass |
+| **4** | QA + Deploy | Full test, browser verify, sync, commit, push |
+
+---
+
+### 📁 Files Affected (Phase 4)
+
+| File | Change | Scope |
+|------|--------|-------|
+| `frontend/js/views/stock_detail.js` | **Modify** | Layout rebalance, skeleton, TradingView embed, collapsible |
+| `frontend/style.css` | **Modify** | Ticker fix, skeleton, TradingView, card polish, mobile |
+| `frontend/js/views/news.js` | **Modify** | Images, related news, card redesign, categories |
+| `frontend/js/main.js` | **Minor** | Running ticker init fix |
+| `frontend/index.html` | **Minor** | TradingView widget script (if needed) |
+| `backend/routes/news.py` | **Minor** | Category/related endpoint (optional) |
+| `backend/routes/stock_detail.py` | **No change** | All endpoints already exist |
+| `frontend/js/api.js` | **No change** | Existing fetch helpers sufficient |
+
+---
+
+### Progress Log
+
+#### 2026-05-04 — Phase 4 Planning
+- [x] **Hari 1**: TradingView chart + topbar fix + model update
+- [x] **Issue 6**: AI Chat model → `google/gemma-4-26b-a4b-it` ✅
+- [x] **Issue 5**: TradingView widget embed di stock detail ✅ (fallback LightweightCharts)
+- [x] **Issue 1**: Topbar running ticker — konsolidasi CSS animation, mobile scroll ✅
+- [x] **Issue 2**: Layout rebalance — fundamental+catalyst pindah ke kiri, hapus gap waste ✅
+- [ ] **Hari 2**: Skeleton loading states
+- [ ] **Hari 3**: News redesign + general UI/UX
+- [ ] **Hari 4**: QA, deploy, commit

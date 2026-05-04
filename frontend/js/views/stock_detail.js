@@ -74,8 +74,7 @@ export async function renderStockDetail(root, ticker) {
       <div class="stock-layout">
         <div class="panel stock-chart-card">
           <div class="flex justify-between items-center mb-3">
-            <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">OHLCV dari DB lokal IDX</p></div>
-            <div class="dashboard-chip-row"><button class="btn btn-primary btn-mini stock-range" data-limit="7">7D</button><button class="btn btn-mini stock-range" data-limit="30">30D</button><button class="btn btn-mini stock-range" data-limit="120">ALL</button></div>
+            <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">TradingView · IDX</p></div>
           </div>
           <div class="chart-toolbar" id="chart-toolbar">
             <label class="indicator-toggle active" data-indicator="sma"><span>SMA</span></label>
@@ -84,11 +83,12 @@ export async function renderStockDetail(root, ticker) {
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
           </div>
           <div class="chart-top-spacing"></div>
+          <div id="tvchart" class="stock-chart-wrap"></div>
           <div id="level-suggestions" class="level-suggestions"></div>
-          <div class="chart-shell"><div id="tvchart" class="stock-chart-wrap"></div><div id="level-overlay" class="level-overlay"></div></div>
-          <div class="decision-panel-gap"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
-          <div class="section-gap-large"></div>
+          <!-- Fundamental & Catalyst dipindah ke sini (layout rebalance) -->
+          <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid"></div></div>
+          <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"></div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="stock-tabs" data-stock-tabs="1">
@@ -97,11 +97,9 @@ export async function renderStockDetail(root, ticker) {
             <button class="stock-tab" data-tab="berita">Berita</button>
           </div>
 
-          <div class="stock-tab-content active" data-tab-content="analisis">
+            <div class="stock-tab-content active" data-tab-content="analisis">
             <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
             <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item">Memuat ringkasan teknikal...</div></div><div id="signal-card" class="signal-card"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
-            <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid right-uniform-grid compact-grid-3"></div></div>
-            <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"></div></div>
             <div class="panel" id="broker-activity-panel" style="display:none"></div>
             <div class="panel" id="peer-comparison-panel" style="display:none"></div>
             <div class="panel"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
@@ -246,17 +244,13 @@ export async function renderStockDetail(root, ticker) {
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   hydrateHeader(symbol, detail, fund, candles);
   const technical = tech?.technical || {};
-  try { renderStockChart(candles, 7, technical); } catch (e) { console.warn('stock chart fallback', e); renderFallbackSvgChart(candles.slice(-7)); }
-  document.querySelectorAll('.stock-range').forEach(btn => btn.addEventListener('click', () => {
-    document.querySelectorAll('.stock-range').forEach(b => b.classList.remove('btn-primary'));
-    btn.classList.add('btn-primary');
-    try { renderStockChart(candles, Number(btn.dataset.limit || 30), technical); renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); } catch (e) { renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); }
-  }));
-  // Indicator toggle
+  // TradingView chart (or fallback to LightweightCharts)
+  try { renderStockChart(symbol, candles, technical); } catch (e) { console.warn('chart error', e); renderFallbackSvgChart(candles.slice(-30)); }
+  // Indicator toggle (only relevant for LightweightCharts fallback)
   document.querySelectorAll('.indicator-toggle').forEach(el => {
     el.addEventListener('click', () => {
       el.classList.toggle('active');
-      renderStockChart(candles, Number(document.querySelector('.stock-range.btn-primary')?.dataset.limit || 30), technical);
+      renderStockChart(symbol, candles, technical);
     });
   });
   const analysisData = analysis?.data || analysis?.analysis || {};
@@ -307,70 +301,106 @@ function hydrateHeader(symbol, detail, fund, candles){
   const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
   const chEl = document.getElementById('stock-change'); chEl.textContent = `${change >= 0 ? '+' : ''}${nf(change,0)} (${pf(pct)})`; chEl.className = `mono text-base mt-1 strong ${change >= 0 ? 'text-up' : 'text-down'}`;
 }
-function renderStockChart(candles, limit, technical){
-  const data = candles.slice(-Math.min(limit, candles.length));
+function renderStockChart(symbol, candles, technical){
   const container = document.getElementById('tvchart'); if (!container) return;
-  document.getElementById('chart-subtitle').textContent = `${data[0]?.date || '—'} → ${data[data.length-1]?.date || '—'} · ${data.length} candle`;
+
+  // Try TradingView widget first
+  if (typeof TradingView !== 'undefined' && container.clientWidth > 0) {
+    try {
+      container.innerHTML = '';
+      const tvSymbol = `IDX:${(symbol || '').replace('.JK','')}`;
+      new TradingView.widget({
+        container_id: 'tvchart',
+        autosize: true,
+        symbol: tvSymbol,
+        interval: 'D',
+        timezone: 'Asia/Jakarta',
+        theme: 'dark',
+        style: '1',
+        locale: 'id_ID',
+        toolbar_bg: '#0b1220',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        hide_top_toolbar: false,
+        hide_legend: false,
+        save_image: true,
+        studies: ['RSI@tv-basicstudies', 'MASimple@tv-basicstudies'],
+        disabled_features: ['use_localstorage_for_settings'],
+        enabled_features: ['study_templates'],
+        overrides: {
+          'mainSeriesProperties.candleStyle.upColor': '#10b981',
+          'mainSeriesProperties.candleStyle.downColor': '#ef4444',
+          'mainSeriesProperties.candleStyle.wickUpColor': '#10b981',
+          'mainSeriesProperties.candleStyle.wickDownColor': '#ef4444',
+        },
+      });
+      document.getElementById('chart-subtitle').textContent = `${tvSymbol} · live dari TradingView`;
+      // Hide our indicator toolbar when using TradingView
+      const toolbar = document.getElementById('chart-toolbar');
+      if (toolbar) toolbar.style.display = 'none';
+      // Hide level suggestions (TradingView has its own)
+      const ls = document.getElementById('level-suggestions');
+      if (ls) ls.style.display = 'none';
+      return;
+    } catch (e) {
+      console.warn('TradingView init failed, fallback to LightweightCharts', e);
+    }
+  }
+
+  // Fallback: LightweightCharts + our overlays
+  const limit = 120;
+  const data = candles.slice(-Math.min(limit, candles.length));
+  document.getElementById('chart-subtitle').textContent = `${data[0]?.date || '—'} → ${data[data.length-1]?.date || '—'} · ${data.length} candle · LightweightCharts`;
+  // Show our toolbar
+  const toolbar = document.getElementById('chart-toolbar');
+  if (toolbar) toolbar.style.display = '';
+  const ls = document.getElementById('level-suggestions');
+  if (ls) ls.style.display = '';
+
   if (typeof LightweightCharts !== 'undefined') {
     container.innerHTML = '';
     const chart = LightweightCharts.createChart(container, { width:container.clientWidth, height:container.clientHeight, layout:{ textColor:'#94a3b8', background:{ type:'solid', color:'transparent' }}, grid:{ vertLines:{ color:'rgba(255,255,255,.035)'}, horzLines:{ color:'rgba(255,255,255,.035)'}}, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:false }});
     const active = Array.from(document.querySelectorAll('.indicator-toggle.active')).map(el => el.dataset.indicator);
     const chartData = data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close }));
 
-    // Candlestick series (always)
     const cs = chart.addCandlestickSeries({ upColor:'#10b981', downColor:'#ef4444', borderVisible:false, wickUpColor:'#10b981', wickDownColor:'#ef4444' });
     cs.setData(chartData);
 
-    // Volume histogram
     const vol = active.includes('vol') ? chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:'#64748b55' }) : null;
     if (vol) {
       vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume, color:d.close >= d.open ? '#10b98155' : '#ef444455' })));
       chart.priceScale('').applyOptions({ scaleMargins:{ top:.82, bottom:0 }});
     }
 
-    // SMA 20/50 overlays
-    const hasSma20 = active.includes('sma') && data.some(d => d.sma_20 != null);
-    const hasSma50 = active.includes('sma') && data.some(d => d.sma_50 != null);
-    if (hasSma20) {
-      const s20 = chart.addLineSeries({ color:'#fbbf24', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
-      s20.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_20 })).filter(d => d.value != null));
+    if (active.includes('sma') && data.some(d => d.sma_20 != null)) {
+      chart.addLineSeries({ color:'#fbbf24', lineWidth:1, priceLineVisible:false, lastValueVisible:false })
+        .setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_20 })).filter(d => d.value != null));
     }
-    if (hasSma50) {
-      const s50 = chart.addLineSeries({ color:'#6366f1', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
-      s50.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_50 })).filter(d => d.value != null));
+    if (active.includes('sma') && data.some(d => d.sma_50 != null)) {
+      chart.addLineSeries({ color:'#6366f1', lineWidth:1, priceLineVisible:false, lastValueVisible:false })
+        .setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_50 })).filter(d => d.value != null));
     }
 
-    // Bollinger Bands
     const ind = technical?.indicators || {};
     const bb = ind.bollinger_bands || {};
     if (active.includes('boll') && bb.upper != null && bb.lower != null && data.length) {
       const lastTime = String(data[data.length-1].date).slice(0,10);
-      const bbUpper = chart.addLineSeries({ color:'rgba(99,102,241,.4)', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
-      const bbLower = chart.addLineSeries({ color:'rgba(99,102,241,.4)', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
-      const bbMid = chart.addLineSeries({ color:'rgba(99,102,241,.2)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false });
-      // Draw horizontal lines at the current BB levels
-      const baseline = [{ time: data[0].date.slice(0,10), value: bb.upper }, { time: lastTime, value: bb.upper }];
-      bbUpper.setData(baseline);
-      const baselineL = [{ time: data[0].date.slice(0,10), value: bb.lower }, { time: lastTime, value: bb.lower }];
-      bbLower.setData(baselineL);
-      if (bb.middle != null) {
-        const baselineM = [{ time: data[0].date.slice(0,10), value: bb.middle }, { time: lastTime, value: bb.middle }];
-        bbMid.setData(baselineM);
-      }
+      [[bb.upper,'rgba(99,102,241,.4)'], [bb.lower,'rgba(99,102,241,.4)'], [bb.middle,'rgba(99,102,241,.2)']].forEach(([val,clr],i) => {
+        if (val == null) return;
+        chart.addLineSeries({ color:clr, lineWidth:1, priceLineVisible:false, lastValueVisible:false, lineStyle:i===2?2:0 })
+          .setData([{ time:data[0].date.slice(0,10), value:val }, { time:lastTime, value:val }]);
+      });
     }
 
-    // Support / Resistance lines
     const sr = ind.support_resistance || {};
     if (active.includes('sr') && data.length) {
       const lastTime = String(data[data.length-1].date).slice(0,10);
-      if (sr.support_20d != null) {
+      if (sr.support_20d != null)
         chart.addLineSeries({ color:'rgba(52,211,153,.5)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
-          .setData([{ time: data[0].date.slice(0,10), value: sr.support_20d }, { time: lastTime, value: sr.support_20d }]);
-      }
-      if (sr.resistance_20d != null) {
+          .setData([{ time:data[0].date.slice(0,10), value:sr.support_20d }, { time:lastTime, value:sr.support_20d }]);
+      if (sr.resistance_20d != null)
         chart.addLineSeries({ color:'rgba(248,113,113,.5)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
-          .setData([{ time: data[0].date.slice(0,10), value: sr.resistance_20d }, { time: lastTime, value: sr.resistance_20d }]);
-      }
+          .setData([{ time:data[0].date.slice(0,10), value:sr.resistance_20d }, { time:lastTime, value:sr.resistance_20d }]);
     }
 
     if (!vol) chart.priceScale('').applyOptions({ scaleMargins:{ top:.1, bottom:.1 }});
