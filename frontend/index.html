@@ -58,6 +58,24 @@
  </nav>
  <div class="search-overlay" id="search-overlay"><div class="search-modal"><input type="text" id="global-search-input" placeholder="Cari kode saham, emiten, atau sektor..."><div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div></div></div>
  <div id="toast-container" style="position:fixed; bottom:80px; right:20px; z-index:2000;"></div>
+ <script>
+  // Error catcher — tampilkan error di halaman kalo JS module fail
+  window.onerror = function(msg, url, line, col, err) {
+    const el = document.getElementById('app-root');
+    if (!el) return;
+    el.innerHTML = '<div style="padding:20px;color:#f87171;font-family:monospace;font-size:13px;">' +
+      '<strong style="color:#fff;">⚠️ JavaScript Error</strong><br>' +
+      msg + '<br><small style="color:#94a3b8;">' + (url||'') + ':' + (line||'') + ':' + (col||'') + '</small></div>';
+    return false;
+  };
+ </script>
  <script type="module" src="js/main.js?v=20260504e"></script>
+ <script nomodule>
+  // Fallback untuk browser tanpa ES module support
+  document.getElementById('app-root').innerHTML =
+    '<div style="padding:20px;color:#f87171;font-family:sans-serif;">' +
+    '<strong>⚠️ Browser tidak mendukung ES Modules.</strong><br>' +
+    '<small>Gunakan Chrome/Safari/Edge terbaru.</small></div>';
+ </script>
 </body>
 </html>
