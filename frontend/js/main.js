@@ -187,6 +187,9 @@ async function refreshTopbarMarket() {
            if (prevVal !== newVal && !isNaN(prevVal) && !isNaN(newVal)) {
                animateValue(valEl, prevVal, newVal, 800);
                flashUpdate(valEl, newVal > prevVal);
+               // Toggle glow on quote card
+               const qc = document.querySelector('.dash-quote-card');
+               if (qc) { qc.classList.remove('is-up', 'is-down'); qc.classList.add(newVal > prevVal ? 'is-up' : 'is-down'); }
            } else {
                valEl.textContent = Number(data.value || 7080.63).toLocaleString('id-ID', { maximumFractionDigits: 2 });
            }
