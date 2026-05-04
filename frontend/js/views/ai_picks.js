@@ -90,7 +90,7 @@ function renderAiBrief(payload) {
     </div>
 
     <details class="ai-picks-brief-collapsible panel">
-      <summary class="ai-picks-brief-summary">AI Desk Brief <span class="ai-picks-brief-model">google/gemma-4-26b-a4b-it</span></summary>
+      <summary class="ai-picks-brief-summary">AI Desk Brief <span class="badge">live</span></summary>
       <div class="ai-picks-brief-body">
         <p class="text-sm text-muted">Briefing dan narasi tambahan akan tersedia saat scheduler harian selesai memproses semua kandidat.</p>
       </div>
@@ -238,7 +238,7 @@ export async function renderAiPicks(root) {
 
   // Set active mode button
   function setActiveMode(mode) {
-    modeSwitch.querySelectorAll('[data-mode]').forEach(b => {
+    document.querySelectorAll('[data-mode]').forEach(b => {
       b.classList.toggle('btn-primary', b.getAttribute('data-mode') === mode);
     });
   }
@@ -255,6 +255,7 @@ export async function renderAiPicks(root) {
       root.querySelector('.ai-picks-compact-hero').innerHTML = extractHeroHtml(cached);
       root.querySelector('.ai-picks-summary-strip').innerHTML = extractSummaryHtml(cached);
       listEl.innerHTML = renderCardList(cached.data, mode);
+      setActiveMode(mode);
       wireActions(root, mode, cached.data || [], loadMode);
       if (typeof lucide !== 'undefined') lucide.createIcons();
       return;
@@ -281,6 +282,7 @@ export async function renderAiPicks(root) {
         listEl.innerHTML = renderCardList(picks, mode);
       }
 
+      setActiveMode(mode);
       wireActions(root, mode, picks, loadMode);
       if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch {
@@ -290,9 +292,13 @@ export async function renderAiPicks(root) {
     }
   };
 
-  // Mode switch buttons
-  modeSwitch.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.addEventListener('click', () => loadMode(btn.getAttribute('data-mode') || 'swing'));
+  // Mode switch (event delegation — survives outerHTML/innerHTML replacement)
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-mode]');
+    if (btn) {
+      e.preventDefault();
+      loadMode(btn.getAttribute('data-mode') || 'swing');
+    }
   });
 
   // Initial load

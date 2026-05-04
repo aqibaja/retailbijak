@@ -80,18 +80,14 @@ export async function renderStockDetail(root, ticker) {
           <div class="decision-panel-gap"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <div class="section-gap-large"></div>
-          <div id="below-chart-fill" class="below-chart-fill"></div>
-          <div class="section-divider"></div>
-          <div id="catalyst-strip" class="below-chart-fill"></div>
-          <div class="section-divider"></div>
-          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">Asisten AI</div><div class="text-sm text-main strong mt-1">Tanya AI tentang saham ini</div><div class="text-xs text-muted mt-1">Pratinjau AI berbasis chart, fundamental, berita, dan pemindai RetailBijak.</div></div><span class="signal-pill pill-good">Pratinjau AI</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-good"><span>Tanya Risiko</span><strong>Kenapa pantau?</strong><small>risk / reward</small></div><div class="stat-tile metric-warn"><span>Tanya Entry</span><strong>Area masuk?</strong><small>rencana pullback</small></div><div class="stat-tile metric-neutral"><span>Tanya Berita</span><strong>Katalis?</strong><small>ringkas berita</small></div><div class="stat-tile metric-good"><span>Tanya Penjelasan</span><strong>Alasan sinyal</strong><small>ringkasan AI</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risiko, entry, berita, atau alasan sinyal...</div></div>
+          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">Asisten AI</div><div class="text-sm text-main strong mt-1">Tanya AI tentang saham ini</div><div class="text-xs text-muted mt-1">Pratinjau AI berbasis chart, fundamental, berita, dan pemindai RetailBijak.</div></div><span class="signal-pill pill-good">Pratinjau AI</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-neutral"><span>Risiko</span><strong>Stop loss?</strong><small>area invalidasi</small></div><div class="stat-tile metric-good"><span>Trading</span><strong>Entry plan</strong><small>level + target</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risiko, entry, berita, atau alasan sinyal...</div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
           <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item">Memuat ringkasan teknikal...</div></div><div id="signal-card" class="signal-card"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
           <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid right-uniform-grid compact-grid-3"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Snapshot Analisis</h3><div id="analysis-panel" class="insight-grid right-uniform-grid compact-grid-3"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Catatan Aksi</h3><div id="insight-cards" class="compact-notes flex-col gap-2"></div></div>
+
+
           <div class="panel accent-top"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
         </div>
       </div>
@@ -122,13 +118,9 @@ export async function renderStockDetail(root, ticker) {
   renderTechnicalPanel(technical);
   renderSnapshotPanel(fund?.data || detail?.data || {}, candles, technical);
   renderFundamentalPanel(fund?.data || detail?.data || {}, candles, technical);
-  renderAnalysisPanel(analysisData, technical);
   renderDecisionPanel(candles, technical);
-  renderBelowChartFill(candles, technical);
-  renderCatalystStrip(symbol, news, announcements);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
-  renderInsightCards(candles, technical, analysisPayload);
   renderLevelSuggestions(candles, technical);
   renderLevelOverlay(candles, technical);
 
@@ -219,6 +211,12 @@ function renderLevelSuggestions(candles, tech){
   el.innerHTML = items.map(([label, price, note, cls]) => `<span class="sugg-chip ${cls}"><strong>${label}</strong> ${money(price)} <small>${note}</small></span>`).join('');
 }
 function renderFundamentalPanel(d, candles, tech){
+  const el = document.getElementById('fundamental-panel'); if (!el) return;
+  const hasData = d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at);
+  if (!hasData) {
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Data fundamental belum tersedia</strong><span class="dashboard-widget-state-note">Data fundamental akan tersedia setelah scheduler harian memperbarui basis data IDX.</span></div>';
+    return;
+  }
   const last = candles[candles.length-1] || {}; const volRatio = tech?.indicators?.volume?.ratio;
   const peLabel = d.trailing_pe ? (d.trailing_pe < 12 ? 'murah' : d.trailing_pe > 25 ? 'mahal' : 'wajar') : 'belum ada data';
   const pbLabel = d.price_to_book ? (d.price_to_book < 1.5 ? 'murah' : d.price_to_book > 3 ? 'mahal' : 'wajar') : 'belum ada data';
@@ -226,7 +224,7 @@ function renderFundamentalPanel(d, candles, tech){
   const stats = [
     ['Harga Terakhir', money(last.close), tech?.rating || '', sentimentClass(tech?.rating, last.close)], ['Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x rata-rata` : '', sentimentClass('spike', volRatio)], ['P/E', d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—', peLabel], ['P/B', d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—', pbLabel], ['ROE', d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—', 'profitabilitas', sentimentClass('', d.roe, 'roe')], ['DER', nf(d.debt_to_equity,2), 'leverage', sentimentClass('', d.debt_to_equity, 'der')], ['Pendapatan', nf(d.revenue,0), revenueLabel], ['Pembaruan', d.updated_at ? String(d.updated_at).slice(0,10) : 'DB IDX', 'sumber']
   ];
-  document.getElementById('fundamental-panel').innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+  el.innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
 }
 
 function renderSnapshotPanel(d, candles, tech){
@@ -265,10 +263,9 @@ function renderAiPreview(symbol, d, candles, tech, analysis){
       ? (llmRuntimeMessage || analysis?.llm?.summary || 'Asisten AI aktif tetapi respons terbaru gagal dimuat.')
       : (llmRuntimeMessage || 'OpenRouter belum aktif. Aktifkan API key untuk membuka ringkasan AI penuh.');
   const llmBadge = llmStatus === 'ok' ? 'Asisten AI aktif' : llmStatus === 'error' ? 'Asisten AI tertunda' : 'OpenRouter belum aktif';
-  host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Saat Ini</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile metric-warn"><span>Risiko Utama</span><div class="text-sm text-muted mt-1">${riskNote}</div></div><div class="stat-tile metric-neutral"><span>Pemicu Perubahan Bias</span><div class="text-sm text-muted mt-1">${biasTrigger}</div></div><div class="stat-tile metric-good"><span>Apa yang perlu ditunggu</span><div class="text-sm text-muted mt-1">${waitingNote}</div></div><div class="stat-tile ${hasFundamental ? 'metric-good' : 'metric-warn'}"><span>Bacaan valuasi</span><div class="text-sm text-muted mt-1">${valuation}; ${hasFundamental ? 'fundamental sudah bisa dibaca.' : 'fundamental masih pending.'}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile metric-neutral"><span>Lensa Katalis</span><div class="text-sm text-muted mt-1">AI akan merangkum katalis terbaru; saat ini ${catalyst}.</div></div><div class="stat-tile ${llmStatus === 'ok' ? 'metric-good' : llmStatus === 'error' ? 'metric-warn' : 'metric-neutral'}"><span>${llmBadge}</span><div class="text-sm text-muted mt-1">${llmHeadline}</div></div>`;
+  host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Saat Ini</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile metric-warn"><span>Risiko</span><div class="text-sm text-muted mt-1">${riskNote}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile ${llmStatus === 'ok' ? 'metric-good' : llmStatus === 'error' ? 'metric-warn' : 'metric-neutral'}"><span>${llmBadge}</span><div class="text-sm text-muted mt-1">${llmHeadline}</div></div>`;
 }
 
-function renderBelowChartFill(candles, tech){
   const el = document.getElementById('below-chart-fill'); if (!el) return;
   const data = candles.slice(-7); const last = candles[candles.length-1] || {}; const first = data[0] || last;
   const highs = data.map(d=>d.high).filter(Number.isFinite), lows = data.map(d=>d.low).filter(Number.isFinite);
@@ -318,7 +315,6 @@ function formatRelativeCatalystTime(value){
   return `${diffDay}h lalu`;
 }
 
-function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const el = document.getElementById('catalyst-strip'); if (!el) return;
   const symbolUpper = String(symbol || '').toUpperCase();
   const newsRows = rankCatalystRows(Array.isArray(newsPayload?.data) ? newsPayload.data : [], symbolUpper);
@@ -342,7 +338,6 @@ function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   el.innerHTML = cards.join('');
 }
 
-function renderAnalysisPanel(data, tech){
   const noData = String(tech.rating || '').toUpperCase().includes('NO DATA');
   const rows = noData
     ? [['Skor Swing', '—', 'belum ada data'], ['Sinyal', 'BELUM ADA DATA', 'belum ada data'], ['Valuasi', '—', 'belum ada data'], ['Kualitas', '—', 'belum ada data'], ['Risiko', '—', 'belum ada data']]
@@ -354,7 +349,6 @@ function renderTradePlan(candles, tech){
   const entry = last.close, stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : (entry - (atr || entry*.08)); const target = sr.resistance_20d || (entry + (atr || entry*.1));
   const el = document.getElementById('trade-plan'); if (el) el.innerHTML = [ ['Zona Entry', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'tunggu pullback'], ['Area Stop', money(Math.max(1, stop)), 'kendali risiko'], ['Target Dekat', money(target), 'resistansi'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
 }
-function renderInsightCards(candles, tech, data){
   const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;
   const notes = [
     {t:'Momentum', v: pct >= 0 ? `Harga naik ${pf(pct)}; trend sedang kuat.` : `Harga turun ${pf(pct)}; tunggu konfirmasi.`, c: pct >= 0 ? 'metric-good' : 'metric-bad'},
