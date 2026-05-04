@@ -136,7 +136,7 @@ function renderCompactCard(item, mode) {
         <button class="btn btn-sm ai-picks-factor-toggle" data-toggle-factors="${item.ticker}">▸ Faktor</button>
       </div>
 
-      <div class="ai-picks-card-factors" id="factors-${item.ticker}" style="display:none">
+      <div class="ai-picks-card-factors" id="factors-${item.ticker}">
         <div class="ai-picks-factor-list">
           ${renderFactorMeter('Teknikal', factors.technical)}
           ${renderFactorMeter('Likuiditas', factors.liquidity)}
@@ -151,13 +151,13 @@ function renderCompactCard(item, mode) {
 
 // ─── Loading / Empty / Error States ────────────────────────
 function renderLoadingState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="loading"><div class="ai-picks-state-stack"><span class="ai-picks-state-pulse skeleton-shimmer"></span><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="loading"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon loading"><i data-lucide="loader" style="width:22px;height:22px"></i></div><div class="ai-picks-state-pulse skeleton-shimmer"></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
 }
 function renderEmptyState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="empty"><div class="ai-picks-state-stack"><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="empty"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon empty"><i data-lucide="inbox" style="width:22px;height:22px"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
 }
 function renderErrorState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="error"><div class="ai-picks-state-stack"><strong>${title}</strong><span class="text-sm text-muted">${note}</span><button class="btn btn-sm ai-picks-retry-btn" data-retry="1">Coba Lagi</button></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="error"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon error"><i data-lucide="alert-triangle" style="width:22px;height:22px"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span><button class="btn btn-sm ai-picks-retry-btn" data-retry="1">Coba Lagi</button></div></div>`;
 }
 
 // ─── Wire event handlers ───────────────────────────────────
@@ -186,30 +186,15 @@ function wireActions(root, mode, picks, loadFn) {
     });
   });
 
-  // Factor toggle
+  // Factor toggle (CSS transition via .expanded class)
   root.querySelectorAll('[data-toggle-factors]').forEach(btn => {
     btn.addEventListener('click', () => {
       const ticker = btn.getAttribute('data-toggle-factors');
       const el = root.querySelector(`#factors-${ticker}`);
       if (!el) return;
-      const isHidden = el.style.display === 'none' || el.classList.contains('factors-collapsed');
-      el.style.display = 'block';
-      el.classList.remove('factors-collapsed');
-      if (isHidden) {
-        el.style.maxHeight = '0';
-        el.style.opacity = '0';
-        el.classList.add('factors-expanding');
-        requestAnimationFrame(() => {
-          el.style.maxHeight = el.scrollHeight + 'px';
-          el.style.opacity = '1';
-        });
-        btn.textContent = '▾ Faktor';
-      } else {
-        el.style.maxHeight = '0';
-        el.style.opacity = '0';
-        el.classList.add('factors-collapsed');
-        btn.textContent = '▸ Faktor';
-      }
+      const isExpanded = el.classList.contains('expanded');
+      el.classList.toggle('expanded', !isExpanded);
+      btn.textContent = isExpanded ? '▸ Faktor' : '▾ Faktor';
     });
   });
 
