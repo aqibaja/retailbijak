@@ -316,6 +316,7 @@ function formatRelativeCatalystTime(value){
   return `${diffDay}h lalu`;
 }
 
+function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const el = document.getElementById('catalyst-strip'); if (!el) return;
   const symbolUpper = String(symbol || '').toUpperCase();
   const newsRows = rankCatalystRows(Array.isArray(newsPayload?.data) ? newsPayload.data : [], symbolUpper);
@@ -339,6 +340,7 @@ function formatRelativeCatalystTime(value){
   el.innerHTML = cards.join('');
 }
 
+function renderAnalysisPanel(data, tech){
   const noData = String(tech.rating || '').toUpperCase().includes('NO DATA');
   const rows = noData
     ? [['Skor Swing', '—', 'belum ada data'], ['Sinyal', 'BELUM ADA DATA', 'belum ada data'], ['Valuasi', '—', 'belum ada data'], ['Kualitas', '—', 'belum ada data'], ['Risiko', '—', 'belum ada data']]
@@ -350,6 +352,15 @@ function renderTradePlan(candles, tech){
   const entry = last.close, stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : (entry - (atr || entry*.08)); const target = sr.resistance_20d || (entry + (atr || entry*.1));
   const el = document.getElementById('trade-plan'); if (el) el.innerHTML = [ ['Zona Entry', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'tunggu pullback'], ['Area Stop', money(Math.max(1, stop)), 'kendali risiko'], ['Target Dekat', money(target), 'resistansi'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
 }
+  const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;
+  const notes = [
+    {t:'Momentum', v: pct >= 0 ? `Harga naik ${pf(pct)}; trend sedang kuat.` : `Harga turun ${pf(pct)}; tunggu konfirmasi.`, c: pct >= 0 ? 'metric-good' : 'metric-bad'},
+    {t:'Volume', v: vol ? `Volume ${nf(vol,2)}x rata-rata 20 hari.` : 'Volume belum lengkap.', c: vol >= 1.5 ? 'metric-good' : 'metric-neutral'},
+    {t:'Risiko', v: rsi >= 70 ? 'RSI jenuh beli — jangan chasing, tunggu pullback.' : 'Risiko relatif terkendali.', c: rsi >= 70 ? 'metric-warn' : 'metric-good'}
+  ];
+  document.getElementById('insight-cards').innerHTML = notes.map(n => `<div class="stat-tile ${n.c}"><span>${n.t}</span><div class="text-sm text-muted mt-1">${n.v}</div></div>`).join('');
+}
+function renderStockNotes(tech){
   const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;
   const notes = [
     {t:'Momentum', v: pct >= 0 ? `Harga naik ${pf(pct)}; trend sedang kuat.` : `Harga turun ${pf(pct)}; tunggu konfirmasi.`, c: pct >= 0 ? 'metric-good' : 'metric-bad'},
