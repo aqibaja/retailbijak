@@ -125,10 +125,7 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 
 # --- Static files ---
-# Serve index.html at root
-@app.get("/")
-async def root():
-    return FileResponse(str(FRONTEND_DIR / "index.html"))
+# Root / and SPA fallback are handled by StaticFiles(html=True) below.
 
 
 @app.get("/api/ai-picks")
@@ -166,5 +163,6 @@ except ModuleNotFoundError:
 
 
 # Mount the entire frontend directory at / to serve static files (js, views, style.css)
+# html=True serves index.html for / and for any unmatched paths (SPA fallback)
 # MUST be at the bottom so it doesn't intercept /api routes
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR)), name="frontend_root")
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend_root")

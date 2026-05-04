@@ -15,7 +15,7 @@ async function fetchStats() { return apiFetch('/market-stats') || { count: 0, da
 const badge = (label) => `<span class="market-tag">${label}</span>`;
 const statBox = (label, value, tone = '', valueClass = '', labelClass = '') => `<div class="market-stat-box ${tone}"><div class="market-stat-label ${labelClass}">${label}</div><div class="market-stat-value ${valueClass}">${value}</div></div>`;
 const breadthStatBox = (advancing, declining) => `<div class="market-stat-box market-stat-box-breadth"><div class="market-stat-label">Breadth</div><div class="market-stat-value market-stat-value-breadth"><span>${advancing ?? 0}</span><span class="market-breadth-separator">/</span><span class="market-breadth-secondary">${declining ?? 0}</span></div><div class="market-stat-footnote">${breadthInsight(advancing, declining)}</div></div>`;
-const compactSource = (value) => String(value || '').toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const compactSource = (value) => String(value || '').toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const emptyState = (title, note, cta = 'Muat ulang data') => `<div class="market-empty market-empty-rich"><strong>${title}</strong><span>${note}</span><button class="market-empty-refresh" type="button" data-market-refresh="1">${cta}</button></div>`;
 const freshnessTone = (sources = []) => {
   const cleaned = sources.filter(Boolean).map((item) => String(item).toLowerCase());
@@ -173,7 +173,7 @@ export async function renderMarket(root) {
 
   const srcParts = [summaryData?.source, actionsData?.source, announcementsData?.source, foreignData?.source, brokersData?.source, breadthData?.source, statsData?.source]
     .filter(Boolean)
-    .map((part) => String(part).toUpperCase().replaceAll('_', ' '));
+    .map((part) => String(part).toUpperCase().replace(/_/g, ' '));
   const freshness = freshnessTone([summaryData?.source, actionsData?.source, announcementsData?.source, foreignData?.source, brokersData?.source, breadthData?.source, statsData?.source]);
   const srcSummary = srcParts.length > 3 ? `${srcParts.slice(0, 3).join(' · ')} +${srcParts.length - 3}` : (srcParts.join(' · ') || 'TIDAK ADA DATA');
   const badgeEl = document.getElementById('market-source');
