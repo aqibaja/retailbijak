@@ -115,8 +115,9 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-chat-card">
               <div id="stock-chat-messages" class="chat-messages">
                 <div class="chat-placeholder">
+                  <div class="chat-placeholder-icon"><i data-lucide="bot" style="width:18px;height:18px;color:#a5b4fc"></i></div>
                   <div class="text-sm text-main strong">Asisten AI</div>
-                  <div class="text-xs text-muted mt-1">Tanya tentang saham ini — analisis teknikal, fundamental, support/resistance, atau rekomendasi.</div>
+                  <div class="text-xs text-muted">Tanya tentang saham ini — analisis teknikal, fundamental, support/resistance, atau rekomendasi.</div>
                 </div>
               </div>
               <div class="sample-prompts" id="chat-quick-prompts">
@@ -191,7 +192,7 @@ export async function renderStockDetail(root, ticker) {
     // Add loading indicator
     const loadingEl = document.createElement('div');
     loadingEl.className = 'chat-bubble ai-bubble chat-loading';
-    loadingEl.textContent = '⏳';
+    loadingEl.innerHTML = '<span class="chat-loading-dot"></span><span class="chat-loading-dot"></span><span class="chat-loading-dot"></span>';
     chatMessages.appendChild(loadingEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
