@@ -37,7 +37,7 @@ export async function renderSettings(root) {
                         <div class="strong mb-1 text-main text-base">Tabel Lebih Rapat</div>
                         <div class="text-sm text-muted">Padatkan tinggi baris tabel agar lebih banyak data langsung terlihat.</div>
                     </div>
-                    <input id="setting-compact" type="checkbox" style="width:18px; height:18px; accent-color:var(--primary-color);" />
+                    <input id="setting-compact" type="checkbox" class="settings-checkbox" />
                 </label>
                 
                 <label class="settings-toggle-card">
@@ -45,7 +45,7 @@ export async function renderSettings(root) {
                         <div class="strong mb-1 text-main text-base">Pembaruan Otomatis Pemindai</div>
                         <div class="text-sm text-muted">Minta layanan lokal memperbarui sinyal institusi secara berkala saat filter berubah.</div>
                     </div>
-                    <input id="setting-refresh" type="checkbox" style="width:18px; height:18px; accent-color:var(--primary-color);" />
+                    <input id="setting-refresh" type="checkbox" class="settings-checkbox" />
                 </label>
             </div>
 
@@ -59,7 +59,7 @@ export async function renderSettings(root) {
                 <span class="settings-field-label">API key OpenRouter</span>
                 <div style="position:relative">
                   <input id="setting-openrouter-key" class="settings-text-input" type="password" placeholder="sk-or-..." autocomplete="off" />
-                  <button id="toggle-key-visibility" type="button" class="btn btn-icon" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);height:28px;width:28px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-dim);font-size:10px;font-weight:700" title="Tampilkan/sembunyikan key">T</button>
+                  <button id="toggle-key-visibility" type="button" class="btn btn-icon settings-key-toggle" title="Tampilkan/sembunyikan key">T</button>
                 </div>
                 <small class="text-xs text-dim">Key disimpan di server · simpan dengan kosong untuk mempertahankan key yang sudah ada.</small>
               </label>
@@ -86,7 +86,7 @@ export async function renderSettings(root) {
             </div>
 
             <div class="settings-actions-row">
-                <span id="settings-status" class="text-xs text-dim mono strong" style="letter-spacing:0.05em;">TERSAMBUNG KE LAYANAN LOKAL</span>
+                <span id="settings-status" class="text-xs text-dim mono strong settings-status-text">TERSAMBUNG KE LAYANAN LOKAL</span>
                 <button id="save-settings" class="btn btn-primary settings-save-btn">Simpan Konfigurasi</button>
             </div>
           </div>
@@ -95,7 +95,7 @@ export async function renderSettings(root) {
             <h2 class="settings-note-title"><i data-lucide="terminal" style="width:14px;"></i> Catatan Terminal</h2>
             <div class="settings-note-stack">
                 <div class="settings-note-card">
-                    <strong style="color:var(--text-main)">⌘K / Ctrl+K</strong> membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.
+                    <strong class="settings-note-strong">⌘K / Ctrl+K</strong> membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.
                 </div>
                 <div class="settings-note-card">
                     Tema menyesuaikan otomatis. Penyesuaian manual tetap tersedia di pojok kanan atas.

@@ -92,13 +92,13 @@ function setupSearchOverlay() {
        const groups = { ticker: [], company: [], sector: [] };
        items.forEach(item => (groups[item.bucket || 'company'] || groups.company).push(item));
       const renderRow = (item, idx) => `
-        <a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center p-3 search-suggestion-item" style="${idx === activeIndex ? 'background:rgba(255,255,255,0.06);' : ''}">
+        <a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center p-3 search-suggestion-item${idx === activeIndex ? ' search-suggestion-active' : ''}">
           <div class="flex items-center gap-3" style="min-width:0;">
             <span class="badge sugg-badge">${item.bucket === 'sector' ? 'SC' : item.bucket === 'company' ? 'CO' : 'EQ'}</span>
             <span class="mono strong text-main" style="font-size:15px;">${highlight(item.ticker, query)}</span>
-            <span class="text-sm text-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px;">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
+            <span class="text-sm text-muted search-suggestion-text">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
           </div>
-          <span class="text-xs text-dim" style="text-transform:uppercase;">${escapeHtml(item.bucket || item.source || '')}</span>
+          <span class="search-suggestion-label">${escapeHtml(item.bucket || item.source || '')}</span>
         </a>`;
        suggestions.innerHTML = [
         groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Kode Saham</div>${groups.ticker.map(renderRow).join('')}` : '',
@@ -123,7 +123,7 @@ function setupSearchOverlay() {
        if (!currentItems.length) return;
        activeIndex = Math.max(0, Math.min(currentItems.length - 1, activeIndex + delta));
        const rows = [...suggestions.querySelectorAll('a[data-idx]')];
-       rows.forEach((row, idx) => row.style.background = idx === activeIndex ? 'rgba(255,255,255,0.06)' : '');
+       rows.forEach((row, idx) => row.classList.toggle('search-suggestion-active', idx === activeIndex));
        rows[activeIndex]?.scrollIntoView({ block: 'nearest' });
    };
    input.addEventListener('input', () => {

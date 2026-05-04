@@ -10,7 +10,7 @@ const renderEmptyState = ({
     <div class="empty-icon"><i data-lucide="radar" style="width:32px;height:32px"></i></div>
     <h3>${title}</h3>
     <p>${body}</p>
-    <span style="font-size:11px;color:var(--text-dim);margin-top:4px">${action}</span>
+    <span class="empty-state-small">${action}</span>
   </div>
 `;
 
@@ -68,39 +68,39 @@ export async function renderScreener(root) {
       <section class="stagger-reveal">
         <div class="mb-6 screener-hero">
           <div class="screener-kicker">SwingAQ Intelligence</div>
-          <h1 class="text-3xl strong mb-2" style="letter-spacing:-0.02em;">Pemindai Akumulasi Institusi</h1>
+          <h1 class="text-3xl strong mb-2" style="letter-spacing:-0.02em">Pemindai Akumulasi Institusi</h1>
         </div>
         <div class="scanner-layout">
-          <div class="scanner-form flex-col" style="gap:20px;">
+          <div class="scanner-form flex-col" style="gap:20px">
             <div class="scanner-header-text">PUSAT KONTROL</div>
             <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
             <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
             <button id="btn-run-screener" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
             <div id="screener-progress" style="display:none" class="panel-lite p-4 scanner-progress">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
-              <div style="height:4px;background:var(--border-subtle);border-radius:2px"><div id="sp-fill" style="height:100%;width:0%;background:var(--primary-color);border-radius:2px"></div></div>
+              <div class="screener-progress-track"><div id="sp-fill" class="screener-progress-fill"></div></div>
             </div>
           </div>
           <div class="scanner-results flex-col">
             <div class="flex justify-between items-center p-5 border-b border-subtle">
               <div class="flex items-center gap-3">
-                <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main)">Sinyal Live</h3>
+                <h3 class="text-xs strong uppercase m-0 screener-signal-title">Sinyal Live</h3>
                 <span class="badge" id="screener-count">BELUM SCAN</span>
               </div>
               <div id="screener-toolbar" class="flex gap-2 screener-toolbar" style="display:none">
                 <div class="scanner-control-stack">
-                  <select id="screener-sort" class="scanner-select" style="width:130px;height:36px;font-size:12px">
+                  <select id="screener-sort" class="scanner-select screener-control-select">
                       <option value="cci">Urut: CCI</option>
                       <option value="volume">Urut: Volume</option>
                       <option value="ma">Urut: MA</option>
                   </select>
                 </div>
                 <div class="scanner-control-stack">
-                  <input type="text" id="screener-search" placeholder="Cari kode..." class="scanner-select" style="width:100px;height:36px;font-size:12px">
+                  <input type="text" id="screener-search" placeholder="Cari kode..." class="scanner-select screener-control-search">
                 </div>
               </div>
             </div>
-            <div id="screener-content" style="flex:1;overflow-y:auto">${renderEmptyState()}</div>
+            <div id="screener-content" class="screener-content-area">${renderEmptyState()}</div>
           </div>
         </div>
       </section>`;

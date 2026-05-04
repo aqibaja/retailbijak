@@ -2435,3 +2435,222 @@ html[data-theme="light"] .news-meta {
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.07); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14); }
 * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.07) transparent; }
+
+/* ================= PAGE TRANSITIONS ================= */
+#app-root.page-loading {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+#app-root:not(.page-loading) {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.28s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ================= KEYBOARD FOCUS VISIBLE ================= */
+:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.btn:focus-visible, .nav-item:focus-visible, 
+.bottom-nav-item:focus-visible, a:focus-visible,
+input:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ================= SEARCH SUGGESTION CLASSES ================= */
+.search-suggestion-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-suggestion-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.search-suggestion-active {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* ================= MODAL / PORTFOLIO ================= */
+.modal-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: rgba(11,18,32,.5);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.modal-input:focus {
+  border-color: var(--primary-color);
+}
+.modal-btn {
+  flex: 1;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.modal-btn-cancel {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+.modal-btn-danger {
+  background: rgba(239,68,68,.15);
+  color: #fb7185;
+  border: 1px solid rgba(239,68,68,.25);
+}
+.portfolio-tab-btn {
+  border: none;
+  padding: 4px 16px;
+  border-radius: 8px;
+  min-width: 100px;
+  height: 32px;
+  font-size: 12px;
+}
+.portfolio-card {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+}
+.portfolio-section-header {
+  letter-spacing: .08em;
+}
+.portfolio-action-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  height: 32px;
+}
+.portfolio-delete-btn {
+  color: var(--down-color);
+}
+
+/* ================= SCREENER INLINE FIXES ================= */
+.screener-progress-track {
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+}
+.screener-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--primary-color);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.screener-signal-title {
+  color: var(--text-main);
+}
+.screener-control-select {
+  width: 130px;
+  height: 36px;
+  font-size: 12px;
+}
+.screener-control-search {
+  width: 100px;
+  height: 36px;
+  font-size: 12px;
+}
+.screener-content-area {
+  flex: 1;
+  overflow-y: auto;
+}
+.empty-state-small {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* ================= SETTINGS ================= */
+.settings-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+}
+.settings-status-text {
+  letter-spacing: 0.05em;
+}
+.settings-note-strong {
+  color: var(--text-main);
+}
+.settings-key-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 28px;
+  width: 28px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ================= WATCHLIST ================= */
+.watchlist-empty-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* ================= STOCK DETAIL ================= */
+.stock-chart-skeleton {
+  height: 100%;
+  border-radius: 14px;
+}
+.chat-send-btn {
+  height: 36px;
+  min-width: 36px;
+}
+.catalyst-link {
+  text-decoration: none;
+}
+.peer-table-header {
+  font-size: 9px;
+}
+.peer-row-divider {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 6px 0;
+}
+.alert-input {
+  width: 100%;
+  height: 36px;
+  margin-top: 4px;
+}
+.alert-save-btn {
+  width: 100%;
+  height: 36px;
+}
+.alert-delete-btn {
+  font-size: 10px;
+  height: 22px;
+}
+.news-clickable {
+  cursor: pointer;
+  min-height: auto;
+  padding: 8px 10px;
+}
+.news-clickable strong {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ================= MARKET ================= */
+.market-accent-card {
+  --market-accent: var(--accent-indigo);
+}
+

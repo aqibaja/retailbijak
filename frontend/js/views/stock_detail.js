@@ -92,7 +92,7 @@ export async function renderStockDetail(root, ticker) {
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
           </div>
           <div class="chart-top-spacing"></div>
-          <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart" style="height:100%;border-radius:14px"></div></div>
+          <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <div class="panel-flush mt-3"><h3 class="panel-flush-title">Market Stats</h3><div id="market-stats-v2" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
@@ -127,7 +127,7 @@ export async function renderStockDetail(root, ticker) {
               </div>
               <div class="chat-input-area">
                 <input type="text" id="stock-chat-input" class="form-input" placeholder="Tanya: risiko, entry, berita, atau analisis..." />
-                <button id="stock-chat-send" class="btn btn-primary" style="height:36px;min-width:36px;"><i data-lucide="send"></i></button>
+                <button id="stock-chat-send" class="btn btn-primary chat-send-btn"><i data-lucide="send"></i></button>
               </div>
             </div>
           </div>
@@ -709,7 +709,7 @@ function renderCatalystStripV2(symbol, newsPayload, announcementsPayload){
 
   function metaRow(icon, iconCls, title, time, href, isAvailable) {
     const safeHref = href || 'news://pending';
-    return `<a href="${safeHref}" class="catalyst-row" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+    return `<a href="${safeHref}" class="catalyst-row catalyst-link" target="_blank" rel="noopener noreferrer">
       <span class="catalyst-icon ${iconCls}">${icon}</span>
       <div class="catalyst-body">
         <span class="catalyst-title">${title}</span>
@@ -778,9 +778,9 @@ function renderStockNewsFeed(symbol, newsPayload) {
   const display = filtered.length ? filtered : items.slice(0, 4);
   const label = filtered.length ? `Terkait ${upper}` : 'Berita Pasar Terbaru';
   el.innerHTML = `<div class="text-xs text-dim uppercase strong mb-2">${label}</div>` +
-    display.map(n => `<div class="stat-tile metric-neutral" style="cursor:pointer;min-height:auto;padding:8px 10px" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')">
+    display.map(n => `<div class="stat-tile metric-neutral news-clickable" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')">
       <span style="font-size:9px">${n.source || 'rss'} · ${(n.published_at || '').slice(0, 10) || ''}</span>
-      <strong style="font-size:12px;line-height:1.4">${(n.title || 'Berita').slice(0, 80)}</strong>
+      <strong>${(n.title || 'Berita').slice(0, 80)}</strong>
       ${n.summary ? `<small style="font-size:10px">${n.summary.replace(/<[^>]*>/g,'').slice(0, 60)}</small>` : ''}
     </div>`).join('');
 }
@@ -812,7 +812,7 @@ function renderBrokerActivity(data) {
     data.slice(0, 6).map(r => {
       const net = Number(r.net_volume || 0);
       const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
-      return `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle);padding:6px 0"><span class="mono" style="font-size:11px">${r.broker || '—'}</span><span class="mono ${cls}" style="font-size:11px">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
+      return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono" style="font-size:11px">${r.broker || '—'}</span><span class="mono ${cls}" style="font-size:11px">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
     }).join('');
 }
 
@@ -827,12 +827,12 @@ function showAlertModal(symbol) {
     <div class="modal-panel">
       <div class="flex justify-between items-center mb-3"><h3 class="panel-title m-0">Atur Peringatan ${symbol}</h3><button class="btn btn-icon" onclick="document.getElementById('alert-modal-overlay')?.remove()"><i data-lucide="x"></i></button></div>
       <div class="mb-2"><label class="text-xs text-dim uppercase strong">Tipe</label>
-        <select id="alert-type" class="form-input" style="width:100%;height:36px;margin-top:4px">
+        <select id="alert-type" class="form-input alert-input">
           <option value="price_above">Harga di atas</option><option value="price_below">Harga di bawah</option>
           <option value="rsi_above">RSI di atas</option><option value="rsi_below">RSI di bawah</option>
         </select></div>
-      <div class="mb-2"><label class="text-xs text-dim uppercase strong">Nilai</label><input type="number" id="alert-value" class="form-input" style="width:100%;height:36px;margin-top:4px" step="10" min="1" /></div>
-      <button id="alert-save-btn" class="btn btn-primary" style="width:100%;height:36px">Simpan Peringatan</button>
+      <div class="mb-2"><label class="text-xs text-dim uppercase strong">Nilai</label><input type="number" id="alert-value" class="form-input alert-input" step="10" min="1" /></div>
+      <button id="alert-save-btn" class="btn btn-primary alert-save-btn">Simpan Peringatan</button>
       <div id="alert-list" class="mt-3"></div>
     </div>`;
   document.body.appendChild(overlay);
@@ -856,7 +856,7 @@ async function loadAlertList(symbol) {
   const items = Array.isArray(res?.data) ? res.data : [];
   if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
   el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
-    items.map(a => `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle)"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down" data-alert-id="${a.id}" style="font-size:10px;height:22px">Hapus</button></div>`).join('');
+    items.map(a => `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle)"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
   el.querySelectorAll('[data-alert-id]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.alertId;
@@ -873,7 +873,7 @@ function renderPeerComparison(symbol) {
     if (!el || !res?.data?.length) return;
     el.style.display = '';
     el.innerHTML = '<div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Peer Comparison</span></div>' +
-      '<div class="peer-row" style="border-bottom:1px solid var(--border-subtle);padding:4px 0 4px"><span class="text-xs text-dim" style="font-size:9px">KODE</span><span class="text-xs text-dim" style="font-size:9px">NAMA</span><span class="text-xs text-dim" style="font-size:9px;text-align:right">HARGA</span><span class="text-xs text-dim" style="font-size:9px;text-align:right">CHG%</span></div>' +
+      '<div class="peer-row peer-row-divider"><span class="text-xs text-dim peer-table-header">KODE</span><span class="text-xs text-dim peer-table-header">NAMA</span><span class="text-xs text-dim peer-table-header" style="text-align:right">HARGA</span><span class="text-xs text-dim peer-table-header" style="text-align:right">CHG%</span></div>' +
       res.data.map(p => {
         const changeCls = p.change_pct > 0 ? 'text-up' : p.change_pct < 0 ? 'text-down' : 'text-dim';
         const arrow = p.change_pct > 0 ? '▲' : p.change_pct < 0 ? '▼' : '—';

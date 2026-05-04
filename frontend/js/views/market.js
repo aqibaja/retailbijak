@@ -211,7 +211,7 @@ export async function renderMarket(root) {
   }
   const ihsg = summaryData?.value;
   const ihsgChange = summaryData?.change_pct;
-  document.getElementById('ihsg-summary-card').innerHTML = `<section class="market-card market-card-hero" style="--market-accent:var(--accent-indigo)">
+  document.getElementById('ihsg-summary-card').innerHTML = `<section class="market-card market-card-hero market-accent-card">
     <header class="market-card-head market-hero-head">
       <div>
         <div class="market-hero-kicker">Ringkasan utama pasar</div>
@@ -254,7 +254,7 @@ export async function renderMarket(root) {
     statBox('Stagnan', b.unchanged ?? 0, '', 'market-stat-value-wide', 'market-stat-label-wide')
   ].join('');
 
-  document.getElementById('breadth-card').innerHTML = `<section class="market-card market-card-subtle market-breadth-card" style="--market-accent:var(--accent-indigo)">
+  document.getElementById('breadth-card').innerHTML = `<section class="market-card market-card-subtle market-breadth-card market-accent-card">
     <header class="market-card-head">
       <h3>Breadth Pasar</h3>
       <p>Penguat vs pelemah pada sesi ini</p>

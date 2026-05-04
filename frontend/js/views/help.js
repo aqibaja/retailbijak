@@ -53,7 +53,7 @@ export function renderHelp(root) {
             </div>
             <h3>Butuh Bantuan?</h3>
             <p>Pelajari alur kerja RetailBijak: mulai dari pemindaian, analisis, hingga manajemen portofolio.</p>
-            <div class="flex gap-3" style="flex-wrap:wrap; justify-content:center;">
+            <div class="flex gap-3 help-cta-fix">
               <a href="#screener" class="btn btn-primary help-support-btn">Buka Pemindai</a>
               <a href="#portfolio" class="btn btn-secondary help-support-btn">Kelola Aset</a>
             </div>

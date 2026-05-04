@@ -224,7 +224,7 @@ async function loadAiPickWidget() {
 
   if (!featured) {
     if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
-    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary" style="margin-top:10px;height:32px;font-size:11px">Buka AI Picks</a></div>';
+    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary portfolio-action-btn" style="margin-top:10px">Buka AI Picks</a></div>';
     return;
   }
 

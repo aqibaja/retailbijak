@@ -19,13 +19,13 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
         <div class="mb-2">
           <label class="text-xs text-dim uppercase strong block mb-1">${f.label}</label>
           ${f.type === 'number'
-            ? `<input type="number" id="modal-field-${i}" class="form-input" style="width:100%;height:38px;padding:0 12px;border-radius:10px;background:rgba(11,18,32,.5);border:1px solid var(--border-subtle);color:var(--text-main);font-size:13px" value="${f.value ?? ''}" step="${f.step ?? '1'}" min="${f.min ?? ''}" />`
-            : `<input type="text" id="modal-field-${i}" class="form-input" style="width:100%;height:38px;padding:0 12px;border-radius:10px;background:rgba(11,18,32,.5);border:1px solid var(--border-subtle);color:var(--text-main);font-size:13px" value="${f.value ?? ''}" placeholder="${f.placeholder ?? ''}" />`
+            ? `<input type="number" id="modal-field-${i}" class="modal-input" value="${f.value ?? ''}" step="${f.step ?? '1'}" min="${f.min ?? ''}" />`
+            : `<input type="text" id="modal-field-${i}" class="modal-input" value="${f.value ?? ''}" placeholder="${f.placeholder ?? ''}" />`
           }
         </div>`).join('')}</div>
       <div class="flex gap-2 mt-3">
-        <button class="btn modal-cancel-btn" style="flex:1;height:36px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-muted);font-size:12px;font-weight:700">${cancelText}</button>
-        <button class="btn btn-primary modal-confirm-btn" style="flex:1;height:36px;border-radius:10px;font-size:12px;font-weight:700">${confirmText}</button>
+        <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
+        <button class="btn btn-primary modal-confirm-btn modal-btn">${confirmText}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -69,8 +69,8 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
         <p class="text-xs text-muted mt-2" style="line-height:1.5">${message}</p>
       </div>
       <div class="flex gap-2 mt-4">
-        <button class="btn modal-cancel-btn" style="flex:1;height:36px;border-radius:10px;font-size:12px;font-weight:700;background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-muted)">${cancelText}</button>
-        <button class="btn modal-confirm-btn" style="flex:1;height:36px;border-radius:10px;font-size:12px;font-weight:700;${danger ? 'background:rgba(239,68,68,.15);color:#fb7185;border:1px solid rgba(239,68,68,.25)' : ''}">${confirmText}</button>
+        <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
+        <button class="btn modal-confirm-btn modal-btn ${danger ? 'modal-btn-danger' : 'btn-primary'}">${confirmText}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -97,12 +97,12 @@ export async function renderPortfolio(root, activeTab) {
           </div>
           <div class="portfolio-meta-rail">
             <div class="portfolio-tab-switch flex p-1" style="background:rgba(15,23,41,.5);border-radius:10px;border:1px solid var(--border-subtle);">
-              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''}" style="border:none;padding:4px 16px;border-radius:8px;min-width:100px;height:32px;font-size:12px">Portofolio</a>
-              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''}" style="border:none;padding:4px 16px;border-radius:8px;min-width:100px;height:32px;font-size:12px">Pantauan</a>
+              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">Portofolio</a>
+              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
             </div>
           </div>
         </div>
-        <div id="tab-content" class="col-span-12 panel flex-col" style="padding:0;overflow:hidden;border-radius:16px">
+        <div id="tab-content" class="col-span-12 panel flex-col portfolio-card">
             <div class="p-4 text-center"><div class="skeleton skel-text" style="width:200px;margin:auto"></div></div>
         </div>
       </section>`;
@@ -118,8 +118,8 @@ async function renderWatchlistTab(el) {
 
     el.innerHTML = `
       <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border-subtle)">
-        <h3 class="text-xs uppercase text-dim strong m-0" style="letter-spacing:.08em">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
-        <button id="add-watchlist" class="btn btn-primary" style="padding:6px 14px;font-size:11px;height:32px"><i data-lucide="plus" style="width:14px"></i> Tambah</button>
+        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
+        <button id="add-watchlist" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" style="width:14px"></i> Tambah</button>
       </div>
       ${rows.length ? `
       <div class="table-wrapper">
@@ -129,12 +129,12 @@ async function renderWatchlistTab(el) {
             <tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main" style="font-size:15px">${r.ticker}</span></a></td>
               <td class="text-muted text-sm">${r.notes || '-'}</td>
-              <td style="text-align:right"><button class="btn-icon delete-watchlist" data-ticker="${r.ticker}" style="color:var(--down-color)"><i data-lucide="trash-2" style="width:16px"></i></button></td>
+              <td style="text-align:right"><button class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" style="width:16px"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>
       </div>` : `
       <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="eye" style="width:28px;height:28px"></i></div>
+        <div class="empty-icon"><i data-lucide="eye" class="watchlist-empty-icon"></i></div>
         <h3>Daftar Pantau Kosong</h3>
         <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
         <button id="add-watchlist-empty" class="btn btn-primary" style="margin-top:12px"><i data-lucide="plus" style="width:16px"></i> Tambah Sekarang</button>
@@ -177,8 +177,8 @@ async function renderPortfolioTab(el) {
 
     el.innerHTML = `
       <div class="flex justify-between items-center p-4" style="border-bottom:1px solid var(--border-subtle)">
-        <h3 class="text-xs uppercase text-dim strong m-0" style="letter-spacing:.08em">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
-        <button id="add-portfolio" class="btn btn-primary" style="padding:6px 14px;font-size:11px;height:32px"><i data-lucide="plus" style="width:14px"></i> Tambah</button>
+        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
+        <button id="add-portfolio" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" style="width:14px"></i> Tambah</button>
       </div>
       ${rows.length ? `
       <div class="table-wrapper">
@@ -189,12 +189,12 @@ async function renderPortfolioTab(el) {
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main" style="font-size:15px">${r.ticker}</span></a></td>
               <td class="mono" style="font-size:14px">${r.lots}</td>
               <td class="mono" style="font-size:14px;color:var(--text-muted)">Rp ${(r.avg_price || 0).toLocaleString()}</td>
-              <td style="text-align:right"><button class="btn-icon delete-portfolio" data-ticker="${r.ticker}" style="color:var(--down-color)"><i data-lucide="trash-2" style="width:16px"></i></button></td>
+              <td style="text-align:right"><button class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" style="width:16px"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>
       </div>` : `
       <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="briefcase" style="width:28px;height:28px"></i></div>
+        <div class="empty-icon"><i data-lucide="briefcase" class="watchlist-empty-icon"></i></div>
         <h3>Belum Ada Posisi</h3>
         <p>Mulai catat posisi saham Anda untuk melacak portofolio.</p>
         <button id="add-portfolio-empty" class="btn btn-primary" style="margin-top:12px"><i data-lucide="plus" style="width:16px"></i> Tambah Posisi</button>
