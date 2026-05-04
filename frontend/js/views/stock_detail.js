@@ -89,6 +89,7 @@ export async function renderStockDetail(root, ticker) {
           <!-- Fundamental & Catalyst dipindah ke sini (layout rebalance) -->
           <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
           <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"></div></div>
+          <div class="panel"><h3 class="panel-title mb-1">Aksi Korporasi Terdekat</h3><div id="corporate-actions-strip"><div class="text-sm text-muted" style="padding:4px 0">Belum ada aksi korporasi terjadwal</div></div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="stock-tabs" data-stock-tabs="1">
@@ -299,7 +300,11 @@ function hydrateHeader(symbol, detail, fund, candles){
   const change = last.close - prev.close, pct = prev.close ? change/prev.close*100 : 0;
   document.getElementById('stock-name').textContent = detail?.data?.name || fund?.data?.name || fallbackIssuerName(symbol);
   const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
-  const chEl = document.getElementById('stock-change'); chEl.textContent = `${change >= 0 ? '+' : ''}${nf(change,0)} (${pf(pct)})`; chEl.className = `mono text-base mt-1 strong ${change >= 0 ? 'text-up' : 'text-down'}`;
+  const chEl = document.getElementById('stock-change'); chEl.innerHTML = `${change >= 0 ? '+' : ''}${nf(change,0)} <small>(${pf(pct)})</small>`; chEl.className = `mono stock-change-large mt-1 strong ${change >= 0 ? 'text-up' : 'text-down'}`;
+  // Last update timestamp
+  const now = new Date(); const hh = String(now.getHours()).padStart(2,'0'); const mm = String(now.getMinutes()).padStart(2,'0');
+  const ts = document.getElementById('live-badge');
+  if (ts) ts.textContent = `WIB ${hh}:${mm}`; ts.className = 'badge';
 }
 function renderStockChart(symbol, candles, technical){
   const container = document.getElementById('tvchart'); if (!container) return;
@@ -423,15 +428,35 @@ function sentimentClass(label, value, metric = ''){
 function tile(label, value, status = '', cls = ''){ return `<div class="stat-tile ${cls || sentimentClass(status, value)}"><span>${label}</span><strong class="mono metric-value">${value}</strong>${status ? `<small>${status}</small>` : ''}</div>`; }
 function renderTechnicalPanel(t){
   const ind = t.indicators || {}; const isNoData = String(t.rating || '').toUpperCase().includes('NO DATA'); const score = isNoData ? null : Number(t.score ?? 0); const ratingCls = isNoData ? 'metric-neutral' : sentimentClass(t.rating, score);
+  const rsiVal = Number(ind.rsi?.value); const stochVal = Number(ind.stochastic?.k);
+  const rsiBadge = rsiVal >= 80 ? 'OVERBOUGHT' : rsiVal <= 20 ? 'OVERSOLD' : rsiVal >= 70 ? 'WASPADA' : '';
+  const stochBadge = stochVal >= 80 ? 'OVERBOUGHT' : stochVal <= 20 ? 'OVERSOLD' : '';
+  const rsiDanger = rsiVal >= 80 || rsiVal <= 20;
+  const stochDanger = stochVal >= 80 || stochVal <= 20;
+  // Multi-indicator alert
+  const multiAlert = (rsiVal >= 80 && stochVal >= 80) ? `<div class="tech-alert-banner warn">⚠️ RSI &amp; Stochastics overbought ekstrem — potensi koreksi tinggi</div>`
+    : (rsiVal >= 70 && stochVal >= 80) ? `<div class="tech-alert-banner warn">⚠️ Multiple indikator overbought — risiko koreksi meningkat</div>`
+    : (rsiVal <= 20 && stochVal <= 20) ? `<div class="tech-alert-banner info">📈 RSI &amp; Stochastics oversold — potensi reversal</div>`
+    : '';
+
+  // Inject alert badges into status text
+  function withBadge(val, label, badge) {
+    return badge ? `${label} <span class="indicator-alert-badge">${badge}</span>` : label;
+  }
+  const rsiStatus = withBadge(rsiVal, ind.rsi?.status || '', rsiBadge);
+  const stochStatus = withBadge(stochVal, ind.stochastic?.status || '', stochBadge);
+  const rsiCls = rsiDanger ? 'metric-bad' : (rsiVal >= 70 || rsiVal <= 30) ? 'metric-warn' : sentimentClass(ind.rsi?.status, rsiVal, 'rsi');
+  const stochCls = stochDanger ? 'metric-bad' : stochVal >= 80 ? 'metric-warn' : sentimentClass(ind.stochastic?.status, stochVal);
+
   document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NETRAL'}</span><div class="mt-2 text-sm text-muted">${t.summary || 'Ringkasan teknikal belum tersedia lengkap.'}</div>`;
   const signal = document.getElementById('signal-card'); signal.classList.add(ratingCls); signal.querySelector('strong').textContent = t.rating || 'NETRAL'; signal.querySelector('small').textContent = score == null ? 'Keyakinan —' : `Keyakinan ${nf(score,0)}/100`;
   const groups = [
-    ['Momentum', [['RSI 14', nf(ind.rsi?.value,2), ind.rsi?.status, sentimentClass(ind.rsi?.status, ind.rsi?.value, 'rsi')], ['Stoch %K', nf(ind.stochastic?.k,2), ind.stochastic?.status], ['MACD', nf(ind.macd?.histogram,2), ind.macd?.status]]],
+    ['Momentum', [['RSI 14', nf(ind.rsi?.value,2), rsiStatus, rsiCls], ['Stoch %K', nf(ind.stochastic?.k,2), stochStatus, stochCls], ['MACD', nf(ind.macd?.histogram,2), ind.macd?.status]]],
     ['Tren', filterValidCards([['SMA 20', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'Menengah'], ['SMA 200', nf(ind.trend?.sma_200,2), 'Panjang']])],
     ['Volatilitas', filterValidCards([['ATR 14', nf(ind.atr?.value,2), ind.atr?.status], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good']])],
     ['Level Kunci', filterValidCards([['Rasio Volume', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support', isValidLevel(ind.support_resistance?.support_20d) ? money(ind.support_resistance.support_20d) : '—', 'support', 'metric-good'], ['Resistance', isValidLevel(ind.support_resistance?.resistance_20d) ? money(ind.support_resistance.resistance_20d) : '—', 'resistance', 'metric-warn']])],
   ];
-  document.getElementById('technical-panel').innerHTML = groups.map(([title, cards]) => renderMetricGroup(title, cards)).join('');
+  document.getElementById('technical-panel').innerHTML = multiAlert + groups.map(([title, cards]) => renderMetricGroup(title, cards)).join('');
 }
 
 function renderMetricGroup(title, cards){
@@ -449,9 +474,6 @@ function renderDecisionPanel(candles, tech){
   const levels = getLevels(candles, tech); const rsi = tech?.indicators?.rsi?.value; const rating = tech?.rating || 'NETRAL';
   const ind = tech?.indicators || {};
   const risk = Math.max(levels.entry - levels.stop, 1), reward = Math.max(levels.target - levels.entry, 0); const rr = reward/risk;
-  const action = rating === 'BEARISH' ? 'HINDARI DULU' : (rsi >= 70 || rr < 1) ? 'TAHAN / PANTAU' : rating === 'BULLISH' ? 'AKUMULASI BERTAHAP' : 'PANTAU';
-  const caution = rr < 1 ? 'Rasio risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.' : 'Setup boleh dipantau, tetap tunggu konfirmasi volume dan candle.';
-
   // Confluence: count bullish/bearish indicators
   const macdStatus = (ind.macd?.status || '').toLowerCase();
   const trendStatus = (ind.trend?.status || '').toLowerCase();
@@ -460,6 +482,8 @@ function renderDecisionPanel(candles, tech){
   const confluenceBull = [rating === 'BULLISH', macdStatus.includes('bull'), trendStatus.includes('bull'), rsi > 50 && rsi < 70, volRatio >= 1].filter(Boolean).length;
   const confluenceBear = [rating === 'BEARISH', macdStatus.includes('bear'), trendStatus.includes('bear'), rsi >= 70, volRatio < 0.5].filter(Boolean).length;
   const totalChecked = 5;
+  const netScore = Math.round((confluenceBull / totalChecked) * 100);
+  const scoreLabel = netScore >= 70 ? 'Bullish kuat' : netScore >= 50 ? 'Bullish moderat' : netScore >= 30 ? 'Sideways' : 'Bearish';
 
   // Multi-TF trends from candle closes
   const closes = candles.map(c => Number(c.close)).filter(Number.isFinite);
@@ -467,14 +491,35 @@ function renderDecisionPanel(candles, tech){
   const tf7 = tfTrend(7), tf30 = tfTrend(30), tf90 = tfTrend(90);
   const tfClass = (t) => t === '↑' ? 'text-up' : t === '↓' ? 'text-down' : 'text-dim';
 
+  // Dynamic recommendation
+  const isOverbought = rsi >= 70;
+  const action = rating === 'BEARISH' ? 'HINDARI DULU'
+    : (rsi >= 80 || (isOverbought && rr < 1.2)) ? 'TAHAN / PANTAU'
+    : netScore >= 70 ? 'AKUMULASI BERTAHAP'
+    : netScore >= 50 ? 'PANTAU KONFIRMASI'
+    : 'HINDARI DULU';
+  const caution = rsi >= 80
+    ? 'RSI ekstrem — risiko koreksi tinggi. Jangan chasing, tunggu pullback.'
+    : rr < 1
+      ? 'Rasio risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.'
+      : netScore >= 70
+        ? 'Setup bullish terkonfirmasi. Pantau breakout resistance dengan volume.'
+        : netScore >= 50
+          ? 'Setup bullish muncul. Tunggu konfirmasi volume dan candle penutup.'
+          : 'Belum ada setup jelas. Tahan posisi/tunggu.';  
+
   // RR visual bar
   const barPct = Math.min(Math.max((rr / 3) * 100, 5), 100);
 
   document.getElementById('decision-panel').innerHTML = `
     <div class="decision-hero">
-      <div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Panel Keputusan</span><span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">${action}</span></div>
-      <div class="decision-confluence">
-        <div class="confluence-bar-wrap"><div class="confluence-label">Konfluensi</div><div class="confluence-track"><div class="confluence-fill bullish" style="width:${(confluenceBull/totalChecked)*100}%"></div><div class="confluence-fill bearish" style="width:${(confluenceBear/totalChecked)*100}%"></div></div><div class="confluence-nums"><span class="text-up strong">${confluenceBull}</span><span class="text-dim">/</span><span class="text-down strong">${confluenceBear}</span><span class="text-dim"> indikator</span></div></div>
+      <div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Panel Keputusan <span class="confluence-score"><span class="score">${netScore}</span><span class="max">/100</span></span></span>
+        <div class="flex items-center gap-2">
+          <span class="info-tip" title="">&#9432;<span class="info-popup">Skor dihitung dari agregasi sinyal teknikal multiple indikator (tren, momentum, volume). &gt;70 = Bullish kuat, 50-70 = Bullish moderat, &lt;50 = Bearish/Sideways</span></span>
+          <span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">${action}</span></div></div>
+      <div class="decision-confluence position-relative">
+        <div class="confluence-bar-wrap"><div class="confluence-label">Konfluensi</div><div class="confluence-track" style="position:relative"><div class="confluence-marker" style="left:50%"></div><div class="confluence-fill bullish" style="width:${(confluenceBull/totalChecked)*100}%"></div><div class="confluence-fill bearish" style="width:${(confluenceBear/totalChecked)*100}%"></div></div><div class="confluence-nums"><span class="text-up strong">${confluenceBull}</span><span class="text-dim">/</span><span class="text-down strong">${confluenceBear}</span><span class="text-dim"> indikator</span></div></div>
+        <div class="text-xs text-dim mt-1" style="margin-top:4px">${scoreLabel}</div>
       </div>
       <div class="flex gap-3 items-center mt-2">
         <div class="text-xs text-dim">Multi-TF: <span class="${tfClass(tf7)} strong">7D ${tf7}</span> <span class="${tfClass(tf30)} strong">30D ${tf30}</span> <span class="${tfClass(tf90)} strong">90D ${tf90}</span></div>
@@ -519,7 +564,7 @@ function renderSnapshotPanel(d, candles, tech){
     ['Tinggi / Rendah', `${money(last.high)} / ${money(last.low)}`, 'rentang sesi', 'metric-neutral'],
     ['Penutupan Sebelumnya', money(prev.close), pct == null ? 'baseline harian' : pf(pct), delta >= 0 ? 'metric-good' : 'metric-bad'],
     ['Laju Volume', nf(last.volume,0), tech?.indicators?.volume?.ratio ? `${nf(tech.indicators.volume.ratio,2)}x rata-rata` : 'pantau aliran', sentimentClass('spike', tech?.indicators?.volume?.ratio)],
-    ['Cakupan Fundamental', hasFundamental ? 'siap dibaca' : 'fundamental menunggu', hasFundamental ? 'snapshot basis data' : 'menunggu basis data lebih kaya', hasFundamental ? 'metric-good' : 'metric-warn'],
+    ['Cakupan Fundamental', hasFundamental ? 'Siap Dibaca' : 'Fundamental Menunggu', hasFundamental ? 'snapshot basis data' : 'menunggu basis data lebih kaya', hasFundamental ? 'metric-good' : 'metric-warn'],
     ['Bias Tren', tech?.rating || 'PANTAU', tech?.summary || 'snapshot teknikal', sentimentClass(tech?.rating, tech?.score)],
   ];
   el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
@@ -566,7 +611,7 @@ function renderBelowChart(candles, tech){
 function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news://pending', meta = ''){
   const safeHref = href || 'news://pending';
   const cardHref = safeHref;
-  return `<div class="stat-tile ${cls}" style="position:relative"><span>${label}</span><strong>${title}</strong><small>${body}</small><small>${meta || `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`}</small><a class="stretched-link" href="${cardHref}" target="_blank" rel="noopener noreferrer" aria-label="Buka sumber katalis"></a></div>`;
+  return `<div class="stat-tile ${cls}" style="position:relative"><span>${label}</span><strong>${title}</strong><small>${body}</small><small>${meta || `<a href="${safeHref}" class="catalyst-link" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`}</small><a class="stretched-link" href="${cardHref}" target="_blank" rel="noopener noreferrer" aria-label="Buka sumber katalis"></a></div>`;
 }
 
 function scoreCatalystRow(row, symbolUpper){
@@ -607,8 +652,8 @@ function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
   const latestAnnouncement = announcementRows[0]?.score > 0 ? announcementRows[0] : announcementRows[0] || null;
   const newsHref = relevantNews?.link || 'news://pending';
   const annHref = latestAnnouncement?.link || 'news://pending';
-  const newsMeta = `${formatRelativeCatalystTime(relevantNews?.published_at)} · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
-  const annMeta = `${formatRelativeCatalystTime(latestAnnouncement?.date)} · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
+  const newsMeta = `${formatRelativeCatalystTime(relevantNews?.published_at)} · <a href="${newsHref}" class="catalyst-link" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
+  const annMeta = `${formatRelativeCatalystTime(latestAnnouncement?.date)} · <a href="${annHref}" class="catalyst-link" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
   const cards = [
     relevantNews
       ? catalystTile('Katalis Terbaru', 'Denyut Berita', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref, newsMeta)
@@ -756,8 +801,18 @@ function renderPeerComparison(symbol) {
     const el = document.getElementById('peer-comparison-panel');
     if (!el || !res?.data?.length) return;
     el.style.display = '';
-    el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2">Peer Comparison</div>' +
-      res.data.map(p => `<a href="#stock/${p.ticker}" class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle);text-decoration:none;color:var(--text-main)"><span class="mono text-up" style="font-size:11px">${p.ticker}</span><span class="text-xs text-muted">${p.name || p.sector || ''}</span></a>`).join('');
+    el.innerHTML = '<div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Peer Comparison</span></div>' +
+      '<div class="peer-row" style="border-bottom:1px solid var(--border-subtle);padding:4px 0 4px"><span class="text-xs text-dim" style="font-size:9px">KODE</span><span class="text-xs text-dim" style="font-size:9px">NAMA</span><span class="text-xs text-dim" style="font-size:9px;text-align:right">HARGA</span><span class="text-xs text-dim" style="font-size:9px;text-align:right">CHG%</span></div>' +
+      res.data.map(p => {
+        const changeCls = p.change_pct > 0 ? 'text-up' : p.change_pct < 0 ? 'text-down' : 'text-dim';
+        const arrow = p.change_pct > 0 ? '▲' : p.change_pct < 0 ? '▼' : '—';
+        return `<a href="#stock/${p.ticker}" class="peer-row">
+          <span class="peer-code">${p.ticker}</span>
+          <span class="peer-name">${(p.name || p.sector || '').slice(0, 18)}</span>
+          <span class="peer-price">${p.price != null ? nf(p.price,0) : '—'}</span>
+          <span class="peer-change ${changeCls}">${p.change_pct != null ? `${arrow} ${pf(p.change_pct)}` : '—'}</span>
+        </a>`;
+      }).join('');
   }).catch(() => {});
 }
 

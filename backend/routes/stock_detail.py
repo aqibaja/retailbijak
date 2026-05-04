@@ -315,5 +315,17 @@ def get_peers(ticker: str, limit: int = 6, db: Session = Depends(get_db)):
     if stock and stock.sector:
         similar = db.query(Stock).filter(Stock.sector == stock.sector, Stock.ticker != base).limit(limit).all()
         for s in similar:
-            peers.append({'ticker': s.ticker, 'name': s.name or '', 'sector': s.sector or '', 'market_cap': s.market_cap})
+            # Fetch latest OHLCV for price data
+            latest = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == s.ticker).order_by(OHLCVDaily.date.desc()).first()
+            prev = db.query(OHLCVDaily).filter(OHLCVDaily.ticker == s.ticker).order_by(OHLCVDaily.date.desc()).offset(1).first() if latest else None
+            price = float(latest.close) if latest else None
+            prev_close = float(prev.close) if prev else None
+            change = (price - prev_close) if (price and prev_close) else None
+            change_pct = (change / prev_close * 100) if (change and prev_close) else None
+            peers.append({
+                'ticker': s.ticker, 'name': s.name or '', 'sector': s.sector or '',
+                'market_cap': s.market_cap, 'price': price,
+                'change': round(change, 2) if change is not None else None,
+                'change_pct': round(change_pct, 2) if change_pct is not None else None,
+            })
     return {'ticker': base, 'source': 'db', 'count': len(peers), 'data': peers}
