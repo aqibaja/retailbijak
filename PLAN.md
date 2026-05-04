@@ -271,20 +271,13 @@ HILANG:
 
 ## Progress Log
 
-### 2026-05-04 — Phase 1 done (data flow)
-- [x] Diagnosa data flow & UI/UX selesai
-- [x] Phase 1 (data flow) scope & steps ditulis
-- [x] Phase 2 (UI/UX) scope & layout spec ditulis
-- [x] Test plan & risk assessment selesai
-- [x] **Step 1.1** — Backend: endpoint `/api/ai-picks` diubah — hapus `refresh`, `llm`, on-demand generate. Hanya baca dari DB + fallback
-- [x] **Step 1.2** — Frontend: `fetchAiPicks()` disederhanakan — hapus param `options`, `refresh`, `llm`
-- [x] **Step 1.3** — Test: 3 test LLM dihapus, 1 test key shape diperbaiki, test `Manual Refresh` dihapus. 36/36 passed
-- [x] **Deploy** — sync ke `/opt/swingaq/`, restart service, live verified
-- [ ] [next] **Step 2.1** — UI: Hero redesign compact
-- [ ] [next] **Step 2.2** — UI: AI Desk Brief collapsible
-- [ ] [next] **Step 2.3** — UI: Unified compact card list
-- [ ] [next] **Step 2.4** — UI: Smoother mode switch (cache)
-- [ ] [next] **Step 2.5** — UI: Remove pin, simplify actions
-- [ ] [next] **Deploy runtime** — sync ke `/opt/swingaq/`
-- [ ] [next] **Browser QA** — live domain verification
-- [ ] [next] **Commit & push**
+### 2026-05-04 — Phase 2 done (UI/UX enhancement)
+- [x] **Step 2.1** — UI: Hero redesign compact (`ai-picks-compact-hero`, `ai-picks-hero-row`, `ai-picks-hero-title`)
+- [x] **Step 2.2** — UI: AI Desk Brief collapsible (`ai-picks-brief-collapsible` with `<details>` toggle)
+- [x] **Step 2.3** — UI: Unified compact card list (`ai-picks-card`, featured merged into list, `compare-tray` removed)
+- [x] **Step 2.4** — UI: Smoother mode switch (`modeCache` in-memory, `extractHeroHtml`/`extractSummaryHtml` render from cache)
+- [x] **Step 2.5** — UI: Remove pin, simplify actions to [Detail] [Simpan] [Faktor toggle]
+- [x] **Test** — 37/37 passed, static guards updated for new classes
+- [x] **Deploy** — sync CSS + JS ke `/opt/swingaq/`
+- [x] **Browser QA** — live domain verified: new CSS classes loaded, API return DB data
+- [x] **Commit & push**

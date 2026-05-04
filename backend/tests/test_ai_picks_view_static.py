@@ -37,22 +37,24 @@ def test_ai_picks_view_exports_render_function_and_shell_hooks():
     content = VIEW.read_text()
     assert 'export async function renderAiPicks(root)' in content
     assert 'ai-picks-page' in content
-    assert 'ai-picks-hero' in content
+    assert 'ai-picks-compact-hero' in content
+    assert 'ai-picks-hero-row' in content
+    assert 'ai-picks-hero-title' in content
     assert 'ai-picks-mode-switch' in content
-    assert 'ai-picks-featured' in content
-    assert 'ai-picks-ranked-list' in content
-    assert 'ai-picks-compare' in content
-    assert 'ai-picks-empty' in content
+    assert 'ai-picks-summary-strip' in content
+    assert 'ai-picks-list' in content
+    assert 'ai-picks-card' in content
     assert 'fetchAiPicks' in content
+    assert 'modeCache' in content
 
 
 def test_ai_picks_view_contains_daily_briefing_hooks_and_actionable_fields():
     content = VIEW.read_text()
     assert 'AI Picks Hari Ini' in content
-    assert 'Premarket briefing otomatis' in content
-    assert 'ai-picks-briefing-meta' in content
-    assert 'ai-picks-freshness' in content
-    assert 'ai-picks-generated-at' in content
+    assert 'ai-picks-compact-hero' in content
+    assert 'ai-picks-hero-meta' in content
+    assert 'ai-picks-brief-collapsible' in content
+    assert 'ai-picks-brief-summary' in content
     assert 'entry_zone' in content
     assert 'stop_loss' in content
     assert 'take_profit' in content
@@ -62,48 +64,39 @@ def test_ai_picks_view_contains_daily_briefing_hooks_and_actionable_fields():
     assert 'catalysts' in content
 
 
-def test_ai_picks_view_contains_compare_tray_and_explainable_metric_hooks():
+def test_ai_picks_view_contains_compact_card_and_factor_hooks():
     content = VIEW.read_text()
-    assert 'renderCompareTray' in content
+    assert 'renderCompactCard' in content
     assert 'renderFactorMeter' in content
-    assert 'renderAiDeskBrief' in content
-    assert 'ai-picks-compare-grid' in content
+    assert 'ai-picks-card-head' in content
+    assert 'ai-picks-card-meta' in content
+    assert 'ai-picks-card-thesis' in content
+    assert 'ai-picks-card-actions' in content
     assert 'ai-picks-factor-list' in content
     assert 'ai-picks-factor-meter' in content
-    assert 'ai-picks-metric-strip' in content
-    assert 'ai-picks-llm-brief' in content
-    assert 'runtime_message' in content
-    assert 'runtime_state' in content
-    assert 'change_pct' in content
-    assert 'volume_ratio' in content
-    assert 'comparison_points' in content
+    assert 'ai-picks-factor-fill' in content
+    assert 'data-toggle-factors' in content
+    assert 'data-open-detail' in content
+    assert 'data-save' in content
     assert 'factor_scores' in content
-    assert 'data-ai-picks-compare' in content
 
 
-def test_ai_picks_view_persists_mode_and_exposes_richer_state_markers():
+def test_ai_picks_view_persists_mode_and_exposes_state_markers():
     content = VIEW.read_text()
     assert 'const AI_PICKS_MODE_KEY =' in content
     assert 'localStorage.getItem(' in content
     assert 'localStorage.setItem(' in content
-    assert 'data-ai-picks-state="loading"' in content
-    assert 'data-ai-picks-state="empty"' in content
-    assert 'data-ai-picks-state="error"' in content
-    assert 'data-ai-picks-retry' in content
+    assert 'data-state=\"loading\"' in content
+    assert 'data-state=\"empty\"' in content
+    assert 'data-state=\"error\"' in content
+    assert 'data-retry' in content
 
 
-def test_ai_picks_view_supports_detail_context_handoff_and_pin_state():
+def test_ai_picks_view_supports_detail_context_handoff():
     content = VIEW.read_text()
     assert 'const AI_PICKS_CONTEXT_KEY =' in content
-    assert 'const AI_PICKS_PINNED_KEY =' in content
     assert 'safeSessionStorageSet(' in content
-    assert 'safeLocalStorageGetJson(' in content
-    assert 'safeLocalStorageSetJson(' in content
-    assert 'data-ai-picks-open-detail' in content
-    assert 'data-ai-picks-pin' in content
-    assert 'ai-picks-pin-active' in content
-    assert 'Pin Prioritas' in content
-    assert 'Pin aktif' in content
+    assert 'data-open-detail' in content
     assert "window.location.hash = `#stock/${ticker}`" in content
     assert 'reason_labels' in content
     assert 'risk_note' in content
@@ -113,13 +106,22 @@ def test_ai_picks_view_supports_detail_context_handoff_and_pin_state():
     assert 'source_label' in content
 
 
+def test_ai_picks_uses_mode_cache():
+    content = VIEW.read_text()
+    assert 'modeCache' in content
+    assert 'modeCache[mode]' in content
+    assert 'extractHeroHtml' in content
+    assert 'extractSummaryHtml' in content
+    assert 'renderCardList' in content
+
+
 def test_ai_picks_and_dashboard_use_indonesian_confidence_copy_with_explanation():
     ai_picks = VIEW.read_text()
     dashboard = DASHBOARD.read_text()
     expected = [
         'Keyakinan',
-        'cukup layak dipantau, tetapi belum konfirmasi kuat',
-        'konfirmasi teknikal cukup kuat untuk akumulasi bertahap',
+        'cukup layak dipantau, belum konfirmasi kuat',
+        'konfirmasi cukup kuat untuk akumulasi bertahap',
     ]
     for marker in expected:
         assert marker in ai_picks or marker in dashboard
@@ -185,26 +187,28 @@ def test_stock_detail_can_render_ai_pick_context_banner():
     assert 'stock-ai-pick-context-cta' in content
 
 
-def test_ai_picks_styles_exist_for_shell_layout():
+def test_ai_picks_styles_exist_for_compact_layout():
     content = STYLE.read_text()
     assert '.ai-picks-page' in content
-    assert '.ai-picks-hero' in content
+    assert '.ai-picks-compact-hero' in content
+    assert '.ai-picks-hero-row' in content
+    assert '.ai-picks-hero-title' in content
     assert '.ai-picks-summary-strip' in content
-    assert '.ai-picks-featured-card' in content
-    assert '.ai-picks-rank-card' in content
-    assert '.ai-picks-compare-tray' in content
-    assert '.ai-picks-briefing-meta' in content
-    assert '.ai-picks-freshness' in content
+    assert '.ai-picks-brief-collapsible' in content
+    assert '.ai-picks-list' in content
+    assert '.ai-picks-card' in content
 
 
-def test_ai_picks_styles_exist_for_compare_and_factor_visuals():
+def test_ai_picks_styles_exist_for_card_and_factor_visuals():
     content = STYLE.read_text()
-    assert '.ai-picks-compare-grid' in content
-    assert '.ai-picks-compare-card' in content
+    assert '.ai-picks-card-head' in content
+    assert '.ai-picks-card-meta' in content
+    assert '.ai-picks-card-thesis' in content
+    assert '.ai-picks-card-actions' in content
+    assert '.ai-picks-card-factors' in content
     assert '.ai-picks-factor-list' in content
     assert '.ai-picks-factor-meter' in content
     assert '.ai-picks-factor-fill' in content
-    assert '.ai-picks-metric-strip' in content
 
 
 def test_ai_picks_styles_cover_loading_empty_and_error_states():
@@ -212,7 +216,6 @@ def test_ai_picks_styles_cover_loading_empty_and_error_states():
     assert '.ai-picks-state-card' in content
     assert '.ai-picks-state-stack' in content
     assert '.ai-picks-state-pulse' in content
-    assert '.ai-picks-retry-btn' in content
 
 
 def test_dashboard_styles_cover_top_ai_pick_widget():
