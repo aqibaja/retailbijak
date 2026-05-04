@@ -42,9 +42,10 @@ export async function renderNews(root) {
             <div class="market-row-kicker">Intel Pasar</div>
             <h1 style="font-size:clamp(24px,2.8vw,36px);letter-spacing:-.03em">Berita & Intelijen Pasar</h1>
             <p style="max-width:680px">Ringkasan berita pasar, pengumuman emiten, dan intelijen data IDX dalam satu aliran.</p>
-          </div>
-          <div class="market-head-status">
-            <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
+            <div class="market-meta-rail" style="margin-top:6px">
+              <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
+              <input type="text" id="news-search-input" class="form-input" placeholder="Cari berita berdasarkan saham (BBCA, BMRI...)" style="width:280px;height:32px;font-size:12px;padding:0 12px;background:rgba(15,23,41,.6);border:1px solid var(--border-subtle);border-radius:999px;color:var(--text-main);outline:none">
+            </div>
           </div>
         </div>
         <div class="market-section-group">
@@ -60,7 +61,7 @@ export async function renderNews(root) {
         </div>
         <div class="market-section-group">
           <div class="market-section-group-head">
-            <div class="market-section-group-title">Aliran Berita</div>
+            <div class="market-section-group-title">Aliran Berita <span id="news-filter-label"></span></div>
             <p>Semua berita dan pengumuman dari berbagai sumber terintegrasi.</p>
           </div>
           <div id="news-stream" class="market-section-group-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
@@ -109,22 +110,47 @@ export async function renderNews(root) {
         }).join('');
 
         // Render stream (2-column grid)
-        document.getElementById('news-stream').innerHTML = stream.map((n, i) => {
-          const { c1, c2, initials } = generateFallbackGradient(n.title, n.source);
-          const isWide = i === 0;
-          return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="market-card" style="text-decoration:none;display:flex;gap:16px;align-items:flex-start;padding:18px;min-height:110px;border-left:3px solid ${c1}">
-            <div style="min-width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">${initials}</div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><span style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)">${sourceCategory(n.source)}</span><span style="font-size:9px;color:var(--text-dim)">${relativeTime(n.published_at)}</span></div>
-              <strong style="font-size:13px;color:var(--text-main);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title || 'Intel Pasar'}</strong>
-              ${n.summary ? `<div style="margin-top:4px;font-size:11px;color:var(--text-muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${n.summary}</div>` : ''}
-            </div>
-          </a>`;
-        }).join('');
+        document.getElementById('news-stream').innerHTML = stream.map((n, i) => streamCardHtml(n, i)).join('');
+
+        // Search filter — store all items for filtering
+        window.__newsAllItems = stream;
+        const searchInput = document.getElementById('news-search-input');
+        if (searchInput) {
+          searchInput.addEventListener('input', function() {
+            const q = this.value.trim().toUpperCase();
+            const label = document.getElementById('news-filter-label');
+            if (!q || q.length < 2) {
+              // Reset to all
+              document.getElementById('news-stream').innerHTML = window.__newsAllItems.map((n, i) => streamCardHtml(n, i)).join('');
+              if (label) label.textContent = '';
+              return;
+            }
+            const filtered = window.__newsAllItems.filter(n =>
+              (n.title || '').toUpperCase().includes(q) ||
+              (n.summary || '').toUpperCase().includes(q)
+            );
+            if (label) label.textContent = filtered.length ? `· filter "${this.value}" (${filtered.length})` : '· tidak ditemukan';
+            document.getElementById('news-stream').innerHTML = filtered.length
+              ? filtered.map((n, i) => streamCardHtml(n, i)).join('')
+              : '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Tidak ditemukan</strong><span class="dashboard-widget-state-note">Coba kata kunci lain.</span></div>';
+          });
+        }
 
     } catch (err) {
         document.getElementById('news-count').textContent = 'GAGAL';
         const stream = document.getElementById('news-stream');
         if (stream) stream.innerHTML = `<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">${err.message || 'Coba refresh halaman.'}</span></div>`;
     }
+}
+
+function streamCardHtml(n, i) {
+  const { c1, c2, initials } = generateFallbackGradient(n.title, n.source);
+  return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="market-card" style="text-decoration:none;display:flex;gap:16px;align-items:flex-start;padding:18px;min-height:110px;border-left:3px solid ${c1}">
+    <div style="min-width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">${initials}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><span style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)">${sourceCategory(n.source)}</span><span style="font-size:9px;color:var(--text-dim)">${relativeTime(n.published_at)}</span></div>
+      <strong style="font-size:13px;color:var(--text-main);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title || 'Intel Pasar'}</strong>
+      ${n.summary ? `<div style="margin-top:4px;font-size:11px;color:var(--text-muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${n.summary}</div>` : ''}
+    </div>
+  </a>`;
 }

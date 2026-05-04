@@ -654,13 +654,19 @@ function renderStockNewsFeed(symbol, newsPayload) {
   if (!el) return;
   const items = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
   if (!items.length) {
-    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Belum ada berita terkait</strong><span class="dashboard-widget-state-note">Berita dari RSS feed akan muncul setelah scheduler harian berjalan.</span></div>';
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Menunggu aliran berita</strong><span class="dashboard-widget-state-note">Berita pasar akan muncul setelah scheduler berjalan. Cek halaman Berita untuk feed lengkap.</span></div>';
     return;
   }
   const upper = symbol.toUpperCase();
   const filtered = items.filter(n => (n.title || '').toUpperCase().includes(upper) || (n.summary || '').toUpperCase().includes(upper)).slice(0, 5);
-  const display = filtered.length ? filtered : items.slice(0, 3);
-  el.innerHTML = display.map(n => `<div class="stat-tile metric-neutral" style="cursor:pointer" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')"><span>${n.source || 'rss'}</span><strong>${(n.title || 'Berita').slice(0, 72)}</strong><small>${n.summary ? n.summary.slice(0, 80) : ''} · ${(n.published_at || '').slice(0, 10) || ''}</small></div>`).join('');
+  const display = filtered.length ? filtered : items.slice(0, 4);
+  const label = filtered.length ? `Terkait ${upper}` : 'Berita Pasar Terbaru';
+  el.innerHTML = `<div class="text-xs text-dim uppercase strong mb-2">${label}</div>` +
+    display.map(n => `<div class="stat-tile metric-neutral" style="cursor:pointer;min-height:auto;padding:8px 10px" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')">
+      <span style="font-size:9px">${n.source || 'rss'} · ${(n.published_at || '').slice(0, 10) || ''}</span>
+      <strong style="font-size:12px;line-height:1.4">${(n.title || 'Berita').slice(0, 80)}</strong>
+      ${n.summary ? `<small style="font-size:10px">${n.summary.replace(/<[^>]*>/g,'').slice(0, 60)}</small>` : ''}
+    </div>`).join('');
 }
 
 function renderStockAnnouncements(symbol, annPayload) {
