@@ -20,10 +20,10 @@
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="style.css?v=20260504b">
  <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;}</style>
- <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
- <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js" defer></script>
- <script src="https://unpkg.com/lucide@latest" defer></script>
- <script src="https://s3.tradingview.com/tv.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@1.14.0/dist/umd/lucide.min.js" defer></script>
+    <script src="https://s3.tradingview.com/tv.js" defer></script>
 </head>
 <body>
  <header class="topbar">
@@ -62,15 +62,24 @@
  <div class="search-overlay" id="search-overlay"><div class="search-modal"><input type="text" id="global-search-input" placeholder="Cari kode saham, emiten, atau sektor..."><div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div></div></div>
  <div id="toast-container"></div>
  <script>
-  // Error catcher — tampilkan error di halaman kalo JS module fail
-  window.onerror = function(msg, url, line, col, err) {
-    const el = document.getElementById('app-root');
-    if (!el) return;
-    el.innerHTML = '<div style="padding:20px;color:#f87171;font-family:monospace;font-size:13px;">' +
-      '<strong style="color:#fff;">⚠️ JavaScript Error</strong><br>' +
-      msg + '<br><small style="color:#94a3b8;">' + (url||'') + ':' + (line||'') + ':' + (col||'') + '</small></div>';
-    return false;
-  };
+  // Error catcher — pakai window.addEventListener('error') karena window.onerror
+  // TIDAK menangkap error dari ES Modules (type="module")
+  window.addEventListener('error', function(e) {
+   const el = document.getElementById('app-root');
+   if (!el) return;
+   e.preventDefault();
+   el.classList.remove('page-loading');
+   el.innerHTML = '<div style="padding:20px;color:#f87171;font-family:monospace;font-size:13px;">' +
+     '<strong style="color:#fff;">⚠️ JavaScript Error</strong><br>' +
+     (e.message || e.error?.message || String(e)) +
+     '<br><small style="color:#94a3b8;">' + (e.filename||'') + ':' + (e.lineno||'') + ':' + (e.colno||'') + '</small>' +
+     '<br><small style="color:#fbbf24;margin-top:8px;display:block;">Coba refresh halaman atau hubungi admin.</small></div>';
+  });
+  // Safety: force-remove page-loading setelah 5 detik (anti stuck blank)
+  setTimeout(function() {
+   var el = document.getElementById('app-root');
+   if (el) el.classList.remove('page-loading');
+  }, 5000);
  </script>
  <script type="module" src="js/main.js?v=20260504e"></script>
  <script nomodule>

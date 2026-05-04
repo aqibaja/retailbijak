@@ -37,8 +37,15 @@ export function handleRoute(hash) {
     root.dataset.routePath = cleanPath;
     root.dataset.activeView = baseRoute;
     
+    // Safety: force-remove page-loading after 3s to prevent stuck blank
+    const safetyTimer = setTimeout(() => {
+        root.classList.remove('page-loading');
+    }, 3000);
+    
     window.setTimeout(() => {
         if (currentToken !== routeToken) return;
+        // Clear the safety timer since we're about to remove it ourselves
+        clearTimeout(safetyTimer);
         try {
             window.scrollTo({ top: 0, behavior: 'instant' });
         } catch {

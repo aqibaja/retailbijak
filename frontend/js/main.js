@@ -229,13 +229,17 @@ async function setupRunningTicker() {
 }
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
-   initTheme();
-   lucide.createIcons();
-   setupSearchOverlay();
-   setupScrollEffects();
-   setupRunningTicker();
-   refreshTopbarMarket();
-   setInterval(refreshTopbarMarket, 60000);
+   try {
+       initTheme();
+       if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+       setupSearchOverlay();
+       setupScrollEffects();
+       setupRunningTicker();
+       refreshTopbarMarket();
+       setInterval(refreshTopbarMarket, 60000);
+   } catch (e) {
+       console.error('Init error:', e);
+   }
 });
 // Routing
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
