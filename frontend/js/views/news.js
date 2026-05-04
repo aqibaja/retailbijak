@@ -103,9 +103,9 @@ export async function renderNews(root) {
         // Render side featured
         document.getElementById('news-featured-side').innerHTML = side.map(n => {
           const { c1, c2 } = generateFallbackGradient(n.title, n.source);
-          return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} style="text-decoration:none;display:flex;flex-direction:column;justify-content:center;flex:1;border-radius:18px;background:linear-gradient(135deg,${c1}33,${c2}22);padding:18px;border:1px solid rgba(255,255,255,.06);min-height:120px;position:relative;overflow:hidden">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5)">${sourceCategory(n.source)}</span><span style="font-size:10px;color:rgba(255,255,255,.35)">${relativeTime(n.published_at)}</span></div>
-            <strong style="font-size:13px;color:var(--text-main);line-height:1.45">${n.title || 'Intel Pasar'}</strong>
+          return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-featured-side-card" style="text-decoration:none;background:linear-gradient(135deg,${c1}22,${c2}15)">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)">${sourceCategory(n.source)}</span><span style="font-size:9px;color:var(--text-dim)">${relativeTime(n.published_at)}</span></div>
+            <strong style="font-size:12px;color:var(--text-main);line-height:1.4">${n.title || 'Intel Pasar'}</strong>
           </a>`;
         }).join('');
 
@@ -145,12 +145,12 @@ export async function renderNews(root) {
 
 function streamCardHtml(n, i) {
   const { c1, c2, initials } = generateFallbackGradient(n.title, n.source);
-  return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="market-card" style="text-decoration:none;display:flex;gap:16px;align-items:flex-start;padding:18px;min-height:110px;border-left:3px solid ${c1}">
-    <div style="min-width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">${initials}</div>
+  return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="text-decoration:none;border-left-color:${c1}">
+    <div style="min-width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff">${initials}</div>
     <div style="flex:1;min-width:0">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><span style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)">${sourceCategory(n.source)}</span><span style="font-size:9px;color:var(--text-dim)">${relativeTime(n.published_at)}</span></div>
-      <strong style="font-size:13px;color:var(--text-main);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title || 'Intel Pasar'}</strong>
-      ${n.summary ? `<div style="margin-top:4px;font-size:11px;color:var(--text-muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${n.summary}</div>` : ''}
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)">${sourceCategory(n.source)}</span><span style="font-size:8px;color:var(--text-dim)">${relativeTime(n.published_at)}</span></div>
+      <strong style="font-size:12px;color:var(--text-main);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title || 'Intel Pasar'}</strong>
+      ${n.summary ? `<div style="margin-top:3px;font-size:10px;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${n.summary.replace(/<[^>]*>/g,'')}</div>` : ''}
     </div>
   </a>`;
 }
