@@ -16,54 +16,30 @@ const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractio
 const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
 
 function safeSessionStorageSet(key, value) {
-  try {
-    sessionStorage.setItem(key, value);
-  } catch {
-    // ignore session storage issues
-  }
+  try { sessionStorage.setItem(key, value); } catch { /* ignore */ }
 }
 
 function buildAiPickContext(item, mode = 'swing') {
   return JSON.stringify({
-    ticker: item?.ticker || '',
-    mode,
-    source_route: '#dashboard',
-    source_label: 'Top AI Pick Today',
-    score: item?.score ?? null,
-    confidence: item?.confidence || null,
-    fit_label: item?.fit_label || '',
-    entry_zone: item?.entry_zone ?? null,
-    target_zone: item?.target_zone ?? null,
-    invalidation: item?.invalidation ?? null,
-    reason_labels: Array.isArray(item?.reason_labels) ? item.reason_labels.slice(0, 3) : [],
-    risk_note: item?.risk_note || '',
+    ticker: item?.ticker || '', mode, source_route: '#dashboard', source_label: 'Top AI Pick Today',
+    score: item?.score ?? null, confidence: item?.confidence || null, fit_label: item?.fit_label || '',
+    entry_zone: item?.entry_zone ?? null, target_zone: item?.target_zone ?? null, invalidation: item?.invalidation ?? null,
+    reason_labels: Array.isArray(item?.reason_labels) ? item.reason_labels.slice(0, 3) : [], risk_note: item?.risk_note || '',
   });
 }
-
-const FALLBACK_NEWS = [
-  { title: 'IHSG stabil, rotasi sektor mulai terlihat di perbankan dan energi', source: 'MARKET INTEL', link: '#market' },
-  { title: 'Watchlist hari ini: BBCA, BMRI, GOTO, BRPT untuk momentum intraday', source: 'IDEA', link: '#screener' },
-  { title: 'Breadth netral: tunggu konfirmasi volume sebelum entry agresif', source: 'RISK', link: '#market' },
-];
-const MOVERS = [
-  { ticker:'GOTO', name:'GoTo Gojek Tokopedia', price:96, change:9.89 },
-  { ticker:'BRPT', name:'Barito Pacific', price:1200, change:5.20 },
-  { ticker:'BBCA', name:'Bank Central Asia', price:9800, change:1.15 },
-  { ticker:'BMRI', name:'Bank Mandiri', price:11750, change:0.82 },
-  { ticker:'TLKM', name:'Telkom Indonesia', price:3420, change:-0.45 },
-];
 
 export async function renderDashboard(root) {
   root.innerHTML = `
   <section class="dashboard-pro stagger-reveal">
     <div class="dash-hero-pro panel">
       <div class="dash-copy">
-        <div class="screener-kicker">RUANG KERJA LIVE IDX</div>
-        <h1>Dashboard Intelijen Pasar</h1>
-        <p class="dash-hero-lead">Pantau IHSG, breadth, penggerak utama, dan ide cepat dalam satu layar trading yang padat.</p>
-        <div class="dash-hero-note">Satu glance untuk membaca bias tape, kualitas data, dan jalur aksi tercepat sebelum masuk ke pemindai.</div>
-        <div class="dash-actions dash-actions-compact"><a href="#screener" class="btn btn-primary dash-primary-cta">Jalankan Pemindai</a><a href="#market" class="btn dash-secondary-cta">Ikhtisar Pasar</a></div>
-        <div class="dash-density-note">Mode briefing padat: lebih sedikit noise di top fold, lebih cepat masuk ke chart dan movers.</div>
+        <div class="screener-kicker">RUANG KERJA IDX</div>
+        <h1>Dashboard Pasar</h1>
+        <p class="dash-hero-lead">Pantau IHSG, breadth, dan penggerak utama dalam satu layar.</p>
+        <div class="dash-actions dash-actions-compact">
+          <a href="#screener" class="btn btn-primary dash-primary-cta">Jalankan Pemindai</a>
+          <a href="#market" class="btn dash-secondary-cta">Ikhtisar Pasar</a>
+        </div>
         <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack">
           <div class="dash-summary-card">
             <span>Bias Pasar</span>
@@ -75,7 +51,7 @@ export async function renderDashboard(root) {
             <strong id="dash-lead-gainer">Memuat...</strong>
             <small id="dash-lead-gainer-note">Menunggu top movers valid.</small>
           </div>
-          <div class="dash-summary-card dash-mobile-chip">
+          <div class="dash-summary-card">
             <span>Sektor Utama</span>
             <strong id="dash-lead-sector">Memuat...</strong>
             <small id="dash-lead-sector-note">Snapshot rotasi sektor.</small>
@@ -83,27 +59,41 @@ export async function renderDashboard(root) {
         </div>
       </div>
       <div class="dash-quote-card dash-mobile-status">
-        <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div><div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
-        <div class="text-xs text-dim uppercase strong">IHSG Composite</div>
+        <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div>
+        <div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
+        <div class="text-xs text-dim uppercase strong">IHSG</div>
         <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
         <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">—</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
-        <div class="dash-quote-freshness" id="dash-quote-freshness">Sinkronisasi terakhir: menunggu ringkasan pasar.</div>
+        <div class="dash-quote-freshness" id="dash-quote-freshness">Sinkronisasi: menunggu ringkasan pasar.</div>
       </div>
     </div>
 
     <div class="dash-grid-pro dash-mobile-shell">
       <div class="panel dash-chart-panel">
-        <div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div><div class="dashboard-chip-row"><button class="btn btn-mini ihsg-range" data-range="1W">1W</button><button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button><button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button></div></div>
-        <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias sedang dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu summary dan chart range.</strong></div>
+        <div class="flex justify-between items-center mb-3">
+          <div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div>
+          <div class="dashboard-chip-row">
+            <button class="btn btn-mini ihsg-range" data-range="1W">1W</button>
+            <button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button>
+            <button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button>
+          </div>
+        </div>
+        <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu data.</strong></div>
         <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
       </div>
-      <div class="panel dash-movers-panel"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape sedang dimuat</span><small id="dash-movers-summary-note">Menyiapkan penggerak pasar dan dukungan breadth.</small></div></div><a href="#market" class="text-xs text-primary strong">Lihat Semua</a></div><div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan penggerak pasar</strong><span class="dashboard-widget-state-note">Mengurutkan saham paling aktif untuk first glance.</span></div></div></div>
+      <div class="panel dash-movers-panel">
+        <div class="flex justify-between items-center mb-3">
+          <div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape dimuat</span></div></div>
+          <a href="#market" class="text-xs text-primary strong">Lihat Semua</a>
+        </div>
+        <div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan data</strong></div></div>
+      </div>
     </div>
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
-      <div class="panel"><h3 class="panel-title mb-3">Market Intelligence</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan pasar</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan garis rencana intraday.</span></div></div></div>
-      <div class="panel dash-ai-pick-card"><div class="flex justify-between items-center mb-3"><div><h3 class="panel-title">Top AI Pick Today</h3><div class="dash-ai-pick-summary" id="dash-ai-pick-summary">Menyiapkan pick unggulan untuk discovery cepat.</div></div></div><div id="dash-ai-pick-widget"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick unggulan</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi agar dashboard tetap terasa hidup.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita pasar</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dan fallback editorial jika feed kosong.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Intelijen Pasar</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dari feed.</span></div></div></div>
     </div>
   </section>`;
   observeElements();
@@ -120,9 +110,9 @@ async function loadMarketSummary(){
   document.getElementById('market-fold-badge').textContent = isLive ? 'DB' : 'REF';
   const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
   const dateEl = document.getElementById('market-data-date');
-  if (dateEl) dateEl.textContent = dataDate ? `Data IDX tanggal ${dataDate} · auto-sync 18:00 WIB` : 'Data IDX belum tersedia · auto-sync 18:00 WIB';
+  if (dateEl) dateEl.textContent = dataDate ? `Data ${dataDate} · sync 18:00 WIB` : 'Data belum tersedia';
   const freshnessEl = document.getElementById('dash-quote-freshness');
-  if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi terakhir: ${dataDate} · auto-refresh setelah market tutup.` : 'Sinkronisasi terakhir: menunggu ringkasan pasar.';
+  if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi: ${dataDate}` : 'Sinkronisasi: menunggu data.';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
   const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? pf(c) : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
@@ -132,7 +122,7 @@ async function loadMarketSummary(){
   const biasLabel = document.getElementById('dash-bias-label');
   const biasNote = document.getElementById('dash-bias-note');
   if (biasLabel) biasLabel.textContent = v == null ? 'Menunggu snapshot' : c >= 0 ? 'Tape Berisiko' : 'Tape Defensif';
-  if (biasNote) biasNote.textContent = v == null ? 'Ringkasan market belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} sehingga defense dan selektivitas lebih penting.`;
+  if (biasNote) biasNote.textContent = v == null ? 'Ringkasan belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} defensif, selektivitas lebih penting.`;
   return summary;
 }
 
@@ -145,8 +135,7 @@ async function loadIntel(){
     fetchSectorSummary().catch(() => null),
   ]);
   const sectors = Array.isArray(sectorRes?.data) && sectorRes.data.length
-    ? sectorRes.data
-    : [{ sector:'Finance', change_pct:1.2 }, { sector:'Energy', change_pct:0.8 }, { sector:'Technology', change_pct:-1.5 }];
+    ? sectorRes.data : [{ sector:'Finance', change_pct:1.2 }, { sector:'Energy', change_pct:0.8 }, { sector:'Technology', change_pct:-1.5 }];
   const best = [...sectors].sort((a,b)=>Number(b.change_pct||0)-Number(a.change_pct||0))[0];
   const breadth = breadthRes?.data || {};
   const adv = Number(breadth.advancing ?? 0);
@@ -155,10 +144,10 @@ async function loadIntel(){
   const losers = Array.isArray(losersRes?.data) ? losersRes.data : [];
   const leadGainer = gainers[0] || null;
   const leadLoser = losers[0] || null;
-  const tapeBias = adv === 0 && dec === 0 ? 'menunggu snapshot breadth valid' : (adv >= dec ? 'bias positif' : 'tekanan dominan');
+  const tapeBias = adv === 0 && dec === 0 ? 'menunggu data' : adv >= dec ? 'bias positif' : 'tekanan dominan';
   const planLine = Number(summary?.change_pct ?? 0) >= 0
-    ? 'Plan: fokus ke saham pemimpin sektor, validasi volume sebelum entry lanjutan.'
-    : 'Plan: prioritaskan defense, entry bertahap, dan hindari chasing rebound tipis.';
+    ? 'Fokus ke saham pemimpin sektor, validasi volume sebelum entry.'
+    : 'Prioritaskan defense, entry bertahap, hindari chasing.';
   const biasLabel = document.getElementById('dash-bias-label');
   const leadGainerEl = document.getElementById('dash-lead-gainer');
   const leadGainerNoteEl = document.getElementById('dash-lead-gainer-note');
@@ -167,37 +156,35 @@ async function loadIntel(){
   const chartBiasChip = document.getElementById('dash-chart-bias-chip');
   const chartReadout = document.getElementById('dash-chart-readout');
   if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? 'Butuh breadth' : adv >= dec ? 'Tape Berisiko' : 'Tape Defensif';
-  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'Belum ada pemimpin';
-  if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin tape hari ini.` : 'Top movers belum lengkap, fallback tetap aktif.';
+  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'Belum ada';
+  if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin hari ini.` : 'Top movers belum lengkap.';
   if (leadSectorEl) leadSectorEl.textContent = best?.sector || best?.name || 'Finance';
-  if (leadSectorNoteEl) leadSectorNoteEl.textContent = `Rotasi ${pf(best?.change_pct ?? 1.2)} menjadi konteks sektor utama.`;
-  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? 'Breadth tertunda' : adv >= dec ? 'Breadth mendukung' : 'Breadth melemah';
-  if (chartReadout) chartReadout.textContent = `IHSG ${pf(Number(summary?.change_pct ?? 0))} · ${adv} adv vs ${dec} dec · fokus ${best?.sector || 'sector leader'} sebagai konteks tape.`;
+  if (leadSectorNoteEl) leadSectorNoteEl.textContent = `${best?.sector||'Sektor'} rotasi ${pf(best?.change_pct ?? 1.2)}.`;
+  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? 'Data breadth belum tersedia' : adv >= dec ? 'Breadth mendukung' : 'Breadth melemah';
+  if (chartReadout) chartReadout.textContent = `IHSG ${pf(Number(summary?.change_pct ?? 0))} · ${adv} adv vs ${dec} dec · ${planLine}`;
   document.getElementById('market-intel').innerHTML = [
-    { kicker: 'Breadth', value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? 'Snapshot breadth belum valid.' : `${tapeBias} untuk first glance tape.` },
-    { kicker: 'Leader', value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin, lawan ${leadLoser?.ticker || 'N/A'} di sisi lemah.` : 'Leader tape masih memakai fallback sektoral.' },
-    { kicker: 'Sector', value: best?.sector||best?.name||'Finance', note: `Rotasi ${pf(best?.change_pct ?? 1.2)} paling dominan saat ini.` },
-    { kicker: 'Plan', value: Number(summary?.change_pct ?? 0) >= 0 ? 'Momentum Selective' : 'Defense First', note: planLine.replace('Plan: ', '') }
+    { kicker: 'Breadth', value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? 'Snapshot belum valid.' : `${tapeBias} untuk first glance.` },
+    { kicker: 'Leader', value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin.` : 'Fallback sektoral.' },
+    { kicker: 'Sektor', value: best?.sector||best?.name||'Finance', note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
+    { kicker: 'Plan', value: Number(summary?.change_pct ?? 0) >= 0 ? 'Selektif' : 'Defensif', note: planLine }
   ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
 }
 
 async function loadMovers(){
   const res = await fetchTopMovers(5, 'gainers');
-  const items = Array.isArray(res?.data) && res.data.length ? res.data : MOVERS;
+  const items = Array.isArray(res?.data) && res.data.length ? res.data : [];
   const moversSummaryChip = document.getElementById('dash-movers-summary-chip');
-  const moversSummaryNote = document.getElementById('dash-movers-summary-note');
-  const positiveCount = items.filter(item => Number(item.change_pct ?? item.change ?? 0) >= 0).length;
-  if (moversSummaryChip) moversSummaryChip.textContent = `${positiveCount}/${items.length} hijau`;
-  if (moversSummaryNote) moversSummaryNote.textContent = positiveCount === items.length
-    ? 'Leader tape masih dominan hijau untuk first glance.'
-    : 'Perhatikan rotasi karena tidak semua leader bergerak searah.';
-  document.getElementById('movers-list').innerHTML = items.slice(0,5).map((r, index) => row({
-    ticker: r.ticker,
-    name: r.name || r.sector || 'Ekuitas IDX',
-    price: r.price ?? 0,
-    change: r.change_pct ?? r.change ?? 0,
-    rank: index + 1,
-  })).join('');
+  if (items.length) {
+    const positiveCount = items.filter(item => Number(item.change_pct ?? 0) >= 0).length;
+    if (moversSummaryChip) moversSummaryChip.textContent = `${positiveCount}/${items.length} positif`;
+    document.getElementById('movers-list').innerHTML = items.slice(0,5).map((r, index) => row({
+      ticker: r.ticker, name: r.name || r.sector || 'Ekuitas IDX', price: r.price ?? 0,
+      change: r.change_pct ?? 0, rank: index + 1,
+    })).join('');
+  } else {
+    if (moversSummaryChip) moversSummaryChip.textContent = 'Data belum tersedia';
+    document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Belum ada data penggerak</strong><span class="dashboard-widget-state-note">Top movers akan muncul setelah scheduler memperbarui basis data.</span></div>';
+  }
 }
 
 async function loadAiPickWidget() {
@@ -209,8 +196,7 @@ async function loadAiPickWidget() {
     const detailButton = mount.querySelector('[data-dash-ai-pick-open-detail]');
     if (!detailButton || !featured?.ticker) return;
     detailButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault(); event.stopPropagation();
       const ticker = detailButton.getAttribute('data-dash-ai-pick-open-detail');
       if (!ticker) return;
       safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(featured, mode));
@@ -221,8 +207,7 @@ async function loadAiPickWidget() {
   const wireAltPickDetails = (alternatives = [], mode = 'swing') => {
     mount.querySelectorAll('[data-dash-ai-pick-alt-detail]').forEach((button) => {
       button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+        event.preventDefault(); event.stopPropagation();
         const ticker = button.getAttribute('data-dash-ai-pick-alt-detail');
         const item = alternatives.find(candidate => candidate.ticker === ticker);
         if (!ticker || !item) return;
@@ -237,16 +222,12 @@ async function loadAiPickWidget() {
   const featured = picks[0];
 
   if (!featured) {
-    if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan live. Widget tetap memberi jalur cepat ke halaman AI Picks.';
-    mount.innerHTML = `
-      <div class="dashboard-widget-state dash-ai-pick-featured" data-ai-picks-state="empty">
-        <strong class="dashboard-widget-state-title">Top AI Pick Today belum siap</strong>
-        <span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk melihat mode lain dan fallback yang lebih lengkap.</span>
-      </div>`;
+    if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
+    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary" style="margin-top:10px;height:32px;font-size:11px">Buka AI Picks</a></div>';
     return;
   }
 
-  if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter · fokus cepat ke ide dengan score tertinggi.`;
+  if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter.`;
   const alternatives = picks.slice(1, 3);
   mount.innerHTML = `
     <div class="dash-ai-pick-featured">
@@ -254,19 +235,18 @@ async function loadAiPickWidget() {
         <div class="dash-ai-pick-head">
           <div>
             <span class="dash-intel-kicker">Featured · ${featured.ticker}</span>
-            <strong>${featured.name}</strong>
+            <strong>${featured.name || featured.ticker}</strong>
           </div>
           <div class="dash-ai-pick-score">${nf(featured.score, 1)}</div>
         </div>
-        <p class="dash-ai-pick-fit">${featured.fit_label || 'Ranking engine memilih kandidat ini sebagai ide tercepat untuk mode swing.'}</p>
+        <p class="dash-ai-pick-fit">${featured.fit_label || 'Kandidat terbaik untuk mode swing.'}</p>
         <div class="dash-ai-pick-metrics">
           <div><span>Keyakinan</span><strong>${featured.confidence || '-'}</strong></div>
           <div><span>Change</span><strong>${pf(featured.change_pct ?? 0)}</strong></div>
-          <div><span>Vol Ratio</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
+          <div><span>Vol</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
         </div>
         <div class="dash-ai-pick-summary">
-          <span>${featured.reason_labels?.[0] || 'Likuiditas dan teknikal masih mendukung.'}</span>
-          <small>${Number(featured.confidence ?? 0) >= 75 ? 'konfirmasi teknikal cukup kuat untuk akumulasi bertahap' : Number(featured.confidence ?? 0) >= 55 ? 'cukup layak dipantau, tetapi belum konfirmasi kuat' : (featured.risk_note || 'Tetap validasi entry dan invalidasi sebelum eksekusi.')}</small>
+          <span>${featured.reason_labels?.[0] || 'Likuiditas dan teknikal mendukung.'}</span>
         </div>
       </a>
       ${alternatives.length ? `
@@ -275,7 +255,7 @@ async function loadAiPickWidget() {
             <button class="dash-ai-pick-alt-item" data-dash-ai-pick-alt-detail="${item.ticker}">
               <span class="dash-ai-pick-alt-ticker">${item.ticker}</span>
               <strong>${nf(item.score, 1)}</strong>
-              <small>${item.reason_labels?.[0] || item.fit_label || 'Alternatif cepat untuk review berikutnya.'}</small>
+              <small>${item.reason_labels?.[0] || item.fit_label || ''}</small>
             </button>`).join('')}
         </div>` : ''}
       <div class="dash-ai-pick-cta-row">
@@ -288,10 +268,31 @@ async function loadAiPickWidget() {
 }
 
 async function loadNews(){
-  const res = await fetchNews(3); const items = (Array.isArray(res?.data)&&res.data.length?res.data:FALLBACK_NEWS);
-  document.getElementById('news-container').innerHTML = items.slice(0,3).map((n, index)=>`<a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}"><span class="badge">${n.source||'NEWS'}</span><b>${n.title}</b><span class="dash-news-meta">${index===0?'Headline utama':'Quick brief'} · ${n.source||'NEWS'}</span><small>${n.summary ? String(n.summary).replace(/<[^>]+>/g,'').slice(0,72) : 'Buka Market Intelligence'}</small></a>`).join('');
+  const res = await fetchNews(3);
+  const items = Array.isArray(res?.data) && res.data.length ? res.data : [];
+  if (items.length) {
+    document.getElementById('news-container').innerHTML = items.slice(0,3).map((n, index) => `
+      <a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}">
+        <span class="badge">${n.source||'NEWS'}</span>
+        <b>${n.title}</b>
+        <span class="dash-news-meta">${index===0?'Headline':'Brief'} · ${n.source||'NEWS'}</span>
+        ${n.summary ? `<small>${String(n.summary).replace(/<[^>]+>/g,'').slice(0,72)}</small>` : ''}
+      </a>`).join('');
+  } else {
+    document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Berita belum tersedia</strong><span class="dashboard-widget-state-note">Feed berita akan muncul setelah scheduler berjalan. Cek halaman Berita untuk update.</span></div>';
+  }
 }
-const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row dash-mover-row"><div class="dash-mover-main"><span class="dash-mover-rank">#${r.rank || '—'}</span><div><b class="mono">${r.ticker}</b><small>${r.name}</small></div></div><div class="text-right"><b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b><small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small></div></a>`;
+
+const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row dash-mover-row">
+  <div class="dash-mover-main">
+    <span class="dash-mover-rank">#${r.rank || '—'}</span>
+    <div><b class="mono">${r.ticker}</b><small>${r.name || ''}</small></div>
+  </div>
+  <div class="text-right">
+    <b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b>
+    <small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small>
+  </div>
+</a>`;
 
 let ihsgChart;
 const PERIOD_MAP = { '1W': '1W', '1M': '1M', '1Q': '1Q', '1Y': '1Y' };
@@ -299,12 +300,8 @@ const PERIOD_MAP = { '1W': '1W', '1M': '1M', '1Q': '1Q', '1Y': '1Y' };
 async function loadIhsgChartData(period = '1M') {
   try {
     const chartRes = await fetchIhsgChart(period);
-    if (chartRes && chartRes.data && chartRes.data.length > 0) {
-      return chartRes;
-    }
-  } catch (e) {
-    console.warn('IHSG chart fetch failed', e);
-  }
+    if (chartRes && chartRes.data && chartRes.data.length > 0) return chartRes;
+  } catch (e) { console.warn('IHSG chart fetch failed', e); }
   return null;
 }
 
@@ -319,28 +316,18 @@ function initChart(summary) {
     if (chartRes && chartRes.data.length > 0) {
       labels = chartRes.data.map(p => {
         const d = new Date(p.date);
-        if (range === '1Q' || range === '1Y') {
-          return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
-        }
-        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
       });
       data = chartRes.data.map(p => p.value);
       const sub = document.getElementById('ihsg-chart-subtitle');
       if (sub) {
         const first = chartRes.data[0]?.date || '';
         const last = chartRes.data[chartRes.data.length - 1]?.date || '';
-        sub.textContent = `IDX ${chartRes.period} · ${chartRes.count} points · ${first} → ${last}`;
+        sub.textContent = `IDX ${chartRes.period} · ${chartRes.count} points`;
       }
     } else {
-      const base = Number(summary?.value || 7000);
-      const points = range === '1Q' ? 55 : range === '1W' ? 5 : 22;
-      labels = Array.from({ length: points }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (points - 1 - i));
-        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-      });
-      const amp = range === '1Q' ? 0.06 : range === '1W' ? 0.01 : 0.018;
-      data = labels.map((_, i) => Number((base * (1 + Math.sin(i * 1.4) * amp + (i - labels.length + 1) * amp / labels.length)).toFixed(2)));
-      data[data.length - 1] = Number(base.toFixed(2));
+      document.getElementById('ihsg-chart-subtitle').textContent = 'Data IHSG menunggu scheduler.';
+      return;
     }
 
     const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 320);
@@ -351,14 +338,12 @@ function initChart(summary) {
       type: 'line',
       data: { labels, datasets: [{ data, borderColor: '#10b981', backgroundColor: g, borderWidth: 2, pointRadius: labels.length > 30 ? 0 : 2, fill: true, tension: .42 }] },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `IHSG ${nf(c.parsed.y, 2)}` } } },
         scales: { x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 10 } }, y: { position: 'right', grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', callback: (v) => nf(v, 0) } } }
       }
     });
   };
-
   render('1M');
   document.querySelectorAll('.ihsg-range').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('.ihsg-range').forEach(b => b.classList.remove('btn-primary'));
