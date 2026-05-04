@@ -15,8 +15,8 @@
   --accent-glow: rgba(99, 102, 241, 0.15);
 
   /* Glassmorphism Borders */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-strong: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
   --border-focus: rgba(16, 185, 129, 0.4);
   
   /* Text Colors */
@@ -55,7 +55,7 @@
   /* Scanner Specific Variables & Classes */
   --scanner-form-width: 340px;
   --panel-bg: #141c30;
-  --panel-border: rgba(255,255,255,0.06);
+  --panel-border: rgba(255,255,255,0.12);
   --panel-radius: 18px;
   --input-bg: #1a2340;
   --input-border: rgba(255,255,255,0.08);
@@ -69,9 +69,13 @@
   --bg-panel-hover: #fafdff;
   --bg-elevated: #f3f8f5;
   --bg-mobile-surface: #ffffff;
-  --border-subtle: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.14);
+  --border-subtle: rgba(15, 23, 42, 0.12);
+  --border-strong: rgba(15, 23, 42, 0.18);
   --border-focus: rgba(16, 185, 129, 0.26);
+  --panel-bg: #ffffff;
+  --panel-border: rgba(15,23,42,0.10);
+  --input-bg: #ffffff;
+  --input-border: rgba(148, 163, 184, 0.25);
   --text-main: #0f172a;
   --text-muted: #475569;
   --text-dim: #64748b;
@@ -103,8 +107,8 @@
     --panel-bg: #090d15;
     --input-bg: #090d15;
     --ticker-bg: rgba(255,255,255,0.01);
-    --border-subtle: rgba(255,255,255,0.035);
-    --border-strong: rgba(255,255,255,0.075);
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.10);
     --text-main: #eef4ff;
     --text-muted: #8b9ab1;
     --text-dim: #5f6f86;
@@ -840,8 +844,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .panel:hover {
   transform: translateY(-4px);
-  border-color: rgba(255,255,255,0.1);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.3), 0 0 40px rgba(16,163,109,0.04);
+  border-color: rgba(255,255,255,0.18);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35), 0 0 40px rgba(16,163,109,0.06);
 }
 .panel-header {
   display: flex; justify-content: space-between; align-items: center;
