@@ -272,6 +272,9 @@ export async function renderAiPicks(root) {
       modeCache[mode] = payload;
 
       // Render hero + summary
+      // First remove old summary strip to prevent duplicate (outerHTML only replaces hero, not siblings)
+      const oldSummary = root.querySelector('.ai-picks-summary-strip');
+      if (oldSummary) oldSummary.remove();
       const heroSection = root.querySelector('.ai-picks-compact-hero');
       if (heroSection) heroSection.outerHTML = renderAiBrief(payload);
       const summarySection = root.querySelector('.ai-picks-summary-strip');

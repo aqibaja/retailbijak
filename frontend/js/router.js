@@ -6,7 +6,7 @@ import { renderMarket } from './views/market.js?v=20260504e';
 import { renderNews } from './views/news.js?v=20260504e';
 import { renderSettings } from './views/settings.js?v=20260504e';
 import { renderHelp } from './views/help.js?v=20260504e';
-import { renderAiPicks } from './views/ai_picks.js?v=20260505a';
+import { renderAiPicks } from './views/ai_picks.js?v=20260505c';
 
 let routeToken = 0;
 
