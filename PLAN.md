@@ -653,11 +653,12 @@
 ### Progress Log
 
 #### 2026-05-04 — Phase 4 Planning
-- [x] **Hari 1**: TradingView chart + topbar fix + model update
+- [x] **Hari 1**: TradingView chart + topbar fix + model update ✅
 - [x] **Issue 6**: AI Chat model → `google/gemma-4-26b-a4b-it` ✅
 - [x] **Issue 5**: TradingView widget embed di stock detail ✅ (fallback LightweightCharts)
 - [x] **Issue 1**: Topbar running ticker — konsolidasi CSS animation, mobile scroll ✅
-- [x] **Issue 2**: Layout rebalance — fundamental+catalyst pindah ke kiri, hapus gap waste ✅
-- [ ] **Hari 2**: Skeleton loading states
-- [ ] **Hari 3**: News redesign + general UI/UX
-- [ ] **Hari 4**: QA, deploy, commit
+- [x] **Issue 2**: Layout rebalance — fundamental+catalyst pindah ke kiri ✅
+- [x] **Issue 4**: Skeleton loading states — shimmer animation + skeleton di template ✅
+- [x] **Issue 3**: News redesign — images, related news, card redesign ✅
+- [ ] **Issue 7**: General UI/UX polish
+- [ ] **Commit & push**

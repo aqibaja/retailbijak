@@ -74,7 +74,7 @@ export async function renderStockDetail(root, ticker) {
       <div class="stock-layout">
         <div class="panel stock-chart-card">
           <div class="flex justify-between items-center mb-3">
-            <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">TradingView · IDX</p></div>
+            <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">Memuat chart...</p></div>
           </div>
           <div class="chart-toolbar" id="chart-toolbar">
             <label class="indicator-toggle active" data-indicator="sma"><span>SMA</span></label>
@@ -83,11 +83,11 @@ export async function renderStockDetail(root, ticker) {
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
           </div>
           <div class="chart-top-spacing"></div>
-          <div id="tvchart" class="stock-chart-wrap"></div>
+          <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart" style="height:100%;border-radius:14px"></div></div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <!-- Fundamental & Catalyst dipindah ke sini (layout rebalance) -->
-          <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid"></div></div>
+          <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
           <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"></div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
@@ -98,8 +98,8 @@ export async function renderStockDetail(root, ticker) {
           </div>
 
             <div class="stock-tab-content active" data-tab-content="analisis">
-            <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
-            <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item">Memuat ringkasan teknikal...</div></div><div id="signal-card" class="signal-card"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
+            <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-card" style="min-width:70px"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="panel" id="broker-activity-panel" style="display:none"></div>
             <div class="panel" id="peer-comparison-panel" style="display:none"></div>
             <div class="panel"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
