@@ -410,6 +410,24 @@ def compose_pick_payload(candidate: dict[str, Any], rank: int, mode: str, market
     }
 
 
+def _get_next_ai_pick_update() -> str:
+    """Return next update time label (2x/day: 08:00 & 12:00 WIB)"""
+    from datetime import datetime as dt, time
+    import pytz
+    jkt = pytz.timezone('Asia/Jakarta')
+    now_jkt = dt.now(jkt)
+    today = now_jkt.date()
+    # Update times: 08:00 and 12:00 WIB
+    t8 = jkt.localize(dt.combine(today, time(8, 0)))
+    t12 = jkt.localize(dt.combine(today, time(12, 0)))
+    if now_jkt < t8:
+        return '08:00 WIB'
+    elif now_jkt < t12:
+        return '12:00 WIB'
+    else:
+        return '08:00 WIB besok (hari kerja)'
+
+
 def _build_freshness(generated_at: datetime | None) -> dict[str, Any]:
     if not generated_at:
         return {'label': 'Belum ada briefing', 'is_stale': True, 'generated_at': None}
@@ -457,6 +475,7 @@ def build_ai_picks_payload(mode: str | None = 'swing', limit: int = 5) -> dict[s
             'featured_ticker': picks[0]['ticker'] if picks else None,
         },
         'freshness': _build_freshness(generated_at),
+        'next_update': _get_next_ai_pick_update(),
         'data': picks,
     }
 
@@ -482,6 +501,7 @@ def build_ai_picks_fallback_payload(mode: str | None = 'swing', trading_date: st
             'featured_ticker': None,
         },
         'freshness': _build_freshness(None),
+        'next_update': _get_next_ai_pick_update(),
         'data': [],
     }
 
@@ -498,6 +518,7 @@ def _serialize_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
         'market_bias': payload.get('market_bias'),
         'summary': payload.get('summary'),
         'freshness': payload.get('freshness'),
+        'next_update': _get_next_ai_pick_update(),
         'data': payload.get('data'),
         'llm': payload.get('llm'),
     }

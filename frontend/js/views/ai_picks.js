@@ -69,6 +69,7 @@ function renderAiBrief(payload) {
   const freshness = payload?.freshness?.label || '';
   const genAt = payload?.generated_at ? String(payload.generated_at).replace('T', ' ').slice(0, 16) : '—';
   const asOf = payload?.as_of_label || '';
+  const nextUp = payload?.next_update || 'jadwal belum tersedia';
 
   return `
     <div class="ai-picks-compact-hero">
@@ -80,7 +81,7 @@ function renderAiBrief(payload) {
           <button class="btn btn-sm" data-mode="catalyst">Catalyst</button>
         </div>
       </div>
-      <div class="ai-picks-hero-meta">${asOf} · generated ${genAt} · ${freshness}</div>
+      <div class="ai-picks-hero-meta">${asOf} · generated ${genAt} · ${freshness} · update ${nextUp}</div>
     </div>
 
     <div class="ai-picks-summary-strip">
