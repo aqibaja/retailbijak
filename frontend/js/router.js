@@ -1,12 +1,12 @@
-import { renderDashboard } from './views/dashboard.js?v=20260503y';
+import { renderDashboard } from './views/dashboard.js?v=20260504e';
 import { renderStockDetail } from './views/stock_detail.js?v=20260504d';
-import { renderScreener } from './views/screener.js?v=20260503z';
-import { renderPortfolio } from './views/portfolio.js?v=20260503aa';
-import { renderMarket } from './views/market.js?v=20260503x';
-import { renderNews } from './views/news.js?v=20260503u';
-import { renderSettings } from './views/settings.js?v=20260503x';
-import { renderHelp } from './views/help.js?v=20260503z';
-import { renderAiPicks } from './views/ai_picks.js?v=20260503aj';
+import { renderScreener } from './views/screener.js?v=20260504e';
+import { renderPortfolio } from './views/portfolio.js?v=20260504e';
+import { renderMarket } from './views/market.js?v=20260504e';
+import { renderNews } from './views/news.js?v=20260504e';
+import { renderSettings } from './views/settings.js?v=20260504e';
+import { renderHelp } from './views/help.js?v=20260504e';
+import { renderAiPicks } from './views/ai_picks.js?v=20260504e';
 
 let routeToken = 0;
 
