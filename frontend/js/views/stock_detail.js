@@ -61,18 +61,26 @@ export async function renderStockDetail(root, ticker) {
   root.innerHTML = `
     <section class="stock-detail-pro stock-detail-compact stagger-reveal">
       ${aiPickContextBanner}
-      <div class="stock-hero panel">
-        <div class="flex items-center gap-4">
+      <div class="stock-hero-v2">
+        <div class="stock-hero-left">
           <a href="${heroBackHref}" class="btn btn-icon" data-stock-origin-back="1"><i data-lucide="arrow-left"></i></a>
-          <div>
-            <div class="flex items-center gap-3"><h1 class="mono text-3xl strong m-0 text-main">${symbol}</h1><span class="badge">IDX EKUITAS</span><span class="badge badge-up" id="live-badge">DB</span></div>
-            <div class="text-sm text-muted" id="stock-name">Memuat data emiten...</div>
+          <div class="stock-hero-info">
+            <div class="stock-hero-ticker">
+              <h1>${symbol}</h1>
+              <div class="stock-hero-badges"><span class="badge">IDX</span><span class="badge" id="live-badge">DB</span></div>
+            </div>
+            <div class="stock-hero-name" id="stock-name">Memuat data emiten...</div>
           </div>
         </div>
-        <div class="text-right"><div class="mono text-3xl strong text-main" id="stock-price">—</div><div class="mono text-base mt-1" id="stock-change">—</div></div>
+        <div class="stock-hero-price-area">
+          <div class="stock-hero-price" id="stock-price">—</div>
+          <div class="stock-hero-meta">
+            <span class="stock-hero-change" id="stock-change">—</span>
+          </div>
+        </div>
       </div>
       <div class="stock-layout">
-        <div class="panel stock-chart-card">
+        <div class="panel chart-card-v2">
           <div class="flex justify-between items-center mb-3">
             <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">Memuat chart...</p></div>
           </div>
@@ -86,10 +94,8 @@ export async function renderStockDetail(root, ticker) {
           <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart" style="height:100%;border-radius:14px"></div></div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
-          <!-- Fundamental & Catalyst dipindah ke sini (layout rebalance) -->
-          <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-          <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"><div class="skeleton skeleton-text" style="width:70%"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
-          <div class="panel"><h3 class="panel-title mb-1">Aksi Korporasi Terdekat</h3><div id="corporate-actions-strip"><div class="skeleton skeleton-text" style="width:60%"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
+          <div class="panel-flush mt-3"><h3 class="panel-flush-title">Market Stats</h3><div id="market-stats-v2" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+          <div class="panel-flush mt-2"><h3 class="panel-flush-title">Katalis Terbaru</h3><div id="catalyst-strip-v2" class="catalyst-strip-v2"><div class="skeleton skeleton-text" style="width:60%"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="stock-tabs" data-stock-tabs="1">
@@ -97,17 +103,15 @@ export async function renderStockDetail(root, ticker) {
             <button class="stock-tab" data-tab="chat">AI Chat</button>
             <button class="stock-tab" data-tab="berita">Berita</button>
           </div>
-
-            <div class="stock-tab-content active" data-tab-content="analisis">
-            <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-            <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-card" style="min-width:70px"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-            <div class="panel" id="broker-activity-panel" style="display:none"></div>
-            <div class="panel" id="peer-comparison-panel" style="display:none"></div>
-            <div class="panel"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
+          <div class="stock-tab-content active" data-tab-content="analisis">
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Ringkasan Sesi</h3><div id="snapshot-panel" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div style="flex:1"><h3 class="stock-side-panel-title">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="stock-side-panel" id="broker-activity-panel" style="display:none"></div>
+            <div class="stock-side-panel" id="peer-comparison-panel" style="display:none"></div>
+            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
           </div>
-
           <div class="stock-tab-content" data-tab-content="chat">
-            <div class="panel stock-chat-card">
+            <div class="stock-chat-card">
               <div id="stock-chat-messages" class="chat-messages">
                 <div class="chat-placeholder">
                   <div class="text-sm text-main strong">Asisten AI</div>
@@ -126,10 +130,9 @@ export async function renderStockDetail(root, ticker) {
               </div>
             </div>
           </div>
-
           <div class="stock-tab-content" data-tab-content="berita">
-            <div class="panel"><h3 class="panel-title mb-2">Berita Terkait</h3><div id="stock-news-feed" class="stats-grid"></div></div>
-            <div class="panel"><h3 class="panel-title mb-2">Pengumuman IDX</h3><div id="stock-announcements-feed" class="stats-grid"></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="stats-grid"></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Pengumuman IDX</h3><div id="stock-announcements-feed" class="stats-grid"></div></div>
           </div>
         </div>
       </div>
@@ -258,7 +261,7 @@ export async function renderStockDetail(root, ticker) {
   const analysisPayload = { ...(analysisData || {}), llm: analysis?.llm || analysisData?.llm || null };
   renderTechnicalPanel(technical);
   renderSnapshotPanel(fund?.data || detail?.data || {}, candles, technical);
-  renderFundamentalPanel(fund?.data || detail?.data || {}, candles, technical);
+  renderMarketStatsV2(fund?.data || detail?.data || {}, candles, technical);
   renderDecisionPanel(candles, technical);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
@@ -266,14 +269,14 @@ export async function renderStockDetail(root, ticker) {
   renderLevelOverlay(candles, technical);
 
   // Catalyst strip — news + announcements
-  if (document.getElementById('catalyst-strip')) {
-    renderCatalystStrip(symbol, news, announcements);
+  if (document.getElementById('catalyst-strip-v2')) {
+    renderCatalystStripV2(symbol, news, announcements);
   }
 
-  // Corporate actions — clear skeleton, show empty state
-  const caEl = document.getElementById('corporate-actions-strip');
-  if (caEl && caEl.querySelector('.skeleton')) {
-    caEl.innerHTML = '<div class="text-sm text-muted" style="padding:4px 0">Belum ada aksi korporasi terjadwal</div>';
+  // Market stats — clear skeleton
+  const msEl = document.getElementById('market-stats-v2');
+  if (msEl && msEl.querySelector('.skeleton')) {
+    // already populated by renderMarketStatsV2
   }
 
   // Berita tab — render news + announcements
@@ -306,7 +309,10 @@ function hydrateHeader(symbol, detail, fund, candles){
   const change = last.close - prev.close, pct = prev.close ? change/prev.close*100 : 0;
   document.getElementById('stock-name').textContent = detail?.data?.name || fund?.data?.name || fallbackIssuerName(symbol);
   const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
-  const chEl = document.getElementById('stock-change'); chEl.innerHTML = `${change >= 0 ? '+' : ''}${nf(change,0)} <small>(${pf(pct)})</small>`; chEl.className = `mono stock-change-large mt-1 strong ${change >= 0 ? 'text-up' : 'text-down'}`;
+  const chEl = document.getElementById('stock-change');
+  const isUp = change >= 0;
+  chEl.innerHTML = `${isUp ? '+' : ''}${nf(change,0)} <small>(${pf(pct)})</small>`;
+  chEl.className = `stock-hero-change ${isUp ? 'up' : 'down'}`;
   // Last update timestamp
   const now = new Date(); const hh = String(now.getHours()).padStart(2,'0'); const mm = String(now.getMinutes()).padStart(2,'0');
   const ts = document.getElementById('live-badge');
@@ -432,37 +438,44 @@ function sentimentClass(label, value, metric = ''){
   return 'metric-neutral';
 }
 function tile(label, value, status = '', cls = ''){ return `<div class="stat-tile ${cls || sentimentClass(status, value)}"><span>${label}</span><strong class="mono metric-value">${value}</strong>${status ? `<small>${status}</small>` : ''}</div>`; }
+function renderMetricGroupV2(title, cards){
+  if (!cards.length) return '';
+  return `<div class="tech-group-title-v2">${title}</div>${cards.map(([l,v,s,c]) => {
+    const cls = c || sentimentClass(s, v);
+    const mapCls = cls === 'metric-good' ? 'tile-good' : cls === 'metric-bad' ? 'tile-danger' : cls === 'metric-warn' ? 'tile-warn' : '';
+    return `<div class="tech-tile-v2 ${mapCls}"><span>${l}</span><strong>${v}</strong>${s ? `<small>${s}</small>` : ''}</div>`;
+  }).join('')}`;
+}
 function renderTechnicalPanel(t){
   const ind = t.indicators || {}; const isNoData = String(t.rating || '').toUpperCase().includes('NO DATA'); const score = isNoData ? null : Number(t.score ?? 0); const ratingCls = isNoData ? 'metric-neutral' : sentimentClass(t.rating, score);
   const rsiVal = Number(ind.rsi?.value); const stochVal = Number(ind.stochastic?.k);
-  const rsiBadge = rsiVal >= 80 ? 'OVERBOUGHT' : rsiVal <= 20 ? 'OVERSOLD' : rsiVal >= 70 ? 'WASPADA' : '';
-  const stochBadge = stochVal >= 80 ? 'OVERBOUGHT' : stochVal <= 20 ? 'OVERSOLD' : '';
+  const rsiBadge = rsiVal >= 80 ? 'OB' : rsiVal <= 20 ? 'OS' : rsiVal >= 70 ? 'Waspada' : '';
+  const stochBadge = stochVal >= 80 ? 'OB' : stochVal <= 20 ? 'OS' : '';
   const rsiDanger = rsiVal >= 80 || rsiVal <= 20;
   const stochDanger = stochVal >= 80 || stochVal <= 20;
   // Multi-indicator alert
-  const multiAlert = (rsiVal >= 80 && stochVal >= 80) ? `<div class="tech-alert-banner warn">⚠️ RSI &amp; Stochastics overbought ekstrem — potensi koreksi tinggi</div>`
-    : (rsiVal >= 70 && stochVal >= 80) ? `<div class="tech-alert-banner warn">⚠️ Multiple indikator overbought — risiko koreksi meningkat</div>`
-    : (rsiVal <= 20 && stochVal <= 20) ? `<div class="tech-alert-banner info">📈 RSI &amp; Stochastics oversold — potensi reversal</div>`
+  const multiAlert = (rsiVal >= 80 && stochVal >= 80) ? `<div class="tech-alert-banner warn">⚠️ RSI &amp; Stochastics overbought ekstrem</div>`
+    : (rsiVal >= 70 && stochVal >= 80) ? `<div class="tech-alert-banner warn">⚠️ Multiple indikator overbought</div>`
+    : (rsiVal <= 20 && stochVal <= 20) ? `<div class="tech-alert-banner info">📈 RSI &amp; Stochastics oversold</div>`
     : '';
 
-  // Inject alert badges into status text
   function withBadge(val, label, badge) {
-    return badge ? `${label} <span class="indicator-alert-badge">${badge}</span>` : label;
+    return badge ? `${label} <span class="tech-badge">${badge}</span>` : label;
   }
-  const rsiStatus = withBadge(rsiVal, ind.rsi?.status || '', rsiBadge);
-  const stochStatus = withBadge(stochVal, ind.stochastic?.status || '', stochBadge);
+  const rsiStatus = withBadge(rsiVal, '', rsiBadge);
+  const stochStatus = withBadge(stochVal, '', stochBadge);
   const rsiCls = rsiDanger ? 'metric-bad' : (rsiVal >= 70 || rsiVal <= 30) ? 'metric-warn' : sentimentClass(ind.rsi?.status, rsiVal, 'rsi');
   const stochCls = stochDanger ? 'metric-bad' : stochVal >= 80 ? 'metric-warn' : sentimentClass(ind.stochastic?.status, stochVal);
 
-  document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NETRAL'}</span><div class="mt-2 text-sm text-muted">${t.summary || 'Ringkasan teknikal belum tersedia lengkap.'}</div>`;
-  const signal = document.getElementById('signal-card'); signal.classList.add(ratingCls); signal.querySelector('strong').textContent = t.rating || 'NETRAL'; signal.querySelector('small').textContent = score == null ? 'Keyakinan —' : `Keyakinan ${nf(score,0)}/100`;
+  document.getElementById('technical-summary').innerHTML = `<span class="signal-pill ${ratingCls === 'metric-good' ? 'pill-good' : ratingCls === 'metric-bad' ? 'pill-bad' : 'pill-warn'}">${t.rating || 'NETRAL'}</span><div class="mt-1 text-sm text-muted">${t.summary || 'Ringkasan teknikal belum tersedia lengkap.'}</div>`;
+  const signal = document.getElementById('signal-card'); signal.classList.add(ratingCls); signal.querySelector('strong').textContent = t.rating || 'NETRAL'; signal.querySelector('small').textContent = score == null ? '—' : `${nf(score,0)}/100`;
   const groups = [
     ['Momentum', [['RSI 14', nf(ind.rsi?.value,2), rsiStatus, rsiCls], ['Stoch %K', nf(ind.stochastic?.k,2), stochStatus, stochCls], ['MACD', nf(ind.macd?.histogram,2), ind.macd?.status]]],
     ['Tren', filterValidCards([['SMA 20', nf(ind.trend?.sma_20,2), ind.trend?.status], ['SMA 50', nf(ind.trend?.sma_50,2), 'Menengah'], ['SMA 200', nf(ind.trend?.sma_200,2), 'Panjang']])],
     ['Volatilitas', filterValidCards([['ATR 14', nf(ind.atr?.value,2), ind.atr?.status], ['Boll Upper', nf(ind.bollinger_bands?.upper,2), 'resistance', 'metric-warn'], ['Boll Lower', nf(ind.bollinger_bands?.lower,2), 'support', 'metric-good']])],
     ['Level Kunci', filterValidCards([['Rasio Volume', nf(ind.volume?.ratio,2), ind.volume?.status], ['Support', isValidLevel(ind.support_resistance?.support_20d) ? money(ind.support_resistance.support_20d) : '—', 'support', 'metric-good'], ['Resistance', isValidLevel(ind.support_resistance?.resistance_20d) ? money(ind.support_resistance.resistance_20d) : '—', 'resistance', 'metric-warn']])],
   ];
-  document.getElementById('technical-panel').innerHTML = multiAlert + groups.map(([title, cards]) => renderMetricGroup(title, cards)).join('');
+  document.getElementById('technical-panel').innerHTML = multiAlert + groups.map(([title, cards]) => renderMetricGroupV2(title, cards)).join('');
 }
 
 function renderMetricGroup(title, cards){
@@ -518,21 +531,23 @@ function renderDecisionPanel(candles, tech){
   const barPct = Math.min(Math.max((rr / 3) * 100, 5), 100);
 
   document.getElementById('decision-panel').innerHTML = `
-    <div class="decision-hero">
-      <div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Panel Keputusan <span class="confluence-score"><span class="score">${netScore}</span><span class="max">/100</span></span></span>
-        <div class="flex items-center gap-2">
-          <span class="info-tip" title="">&#9432;<span class="info-popup">Skor dihitung dari agregasi sinyal teknikal multiple indikator (tren, momentum, volume). &gt;70 = Bullish kuat, 50-70 = Bullish moderat, &lt;50 = Bearish/Sideways</span></span>
-          <span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">${action}</span></div></div>
-      <div class="decision-confluence position-relative">
-        <div class="confluence-bar-wrap"><div class="confluence-label">Konfluensi</div><div class="confluence-track" style="position:relative"><div class="confluence-marker" style="left:50%"></div><div class="confluence-fill bullish" style="width:${(confluenceBull/totalChecked)*100}%"></div><div class="confluence-fill bearish" style="width:${(confluenceBear/totalChecked)*100}%"></div></div><div class="confluence-nums"><span class="text-up strong">${confluenceBull}</span><span class="text-dim">/</span><span class="text-down strong">${confluenceBear}</span><span class="text-dim"> indikator</span></div></div>
-        <div class="text-xs text-dim mt-1" style="margin-top:4px">${scoreLabel}</div>
+    <div class="score-card">
+      <div class="score-card-head">
+        <span class="score-card-label">Skor Keputusan</span>
+        <span class="score-card-badge ${netScore >= 70 ? 'buy' : netScore >= 50 ? 'warn' : 'avoid'}">${action}</span>
       </div>
-      <div class="flex gap-3 items-center mt-2">
-        <div class="text-xs text-dim">Multi-TF: <span class="${tfClass(tf7)} strong">7D ${tf7}</span> <span class="${tfClass(tf30)} strong">30D ${tf30}</span> <span class="${tfClass(tf90)} strong">90D ${tf90}</span></div>
+      <div class="score-card-number"><span class="score-card-num ${netScore >= 70 ? 'good' : netScore >= 50 ? 'warn' : 'bad'}">${netScore}</span><span class="score-card-max">/100</span></div>
+      <div class="score-progress">
+        <div class="score-progress-label"><span>Konfluensi ${confluenceBull}/${totalChecked}</span><span>${scoreLabel}</span></div>
+        <div class="score-progress-track"><div class="score-progress-marker" style="left:50%"></div><div class="score-progress-fill ${netScore >= 70 ? 'good' : netScore >= 50 ? 'warn' : 'bad'}" style="width:${netScore}%"></div></div>
       </div>
-      <div class="rr-visual mt-2"><div class="flex justify-between text-xs text-dim"><span>R/R ${nf(rr,2)}x</span><span>${money(levels.entry)} → ${money(levels.target)}</span></div><div class="rr-track"><div class="rr-fill" style="width:${barPct}%"></div></div></div>
-      <div class="text-sm text-muted mt-2">${caution}</div>
-      <div class="text-xs text-dim mt-2">Area pantau ${money(levels.entry)} · invalid bawah ${money(levels.stop)} · target ${money(levels.target)}</div>
+      <div class="score-details">
+        <span class="score-detail-item">Multi-TF: <strong class="${tfClass(tf7)}">7D ${tf7}</strong> <strong class="${tfClass(tf30)}">30D ${tf30}</strong> <strong class="${tfClass(tf90)}">90D ${tf90}</strong></span>
+        <span class="score-detail-item">R/R: <strong>${nf(rr,2)}x</strong></span>
+        <span class="score-detail-item">Level: <strong class="up">${money(levels.entry)}</strong> → <strong class="up">${money(levels.target)}</strong></span>
+      </div>
+      <div class="score-caution">${caution}</div>
+      <div class="score-levels">Stop <span class="down">${money(levels.stop)}</span> · Entry <span class="up">${money(levels.entry)}</span> · Target <span class="up">${money(levels.target)}</span></div>
     </div>`;
 }
 function renderLevelOverlay(candles, tech){
@@ -543,21 +558,31 @@ function renderLevelSuggestions(candles, tech){
   const items=[['STOP', levels.stop, 'Kendali risiko', 'metric-bad'], ['ENTRY', levels.entry, 'Zona pullback', 'metric-good'], ['TARGET', levels.target, 'Zona reward', 'metric-warn']];
   el.innerHTML = items.map(([label, price, note, cls]) => `<span class="sugg-chip ${cls}"><strong>${label}</strong> ${money(price)} <small>${note}</small></span>`).join('');
 }
-function renderFundamentalPanel(d, candles, tech){
-  const el = document.getElementById('fundamental-panel'); if (!el) return;
-  const hasData = d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at);
-  if (!hasData) {
-    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Data fundamental belum tersedia</strong><span class="dashboard-widget-state-note">Data fundamental akan tersedia setelah scheduler harian memperbarui basis data IDX.</span></div>';
-    return;
+function renderMarketStatsV2(d, candles, tech){
+  const el = document.getElementById('market-stats-v2'); if (!el) return;
+  const last = candles[candles.length-1] || {}; const prev = candles[candles.length-2] || last;
+  const delta = Number(last.close || 0) - Number(prev.close || 0); const pct = prev.close ? (delta / prev.close) * 100 : null;
+  const volRatio = tech?.indicators?.volume?.ratio;
+  const rsiVal = Number(tech?.indicators?.rsi?.value);
+  const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
+  const peLabel = d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—';
+  const pbLabel = d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—';
+  const roeLabel = d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—';
+  const derLabel = nf(d.debt_to_equity,2);
+
+  function statTile(label, value, changeText = '', changeCls = '') {
+    const cls = changeCls ? (changeCls === 'metric-good' ? 'label-up' : changeCls === 'metric-bad' ? 'label-down' : 'label-warn') : '';
+    return `<div class="stock-stat-v2 ${cls}"><span>${label}</span><strong>${value}</strong>${changeText ? `<span class="stat-change ${changeCls === 'metric-good' ? 'up' : changeCls === 'metric-bad' ? 'down' : 'neutral'}">${changeText}</span>` : ''}</div>`;
   }
-  const last = candles[candles.length-1] || {}; const volRatio = tech?.indicators?.volume?.ratio;
-  const peLabel = d.trailing_pe ? (d.trailing_pe < 12 ? 'murah' : d.trailing_pe > 25 ? 'mahal' : 'wajar') : 'belum ada data';
-  const pbLabel = d.price_to_book ? (d.price_to_book < 1.5 ? 'murah' : d.price_to_book > 3 ? 'mahal' : 'wajar') : 'belum ada data';
-  const revenueLabel = d.revenue ? 'sudah dilaporkan' : 'belum ada data';
-  const stats = [
-    ['Harga Terakhir', money(last.close), tech?.rating || '', sentimentClass(tech?.rating, last.close)], ['Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x rata-rata` : '', sentimentClass('spike', volRatio)], ['P/E', d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—', peLabel], ['P/B', d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—', pbLabel], ['ROE', d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—', 'profitabilitas', sentimentClass('', d.roe, 'roe')], ['DER', nf(d.debt_to_equity,2), 'leverage', sentimentClass('', d.debt_to_equity, 'der')], ['Pendapatan', nf(d.revenue,0), revenueLabel], ['Pembaruan', d.updated_at ? String(d.updated_at).slice(0,10) : 'DB IDX', 'sumber']
-  ];
-  el.innerHTML = stats.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+
+  el.innerHTML = [
+    statTile('Harga', money(last.close), pct == null ? '—' : pf(pct), delta >= 0 ? 'metric-good' : 'metric-bad'),
+    statTile('Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x` : '', volRatio >= 1.5 ? 'metric-good' : volRatio < 0.5 ? 'metric-bad' : 'metric-neutral'),
+    statTile('Rentang', `${money(last.high)}/${money(last.low)}`, 'sesi harian', 'metric-neutral'),
+    statTile('ROE', roeLabel, hasFundamental ? 'profitabilitas' : '', isNaN(d.roe) ? '' : d.roe > 15 ? 'metric-good' : d.roe > 5 ? 'metric-neutral' : 'metric-bad'),
+    statTile('P/E', peLabel, hasFundamental ? 'valuasi' : '', d.trailing_pe ? (d.trailing_pe > 25 ? 'metric-bad' : d.trailing_pe < 12 ? 'metric-good' : 'metric-neutral') : ''),
+    statTile('DER', derLabel, hasFundamental ? 'leverage' : '', d.debt_to_equity > 2 ? 'metric-bad' : d.debt_to_equity > 0 ? 'metric-neutral' : ''),
+  ].join('');
 }
 
 function renderSnapshotPanel(d, candles, tech){
@@ -671,6 +696,45 @@ function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
     catalystTile('Katalis Terbaru', 'Cek Sumber', `Berita ${newsPayload?.source || 'no_data'} · Pengumuman ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, `Peta sumber · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`),
   ];
   el.innerHTML = cards.join('');
+}
+
+function renderCatalystStripV2(symbol, newsPayload, announcementsPayload){
+  const el = document.getElementById('catalyst-strip-v2'); if (!el) return;
+  const symbolUpper = String(symbol || '').toUpperCase();
+  const newsRows = rankCatalystRows(Array.isArray(newsPayload?.data) ? newsPayload.data : [], symbolUpper);
+  const announcementRows = rankCatalystRows(Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [], symbolUpper);
+  const relevantNews = newsRows[0];
+  const latestAnnouncement = announcementRows[0];
+
+  function metaRow(icon, iconCls, title, time, href, isAvailable) {
+    const safeHref = href || 'news://pending';
+    return `<a href="${safeHref}" class="catalyst-row" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+      <span class="catalyst-icon ${iconCls}">${icon}</span>
+      <div class="catalyst-body">
+        <span class="catalyst-title">${title}</span>
+        <div class="catalyst-meta">
+          <span>${isAvailable ? (time || 'baru') : 'menunggu data'}</span>
+          <a href="${safeHref}" class="catalyst-link" onclick="event.stopPropagation()">Buka</a>
+        </div>
+      </div>
+    </a>`;
+  }
+
+  const rows = [];
+  if (relevantNews && relevantNews.score > 0) {
+    rows.push(metaRow('B', 'news', (relevantNews.title || 'Berita').slice(0, 80), formatRelativeCatalystTime(relevantNews?.published_at), relevantNews?.link, true));
+  }
+  if (latestAnnouncement && latestAnnouncement.score > 0) {
+    rows.push(metaRow('P', 'ann', (latestAnnouncement.title || latestAnnouncement.subject || 'Pengumuman').slice(0, 72), (latestAnnouncement.date || '').slice(0, 10), latestAnnouncement?.link, true));
+  }
+  // Always show market pulse
+  rows.push(metaRow('M', 'mkt', 'Pantauan pasar: sinyal teknikal jadi basis utama', '', 'news://pending', false));
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="catalyst-row"><div class="catalyst-body"><span class="catalyst-title">Menunggu katalis terbaru</span><div class="catalyst-meta"><span>Belum ada berita atau pengumuman untuk ${symbolUpper}</span></div></div></div>`;
+  } else {
+    el.innerHTML = rows.join('');
+  }
 }
 
 function renderAnalysisPanel(data, tech){

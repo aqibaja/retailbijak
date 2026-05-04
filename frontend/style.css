@@ -1610,3 +1610,421 @@ html[data-theme="light"] .news-meta {
   .market-empty-refresh { min-height: 44px; }
 }
 @media (max-width: 420px) { .market-card { padding: 14px; border-radius: 14px; } .market-stat-value { font-size: 1rem; } .market-overview-head h1 { font-size: 1.25rem; } .market-overview-head { gap: 8px; } .market-refresh-btn { width: 100%; height: 44px; } .market-head-status { gap: 8px; justify-content: flex-start; } .market-source-badge { max-width: 100%; } .market-pulse-grid { grid-template-columns: 1fr; } .market-row-link, .market-row-box { padding: 12px 0; } .market-rank-badge { min-width: 38px; height: 38px; } .market-stat-value-breadth { font-size: 1.28rem; } .market-breadth-secondary { display: inline-block; } }
+
+/* ================= STOCK DETAIL V2 REDESIGN ================= */
+
+/* Stock Hero V2 — Cleaner */
+.stock-hero-v2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  background: linear-gradient(180deg, rgba(15,23,41,.88), rgba(11,18,32,.76));
+  border-radius: 18px;
+  border: 1px solid var(--border-subtle);
+  gap: 14px;
+}
+.stock-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stock-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stock-hero-ticker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stock-hero-ticker h1 {
+  font-size: 24px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -.04em;
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1;
+}
+.stock-hero-badges {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.stock-hero-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.stock-hero-price-area {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.stock-hero-price {
+  font-size: 28px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -.03em;
+  color: var(--text-main);
+  line-height: 1;
+}
+.stock-hero-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.stock-hero-change.up { background: rgba(16,185,129,.12); color: #34d399; }
+.stock-hero-change.down { background: rgba(239,68,68,.12); color: #fb7185; }
+.stock-hero-change small { font-size: 10px; font-weight: 500; opacity: .8; }
+.stock-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.stock-hero-meta .badge { font-size: 9px; padding: 2px 7px; border-radius: 4px; }
+.stock-hero-meta .live-time { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: .04em; }
+
+/* Score Card — Prominent Decision Panel */
+.score-card {
+  background: linear-gradient(135deg, rgba(15,23,41,.94), rgba(11,18,32,.9));
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.score-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.score-card-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+}
+.score-card-number {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.score-card-num {
+  font-size: 30px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+.score-card-num.good { color: #34d399; }
+.score-card-num.warn { color: #fbbf24; }
+.score-card-num.bad { color: #fb7185; }
+.score-card-max {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.score-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.score-card-badge.buy { background: rgba(16,185,129,.15); color: #34d399; }
+.score-card-badge.warn { background: rgba(251,191,36,.12); color: #fbbf24; }
+.score-card-badge.avoid { background: rgba(239,68,68,.12); color: #fb7185; }
+
+/* Score Card Progress */
+.score-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.score-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.score-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15,23,41,.6);
+  overflow: hidden;
+  position: relative;
+}
+.score-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .4s ease;
+}
+.score-progress-fill.good { background: linear-gradient(90deg, rgba(16,185,129,.6), #34d399); }
+.score-progress-fill.warn { background: linear-gradient(90deg, rgba(251,191,36,.5), #fbbf24); }
+.score-progress-fill.bad { background: linear-gradient(90deg, rgba(239,68,68,.5), #fb7185); }
+.score-progress-marker {
+  position: absolute;
+  width: 2px;
+  height: 10px;
+  background: rgba(255,255,255,.2);
+  top: -2px;
+  border-radius: 1px;
+}
+
+/* Score Card Details Row */
+.score-details {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.score-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.score-detail-item strong { font-weight: 700; color: var(--text-main); font-family: var(--font-mono); }
+.score-detail-item .up { color: #34d399; }
+.score-detail-item .down { color: #fb7185; }
+.score-caution {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15,23,41,.4);
+}
+.score-levels {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.score-levels .up { color: #34d399; }
+.score-levels .down { color: #fb7185; }
+
+/* Market Stats — Merged 3-col Grid */
+.stock-stats-v2 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.stock-stat-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(15,23,41,.5);
+  border: 1px solid var(--border-subtle);
+  min-height: 52px;
+}
+.stock-stat-v2.label-up { border-left: 2px solid rgba(16,185,129,.3); }
+.stock-stat-v2.label-down { border-left: 2px solid rgba(239,68,68,.3); }
+.stock-stat-v2.label-warn { border-left: 2px solid rgba(251,191,36,.3); }
+.stock-stat-v2 span {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+}
+.stock-stat-v2 strong {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+  line-height: 1.2;
+}
+.stock-stat-v2 .stat-change {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.stock-stat-v2 .stat-change.up { color: #34d399; }
+.stock-stat-v2 .stat-change.down { color: #fb7185; }
+.stock-stat-v2 .stat-change.neutral { color: var(--text-dim); }
+
+/* Technical Panel V2 — 2-col compact tiles */
+.tech-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.tech-tile-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(15,23,41,.45);
+  border: 1px solid var(--border-subtle);
+  min-height: 48px;
+}
+.tech-tile-v2.tile-danger { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.2); }
+.tech-tile-v2.tile-warn { background: rgba(251,191,36,.06); border-color: rgba(251,191,36,.15); }
+.tech-tile-v2.tile-good { background: rgba(16,185,129,.06); border-color: rgba(16,185,129,.15); }
+.tech-tile-v2 span {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tech-tile-v2 strong {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+  line-height: 1.2;
+}
+.tech-tile-v2 .tech-badge {
+  display: inline-block;
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 2px;
+}
+.tech-tile-v2.tile-danger .tech-badge { background: rgba(239,68,68,.2); color: #fca5a5; }
+.tech-tile-v2.tile-warn .tech-badge { background: rgba(251,191,36,.18); color: #fbbf24; }
+.tech-tile-v2 small { font-size: 9px; color: var(--text-muted); font-weight: 500; }
+.tech-group-title-v2 {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+  grid-column: 1 / -1;
+  padding: 4px 2px 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-top: 4px;
+}
+
+/* Signal Card V2 — inline compact */
+.signal-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15,23,41,.4);
+  border: 1px solid var(--border-subtle);
+  min-width: 70px;
+  text-align: center;
+}
+.signal-inline span { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); }
+.signal-inline strong { font-size: 14px; font-weight: 800; font-family: var(--font-mono); color: var(--text-main); }
+.signal-inline small { font-size: 9px; color: var(--text-muted); }
+
+/* Catalyst Strip V2 — compact, no redundant labels */
+.catalyst-strip-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.catalyst-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: rgba(15,23,41,.45);
+  border: 1px solid var(--border-subtle);
+  transition: background .15s;
+}
+.catalyst-row:hover { background: rgba(15,23,41,.6); border-color: rgba(148,163,184,.2); }
+.catalyst-icon { flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-top: 2px; }
+.catalyst-icon.news { background: rgba(99,102,241,.12); }
+.catalyst-icon.ann { background: rgba(251,191,36,.12); }
+.catalyst-icon.mkt { background: rgba(16,185,129,.12); }
+.catalyst-body { flex: 1; min-width: 0; }
+.catalyst-title { font-size: 11px; font-weight: 700; color: var(--text-main); line-height: 1.35; display: block; margin-bottom: 1px; }
+.catalyst-meta { font-size: 9px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.catalyst-meta a { color: #94a3b8; font-weight: 600; text-decoration: none; }
+.catalyst-meta a:hover { color: #e2e8f0; }
+.stock-side-panel {
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, rgba(15,23,41,.88), rgba(15,23,41,.82));
+  padding: 14px 16px;
+}
+.stock-side-panel-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-main);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.stock-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.stock-actions .btn {
+  height: 34px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0 14px;
+  flex: 1;
+  min-width: 0;
+}
+.stock-actions .btn-primary {
+  background: rgba(16,185,129,.15);
+  color: #34d399;
+  border: 1px solid rgba(16,185,129,.25);
+}
+.panel-flush {
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, rgba(15,23,41,.9), rgba(15,23,41,.84));
+  padding: 14px 16px;
+}
+.panel-flush-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}
+@media(max-width: 768px) {
+  .stock-hero-v2 { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
+  .stock-hero-price-area { align-items: flex-start; text-align: left; width: 100%; }
+  .stock-hero-price { font-size: 24px; }
+  .stock-hero-ticker h1 { font-size: 20px; }
+  .stock-stats-v2 { grid-template-columns: repeat(2, 1fr); }
+  .score-details { gap: 6px; }
+  .score-card-num { font-size: 26px; }
+  .catalyst-row { padding: 6px 8px; }
+}
