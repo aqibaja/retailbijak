@@ -1,283 +1,521 @@
-# Phase 1: AI Picks — Data Flow Change (DB-only) · Phase 2: UI/UX Enhancement
+# Phase 1: AI Picks — Data Flow Change (DB-only) · Phase 2: UI/UX Enhancement · Phase 3: Stock Detail Pro
 
 > **Model routing:** planning/reasoning → `deepseek-v4-pro` · coding/execution → `deepseek-v4-flash`
 
 ---
 
-## 🔍 Current State Assessment
+## Phase 3: Stock Detail Pro — AI Chat, Chart Pro, Rich Analytics
 
-### Data Flow (saat ini)
-
-```
-Scheduler (08:00 WIB)
-  └→ generate_and_store_daily_ai_pick_report()
-      ├→ build_ai_picks_payload()        ← scoring + ranking dari OHLCV
-      ├→ build_ai_picks_llm_payload()    ← LLM brief (OpenRouter)
-      └→ store to DailyAIPickReport DB   ← tersimpan
-
-Frontend fetchAiPicks()
-  └→ GET /api/ai-picks?mode=swing&limit=5&llm=true&refresh=false
-      ├→ refresh=true  → generate_and_store() (regenerasi + LLM)
-      ├→ refresh=false → get_latest_ai_pick_report() (dari DB)
-      │                   └→ jika None → build_ai_picks_payload() (on-demand fallback)
-      └→ llm=true  → inject LLM brief ke response
-```
-
-### UI Layout (saat ini — terlalu banyak section)
-
-```
-┌─────────────────────────────────────────┐
-│  Hero: PREMARKET BRIEFING + mode switch  │
-│  [Swing] [Defensive] [Catalyst] [Refresh]│
-├─────────────────────────────────────────┤
-│  Briefing Meta: 3 cards (Briefing, Gen,  │
-│  Status)                                 │
-├─────────────────────────────────────────┤
-│  Summary Strip: 3 cards (Tone, Universe, │
-│  Market Bias)                            │
-├──────────────┬──────────────────────────┤
-│  Featured    │  Compare Lite (sidebar)   │
-│  Card        │  + AI Desk Brief          │
-│  (full card) │                          │
-├──────────────┴──────────────────────────┤
-│  Ranked List: N full cards               │
-│  (header, metric, thesis, entry/stop/tp, │
-│   risk, factors, 4 action buttons each)  │
-└─────────────────────────────────────────┘
-```
-
-### Key Issues
-
-| Issue | Detail |
-|-------|--------|
-| **Refresh button** | User bisa refresh kapan saja → regenerasi on-demand, tidak sesuai "hanya sekali sehari" |
-| **LLM on-demand** | `llm=true` dipanggil setiap load page → delay + beban ke OpenRouter setiap kali |
-| **On-demand fallback** | Jika DB kosong, backend generate on-demand → bypass scheduler |
-| **Terlalu banyak section** | Hero + briefing meta + summary strip + featured + compare + ranked = 6 section berbeda |
-| **Full reload on mode switch** | Ganti mode (Swing→Defensive) → loading flash di semua section |
-| **Compare Lite tidak jelas** | Sidebar "Compare Lite" membingungkan — user jarang pakai |
-| **Kartu terlalu berat** | Setiap kartu punya: ticker, nama, fit_label, score, confidence, metric strip, reason chips, thesis, entry/stop/tp, risk, factor meters, 4 action buttons |
-| **AI Desk Brief terisolasi** | Brief AI disimpan di sidebar compare, bukan bagian terintegrasi |
-| **Loading state flashy** | Setiap fetch ulang menampilkan skeleton + loading text |
+**Status:** PLANNED  
+**Timeline:** 1 minggu (5-7 hari kerja)  
+**Scope:** `/frontend/js/views/stock_detail.js`, `/frontend/style.css`, `/backend/routes/stock_detail.py`, `/backend/services/openrouter_llm.py`, `+ AI Chat backend endpoint`
 
 ---
 
-## 🎯 Target End State
-
-### Phase 1 — Data Flow: Scheduler-only + DB-read
+### 🔍 Current State Assessment (Stock Detail)
 
 ```
-Scheduler (08:00 WIB)
-  └→ generate_and_store_daily_ai_pick_report() ← satu-satunya yg generate
-      └→ store to DB
-
-Frontend fetchAiPicks()
-  └→ GET /api/ai-picks?mode=swing
-      └→ get_latest_ai_pick_report() from DB
-          └→ jika None → return fallback "briefing belum tersedia"
-          └→ TIDAK ADA on-demand generation
-
-HILANG:
-  - Parameter `refresh` di frontend & backend
-  - Parameter `llm` di frontend
-  - On-demand fallback ke build_ai_picks_payload()
-  - Tombol "Manual Refresh" di UI
+┌─────────────────────────────────────────────────────┐
+│ HERO: ticker + harga + change                        │
+├──────────────────────┬──────────────────────────────┤
+│ CHART (left, 1fr)    │ SIDEBAR (right, 390px)       │
+│                      │                              │
+│ [7D] [30D] [ALL]     │ Ringkasan Sesi (snapshot)     │
+│                      │                              │
+│ Level Suggestions    │ Ringkasan Teknikal + signal   │
+│ [STOP] [ENTRY] [TGT] │ [RSI, MACD, SMA, Boll...]    │
+│                      │                              │
+│ LightweightCharts    │ Statistik Kunci (fundamental) │
+│ candlestick + vol    │ [PE, PB, ROE, DER...]        │
+│                      │                              │
+│ Decision Panel       │ ACTION BAR                   │
+│ [AKUMULASI BERTAHAP] │ [Tambah Watchlist] [Alert]    │
+│                      │ [Jalankan Pemindai]           │
+│                      │                              │
+│ AI CHAT PLACEHOLDER  │                              │
+│ (static, not funct.) │                              │
+│ sample prompts tiles │                              │
+│ [Tanya AI...] input  │                              │
+└──────────────────────┴──────────────────────────────┘
 ```
 
-### Phase 2 — UI/UX: Clean, Compact, Professional
+### Key Gaps & Issues
 
-```
-┌─────────────────────────────────────────┐
-│  Compact Hero                           │
-│  AI Picks Hari Ini · [Swing|Def|Cat]    │
-│  ┌────────┬─────────┬──────────┐        │
-│  │Tone    │Universe │Market    │        │
-│  │defensive│20 kandidat│melemah │        │
-│  └────────┴─────────┴──────────┘        │
-│  Brief: Premarket briefing 2026-05-04   │
-│  ↓ AI Desk Brief (collapsible)          │
-├─────────────────────────────────────────┤
-│  Unified Compact Card List               │
-│                                          │
-│  #1 BUMI  ·  80.3  Keyakinan 80          │
-│  Entry 236-244  Stop 230  TP 259  RR 1:9 │
-│  [tren..] [volume..] [pullback..]        │
-│  Thesis: BUMI cocok untuk mode swing...  │
-│  [Buka Detail] [Simpan]  ▸▶              │
-│  ─── faktor (expandable) ───             │
-│                                          │
-│  #2 GOTO  ·  75.9  Keyakinan 75          │
-│  Entry 53-55  Stop 52  TP 58  RR 2.0    │
-│  [tren..] [volume..] [pullback..]        │
-│  [Buka Detail] [Simpan]  ▸▶              │
-│  ...                                     │
-└─────────────────────────────────────────┘
-```
+| # | Issue | Severity |
+|---|-------|----------|
+| 1 | **AI Chat hanya placeholder** — input tidak fungsional, tidak ada API endpoint chat | 🔴 Critical |
+| 2 | **Catalyst Strip tidak dirender** — fungsi `renderCatalystStrip()` ada tapi tidak dipanggil + DOM mount `#catalyst-strip` tidak ada di template | 🟡 Medium |
+| 3 | **Chart hanya candlestick + volume** — tidak ada SMA/EMA overlay, tidak ada Bollinger Bands, tidak ada support/resistance lines | 🟡 Medium |
+| 4 | **Tidak ada tab navigasi** — semua panel datar, user harus scroll panjang | 🟡 Medium |
+| 5 | **Tidak ada peer comparison** — user tidak bisa bandingkan dengan saham sektor sama | 🟠 Low |
+| 6 | **Alert system masih dummy** — `btn-set-alert` cuma `showToast` placeholder | 🟠 Low |
+| 7 | **Tidak ada broker activity** — padahal model `BrokerSummary` ada di database | 🟠 Low |
+| 8 | **Decision panel terlalu sederhana** — hanya 1 rekomendasi statis | 🟡 Medium |
+| 9 | **Loading state per-section tidak granular** — semua dimuat bersamaan, lambat terasa | 🟠 Low |
+| 10 | **Mobile layout cramped** — side stack terlalu panjang di HP | 🟡 Medium |
+| 11 | **Back button tidak kontekstual** — selalu ke dashboard, harusnya ke halaman asal | 🟢 Done (AI Picks context) |
+| 12 | **Tidak ada corporate actions** — dividends, stock splits, rights issue | 🟠 Low |
+| 13 | **Chart timeframe terlalu sedikit** — hanya 7D/30D/ALL, tidak ada 1D/3D/90D | 🟠 Low |
 
 ---
 
-## 📁 Files Affected
+### 🎯 Target End State
 
-| File | Phase | Change Type | Scope |
-|------|-------|-------------|-------|
-| `backend/services/openrouter_llm.py` | 1 | **Modify** | Hapus `build_ai_picks_llm_payload` dari endpoint public (optional — bisa tetap ada untuk scheduler) |
-| `backend/ai_picks.py` | 1 | **Modify** | Hapus on-demand fallback di `get_latest_ai_pick_report()`, pastikan fungsi utama hanya dipanggil scheduler |
-| `backend/main.py` | 1 | **Modify** | Ubah `/api/ai-picks` — hapus parameter `refresh`, `llm`, hapus on-demand generate. Hanya baca dari DB |
-| `frontend/js/api.js` | 1 | **Modify** | Hapus `refresh` dan `llm` dari `fetchAiPicks()` |
-| `frontend/js/views/ai_picks.js` | 2 | **Modify** | **Rewrite mayor** — layout compact, hapus compare tray, collapsible faktor, smoother mode switch |
-| `frontend/style.css` | 2 | **Modify** | Tambah styling compact cards, collapsible, cleaner hero |
-| `backend/tests/test_ai_picks_api.py` | 1 | **Modify** | Update test — hapus test yang pakai `refresh`/`llm`, pastikan DB-only flow |
-| `backend/tests/test_ai_picks_view_static.py` | 2 | **Modify** | Update static guard sesuai layout baru |
-| `backend/tests/test_nav_ai_picks_entry_static.py` | - | - | Tidak berubah |
+```
+┌──────────────────────────────────────────────────────────────┐
+│ HERO: [← back] BBCA · IDX EKUITAS · DB          Rp 9.800 +2.1% │
+│ Bank Central Asia Tbk · update 2026-05-04 15:30              │
+│ [1D] [3D] [7D] [30D] [90D] [ALL]                             │
+├──────────────────────┬───────────────────────────────────────┤
+│ CHART PRO (left)     │ TAB NAV: [Analisis] [AI Chat] [Berita] │
+│                      │                                       │
+│ Candlestick + Vol    │ ┌─ TAB: Analisis ──────────────────┐  │
+│ + SMA 20/50 overlay  │ │ Snapshot Sesi (compact cards)     │  │
+│ + Bollinger Bands    │ │ Teknikal (expandable groups)      │  │
+│ + Support/Resistance │ │ Fundamental (key stats)           │  │
+│   horizontal lines   │ │ Decision Panel (richer)           │  │
+│ + Level annotations  │ │ Catalyst Strip (connected!)       │  │
+│                      │ │ Broker Activity (if available)    │  │
+│                      │ │ Corporate Actions (if available)  │  │
+│                      │ └──────────────────────────────────┘  │
+│                      │                                       │
+│                      │ ┌─ TAB: AI Chat ───────────────────┐  │
+│                      │ │ Chat UI dengan history            │  │
+│                      │ │ Streaming response (SSE)          │  │
+│                      │ │ Quick prompts:                    │  │
+│                      │ │ - Analisis teknikal BBCA?         │  │
+│                      │ │ - Support resistance?             │  │
+│                      │ │ - Bandingkan dengan BMRI?         │  │
+│                      │ │ - Berita terbaru?                 │  │
+│                      │ │ - Rekomendasi entry?              │  │
+│                      │ └──────────────────────────────────┘  │
+│                      │                                       │
+│                      │ ┌─ TAB: Berita & Katalis ──────────┐  │
+│                      │ │ News feed terkait ticker           │  │
+│                      │ │ Announcements IDX                  │  │
+│                      │ │ Sentiment analysis (jika LLM on)   │  │
+│                      │ └──────────────────────────────────┘  │
+│                      │                                       │
+│                      │ ACTION BAR (sticky bottom)            │
+│                      │ [Tambah Watchlist] [Atur Alert]       │
+│                      │ [Bandingkan] [Bagikan]                │
+└──────────────────────┴───────────────────────────────────────┘
+```
+
+### Feature Breakdown
+
+| Feature | Deskripsi | Prioritas | Estimasi |
+|---------|-----------|-----------|----------|
+| **AI Chat** | Chat fungsional dengan LLM via SSE, context-aware (ticker, chart, technical) | P0 | 2 hari |
+| **Catalyst Strip Fix** | Wire `renderCatalystStrip()` + perbaiki DOM mount | P0 | 0.5 hari |
+| **Chart Indicators Overlay** | SMA 20/50, Bollinger Bands, S/R lines di LightweightCharts | P1 | 1 hari |
+| **Tab Navigation** | Analisis / AI Chat / Berita tabs di sidebar kanan | P1 | 0.5 hari |
+| **Decision Panel V2** | Richer decision: confluences, risk matrix, multi-timeframe | P1 | 0.5 hari |
+| **Broker Activity** | Tampilkan broker summary dari DB (jika data ada) | P2 | 0.5 hari |
+| **Corporate Actions** | Dividen, stock split, rights issue dari pengumuman IDX | P2 | 0.5 hari |
+| **Alert System** | Basic alert setup (harga, indikator) — backend + UI | P2 | 0.5 hari |
+| **Peer Comparison** | Mini-table saham sektor sama dengan metrik kunci | P3 | 0.5 hari |
+| **Mobile UX Polish** | Tab jadi accordion, sticky action bar, chart full-width | P3 | 0.5 hari |
+| **Loading States** | Skeleton per-section, progressive loading | P3 | 0.5 hari |
 
 ---
 
-## 🧪 Test Plan (TDD)
+### 📁 Files Affected
 
-### Phase 1 — Data Flow Tests
+| File | Change | Scope |
+|------|--------|-------|
+| `frontend/js/views/stock_detail.js` | **Rewrite mayor** | Tab system, AI Chat UI, chart indicators, catalyst wire, decision v2 |
+| `frontend/style.css` | **Modify** | Tab styles, chat UI, broker cards, chart overlays, mobile polish |
+| `backend/routes/stock_detail.py` | **Modify** | Add `/api/stocks/{ticker}/chat` SSE endpoint, broker data endpoint |
+| `backend/services/openrouter_llm.py` | **Modify** | Add `build_stock_chat_llm_payload()` for chat context |
+| `backend/routes/news.py` | **Modify** | Ensure `company-announcements` returns corporate actions |
+| `backend/main.py` | **Modify** | Mount chat route, alert CRUD endpoints |
+| `backend/database.py` | **Modify** | Add `Alert` model (jika belum ada) |
+| `frontend/js/api.js` | **Modify** | Add `fetchStockChat()`, `fetchBrokerActivity()`, alert CRUD helpers |
+| `frontend/js/router.js` | **No change** | Stock route sudah ada |
+| `frontend/index.html` | **No change** | Shell tetap |
+
+---
+
+### 🧪 Test Plan (TDD)
+
+#### Backend Tests
+
+| # | Test | Assert |
+|---|------|--------|
+| T1 | `GET /api/stocks/{ticker}/broker-activity` | Return broker summary rows, source field |
+| T2 | `GET /api/stocks/{ticker}/chat` via SSE | Stream chunks, final message, event types |
+| T3 | `POST /api/alerts` | Create alert, validate fields |
+| T4 | `GET /api/alerts` | List alerts for ticker |
+| T5 | `DELETE /api/alerts/{id}` | Remove alert |
+| T6 | `GET /api/stocks/{ticker}/corporate-actions` | Return dividends/splits/rights |
+
+#### Frontend Static Tests
 
 | # | Guard | Assert |
 |---|-------|--------|
-| 1 | `GET /api/ai-picks` tanpa param → `source=db` atau fallback no_data | Response tidak mengandung `refresh` |
-| 2 | `GET /api/ai-picks?refresh=true` → **ditolak** (400 / ignored) | Backend hapus/ignore param refresh |
-| 3 | `GET /api/ai-picks?llm=true` → **ditolak** (400 / ignored) | Backend hapus/ignore param llm |
-| 4 | Jika DB kosong → return fallback "briefing belum tersedia" | Tidak ada on-demand generate |
-| 5 | `fetchAiPicks()` di `api.js` tidak lagi mengirim `refresh`/`llm` | Static guard file api.js |
-
-### Phase 2 — UI/UX Tests
-
-| # | Guard | Assert |
-|---|-------|--------|
-| 6 | Compact hero hooks ada | `ai-picks-hero-compact`, `ai-picks-summary-strip` |
-| 7 | Unified card list hooks | `ai-picks-unified-list`, `ai-picks-compact-card` |
-| 8 | Expandable faktor | `ai-picks-factor-expand`, `ai-picks-factor-expanded` |
-| 9 | Hapus compare tray | elemen `ai-picks-compare-tray` TIDAK ada lagi |
-| 10 | Hapus refresh button | `data-ai-picks-refresh` TIDAK ada |
-| 11 | AI Desk Brief collapsible | `ai-picks-brief-collapsible`, toggle button |
-| 12 | Mode switch tanpa loading flash | State dipertahankan saat ganti mode (skip reload jika data sudah ada) |
+| T7 | Tab navigation hooks | `data-stock-tab`, `data-stock-tab-content` |
+| T8 | AI Chat hooks | `stock-chat-container`, `stock-chat-input`, `stock-chat-messages` |
+| T9 | Chart indicator toggle | `data-indicator-toggle`, SMA/Boll checkboxes |
+| T10 | Catalyst strip rendered | `#catalyst-strip` exists in DOM, not empty |
+| T11 | Decision panel v2 hooks | `decision-confluence`, `decision-risk-matrix` |
+| T12 | Broker activity section | `broker-activity-panel` with data rows |
+| T13 | Mobile tab accordion | `@media (max-width: 768px)` tab styles |
+| T14 | No placeholder copy leaks | Ban `UI placeholder`, `Coming Soon` in stock detail |
 
 ---
 
-## ⚙️ Execution Plan
+### ⚙️ Execution Plan (per hari)
 
-### Phase 1 — Data Flow (model: deepseek-v4-pro → planning, deepseek-v4-flash → coding)
+#### Hari 1: Foundation — Backend Chat + Catalyst Fix + Tab Shell
 
-#### Step 1.1 — Backend: hapus `refresh` & `llm` dari endpoint `/api/ai-picks`
-- `backend/main.py` line 134-157
-- Hapus parameter `refresh: bool = False` dan `llm: bool = False`
-- Endpoint hanya panggil `get_latest_ai_pick_report(mode=mode, db=db)`
-- Jika None → return fallback `build_ai_picks_fallback_payload(mode, trading_date=_current_jakarta_trading_date())`
-- Hapus blok `if refresh:` dan `if llm:` dan import `build_ai_picks_llm_payload`
+**Task 1.1** — Fix Catalyst Strip (wire existing function)
+- Tambah `#catalyst-strip` mount di template HTML `stock_detail.js`
+- Panggil `renderCatalystStrip(symbol, newsPayload, announcementsPayload)` di main render
+- Test: browser QA — catalyst strip muncul setelah load
 
-#### Step 1.2 — Frontend: hapus `refresh` & `llm` dari `fetchAiPicks()`
-- `frontend/js/api.js` — cari fungsi `fetchAiPicks`
-- Hapus parameter `refresh` dan `llm` dari URL builder
-- Sederhanakan jadi: `fetch(\`/api/ai-picks?mode=${mode}&limit=${limit}\`)`
+**Task 1.2** — Backend SSE Chat endpoint
+- `backend/routes/stock_detail.py`: tambah `GET /api/stocks/{ticker}/chat?message=...`
+- Panggil `build_stock_chat_llm_payload()` di `openrouter_llm.py`
+- Context: ticker, technical summary, fundamental snapshot, recent news
+- Return SSE stream: `data: {"chunk": "..."} ` → `data: {"done": true}`
+- Test: curl endpoint
 
-#### Step 1.3 — Hapus method on-demand dari ai_picks.py
-- Di `build_ai_picks_payload()` — pastikan tidak dipanggil dari endpoint
-- Atau biarkan saja untuk scheduler, hanya endpoint yang diubah
+**Task 1.3** — Tab Shell UI
+- Replace sidebar flat layout dengan tab system
+- 3 tabs: Analisis, AI Chat, Berita
+- Tab switching with event delegation
+- CSS: `.stock-tabs`, `.stock-tab`, `.stock-tab-content`
 
-#### Step 1.4 — Test
-- Update test yang bergantung pada `refresh` / `llm`
-- Pastikan DB-only flow berfungsi
-
-### Phase 2 — UI/UX Enhancement (model: deepseek-v4-flash)
-
-#### Step 2.1 — Hero redesign
-- Compact hero: judul "AI Picks Hari Ini" + mode switch (Swing/Defensive/Catalyst) inline
-- Summary strip 3 card (Tone, Universe, Market Bias) langsung di bawah hero
-- Info briefing (tanggal, generated_at, status) sebagai satu baris metadata
-- **Hapus**: tombol "Manual Refresh"
-
-#### Step 2.2 — AI Desk Brief → collapsible
-- Pindah AI Desk Brief dari sidebar compare ke section collapsible di bawah summary strip
-- Default: collapsed (closed), hanya judul "AI Desk Brief" + status icon
-- Expand: tampilkan full brief + pick notes
-- Model chip tetap ada
-
-#### Step 2.3 — Unified compact card list
-- Hapus **Compare Lite** section dan sidebar
-- **Hapus** Featured Card (merge ke ranked list)
-- Satu list berisi semua picks sebagai compact cards:
-  - Header: rank + ticker + score
-  - 1 baris: Entry/Stop/TP/RR
-  - Reason chips (max 2)
-  - Thesis (1 line)
-  - Action: [Buka Detail] [Simpan] + expand toggle
-  - Expandable: faktor meters (Teknikal/Likuiditas/Fundamental/Katalis) + risk notes
-
-#### Step 2.4 — Smoother mode switch
-- Cache hasil per-mode di memori (object `modeCache = {}`)
-- Saat ganti mode:
-  - Jika data mode tsb sudah pernah di-load → render dari cache (no loading)
-  - Jika belum → loading hanya di card list area (bukan seluruh halaman)
-- Persist `modeCache` di session/page lifetime
-
-#### Step 2.5 — Remove pin feature
-- Fitur "Pin Prioritas" (localStorage) jarang berguna dan menambah kompleksitas UI
-- Simplifikasi: hanya "Simpan ke Watchlist" (backend persisten)
+**End Day 1**: Catalyst strip hidup, chat backend berfungsi, tab shell terpasang.
 
 ---
 
-## 🧱 Layout Spec (Phase 2)
+#### Hari 2: AI Chat Frontend + Context Integration
+
+**Task 2.1** — AI Chat UI
+- Chat container dengan message bubbles
+- Input box + send button
+- Loading state (typing indicator)
+- SSE consumer (EventSource atau fetch stream)
+- Quick prompt chips yang auto-fill input
+
+**Task 2.2** — Chat Context Enrichment
+- Backend `build_stock_chat_llm_payload()`:
+  - Technical summary (RSI, MACD, trend, support/resistance)
+  - Fundamental snapshot (PE, PB, ROE, DER)
+  - Recent news headlines (max 3)
+  - Scanner analysis score
+  - Prompt: analis saham IDX yang menjawab dalam Bahasa Indonesia
+- Frontend: kirim ticker + conversation history (last 5 messages)
+
+**Task 2.3** — Integration Test
+- Buka stock detail → tab AI Chat
+- Kirim "Apa sinyal teknikal BBCA?"
+- Verifikasi response streaming
+
+**End Day 2**: AI Chat fully functional dengan context saham.
+
+---
+
+#### Hari 3: Chart Pro — Indicators Overlay
+
+**Task 3.1** — SMA/EMA Overlay
+- Tambah SMA 20 + SMA 50 sebagai line series di LightweightCharts
+- Warna: SMA 20 = `#fbbf24` (amber), SMA 50 = `#6366f1` (indigo)
+- Toggle checkbox di atas chart
+
+**Task 3.2** — Bollinger Bands Overlay
+- Tambah Upper + Middle + Lower bands
+- Warna: semi-transparent `#6366f1` area
+- Data dari `/api/stocks/{ticker}/chart-data` (backend sudah kirim SMA)
+
+**Task 3.3** — Support/Resistance Lines
+- Horizontal line di level S/R dari technical endpoint
+- Dashed style, label di kanan
+- Update saat ganti timeframe
+
+**Task 3.4** — Chart Toolbar
+- Compact toolbar di atas chart: [SMA] [Bollinger] [S/R] [Volume]
+- Toggle on/off tanpa reload chart
+- Simpan preferensi di localStorage
+
+**End Day 3**: Chart profesional dengan multi-indicator overlay.
+
+---
+
+#### Hari 4: Decision Panel V2 + Broker Activity
+
+**Task 4.1** — Decision Panel Redesign
+- Confluence section: berapa indikator yang align (bullish/bearish)
+- Risk matrix kecil: risk/reward visual
+- Multi-timeframe mini: 7D, 30D trend summary
+- Action recommendation dengan confidence level
+- Compact, tidak overwhelming
+
+**Task 4.2** — Broker Activity Panel
+- Backend: `GET /api/stocks/{ticker}/broker-activity`
+- Query `broker_summary` table by ticker, last 5 days
+- Tampilkan: broker name, buy/sell volume, net
+- Frontend: mini table dengan warna buy/sell
+
+**Task 4.3** — Corporate Actions
+- Backend: filter `company-announcements` untuk corporate actions
+- Tampilkan: dividend date, amount, stock split ratio
+- Mini cards di tab Analisis
+
+**End Day 4**: Decision panel kaya, broker activity + corporate actions hadir.
+
+---
+
+#### Hari 5: Alert System + Peer Comparison
+
+**Task 5.1** — Alert Backend
+- Model `Alert`: id, ticker, condition (price_above/price_below/rsi_above/rsi_below), value, active
+- CRUD endpoints: `GET/POST/DELETE /api/alerts`
+- Simpan di SQLite
+
+**Task 5.2** — Alert UI
+- Modal/drawer untuk atur alert
+- List alert aktif untuk ticker ini
+- Toggle on/off, delete
+- Integrasi dengan `btn-set-alert`
+
+**Task 5.3** — Peer Comparison
+- Backend: `GET /api/stocks/{ticker}/peers` → return saham sektor sama
+- Frontend: mini comparison table (ticker, price, change%, PE, market cap)
+- Klik navigasi ke stock detail peer
+
+**End Day 5**: Alert system + peer comparison.
+
+---
+
+#### Hari 6: Mobile Polish + Progressive Loading + Final Integration
+
+**Task 6.1** — Mobile Layout Optimization
+- Chart full-width di mobile
+- Sidebar tabs jadi vertical accordion
+- Sticky action bar di bottom mobile
+- Touch-friendly tab buttons
+- Font size adjustment untuk mobile
+
+**Task 6.2** — Progressive Loading
+- Skeleton loader per-section (chart, technical, fundamental)
+- Render section by section as data arrives
+- Prioritaskan chart + price dulu, baru detail
+
+**Task 6.3** — Tab State Persistence
+- Ingat tab terakhir yang dibuka per ticker (sessionStorage)
+- Saat navigasi balik, buka tab yang sama
+
+**Task 6.4** — Cross-route Context Polish
+- AI Picks → Stock Detail context banner (already done, verify)
+- Screener → Stock Detail context (add `entry`, `target`, `stop` dari scanner)
+
+**End Day 6**: Polish complete, mobile UX halus.
+
+---
+
+#### Hari 7: Testing, QA, Deploy, Documentation
+
+**Task 7.1** — Full Test Suite
+- Backend: pytest all tests
+- Frontend: static guards, compile check
+- Browser QA: semua route, tab switching, mobile emulation
+
+**Task 7.2** — Performance Check
+- Chart render time
+- AI Chat latency
+- Bundle size check (pastikan tidak ada regresi)
+
+**Task 7.3** — Deploy & Verify
+- Sync ke `/opt/swingaq/`
+- Restart backend
+- Verify live domain
+
+**Task 7.4** — Update PLAN.md + Commit
+- Mark all tasks done
+- Final commit & push
+
+**End Day 7**: Phase 3 complete, deployed, documented.
+
+---
+
+### 🧱 Layout Spec Detail
+
+#### Tab: Analisis (default)
 
 ```
-┌─────────────────────────────────────────────┐
-│ AI Picks Hari Ini                            │
-│ [Swing] [Defensive] [Catalyst]   Brief:  │
-│ 2026-05-04 · generated 08:00               │
-├────────────────┬──────────────┬─────────────┤
-│ Tone           │ Universe     │ Market Bias │
-│ defensive      │ 20 kandidat  │ melemah     │
-├────────────────┴──────────────┴─────────────┤
-│ ▸ AI Desk Brief (collapsed)                 │
-│   ⓘ model: google/gemma-4-26b-a4b-it       │
-├─────────────────────────────────────────────┤
-│                                             │
-│ ┌─ #1 BUMI ────────────────────── Score 80.3 ─┐ │
-│ │ Bumi Resources Tbk · swing terkonfirmasi     │ │
-│ │ Keyakinan 80 · konfirmasi teknikal cukup ... │ │
-│ │ Entry 236-244  Stop 230  TP 259  RR 1:1.9   │ │
-│ │ [tren di atas..] [volume dorong breakout..]  │ │
-│ │ Thesis: BUMI cocok untuk mode swing karena   │ │
-│ │ tren di atas rata-rata 20 hari...            │ │
-│ │ [Buka Detail] [Simpan]  ▸ Faktor             │ │
-│ │ ─ (expand) Teknikal 63 · Likuiditas 100  ─   │ │
-│ └───────────────────────────────────────────────┘ │
-│ ┌─ #2 GOTO ────────────────────── Score 75.9 ─┐ │
-│ │ ...                                          │ │
-│ └───────────────────────────────────────────────┘ │
-│ ┌─ #3 BNBR ────────────────────── Score 74.9 ─┐ │
-│ │ ...                                          │ │
-│ └───────────────────────────────────────────────┘ │
-│                                                 │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ Ringkasan Sesi · 2026-05-04 15:30       │
+│ ┌──────┬──────┬──────┬──────┐           │
+│ │ Open │ H/L  │ Prev │ Vol  │           │
+│ │9.750 │9.9K/ │9.700 │1.2M  │           │
+│ │      │9.650 │      │      │           │
+│ └──────┴──────┴──────┴──────┘           │
+├─────────────────────────────────────────┤
+│ Teknikal                        [−]     │
+│ Sinyal: BULLISH · Keyakinan 72/100      │
+│ RSI 58 · MACD bullish · SMA20 ↑         │
+│ [expand untuk detail indikator]         │
+├─────────────────────────────────────────┤
+│ Fundamental · data 2025-Q4     [−]      │
+│ P/E 14.2x · P/B 2.1x · ROE 18.4%       │
+│ DER 1.2 · Revenue Rp 28.5T              │
+├─────────────────────────────────────────┤
+│ Decision Panel                          │
+│ ┌─────────────────────────────────┐     │
+│ │ Confluence: 4/5 indikator BUY   │     │
+│ │ Risk/Reward: 1:2.4x             │     │
+│ │ Multi-TF: 7D↑ 30D↑ 90D→         │     │
+│ │ Action: AKUMULASI BERTAHAP       │     │
+│ │ Entry 9.700 · Stop 9.450 · TP 10.200│  │
+│ └─────────────────────────────────┘     │
+├─────────────────────────────────────────┤
+│ Katalis Terbaru                         │
+│ ┌─────────────────────────────────┐     │
+│ │ BBCA bagikan dividen Rp 230     │     │
+│ │ 2j lalu · idx_announcement      │     │
+│ └─────────────────────────────────┘     │
+├─────────────────────────────────────────┤
+│ Broker Activity (5 hari)                │
+│ Broker       Buy      Sell     Net      │
+│ Mandiri      5.2M     3.1M     +2.1M    │
+│ UBS          2.8M     4.5M     -1.7M    │
+│ ...                                     │
+├─────────────────────────────────────────┤
+│ [Tambah Watchlist] [Atur Alert]         │
+│ [Bandingkan]                            │
+└─────────────────────────────────────────┘
+```
+
+#### Tab: AI Chat
+
+```
+┌─────────────────────────────────────────┐
+│ Asisten AI · BBCA                       │
+│ Konteks: teknikal + fundamental + berita│
+├─────────────────────────────────────────┤
+│ ┌─────────────────────────────────┐     │
+│ │ 🧑 Apa sinyal teknikal BBCA?    │     │
+│ └─────────────────────────────────┘     │
+│ ┌─────────────────────────────────┐     │
+│ │ 🤖 BBCA menunjukkan sinyal      │     │
+│ │ BULLISH dengan keyakinan 72%.   │     │
+│ │ RSI di 58 (netral-kuat), MACD   │     │
+│ │ baru saja golden cross di TF    │     │
+│ │ daily. Harga di atas SMA 20     │     │
+│ │ dan SMA 50, mengkonfirmasi      │     │
+│ │ uptrend jangka pendek...        │     │
+│ └─────────────────────────────────┘     │
+├─────────────────────────────────────────┤
+│ Quick Prompts:                          │
+│ [Support resistance?] [Entry plan?]     │
+│ [Bandingkan BMRI] [Berita terbaru?]     │
+├─────────────────────────────────────────┤
+│ [___________________________] [Kirim]   │
+└─────────────────────────────────────────┘
+```
+
+#### Tab: Berita & Katalis
+
+```
+┌─────────────────────────────────────────┐
+│ Berita Terkait · BBCA                   │
+├─────────────────────────────────────────┤
+│ ┌─────────────────────────────────┐     │
+│ │ BBCA Bagikan Dividen Rp 230     │     │
+│ │ idx_announcement · 2026-05-03   │     │
+│ │ [Buka Sumber]                   │     │
+│ └─────────────────────────────────┘     │
+│ ┌─────────────────────────────────┐     │
+│ │ Bank Central Asia Bukukan Laba  │     │
+│ │ Bersih Rp 14.2T di Q1 2026     │     │
+│ │ rss · 2026-05-02               │     │
+│ │ [Buka Sumber]                   │     │
+│ └─────────────────────────────────┘     │
+│ ...                                     │
+├─────────────────────────────────────────┤
+│ Pengumuman IDX                          │
+│ ┌─────────────────────────────────┐     │
+│ │ Laporan Keuangan Q1 2026        │     │
+│ │ idx_announcement · 2026-04-28   │     │
+│ └─────────────────────────────────┘     │
+└─────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚠️ Risk & Mitigation
+### ⚠️ Risk & Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| Scheduler gagal generate jam 08:00 → DB kosong seharian | Fallback: response "Briefing belum tersedia. Coba lagi nanti." + info kapan scheduler terakhir jalan. Jangan on-demand generate. |
-| User buka AI Picks sebelum 08:00 | Tampilkan state "Briefing hari ini akan siap pukul 08:00 WIB. Data kemarin masih bisa diakses." |
-| Mode switch loading masih terasa | Cache per-mode di memori — data yang sudah di-load tidak perlu fetch ulang |
-| Collapsible AI Brief tidak intuitif | Gunakan ikon ▸/▾ yang standar, animasi smooth |
-| Hapus pin fitur → user kehilangan data pin | Pin sebelumnya disimpan di localStorage, setelah hapus tombol otomatis tidak aktif. Data lama tidak hilang tapi tidak ada UI untuk mengaksesnya. |
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| LightweightCharts multi-series performance | Chart lambat dengan 5+ overlay | Batasi max 3 overlay aktif, gunakan `setData()` minimal |
+| SSE chat timeout / rate limit OpenRouter | Chat gagal / lambat | Timeout 15s, graceful error message, retry button |
+| `broker_summary` table kosong | Panel kosong | Fallback: "Data broker belum tersedia" dengan honest source |
+| `company-announcements` endpoint lambat | Tab Berita loading lama | Cache response, load async setelah tab diklik |
+| Tab state lost on navigation | User frustasi | Simpan activeTab di sessionStorage per ticker |
+| Mobile chart terlalu kecil | User tidak bisa baca chart | Full-width chart, horizontal scroll untuk indicator panel |
+| LLM context terlalu besar | Token limit exceeded | Batasi context: max 3 news, summary technical, no raw OHLCV |
+| Multiple SSE connections | Memory/connection leak | Tutup SSE stream saat ganti tab/ticker, max 1 active |
 
 ---
 
-## Progress Log
+### 🔗 Dependencies
 
-### 2026-05-04 — Phase 2 done (UI/UX enhancement)
-- [x] **Step 2.1** — UI: Hero redesign compact (`ai-picks-compact-hero`, `ai-picks-hero-row`, `ai-picks-hero-title`)
-- [x] **Step 2.2** — UI: AI Desk Brief collapsible (`ai-picks-brief-collapsible` with `<details>` toggle)
-- [x] **Step 2.3** — UI: Unified compact card list (`ai-picks-card`, featured merged into list, `compare-tray` removed)
-- [x] **Step 2.4** — UI: Smoother mode switch (`modeCache` in-memory, `extractHeroHtml`/`extractSummaryHtml` render from cache)
-- [x] **Step 2.5** — UI: Remove pin, simplify actions to [Detail] [Simpan] [Faktor toggle]
-- [x] **Test** — 37/37 passed, static guards updated for new classes
-- [x] **Deploy** — sync CSS + JS ke `/opt/swingaq/`
-- [x] **Browser QA** — live domain verified: new CSS classes loaded, API return DB data
-- [x] **Commit & push**
+| Task | Depends On |
+|------|-----------|
+| AI Chat UI (2.1) | Chat Backend (1.2) |
+| Chart Indicators (3.1-3.4) | Chart data endpoint (already exists) |
+| Chat Context (2.2) | Technical + Fundamental + News endpoints (all exist) |
+| Broker Activity (4.2) | `broker_summary` table (already exists, may be empty) |
+| Corporate Actions (4.3) | `company-announcements` endpoint (exists) |
+| Alert System (5.1-5.2) | None (new) |
+| Peer Comparison (5.3) | `stocks` table + sector data |
+| Mobile Polish (6.1) | All UI tasks above |
+
+---
+
+### Progress Log
+
+#### 2026-05-04 — Phase 3 Plan Authoring
+- [x] Audit existing stock detail code (frontend + backend)
+- [x] Identify 13 gaps/issues
+- [x] Design target layout & feature list
+- [x] Write execution plan (7 hari, 25+ tasks)
+- [x] **Hari 1**: Foundation — chat backend + catalyst fix + tab shell
+- [x] **Hari 2**: AI Chat frontend + context integration
+- [x] **Hari 3**: Chart Pro — indicators overlay
+- [x] **Hari 4**: Decision Panel V2 + Broker Activity
+- [x] **Hari 5**: Alert System + Peer Comparison
+- [x] **Hari 6**: Mobile Polish + Progressive Loading
+- [x] **Hari 7**: Testing, QA, Deploy, Commit
+
+### Detail Perubahan
+
+| Task | Files Changed | Status |
+|------|---------------|--------|
+| T1.1 — Catalyst strip fix | `stock_detail.js` | ✅ |
+| T1.2 — Chat SSE backend + `build_stock_chat_llm_payload` | `stock_detail.py`, `openrouter_llm.py` | ✅ |
+| T1.3 — Tab shell UI + CSS | `stock_detail.js`, `style.css` | ✅ |
+| T2.1 — Chat UI (messages, input, quick prompts) | `stock_detail.js` | ✅ |
+| T3.1-3.4 — Chart overlays (SMA, Bollinger, S/R, toolbar) | `stock_detail.js`, `style.css` | ✅ |
+| T4.1 — Decision Panel V2 (confluence, multi-TF, RR bar) | `stock_detail.js`, `style.css` | ✅ |
+| T4.2 — Broker Activity endpoint + frontend | `stock_detail.py`, `stock_detail.js` | ✅ |
+| T5.1 — Alert model + CRUD | `database.py`, `stock_detail.py` | ✅ |
+| T5.2 — Alert modal UI + list | `stock_detail.js`, `style.css` | ✅ |
+| T5.3 — Peer Comparison endpoint + frontend | `stock_detail.py`, `stock_detail.js` | ✅ |
+| T6 — Mobile polish (sticky action bar, touch tabs) | `style.css` | ✅ |
+| T7 — Compile check, test, deploy, cache-bust, commit | All files | ✅ |
+
+### Files Modified (Phase 3)
+
+| File | Changes |
+|------|---------|
+| `frontend/js/views/stock_detail.js` | **Major rewrite**: tab system, AI Chat, chart overlays, decision V2, broker, alerts, peers, catalyst fix |
+| `frontend/style.css` | Tab styles, chat UI, chart toolbar, decision panel, alert modal, mobile polish |
+| `backend/routes/stock_detail.py` | Chat endpoint, broker activity, alert CRUD, peer comparison |
+| `backend/services/openrouter_llm.py` | Added `build_stock_chat_llm_payload()` |
+| `backend/database.py` | Added `Alert` model |
+| `frontend/js/router.js` | Cache-bust bump |
+| `PLAN.md` | This progress log |

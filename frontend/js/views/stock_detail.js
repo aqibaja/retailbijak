@@ -1,10 +1,12 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260505b';
-import { observeElements, flashUpdate } from '../main.js?v=20260504e';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260505f';
+import { observeElements, flashUpdate } from '../main.js?v=20260505f';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
+const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
 const nf = (n, d = 2) => n == null || Number.isNaN(Number(n)) ? '—' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: d });
 const pf = (n) => n == null || Number.isNaN(Number(n)) ? '—' : `${Number(n) >= 0 ? '+' : ''}${Number(n).toFixed(2)}%`;
 const money = (n) => n == null || Number.isNaN(Number(n)) ? '—' : `Rp ${nf(n, 0)}`;
+let currentSymbol = null;
 
 function safeSessionStorageGet(key) {
   try {
@@ -52,6 +54,7 @@ function renderAiPickContextBanner(symbol) {
 
 export async function renderStockDetail(root, ticker) {
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
+  currentSymbol = symbol;
   const aiPickContext = renderAiPickContextBanner(symbol);
   const aiPickContextBanner = aiPickContext?.bannerHtml || '';
   const heroBackHref = aiPickContext?.heroBackHref || '#dashboard';
@@ -74,21 +77,61 @@ export async function renderStockDetail(root, ticker) {
             <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">OHLCV dari DB lokal IDX</p></div>
             <div class="dashboard-chip-row"><button class="btn btn-primary btn-mini stock-range" data-limit="7">7D</button><button class="btn btn-mini stock-range" data-limit="30">30D</button><button class="btn btn-mini stock-range" data-limit="120">ALL</button></div>
           </div>
+          <div class="chart-toolbar" id="chart-toolbar">
+            <label class="indicator-toggle active" data-indicator="sma"><span>SMA</span></label>
+            <label class="indicator-toggle" data-indicator="boll"><span>Boll</span></label>
+            <label class="indicator-toggle" data-indicator="sr"><span>S/R</span></label>
+            <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
+          </div>
           <div class="chart-top-spacing"></div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div class="chart-shell"><div id="tvchart" class="stock-chart-wrap"></div><div id="level-overlay" class="level-overlay"></div></div>
           <div class="decision-panel-gap"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <div class="section-gap-large"></div>
-          <div class="ai-chat-placeholder ai-fill-panel"><div class="ai-chat-box"><div><div class="text-xs text-dim uppercase strong">Asisten AI</div><div class="text-sm text-main strong mt-1">Tanya AI tentang saham ini</div><div class="text-xs text-muted mt-1">Pratinjau AI berbasis chart, fundamental, berita, dan pemindai RetailBijak.</div></div><span class="signal-pill pill-good">Pratinjau AI</span></div><div class="sample-prompts" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px"><div class="stat-tile metric-neutral"><span>Risiko</span><strong>Stop loss?</strong><small>area invalidasi</small></div><div class="stat-tile metric-good"><span>Trading</span><strong>Entry plan</strong><small>level + target</small></div></div><div class="ai-thread-mock" style="display:grid;gap:8px;margin-top:12px"></div><div class="ai-chat-input">Tanya: risiko, entry, berita, atau alasan sinyal...</div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
-          <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
-          <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item">Memuat ringkasan teknikal...</div></div><div id="signal-card" class="signal-card"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
-          <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid right-uniform-grid compact-grid-3"></div></div>
+          <div class="stock-tabs" data-stock-tabs="1">
+            <button class="stock-tab active" data-tab="analisis">Analisis</button>
+            <button class="stock-tab" data-tab="chat">AI Chat</button>
+            <button class="stock-tab" data-tab="berita">Berita</button>
+          </div>
 
+          <div class="stock-tab-content active" data-tab-content="analisis">
+            <div class="panel"><h3 class="panel-title mb-3">Ringkasan Sesi</h3><div id="snapshot-panel" class="snapshot-grid right-uniform-grid compact-grid-3"></div></div>
+            <div class="panel"><div class="flex justify-between items-start gap-3"><div><h3 class="panel-title mb-2">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item">Memuat ringkasan teknikal...</div></div><div id="signal-card" class="signal-card"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="technical-grid right-uniform-grid mt-3"></div></div>
+            <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid right-uniform-grid compact-grid-3"></div></div>
+            <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"></div></div>
+            <div class="panel" id="broker-activity-panel" style="display:none"></div>
+            <div class="panel" id="peer-comparison-panel" style="display:none"></div>
+            <div class="panel"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
+          </div>
 
-          <div class="panel accent-top"><div class="action-bar"><button id="btn-add-watchlist" class="btn btn-primary" style="height:36px;">Tambah ke Daftar Pantau</button><button id="btn-set-alert" class="btn" style="height:36px;">Atur Peringatan</button><a href="#screener" class="btn" style="height:36px;display:flex;align-items:center;justify-content:center;">Jalankan Pemindai</a></div></div>
+          <div class="stock-tab-content" data-tab-content="chat">
+            <div class="panel stock-chat-card">
+              <div id="stock-chat-messages" class="chat-messages">
+                <div class="chat-placeholder">
+                  <div class="text-sm text-main strong">Asisten AI</div>
+                  <div class="text-xs text-muted mt-1">Tanya tentang saham ini — analisis teknikal, fundamental, support/resistance, atau rekomendasi.</div>
+                </div>
+              </div>
+              <div class="sample-prompts" id="chat-quick-prompts">
+                <button class="stat-tile metric-neutral chat-prompt" data-prompt="Apa sinyal teknikal?"><span>Teknikal</span><strong>Sinyal hari ini?</strong><small>RSI, MACD, trend</small></button>
+                <button class="stat-tile metric-good chat-prompt" data-prompt="Apa level support dan resistance?"><span>Level</span><strong>S/R terdekat?</strong><small>support + resistance</small></button>
+                <button class="stat-tile metric-warn chat-prompt" data-prompt="Apa rekomendasi entry plan?"><span>Trading</span><strong>Entry plan</strong><small>level + target</small></button>
+                <button class="stat-tile metric-neutral chat-prompt" data-prompt="Apa berita terbaru?"><span>Berita</span><strong>Berita terkini</strong><small>katalis terbaru</small></button>
+              </div>
+              <div class="chat-input-area">
+                <input type="text" id="stock-chat-input" class="form-input" placeholder="Tanya: risiko, entry, berita, atau analisis..." />
+                <button id="stock-chat-send" class="btn btn-primary" style="height:36px;min-width:36px;"><i data-lucide="send"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stock-tab-content" data-tab-content="berita">
+            <div class="panel"><h3 class="panel-title mb-2">Berita Terkait</h3><div id="stock-news-feed" class="stats-grid"></div></div>
+            <div class="panel"><h3 class="panel-title mb-2">Pengumuman IDX</h3><div id="stock-announcements-feed" class="stats-grid"></div></div>
+          </div>
         </div>
       </div>
     </section>`;
@@ -98,7 +141,103 @@ export async function renderStockDetail(root, ticker) {
     const res = await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
     showToast(res?.ok ? `${symbol} ditambahkan ke Daftar Pantau` : `Gagal menambahkan ${symbol}`, res?.ok ? 'success' : 'error');
   });
-  document.getElementById('btn-set-alert').addEventListener('click', () => showToast(`Placeholder peringatan untuk ${symbol}: gunakan level entry/stop/target`, 'info'));
+  document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
+
+  // Tab switching
+  document.querySelectorAll('[data-stock-tabs] .stock-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabs = btn.closest('[data-stock-tabs]');
+      if (!tabs) return;
+      const tab = btn.dataset.tab;
+      tabs.querySelectorAll('.stock-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const parent = tabs.parentElement;
+      parent.querySelectorAll('[data-tab-content]').forEach(c => c.classList.remove('active'));
+      const content = parent.querySelector(`[data-tab-content="${tab}"]`);
+      if (content) content.classList.add('active');
+      try { sessionStorage.setItem(`${TAB_STORAGE_KEY}.${symbol}`, tab); } catch {}
+    });
+  });
+  // Restore saved tab
+  try {
+    const savedTab = sessionStorage.getItem(`${TAB_STORAGE_KEY}.${symbol}`);
+    if (savedTab) {
+      const savedBtn = document.querySelector(`[data-stock-tabs] .stock-tab[data-tab="${savedTab}"]`);
+      if (savedBtn) savedBtn.click();
+    }
+  } catch {}
+
+  // AI Chat — send handler
+  const chatInput = document.getElementById('stock-chat-input');
+  const chatSend = document.getElementById('stock-chat-send');
+  const chatMessages = document.getElementById('stock-chat-messages');
+  const quickPrompts = document.getElementById('chat-quick-prompts');
+
+  async function sendChatMessage(msg) {
+    if (!msg || !msg.trim() || !chatMessages) return;
+    // Add user message bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble user-bubble';
+    userBubble.textContent = msg;
+    chatMessages.appendChild(userBubble);
+    // Hide placeholder
+    const placeholder = chatMessages.querySelector('.chat-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+    // Hide quick prompts
+    if (quickPrompts) quickPrompts.style.display = 'none';
+    // Add loading indicator
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'chat-bubble ai-bubble chat-loading';
+    loadingEl.textContent = '⏳';
+    chatMessages.appendChild(loadingEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    try {
+      const res = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg }),
+      });
+      loadingEl.remove();
+      const reply = res?.reply || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
+      const aiBubble = document.createElement('div');
+      aiBubble.className = 'chat-bubble ai-bubble';
+      aiBubble.textContent = reply;
+      chatMessages.appendChild(aiBubble);
+      if (res?.status === 'error' || res?.status === 'disabled') {
+        aiBubble.classList.add('chat-error');
+      }
+    } catch {
+      loadingEl.remove();
+      const errEl = document.createElement('div');
+      errEl.className = 'chat-bubble ai-bubble chat-error';
+      errEl.textContent = 'Gagal terhubung ke asisten AI. Coba lagi.';
+      chatMessages.appendChild(errEl);
+    }
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  if (chatInput && chatSend) {
+    chatSend.addEventListener('click', () => {
+      const msg = chatInput.value.trim();
+      chatInput.value = '';
+      if (msg) sendChatMessage(msg);
+    });
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const msg = chatInput.value.trim();
+        chatInput.value = '';
+        if (msg) sendChatMessage(msg);
+      }
+    });
+  }
+  // Quick prompt chips
+  document.querySelectorAll('.chat-prompt').forEach(el => {
+    el.addEventListener('click', () => {
+      const prompt = el.dataset.prompt;
+      if (prompt && chatInput) sendChatMessage(prompt);
+    });
+  });
 
   const [detail, fund, tech, chart, analysis, news, announcements] = await Promise.all([
     fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol, { llm: true }).catch(()=>null),
@@ -106,13 +245,20 @@ export async function renderStockDetail(root, ticker) {
   ]);
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   hydrateHeader(symbol, detail, fund, candles);
-  try { renderStockChart(candles, 7); } catch (e) { console.warn('stock chart fallback', e); renderFallbackSvgChart(candles.slice(-7)); }
+  const technical = tech?.technical || {};
+  try { renderStockChart(candles, 7, technical); } catch (e) { console.warn('stock chart fallback', e); renderFallbackSvgChart(candles.slice(-7)); }
   document.querySelectorAll('.stock-range').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('.stock-range').forEach(b => b.classList.remove('btn-primary'));
     btn.classList.add('btn-primary');
-    try { renderStockChart(candles, Number(btn.dataset.limit || 30)); renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); } catch (e) { renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); }
+    try { renderStockChart(candles, Number(btn.dataset.limit || 30), technical); renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); } catch (e) { renderFallbackSvgChart(candles.slice(-Number(btn.dataset.limit || 30))); }
   }));
-  const technical = tech?.technical || {};
+  // Indicator toggle
+  document.querySelectorAll('.indicator-toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('active');
+      renderStockChart(candles, Number(document.querySelector('.stock-range.btn-primary')?.dataset.limit || 30), technical);
+    });
+  });
   const analysisData = analysis?.data || analysis?.analysis || {};
   const analysisPayload = { ...(analysisData || {}), llm: analysis?.llm || analysisData?.llm || null };
   renderTechnicalPanel(technical);
@@ -123,6 +269,25 @@ export async function renderStockDetail(root, ticker) {
   renderTradePlan(candles, technical);
   renderLevelSuggestions(candles, technical);
   renderLevelOverlay(candles, technical);
+
+  // Wire catalyst strip — news + announcements already fetched above
+  if (document.getElementById('catalyst-strip')) {
+    renderCatalystStrip(symbol, news, announcements);
+  }
+
+  // Berita tab — render news + announcements
+  renderStockNewsFeed(symbol, news);
+  renderStockAnnouncements(symbol, announcements);
+
+  // Broker Activity (async, non-blocking)
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/broker-activity?limit=6`).then(brokerRes => {
+    if (brokerRes && brokerRes.source === 'db' && brokerRes.data?.length) {
+      renderBrokerActivity(brokerRes.data);
+    }
+  }).catch(() => {});
+
+  // Peer Comparison (async)
+  renderPeerComparison(symbol);
 
   
   
@@ -142,18 +307,73 @@ function hydrateHeader(symbol, detail, fund, candles){
   const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
   const chEl = document.getElementById('stock-change'); chEl.textContent = `${change >= 0 ? '+' : ''}${nf(change,0)} (${pf(pct)})`; chEl.className = `mono text-base mt-1 strong ${change >= 0 ? 'text-up' : 'text-down'}`;
 }
-function renderStockChart(candles, limit){
+function renderStockChart(candles, limit, technical){
   const data = candles.slice(-Math.min(limit, candles.length));
   const container = document.getElementById('tvchart'); if (!container) return;
   document.getElementById('chart-subtitle').textContent = `${data[0]?.date || '—'} → ${data[data.length-1]?.date || '—'} · ${data.length} candle`;
   if (typeof LightweightCharts !== 'undefined') {
     container.innerHTML = '';
     const chart = LightweightCharts.createChart(container, { width:container.clientWidth, height:container.clientHeight, layout:{ textColor:'#94a3b8', background:{ type:'solid', color:'transparent' }}, grid:{ vertLines:{ color:'rgba(255,255,255,.035)'}, horzLines:{ color:'rgba(255,255,255,.035)'}}, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:false }});
-    const series = chart.addCandlestickSeries({ upColor:'#10b981', downColor:'#ef4444', borderVisible:false, wickUpColor:'#10b981', wickDownColor:'#ef4444' });
-    series.setData(data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close })));
-    const vol = chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:'#64748b55' });
-    vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume, color:d.close >= d.open ? '#10b98155' : '#ef444455' })));
-    chart.priceScale('').applyOptions({ scaleMargins:{ top:.82, bottom:0 }});
+    const active = Array.from(document.querySelectorAll('.indicator-toggle.active')).map(el => el.dataset.indicator);
+    const chartData = data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close }));
+
+    // Candlestick series (always)
+    const cs = chart.addCandlestickSeries({ upColor:'#10b981', downColor:'#ef4444', borderVisible:false, wickUpColor:'#10b981', wickDownColor:'#ef4444' });
+    cs.setData(chartData);
+
+    // Volume histogram
+    const vol = active.includes('vol') ? chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:'#64748b55' }) : null;
+    if (vol) {
+      vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume, color:d.close >= d.open ? '#10b98155' : '#ef444455' })));
+      chart.priceScale('').applyOptions({ scaleMargins:{ top:.82, bottom:0 }});
+    }
+
+    // SMA 20/50 overlays
+    const hasSma20 = active.includes('sma') && data.some(d => d.sma_20 != null);
+    const hasSma50 = active.includes('sma') && data.some(d => d.sma_50 != null);
+    if (hasSma20) {
+      const s20 = chart.addLineSeries({ color:'#fbbf24', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+      s20.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_20 })).filter(d => d.value != null));
+    }
+    if (hasSma50) {
+      const s50 = chart.addLineSeries({ color:'#6366f1', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+      s50.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_50 })).filter(d => d.value != null));
+    }
+
+    // Bollinger Bands
+    const ind = technical?.indicators || {};
+    const bb = ind.bollinger_bands || {};
+    if (active.includes('boll') && bb.upper != null && bb.lower != null && data.length) {
+      const lastTime = String(data[data.length-1].date).slice(0,10);
+      const bbUpper = chart.addLineSeries({ color:'rgba(99,102,241,.4)', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+      const bbLower = chart.addLineSeries({ color:'rgba(99,102,241,.4)', lineWidth:1, priceLineVisible:false, lastValueVisible:false });
+      const bbMid = chart.addLineSeries({ color:'rgba(99,102,241,.2)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false });
+      // Draw horizontal lines at the current BB levels
+      const baseline = [{ time: data[0].date.slice(0,10), value: bb.upper }, { time: lastTime, value: bb.upper }];
+      bbUpper.setData(baseline);
+      const baselineL = [{ time: data[0].date.slice(0,10), value: bb.lower }, { time: lastTime, value: bb.lower }];
+      bbLower.setData(baselineL);
+      if (bb.middle != null) {
+        const baselineM = [{ time: data[0].date.slice(0,10), value: bb.middle }, { time: lastTime, value: bb.middle }];
+        bbMid.setData(baselineM);
+      }
+    }
+
+    // Support / Resistance lines
+    const sr = ind.support_resistance || {};
+    if (active.includes('sr') && data.length) {
+      const lastTime = String(data[data.length-1].date).slice(0,10);
+      if (sr.support_20d != null) {
+        chart.addLineSeries({ color:'rgba(52,211,153,.5)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
+          .setData([{ time: data[0].date.slice(0,10), value: sr.support_20d }, { time: lastTime, value: sr.support_20d }]);
+      }
+      if (sr.resistance_20d != null) {
+        chart.addLineSeries({ color:'rgba(248,113,113,.5)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
+          .setData([{ time: data[0].date.slice(0,10), value: sr.resistance_20d }, { time: lastTime, value: sr.resistance_20d }]);
+      }
+    }
+
+    if (!vol) chart.priceScale('').applyOptions({ scaleMargins:{ top:.1, bottom:.1 }});
     chart.timeScale().fitContent();
     new ResizeObserver(() => chart.applyOptions({ width: container.clientWidth, height: container.clientHeight })).observe(container);
   } else renderFallbackSvgChart(data);
@@ -197,10 +417,42 @@ function getLevels(candles, tech){
 }
 function renderDecisionPanel(candles, tech){
   const levels = getLevels(candles, tech); const rsi = tech?.indicators?.rsi?.value; const rating = tech?.rating || 'NETRAL';
+  const ind = tech?.indicators || {};
   const risk = Math.max(levels.entry - levels.stop, 1), reward = Math.max(levels.target - levels.entry, 0); const rr = reward/risk;
   const action = rating === 'BEARISH' ? 'HINDARI DULU' : (rsi >= 70 || rr < 1) ? 'TAHAN / PANTAU' : rating === 'BULLISH' ? 'AKUMULASI BERTAHAP' : 'PANTAU';
   const caution = rr < 1 ? 'Rasio risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.' : 'Setup boleh dipantau, tetap tunggu konfirmasi volume dan candle.';
-  document.getElementById('decision-panel').innerHTML = `<div class="decision-hero"><div class="text-xs text-dim uppercase strong">Panel Keputusan</div><div class="flex justify-between items-center mt-2"><strong class="text-main">${action}</strong><span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">R/R ${nf(rr,2)}x</span></div><div class="text-sm text-muted mt-2">${caution}</div><div class="text-xs text-dim mt-2">Area pantau ${money(levels.entry)} · invalid bawah ${money(levels.stop)} · target ${money(levels.target)}</div></div>`;
+
+  // Confluence: count bullish/bearish indicators
+  const macdStatus = (ind.macd?.status || '').toLowerCase();
+  const trendStatus = (ind.trend?.status || '').toLowerCase();
+  const volRatio = Number(ind.volume?.ratio || 0);
+  const stochK = Number(ind.stochastic?.k || 50);
+  const confluenceBull = [rating === 'BULLISH', macdStatus.includes('bull'), trendStatus.includes('bull'), rsi > 50 && rsi < 70, volRatio >= 1].filter(Boolean).length;
+  const confluenceBear = [rating === 'BEARISH', macdStatus.includes('bear'), trendStatus.includes('bear'), rsi >= 70, volRatio < 0.5].filter(Boolean).length;
+  const totalChecked = 5;
+
+  // Multi-TF trends from candle closes
+  const closes = candles.map(c => Number(c.close)).filter(Number.isFinite);
+  function tfTrend(days) { const s = closes.slice(-days); if (s.length < 2) return '→'; return s[0] <= s[s.length-1] ? '↑' : '↓'; }
+  const tf7 = tfTrend(7), tf30 = tfTrend(30), tf90 = tfTrend(90);
+  const tfClass = (t) => t === '↑' ? 'text-up' : t === '↓' ? 'text-down' : 'text-dim';
+
+  // RR visual bar
+  const barPct = Math.min(Math.max((rr / 3) * 100, 5), 100);
+
+  document.getElementById('decision-panel').innerHTML = `
+    <div class="decision-hero">
+      <div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Panel Keputusan</span><span class="signal-pill ${action.includes('HINDARI') ? 'pill-bad' : action.includes('TAHAN') ? 'pill-warn' : 'pill-good'}">${action}</span></div>
+      <div class="decision-confluence">
+        <div class="confluence-bar-wrap"><div class="confluence-label">Konfluensi</div><div class="confluence-track"><div class="confluence-fill bullish" style="width:${(confluenceBull/totalChecked)*100}%"></div><div class="confluence-fill bearish" style="width:${(confluenceBear/totalChecked)*100}%"></div></div><div class="confluence-nums"><span class="text-up strong">${confluenceBull}</span><span class="text-dim">/</span><span class="text-down strong">${confluenceBear}</span><span class="text-dim"> indikator</span></div></div>
+      </div>
+      <div class="flex gap-3 items-center mt-2">
+        <div class="text-xs text-dim">Multi-TF: <span class="${tfClass(tf7)} strong">7D ${tf7}</span> <span class="${tfClass(tf30)} strong">30D ${tf30}</span> <span class="${tfClass(tf90)} strong">90D ${tf90}</span></div>
+      </div>
+      <div class="rr-visual mt-2"><div class="flex justify-between text-xs text-dim"><span>R/R ${nf(rr,2)}x</span><span>${money(levels.entry)} → ${money(levels.target)}</span></div><div class="rr-track"><div class="rr-fill" style="width:${barPct}%"></div></div></div>
+      <div class="text-sm text-muted mt-2">${caution}</div>
+      <div class="text-xs text-dim mt-2">Area pantau ${money(levels.entry)} · invalid bawah ${money(levels.stop)} · target ${money(levels.target)}</div>
+    </div>`;
 }
 function renderLevelOverlay(candles, tech){
   const overlay=document.getElementById('level-overlay'); if(!overlay) return; overlay.innerHTML = '';
@@ -367,5 +619,111 @@ function renderFallbackSvgChart(data){
   const pts = vals.map((v,i)=>`${p+i*(w-2*p)/Math.max(vals.length-1,1)},${h-p-((v-min)/Math.max(max-min,1))*(h-2*p)}`).join(' ');
   container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="fallback-svg-chart"><polyline fill="none" stroke="#10b981" stroke-width="3" points="${pts}"/><text x="${p}" y="${p}" fill="#94a3b8">${nf(vals[vals.length-1],0)}</text></svg>`;
 }
+function renderStockNewsFeed(symbol, newsPayload) {
+  const el = document.getElementById('stock-news-feed');
+  if (!el) return;
+  const items = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
+  if (!items.length) {
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Belum ada berita terkait</strong><span class="dashboard-widget-state-note">Berita dari RSS feed akan muncul setelah scheduler harian berjalan.</span></div>';
+    return;
+  }
+  const upper = symbol.toUpperCase();
+  const filtered = items.filter(n => (n.title || '').toUpperCase().includes(upper) || (n.summary || '').toUpperCase().includes(upper)).slice(0, 5);
+  const display = filtered.length ? filtered : items.slice(0, 3);
+  el.innerHTML = display.map(n => `<div class="stat-tile metric-neutral" style="cursor:pointer" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')"><span>${n.source || 'rss'}</span><strong>${(n.title || 'Berita').slice(0, 72)}</strong><small>${n.summary ? n.summary.slice(0, 80) : ''} · ${(n.published_at || '').slice(0, 10) || ''}</small></div>`).join('');
+}
+
+function renderStockAnnouncements(symbol, annPayload) {
+  const el = document.getElementById('stock-announcements-feed');
+  if (!el) return;
+  const items = Array.isArray(annPayload?.data) ? annPayload.data : [];
+  if (!items.length) {
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Belum ada pengumuman</strong><span class="dashboard-widget-state-note">Pengumuman dari IDX akan muncul setelah scheduler berjalan.</span></div>';
+    return;
+  }
+  const upper = symbol.toUpperCase();
+  const filtered = items.filter(a => (a.title || a.subject || '').toUpperCase().includes(upper)).slice(0, 5);
+  const display = filtered.length ? filtered : items.slice(0, 3);
+  el.innerHTML = display.map(a => {
+    const title = a.title || a.subject || 'Pengumuman';
+    const date = (a.date || '').slice(0, 10) || '';
+    const link = a.link || 'news://pending';
+    return `<div class="stat-tile metric-warn" style="cursor:pointer" onclick="window.open('${link.replace(/'/g, "\\'")}','_blank')"><span>IDX</span><strong>${title.slice(0, 72)}</strong><small>${date}</small></div>`;
+  }).join('');
+}
+
+function renderBrokerActivity(data) {
+  const el = document.getElementById('broker-activity-panel');
+  if (!el) return;
+  el.style.display = '';
+  el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2">Aktivitas Broker (5 hari)</div>' + 
+    data.slice(0, 6).map(r => {
+      const net = Number(r.net_volume || 0);
+      const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
+      return `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle);padding:6px 0"><span class="mono" style="font-size:11px">${r.broker || '—'}</span><span class="mono ${cls}" style="font-size:11px">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
+    }).join('');
+}
+
+// ─── Alert Modal ────────────────────────
+function showAlertModal(symbol) {
+  const existing = document.getElementById('alert-modal-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'alert-modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-backdrop" onclick="this.closest('#alert-modal-overlay')?.remove()"></div>
+    <div class="modal-panel">
+      <div class="flex justify-between items-center mb-3"><h3 class="panel-title m-0">Atur Peringatan ${symbol}</h3><button class="btn btn-icon" onclick="document.getElementById('alert-modal-overlay')?.remove()"><i data-lucide="x"></i></button></div>
+      <div class="mb-2"><label class="text-xs text-dim uppercase strong">Tipe</label>
+        <select id="alert-type" class="form-input" style="width:100%;height:36px;margin-top:4px">
+          <option value="price_above">Harga di atas</option><option value="price_below">Harga di bawah</option>
+          <option value="rsi_above">RSI di atas</option><option value="rsi_below">RSI di bawah</option>
+        </select></div>
+      <div class="mb-2"><label class="text-xs text-dim uppercase strong">Nilai</label><input type="number" id="alert-value" class="form-input" style="width:100%;height:36px;margin-top:4px" step="10" min="1" /></div>
+      <button id="alert-save-btn" class="btn btn-primary" style="width:100%;height:36px">Simpan Peringatan</button>
+      <div id="alert-list" class="mt-3"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  document.getElementById('alert-save-btn').addEventListener('click', async () => {
+    const atype = document.getElementById('alert-type').value;
+    const avalue = parseFloat(document.getElementById('alert-value').value);
+    if (!avalue || avalue <= 0) return showToast('Masukkan nilai yang valid', 'error');
+    const res = await apiFetch('/alerts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ticker:symbol, alert_type:atype, value:avalue}) });
+    if (res?.ok) { showToast(res.message, 'success'); loadAlertList(symbol); }
+    else showToast('Gagal membuat alert', 'error');
+  });
+  loadAlertList(symbol);
+}
+
+async function loadAlertList(symbol) {
+  const el = document.getElementById('alert-list');
+  if (!el) return;
+  const res = await apiFetch(`/alerts?ticker=${encodeURIComponent(symbol)}`);
+  const items = Array.isArray(res?.data) ? res.data : [];
+  if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
+  el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
+    items.map(a => `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle)"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down" data-alert-id="${a.id}" style="font-size:10px;height:22px">Hapus</button></div>`).join('');
+  el.querySelectorAll('[data-alert-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.alertId;
+      const del = await apiFetch(`/alerts/${id}`, { method: 'DELETE' });
+      if (del?.ok) { showToast(del.message, 'success'); loadAlertList(symbol); }
+    });
+  });
+}
+
+// ─── Peer Comparison ────────────────────
+function renderPeerComparison(symbol) {
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/peers?limit=5`).then(res => {
+    const el = document.getElementById('peer-comparison-panel');
+    if (!el || !res?.data?.length) return;
+    el.style.display = '';
+    el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2">Peer Comparison</div>' +
+      res.data.map(p => `<a href="#stock/${p.ticker}" class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle);text-decoration:none;color:var(--text-main)"><span class="mono text-up" style="font-size:11px">${p.ticker}</span><span class="text-xs text-muted">${p.name || p.sector || ''}</span></a>`).join('');
+  }).catch(() => {});
+}
+
 function fallbackIssuerName(ticker){ const names={GOTO:'GoTo Gojek Tokopedia Tbk.',BBCA:'Bank Central Asia Tbk.',BMRI:'Bank Mandiri Tbk.',BBRI:'Bank Rakyat Indonesia Tbk.',TLKM:'Telkom Indonesia Tbk.'}; return names[ticker] || `${ticker} — Ekuitas IDX`; }
 function makeFallbackCandles(ticker){ const baseMap={GOTO:96,BBCA:9800,BMRI:5850,BBRI:4100,TLKM:3420}; const base=baseMap[ticker]||1000; const out=[]; for(let i=59;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const wave=Math.sin(i/3)*0.025; const close=Math.round(base*(1+wave+(60-i)*0.0008)); out.push({date:d.toISOString().slice(0,10),open:close-2,high:close+4,low:close-5,close,volume:10000000+i*123456}); } return out; }

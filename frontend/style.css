@@ -1145,6 +1145,25 @@ button, input, select { font-family: inherit; border: none; background: none; co
   .stock-detail-pro .signal-card strong { font-size: 16px; }
   .stock-detail-pro .stat-tile { min-height: 64px !important; padding: 8px 9px !important; }
   .stock-detail-pro .ai-chat-placeholder { min-height: 160px !important; padding: 10px !important; }
+  /* Mobile: sticky action bar bottom */
+  .stock-detail-pro .stock-side .panel:last-child .action-bar {
+    position: sticky; bottom: 0; background: var(--bg-mobile-surface);
+    padding: 10px 0; margin-top: 4px; border-top: 1px solid var(--border-subtle);
+    display: flex; gap: 8px; z-index: 10;
+  }
+  .stock-detail-pro .stock-side .panel:last-child .action-bar .btn,
+  .stock-detail-pro .stock-side .panel:last-child .action-bar a.btn {
+    flex: 1; font-size: 11px; height: 40px !important; min-height: 40px;
+    display: flex !important; align-items: center; justify-content: center;
+  }
+  /* Mobile: bigger tab buttons */
+  .stock-tabs .stock-tab { height: 38px; font-size: 12px; }
+  /* Mobile: chat full height */
+  .stock-chat-card { min-height: 300px; }
+  .chat-messages { max-height: 280px !important; min-height: 160px !important; }
+  /* Mobile: chart toolbar wrap */
+  .chart-toolbar { gap: 4px; padding: 0 0 6px; }
+  .indicator-toggle { height: 28px; font-size: 9px; padding: 0 8px; }
 
   .col-span-8.panel.flex-col.gap-6 .flex.justify-between.items-center.pt-2 {
     flex-direction: column;
@@ -1246,6 +1265,53 @@ html[data-theme="light"] .news-meta {
 /* Stock detail UI polish */
 .stock-detail-pro{display:flex;flex-direction:column;gap:16px}.stock-hero{display:flex;justify-content:space-between;align-items:center;padding:24px 28px;background:linear-gradient(180deg,rgba(15,23,41,.86),rgba(11,18,32,.72))}.stock-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:16px}.stock-chart-card{min-height:520px;display:flex;flex-direction:column}.stock-chart-wrap{height:440px;width:100%;background:rgba(11,18,32,.35);border-radius:14px;overflow:hidden}.stock-side{min-width:0;display:flex;flex-direction:column;gap:10px}.stock-side .panel{min-width:0}.compact-right-scroll{min-width:0;overflow:visible;padding-right:0}.technical-grid,.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat-tile{border:1px solid var(--border-subtle);background:rgba(255,255,255,.025);border-radius:12px;padding:10px 12px;min-height:72px}.stat-tile span{display:block;color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.stat-tile strong{display:block;color:var(--text-main);font-size:15px;margin-top:4px}.stat-tile small{display:block;color:var(--text-muted);font-size:11px;margin-top:2px}.fallback-svg-chart{width:100%;height:100%;background:linear-gradient(180deg,rgba(16,185,129,.05),transparent)}
 @media(max-width:1100px){.stock-layout{grid-template-columns:1fr}.stock-hero{align-items:flex-start;gap:16px;flex-direction:column}.stock-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Stock Detail Tabs */
+.stock-tabs{display:flex;gap:4px;padding:4px;background:rgba(15,23,41,.6);border-radius:14px;border:1px solid var(--border-subtle)}
+.stock-tab{flex:1;height:32px;border-radius:10px;border:none;background:transparent;color:var(--text-muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;transition:all .2s}
+.stock-tab.active{background:rgba(16,185,129,.15);color:var(--up-color)}
+.stock-tab:hover:not(.active){background:rgba(255,255,255,.04);color:var(--text-main)}
+.stock-tab-content{display:none;flex-direction:column;gap:10px}
+.stock-tab-content.active{display:flex}
+
+/* Stock Chat */
+.stock-chat-card{min-height:400px;display:flex;flex-direction:column;gap:10px}
+.chat-messages{flex:1;min-height:200px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:12px;background:rgba(11,18,32,.4);border:1px solid var(--border-subtle)}
+.chat-placeholder{padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.chat-bubble{max-width:92%;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.55;word-wrap:break-word}
+.user-bubble{align-self:flex-end;background:rgba(16,185,129,.15);color:var(--text-main);border-bottom-right-radius:4px}
+.ai-bubble{align-self:flex-start;background:rgba(30,41,59,.7);color:var(--text-muted);border:1px solid var(--border-subtle);border-bottom-left-radius:4px}
+.chat-error{background:rgba(248,113,113,.12) !important;color:#fca5a5 !important}
+.chat-loading{min-height:32px;display:flex;align-items:center;justify-content:center}
+.chat-input-area{display:flex;gap:6px;align-items:center;padding:4px}
+.chat-input-area .form-input{flex:1;height:36px;background:rgba(11,18,32,.5);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-main);font-size:13px;padding:0 12px;outline:none}
+.chat-input-area .form-input:focus{border-color:var(--border-focus)}
+.sample-prompts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.chat-prompt{cursor:pointer;transition:all .15s}
+.chat-prompt:hover{border-color:var(--border-focus);background:rgba(16,185,129,.06)}
+
+/* Chart toolbar */
+.chart-toolbar{display:flex;gap:6px;padding:0 0 8px;flex-wrap:wrap}
+.indicator-toggle{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;border-radius:999px;border:1px solid var(--border-subtle);background:rgba(15,23,41,.5);color:var(--text-dim);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.indicator-toggle.active{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.12);color:var(--up-color)}
+
+/* Decision Panel V2 */
+.decision-confluence{margin:6px 0}
+.confluence-bar-wrap{display:flex;align-items:center;gap:8px}
+.confluence-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-weight:800;min-width:52px}
+.confluence-track{flex:1;height:6px;border-radius:999px;background:rgba(15,23,41,.5);overflow:hidden;display:flex}
+.confluence-fill{height:100%;transition:width .3s ease}
+.confluence-fill.bullish{background:linear-gradient(90deg,rgba(16,185,129,.6),rgba(52,211,153,.8))}
+.confluence-fill.bearish{background:linear-gradient(90deg,rgba(248,113,113,.6),rgba(239,68,68,.8))}
+.confluence-nums{font-size:10px;font-family:var(--font-mono);white-space:nowrap}
+.rr-track{height:4px;border-radius:999px;background:rgba(15,23,41,.5);margin-top:4px;overflow:hidden}
+.rr-fill{height:100%;background:linear-gradient(90deg,rgba(99,102,241,.5),rgba(16,185,129,.7));border-radius:999px;transition:width .3s ease}
+
+/* Alert Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(8,14,28,.72);z-index:9999;backdrop-filter:blur(4px)}
+.modal-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(400px,92%);max-height:80vh;overflow-y:auto;background:var(--bg-mobile-surface);border:1px solid var(--border-strong);border-radius:20px;padding:24px;z-index:10000;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.modal-panel .form-input{background:rgba(11,18,32,.5);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-main);font-size:13px;padding:0 12px;outline:none}
+.modal-panel .form-input:focus{border-color:var(--border-focus)}
 /* Sidebar Tooltips */
 .nav-item { position: relative; }
 .nav-item::after {

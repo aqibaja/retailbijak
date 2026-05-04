@@ -148,6 +148,17 @@ class DailyAIPickReport(Base):
     payload_json = Column(JSON)
 
 
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=False)
+    alert_type = Column(String, nullable=False)  # price_above, price_below, rsi_above, rsi_below
+    value = Column(Float, nullable=False)
+    active = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()

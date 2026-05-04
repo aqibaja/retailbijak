@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from typing import Any
+import json
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, get_db
+    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, get_db
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, get_db
+    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, get_db
 
 try:
     from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
@@ -30,6 +33,11 @@ try:
     from services.openrouter_llm import build_stock_analysis_llm_payload
 except ModuleNotFoundError:
     from backend.services.openrouter_llm import build_stock_analysis_llm_payload
+
+try:
+    from services.openrouter_llm import build_stock_chat_llm_payload
+except ModuleNotFoundError:
+    from backend.services.openrouter_llm import build_stock_chat_llm_payload
 
 router = APIRouter()
 
@@ -165,3 +173,147 @@ def get_signals(ticker: str, timeframe: str = '1d', db: Session = Depends(get_db
     signals = db.query(Signal).filter(Signal.ticker == base, Signal.timeframe == timeframe).order_by(Signal.signal_date.desc()).limit(20).all()
     data = _serialize_signal_rows(signals)
     return {'ticker': ticker, 'count': len(data), 'data': data}
+
+
+# ─── Stock Chat (AI Assistant) ─────────────────────────
+
+
+class ChatMessage(BaseModel):
+    message: str = Field(min_length=1, max_length=500)
+
+
+@router.post('/api/stocks/{ticker}/chat')
+def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
+    # Build context: technical, fundamental, recent news
+    tech = None
+    fund = None
+    news_rows = []
+    try:
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
+    except ModuleNotFoundError:
+        try:
+            from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
+        except ModuleNotFoundError:
+            tech = None
+
+    if tech is None:
+        try:
+            t_sym = _ticker_with_suffix(ticker)
+            df = get_ohlcv_dataframe(db, t_sym, limit=200)
+            if not df.empty:
+                df_ind = calculate_all_indicators(df)
+                tech = get_technical_summary(df_ind)
+        except Exception:
+            tech = None
+
+    try:
+        f_sym = _ticker_with_suffix(ticker)
+        f_row = db.query(Fundamental).filter(Fundamental.ticker == f_sym).first()
+        if f_row:
+            fund = {
+                'trailing_pe': f_row.trailing_pe,
+                'price_to_book': f_row.price_to_book,
+                'roe': f_row.roe,
+                'debt_to_equity': f_row.debt_to_equity,
+                'revenue': f_row.revenue,
+            }
+    except Exception:
+        fund = None
+
+    try:
+        raw_news = db.query(News).order_by(News.published_at.desc()).limit(5).all()
+        for n in raw_news:
+            if base in (n.title or '').upper() or base in (n.summary or '').upper():
+                news_rows.append({'title': n.title, 'published_at': str(n.published_at)[:10] if n.published_at else ''})
+    except Exception:
+        pass
+
+    llm_response = build_stock_chat_llm_payload(
+        ticker=base,
+        message=body.message,
+        technical=tech,
+        fundamental=fund,
+        news=news_rows,
+        db=db,
+    )
+    return llm_response
+
+
+@router.get('/api/stocks/{ticker}/broker-activity')
+def get_broker_activity(ticker: str, limit: int = 10, db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
+    try:
+        rows = db.query(BrokerSummary).filter(BrokerSummary.ticker == base).order_by(BrokerSummary.date.desc(), BrokerSummary.net_value.desc()).limit(limit).all()
+        data = []
+        for r in rows:
+            data.append({
+                'date': r.date.isoformat()[:10] if r.date else '',
+                'broker': r.broker_code,
+                'buy_volume': r.buy_volume or 0,
+                'sell_volume': r.sell_volume or 0,
+                'net_volume': r.net_volume or 0,
+                'buy_value': r.buy_value or 0,
+                'sell_value': r.sell_value or 0,
+                'net_value': r.net_value or 0,
+            })
+        return {'ticker': base, 'count': len(data), 'data': data, 'source': 'db' if data else 'no_data'}
+    except Exception as exc:
+        return {'ticker': base, 'count': 0, 'data': [], 'source': 'no_data', 'message': str(exc)}
+
+
+# ─── Alert CRUD ───────────────────────────
+
+
+class AlertPayload(BaseModel):
+    ticker: str = Field(min_length=1)
+    alert_type: str = Field(pattern=r'^(price_above|price_below|rsi_above|rsi_below)$')
+    value: float = Field(gt=0)
+
+
+@router.get('/api/alerts')
+def list_alerts(ticker: str = '', db: Session = Depends(get_db)):
+    q = db.query(Alert)
+    if ticker:
+        q = q.filter(Alert.ticker == ticker.upper().strip())
+    rows = q.order_by(Alert.created_at.desc()).limit(30).all()
+    return {'count': len(rows), 'data': [{
+        'id': r.id, 'ticker': r.ticker, 'alert_type': r.alert_type,
+        'value': r.value, 'active': bool(r.active),
+        'created_at': r.created_at.isoformat()[:19] if r.created_at else '',
+    } for r in rows]}
+
+
+@router.post('/api/alerts')
+def create_alert(payload: AlertPayload, db: Session = Depends(get_db)):
+    alert = Alert(ticker=payload.ticker.upper().strip(), alert_type=payload.alert_type, value=payload.value)
+    db.add(alert)
+    db.commit()
+    db.refresh(alert)
+    return {'ok': True, 'id': alert.id, 'message': f'Alert {payload.alert_type} untuk {alert.ticker} pada {payload.value} dibuat.'}
+
+
+@router.delete('/api/alerts/{alert_id}')
+def delete_alert(alert_id: int, db: Session = Depends(get_db)):
+    alert = db.query(Alert).filter(Alert.id == alert_id).first()
+    if not alert:
+        return {'ok': False, 'message': 'Alert tidak ditemukan.'}
+    db.delete(alert)
+    db.commit()
+    return {'ok': True, 'message': f'Alert {alert_id} dihapus.'}
+
+
+# ─── Peer Comparison ────────────────────
+
+
+@router.get('/api/stocks/{ticker}/peers')
+def get_peers(ticker: str, limit: int = 6, db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
+    # Find sector from the current stock
+    stock = db.query(Stock).filter(Stock.ticker == base).first()
+    peers = []
+    if stock and stock.sector:
+        similar = db.query(Stock).filter(Stock.sector == stock.sector, Stock.ticker != base).limit(limit).all()
+        for s in similar:
+            peers.append({'ticker': s.ticker, 'name': s.name or '', 'sector': s.sector or '', 'market_cap': s.market_cap})
+    return {'ticker': base, 'source': 'db', 'count': len(peers), 'data': peers}
