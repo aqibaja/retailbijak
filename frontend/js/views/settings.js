@@ -1,5 +1,5 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260503b';
-import { observeElements } from '../main.js?v=20260503ab';
+import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260504e';
+import { observeElements } from '../main.js?v=20260504e';
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
 const DEFAULT_PICKS_MODEL = 'google/gemma-4-26b-a4b-it';
