@@ -51,10 +51,10 @@ export function renderHelp(root) {
                 <i data-lucide="life-buoy" style="width:24px; height:24px;"></i>
             </div>
             <h3>Butuh Bantuan?</h3>
-            <p>Gunakan jalur bantuan internal untuk pengecekan pengaturan ruang kerja atau kembali ke pemindai untuk mengulang proses inti.</p>
+            <p>Pelajari alur kerja RetailBijak: mulai dari pemindaian, analisis, hingga manajemen portofolio.</p>
             <div class="flex gap-3" style="flex-wrap:wrap; justify-content:center;">
-              <a href="#settings" class="btn btn-primary help-support-btn">Hubungi Support</a>
-              <a href="#screener" class="btn btn-secondary help-support-btn">Buka Pemindai</a>
+              <a href="#screener" class="btn btn-primary help-support-btn">Buka Pemindai</a>
+              <a href="#portfolio" class="btn btn-secondary help-support-btn">Kelola Aset</a>
             </div>
           </div>
         </div>

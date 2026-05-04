@@ -2028,3 +2028,165 @@ html[data-theme="light"] .news-meta {
   .score-card-num { font-size: 26px; }
   .catalyst-row { padding: 6px 8px; }
 }
+
+/* ================= SHARED UTILITY CLASSES V2 ================= */
+
+/* Modal — reusable stock/settings modal (same pattern as .modal-panel) */
+.modal-stock {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, 92%);
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--bg-mobile-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  padding: 24px;
+  z-index: 10000;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+}
+.modal-stock .form-input {
+  background: rgba(11,18,32,.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-size: 13px;
+  padding: 0 12px;
+  outline: none;
+}
+.modal-stock .form-input:focus {
+  border-color: var(--border-focus);
+}
+
+/* Empty state — consistent / no-data placeholder */
+.empty-state-v2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+}
+.empty-state-v2 .empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.15);
+  display: grid;
+  place-items: center;
+  color: #a5b4fc;
+  font-size: 24px;
+}
+.empty-state-v2 h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.empty-state-v2 p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 36ch;
+}
+.empty-state-v2 .btn {
+  margin-top: 4px;
+}
+
+/* Portfolio table — inline row/utility fixes */
+.inline-fix {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.portfolio-table-v2 {
+  width: 100%;
+  border-collapse: collapse;
+}
+.portfolio-table-v2 th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+  font-weight: 700;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.portfolio-table-v2 td {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-main);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.portfolio-table-v2 tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+/* Screener — search / sort control bar */
+.screener-bar-v2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+}
+.screener-bar-v2 .screener-input {
+  flex: 1;
+  min-width: 160px;
+  height: 36px;
+  background: rgba(11,18,32,.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-size: 13px;
+  padding: 0 12px;
+  outline: none;
+}
+.screener-bar-v2 .screener-input:focus {
+  border-color: var(--border-focus);
+}
+.screener-bar-v2 .screener-select {
+  height: 36px;
+  background: rgba(11,18,32,.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-size: 12px;
+  padding: 0 10px;
+  outline: none;
+  min-width: 120px;
+}
+.screener-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Settings — key/password hint text */
+.password-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* Help page — CTA alignment fix */
+.help-cta-fix {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.help-cta-fix .btn {
+  flex: 1;
+  min-width: 140px;
+}

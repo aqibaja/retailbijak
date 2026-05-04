@@ -56,8 +56,11 @@ export async function renderSettings(root) {
             <div class="settings-openrouter-stack">
               <label class="settings-field-card" for="setting-openrouter-key">
                 <span class="settings-field-label">API key OpenRouter</span>
-                <input id="setting-openrouter-key" class="settings-text-input" type="password" placeholder="opsional · isi hanya bila ingin mengaktifkan AI" autocomplete="off" />
-                <small class="text-xs text-dim">Kosongkan bila ingin mempertahankan key yang sudah tersimpan.</small>
+                <div style="position:relative">
+                  <input id="setting-openrouter-key" class="settings-text-input" type="password" placeholder="sk-or-..." autocomplete="off" />
+                  <button id="toggle-key-visibility" type="button" class="btn btn-icon" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);height:28px;width:28px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-dim);font-size:10px;font-weight:700" title="Tampilkan/sembunyikan key">T</button>
+                </div>
+                <small class="text-xs text-dim">Key disimpan di server · simpan dengan kosong untuk mempertahankan key yang sudah ada.</small>
               </label>
 
               <label class="settings-field-card" for="setting-openrouter-site-url">
@@ -122,10 +125,21 @@ export async function renderSettings(root) {
     const openrouterStockModel = document.getElementById('setting-openrouter-stock-model');
     const openrouterPicksModel = document.getElementById('setting-openrouter-picks-model');
 
-    compact.checked = !!settings?.compact_table_rows;
-    refresh.checked = !!settings?.auto_refresh_screener;
+    compact.checked = settings?.compact_table_rows || false;
+    refresh.checked = settings?.auto_refresh_screener || false;
     compact.disabled = false;
     refresh.disabled = false;
+
+    // Key visibility toggle
+    const toggleBtn = document.getElementById('toggle-key-visibility');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const isPassword = openrouterKey.type === 'password';
+        openrouterKey.type = isPassword ? 'text' : 'password';
+        toggleBtn.textContent = isPassword ? 'S' : 'T';
+        toggleBtn.title = isPassword ? 'Sembunyikan key' : 'Tampilkan key';
+      });
+    }
 
     openrouterKey.value = normalizeMaskedKey(settings?.openrouter_api_key_masked);
     openrouterSiteUrl.value = settings?.openrouter_site_url || '';

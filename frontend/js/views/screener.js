@@ -6,25 +6,23 @@ const renderEmptyState = ({
   body = 'Pilih timeframe di panel kiri lalu klik Jalankan Pemindaian SwingAQ untuk melihat sinyal beli institusional secara live.',
   action = 'Pengurutan tersedia setelah hasil scan muncul.',
 } = {}) => `
-  <div class="scanner-empty scanner-empty-rich">
-    <div class="scanner-empty-icon">
-      <i data-lucide="radar" style="width:32px; height:32px;"></i>
-    </div>
-    <h3 class="scanner-empty-title">${title}</h3>
-    <p class="scanner-empty-copy">${body}</p>
-    <p class="scanner-empty-hint">${action}</p>
+  <div class="empty-state-v2">
+    <div class="empty-icon"><i data-lucide="radar" style="width:32px;height:32px"></i></div>
+    <h3>${title}</h3>
+    <p>${body}</p>
+    <span style="font-size:11px;color:var(--text-dim);margin-top:4px">${action}</span>
   </div>
 `;
 
 const rowMeta = (r) => `
   <div class="scanner-row-meta">
-    <span class="scanner-row-kicker">BELI</span>
+    <span class="scanner-row-kicker">SINYAL</span>
     <span class="scanner-row-note">CCI ${r.cci ?? '—'} · MA ${r.magic_line ?? '—'} · Vol ${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</span>
   </div>`;
 
 const renderSkeleton = () => `
-  <div class="flex-col">
-    ${Array(5).fill('<div class="scanner-row skeleton-shimmer" style="height:85px; margin-bottom:8px;"></div>').join('')}
+  <div class="flex-col gap-2" style="padding:16px">
+    ${Array(5).fill('<div class="skeleton skeleton-card" style="height:80px"></div>').join('')}
   </div>
 `;
 
@@ -35,7 +33,7 @@ const renderRow = (r) => `
       <div class="scanner-row-copy">
         <div class="scanner-row-title">
           <div class="text-main scanner-row-ticker">${r.ticker}</div>
-          <span class="scanner-row-kicker">BELI</span>
+          <span class="scanner-row-kicker">SINYAL</span>
         </div>
         <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}</div>
         ${rowMeta(r)}
@@ -71,53 +69,45 @@ export async function renderScreener(root) {
           <div class="screener-kicker">SwingAQ Intelligence</div>
           <h1 class="text-3xl strong mb-2" style="letter-spacing:-0.02em;">Pemindai Akumulasi Institusi</h1>
         </div>
-
         <div class="scanner-layout">
           <div class="scanner-form flex-col" style="gap:20px;">
             <div class="scanner-header-text">PUSAT KONTROL</div>
-            <select id="screener-tf" class="scanner-select"><option value="1d">Harian (1D)</option></select>
+            <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
             <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
             <button id="btn-run-screener" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
-            <div id="screener-progress" style="display:none;" class="panel-lite p-4 scanner-progress">
+            <div id="screener-progress" style="display:none" class="panel-lite p-4 scanner-progress">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
-              <div style="height:4px; background:var(--border-subtle); border-radius:2px;"><div id="sp-fill" style="height:100%; width:0%; background:var(--primary-color);"></div></div>
+              <div style="height:4px;background:var(--border-subtle);border-radius:2px"><div id="sp-fill" style="height:100%;width:0%;background:var(--primary-color);border-radius:2px"></div></div>
             </div>
           </div>
-
           <div class="scanner-results flex-col">
             <div class="flex justify-between items-center p-5 border-b border-subtle">
               <div class="flex items-center gap-3">
-                <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main);">Sinyal Live</h3>
+                <h3 class="text-xs strong uppercase m-0" style="color:var(--text-main)">Sinyal Live</h3>
                 <span class="badge" id="screener-count">BELUM SCAN</span>
               </div>
-              <div class="flex gap-2 screener-toolbar">
+              <div id="screener-toolbar" class="flex gap-2 screener-toolbar" style="display:none">
                 <div class="scanner-control-stack">
-                  <select id="screener-sort" class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
-                      <option value="cci">Urutkan berdasarkan CCI</option>
-                      <option value="volume">Urutkan berdasarkan Volume</option>
-                      <option value="ma">Urutkan berdasarkan MA</option>
+                  <select id="screener-sort" class="scanner-select" style="width:130px;height:36px;font-size:12px">
+                      <option value="cci">Urut: CCI</option>
+                      <option value="volume">Urut: Volume</option>
+                      <option value="ma">Urut: MA</option>
                   </select>
-                  <small class="scanner-toolbar-hint">Pengurutan tersedia setelah hasil scan muncul.</small>
                 </div>
                 <div class="scanner-control-stack">
-                  <input type="text" id="screener-search" placeholder="Cari kode saham..." class="scanner-select" style="width:120px; height:36px; font-size:12px;" disabled>
-                  <small class="scanner-toolbar-hint">Pencarian kode saham tersedia setelah hasil scan muncul.</small>
+                  <input type="text" id="screener-search" placeholder="Cari kode..." class="scanner-select" style="width:100px;height:36px;font-size:12px">
                 </div>
               </div>
             </div>
-            <div id="screener-content" style="flex:1; overflow-y:auto;">${renderEmptyState()}</div>
+            <div id="screener-content" style="flex:1;overflow-y:auto">${renderEmptyState()}</div>
           </div>
         </div>
       </section>`;
-
     observeElements();
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
-    root.querySelector('#screener-sort').addEventListener('change', sortResults);
-    root.querySelector('#screener-search').addEventListener('input', filterResults);
-    document.getElementById('screener-sort').disabled = true;
-    document.getElementById('screener-search').disabled = true;
+    root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
+    root.querySelector('#screener-search')?.addEventListener('input', filterResults);
 }
 
 function sortResults() {
@@ -139,47 +129,43 @@ function filterResults() {
 
 function renderList(results) {
     const contentArea = document.getElementById('screener-content');
-    const sortControl = document.getElementById('screener-sort');
-    const searchControl = document.getElementById('screener-search');
+    const toolbar = document.getElementById('screener-toolbar');
     const hasResults = results.length > 0;
-    sortControl.disabled = !hasResults;
-    searchControl.disabled = !hasResults;
+    if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
     contentArea.innerHTML = hasResults
         ? `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`
         : renderEmptyState({
-            title: 'Tidak ada sinyal beli terdeteksi',
+            title: 'Tidak ada sinyal terdeteksi',
             body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
-            action: 'Coba jalankan scan lagi beberapa saat atau ganti timeframe saat preset tambahan tersedia.',
-        });
+            action: 'Coba jalankan scan lagi nanti.',
+          });
     if (!hasResults) {
-        searchControl.value = '';
+        const sc = document.getElementById('screener-search');
+        if (sc) sc.value = '';
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function runScreener() {
-    const tf = document.getElementById('screener-tf').value;
     const btn = document.getElementById('btn-run-screener');
     const contentArea = document.getElementById('screener-content');
     const progBox = document.getElementById('screener-progress');
     const countBadge = document.getElementById('screener-count');
-    const sortControl = document.getElementById('screener-sort');
-    const searchControl = document.getElementById('screener-search');
-    
+    const toolbar = document.getElementById('screener-toolbar');
+
     btn.disabled = true;
-    sortControl.disabled = true;
-    searchControl.disabled = true;
-    searchControl.value = '';
-    countBadge.textContent = 'SEDANG MEMINDAI...';
+    if (toolbar) toolbar.style.display = 'none';
+    document.getElementById('screener-search').value = '';
+    countBadge.textContent = 'MEMINDAI...';
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
     progBox.style.display = 'block';
 
-    const es = new EventSource(`${getScanEventSourceUrl(tf)}&rule=SwingAQ`);
+    const es = new EventSource(`${getScanEventSourceUrl('1d')}&rule=SwingAQ`);
     es.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            document.getElementById('sp-text').textContent = `Sedang memindai ${data.ticker}...`;
+            document.getElementById('sp-text').textContent = `Memindai ${data.ticker}...`;
             document.getElementById('sp-percent').textContent = `${data.percent}%`;
             document.getElementById('sp-fill').style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
@@ -191,7 +177,7 @@ function runScreener() {
             progBox.style.display = 'none';
             countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
-            showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal beli.`, 'success');
+            showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal.`, 'success');
             es.close();
         }
     };
@@ -199,8 +185,8 @@ function runScreener() {
         es.close();
         btn.disabled = false;
         progBox.style.display = 'none';
-        countBadge.textContent = 'GALAT PEMINDAIAN';
+        countBadge.textContent = 'GAGAL';
         renderList([]);
-        showToast(`Pemindaian gagal.`, 'error');
+        showToast('Pemindaian gagal.', 'error');
     };
 }
