@@ -200,14 +200,14 @@ export async function renderMarket(root) {
     pulseEl.textContent = `Tekanan pasar ${Number(b.declining ?? 0) > Number(b.advancing ?? 0) ? 'masih dominan' : 'lebih seimbang'} dengan breadth ${b.advancing ?? 0} naik vs ${b.declining ?? 0} turun. ${leadGainer?.ticker || 'N/A'} memimpin penguatan ${leadGainer ? pct(leadGainer.change_pct) : '--'}, sementara ${leadLoser?.ticker || 'N/A'} melemah ${leadLoser ? pct(leadLoser.change_pct) : '--'}.`;
   }
   const refreshBtn = document.getElementById('market-refresh');
-  if (refreshBtn) refreshBtn.addEventListener('click', () => renderMarket(root));
+  if (refreshBtn && !refreshBtn.dataset.marketHooked) {
+    refreshBtn.dataset.marketHooked = '1';
+    refreshBtn.addEventListener('click', () => renderMarket(root));
+  }
   if (loadingEl && contentEl) {
     loadingEl.hidden = true;
     contentEl.hidden = false;
   }
-  root.querySelectorAll('[data-market-refresh="1"]').forEach((btn) => {
-    btn.addEventListener('click', () => renderMarket(root));
-  });
   const ihsg = summaryData?.value;
   const ihsgChange = summaryData?.change_pct;
   document.getElementById('ihsg-summary-card').innerHTML = `<section class="market-card market-card-hero" style="--market-accent:var(--accent-indigo)">
@@ -287,10 +287,6 @@ export async function renderMarket(root) {
 
   contentEl.dataset.marketReady = '1';
   window.clearTimeout(loadingTimeout);
-
-  root.querySelectorAll('[data-market-refresh="1"]').forEach((btn) => {
-    btn.addEventListener('click', () => renderMarket(root));
-  });
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
