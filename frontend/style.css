@@ -1465,4 +1465,3 @@ html[data-theme="light"] .news-meta {
   .market-empty-refresh { min-height: 44px; }
 }
 @media (max-width: 420px) { .market-card { padding: 14px; border-radius: 14px; } .market-stat-value { font-size: 1rem; } .market-overview-head h1 { font-size: 1.25rem; } .market-overview-head { gap: 8px; } .market-refresh-btn { width: 100%; height: 44px; } .market-head-status { gap: 8px; justify-content: flex-start; } .market-source-badge { max-width: 100%; } .market-pulse-grid { grid-template-columns: 1fr; } .market-row-link, .market-row-box { padding: 12px 0; } .market-rank-badge { min-width: 38px; height: 38px; } .market-stat-value-breadth { font-size: 1.28rem; } .market-breadth-secondary { display: inline-block; } }
-@media(max-width:720px){
