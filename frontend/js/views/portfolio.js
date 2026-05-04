@@ -1,4 +1,4 @@
-     1|     1|import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260505b';
+1|     1|import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260505b';
      2|     2|import { observeElements } from '../main.js?v=20260504e';
      3|     3|
      4|     4|// ─── Shared Modal ──────────────────────────────
@@ -11,19 +11,19 @@
     11|    11|  overlay.innerHTML = `
     12|    12|    <div class="modal-backdrop" onclick="this.closest('#stock-modal-overlay')?.remove()"></div>
     13|    13|    <div class="modal-panel">
-    14|    14|      <div class="flex justify-between items-center mb-4">
+    14|    14|      <div class="flex justify-between items-center mb-6">
     15|    15|        <h3 class="text-sm strong m-0 text-main">${title}</h3>
     16|    16|        <button class="btn btn-icon modal-close-btn" aria-label="Tutup"><i data-lucide="x"></i></button>
     17|    17|      </div>
     18|    18|      <div class="modal-fields">${fields.map((f, i) => `
-    19|    19|        <div class="mb-2">
-    20|    20|          <label class="text-xs text-dim uppercase strong block mb-1">${f.label}</label>
+    19|    19|        <div class="mb-4">
+    20|    20|          <label class="text-xs text-dim uppercase strong block mb-2">${f.label}</label>
     21|    21|          ${f.type === 'number'
     22|    22|            ? `<input type="number" id="modal-field-${i}" class="modal-input" value="${f.value ?? ''}" step="${f.step ?? '1'}" min="${f.min ?? ''}" />`
     23|    23|            : `<input type="text" id="modal-field-${i}" class="modal-input" value="${f.value ?? ''}" placeholder="${f.placeholder ?? ''}" />`
     24|    24|          }
     25|    25|        </div>`).join('')}</div>
-    26|    26|      <div class="flex gap-2 mt-3">
+    26|    26|      <div class="flex gap-3 mt-4">
     27|    27|        <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
     28|    28|        <button class="btn btn-primary modal-confirm-btn modal-btn">${confirmText}</button>
     29|    29|      </div>
@@ -63,10 +63,10 @@
     63|    63|  overlay.id = 'stock-modal-overlay';
     64|    64|  overlay.innerHTML = `
     65|    65|    <div class="modal-backdrop" onclick="this.closest('#stock-modal-overlay')?.remove()"></div>
-    66|    66|    <div class="modal-panel" class="modal-panel-narrow">
-    67|    67|      <div class="text-center py-2">
+    66|    66|    <div class="modal-panel modal-panel-narrow">
+    67|    67|      <div class="text-center py-4">
     68|    68|        <h3 class="text-sm strong m-0 text-main">${title}</h3>
-    69|    69|        <p class="text-xs text-muted mt-2" class="line-height-150">${message}</p>
+    69|    69|        <p class="text-xs text-muted mt-2 line-height-150">${message}</p>
     70|    70|      </div>
     71|    71|      <div class="flex gap-2 mt-4">
     72|    72|        <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
@@ -103,7 +103,7 @@
    103|   103|          </div>
    104|   104|        </div>
    105|   105|        <div id="tab-content" class="col-span-12 panel flex-col portfolio-card">
-   106|   106|            <div class="p-4 text-center"><div class="skeleton skel-text" class="skeleton-center"></div></div>
+   106|   106|            <div class="p-4 text-center"><div class="skeleton skel-text skeleton-center"></div></div>
    107|   107|        </div>
    108|   108|      </section>`;
    109|   109|    observeElements();
@@ -117,7 +117,7 @@
    117|   117|    const rows = Array.isArray(data?.data) ? data.data : [];
    118|   118|
    119|   119|    el.innerHTML = `
-   120|   120|      <div class="flex justify-between items-center p-4" class="border-bottom-subtle">
+   120|   120|      <div class="flex justify-between items-center p-4 border-bottom-subtle">
    121|   121|        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
    122|   122|        <button id="add-watchlist" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
    123|   123|      </div>
@@ -127,7 +127,7 @@
    127|   127|          <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
    128|   128|          <tbody>${rows.map(r => `
    129|   129|            <tr>
-   130|   130|              <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main" class="search-suggestion-ticker">${r.ticker}</span></a></td>
+   130|   130|              <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
    131|   131|              <td class="text-muted text-sm">${r.notes || '-'}</td>
    132|   132|              <td class="text-right"><button class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
    133|   133|            </tr>`).join('')}</tbody>
@@ -137,7 +137,7 @@
    137|   137|        <div class="empty-icon"><i data-lucide="eye" class="watchlist-empty-icon"></i></div>
    138|   138|        <h3>Daftar Pantau Kosong</h3>
    139|   139|        <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
-   140|   140|        <button id="add-watchlist-empty" class="btn btn-primary" class="mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
+   140|   140|        <button id="add-watchlist-empty" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
    141|   141|      </div>`}`;
    142|   142|
    143|   143|    // Watchlist add
@@ -176,7 +176,7 @@
    176|   176|    const rows = Array.isArray(data?.data) ? data.data : [];
    177|   177|
    178|   178|    el.innerHTML = `
-   179|   179|      <div class="flex justify-between items-center p-4" class="border-bottom-subtle">
+   179|   179|      <div class="flex justify-between items-center p-4 border-bottom-subtle">
    180|   180|        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
    181|   181|        <button id="add-portfolio" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
    182|   182|      </div>
@@ -186,9 +186,9 @@
    186|   186|          <thead><tr><th>Kode Saham</th><th>Lot</th><th>Harga Rata-Rata</th><th class="text-right">Aksi</th></tr></thead>
    187|   187|          <tbody>${rows.map(r => `
    188|   188|            <tr>
-   189|   189|              <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main" class="search-suggestion-ticker">${r.ticker}</span></a></td>
-   190|   190|              <td class="mono" class="font-size-14">${r.lots}</td>
-   191|   191|              <td class="mono" class="font-size-14 text-muted">Rp ${(r.avg_price || 0).toLocaleString()}</td>
+   189|   189|              <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
+   190|   190|              <td class="mono font-size-14">${r.lots}</td>
+   191|   191|              <td class="mono font-size-14 text-muted">Rp ${(r.avg_price || 0).toLocaleString()}</td>
    192|   192|              <td class="text-right"><button class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
    193|   193|            </tr>`).join('')}</tbody>
    194|   194|        </table>
@@ -197,7 +197,7 @@
    197|   197|        <div class="empty-icon"><i data-lucide="briefcase" class="watchlist-empty-icon"></i></div>
    198|   198|        <h3>Belum Ada Posisi</h3>
    199|   199|        <p>Mulai catat posisi saham Anda untuk melacak portofolio.</p>
-   200|   200|        <button id="add-portfolio-empty" class="btn btn-primary" class="mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
+   200|   200|        <button id="add-portfolio-empty" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
    201|   201|      </div>`}`;
    202|   202|
    203|   203|    // Portfolio add

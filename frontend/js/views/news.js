@@ -43,7 +43,7 @@
     43|    43|            <div class="market-row-kicker">Intel Pasar</div>
     44|    44|            <h1 class="news-hero-title">Berita & Intelijen Pasar</h1>
     45|    45|            <p class="news-hero-sub">Ringkasan berita pasar, pengumuman emiten, dan intelijen data IDX dalam satu aliran.</p>
-    46|    46|            <div class="market-meta-rail mt-6">
+    46|    46|            <div class="market-meta-rail mt-10">
     47|    47|              <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
     48|    48|              <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
     49|    49|            </div>
