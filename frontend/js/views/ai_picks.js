@@ -114,7 +114,7 @@ function renderCompactCard(item, mode) {
         </div>
         <div class="ai-picks-card-score">
           <strong>${nf(item.score, 1)}</strong>
-          <small>Keyakinan ${item.confidence}</small>
+          <small>Skor</small>
         </div>
       </div>
 
@@ -123,7 +123,6 @@ function renderCompactCard(item, mode) {
         <span>Stop ${nf(item.stop_loss)}</span>
         <span>TP ${nf(item.take_profit)}</span>
         <span>RR ${item.risk_reward || 'n/a'}</span>
-        <span class="${Number(item.change_pct ?? 0) >= 0 ? 'is-up' : 'is-down'}">${pct(item.change_pct)}</span>
       </div>
 
       ${reasonLabels.length ? `<div class="ai-picks-card-chips">${renderReasonChips(reasonLabels)}</div>` : ''}
