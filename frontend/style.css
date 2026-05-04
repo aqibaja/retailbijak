@@ -2369,6 +2369,66 @@ html[data-theme="light"] .news-meta {
   min-width: 140px;
 }
 
+/* Search overlay & suggestions */
+.search-suggestion-item {
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.search-suggestion-item:hover {
+  background: rgba(16,185,129,.08) !important;
+}
+.search-suggestion-item mark {
+  background: rgba(99,102,241,.22);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.search-suggestion-item .sugg-badge {
+  background: rgba(99,102,241,0.1);
+  color: #a5b4fc;
+  border: 1px solid rgba(99,102,241,0.2);
+}
+.search-suggestions .sugg-section-header {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-dim);
+  font-weight: 800;
+}
+
+/* Toast container */
+#toast-container {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+#toast-container > * {
+  pointer-events: auto;
+}
+
+/* Running ticker tape cards */
+.tape-card {
+  min-width: 112px;
+  background: var(--ticker-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-decoration: none;
+  transition: border-color .2s;
+}
+.tape-card:hover {
+  border-color: var(--border-strong);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }

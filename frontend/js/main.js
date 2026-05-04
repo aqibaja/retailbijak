@@ -79,7 +79,7 @@ function setupSearchOverlay() {
        if (!query) return escapeHtml(value);
        const idx = value.toUpperCase().indexOf(query.toUpperCase());
        if (idx < 0) return escapeHtml(value);
-       return `${escapeHtml(value.slice(0, idx))}<mark style="background:rgba(99,102,241,.22);color:inherit;padding:0 2px;border-radius:3px;">${escapeHtml(value.slice(idx, idx + query.length))}</mark>${escapeHtml(value.slice(idx + query.length))}`;
+       return `${escapeHtml(value.slice(0, idx))}<mark>${escapeHtml(value.slice(idx, idx + query.length))}</mark>${escapeHtml(value.slice(idx + query.length))}`;
    };
    const renderSuggestions = (items = [], query = '') => {
        if (!suggestions) return;
@@ -91,15 +91,15 @@ function setupSearchOverlay() {
        }
        const groups = { ticker: [], company: [], sector: [] };
        items.forEach(item => (groups[item.bucket || 'company'] || groups.company).push(item));
-       const renderRow = (item, idx) => `
-         <a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center p-3 hover-bg search-suggestion-item" style="border-radius:8px; transition:background 0.2s; ${idx === activeIndex ? 'background:rgba(255,255,255,0.06);' : ''}">
-           <div class="flex items-center gap-3" style="min-width:0;">
-             <span class="badge" style="background:rgba(99,102,241,0.1); color:#a5b4fc; border:1px solid rgba(99,102,241,0.2);">${item.bucket === 'sector' ? 'SC' : item.bucket === 'company' ? 'CO' : 'EQ'}</span>
-             <span class="mono strong text-main" style="font-size:15px;">${highlight(item.ticker, query)}</span>
-             <span class="text-sm text-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px;">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
-           </div>
-           <span class="text-xs text-dim" style="text-transform:uppercase;">${escapeHtml(item.bucket || item.source || '')}</span>
-         </a>`;
+      const renderRow = (item, idx) => `
+        <a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center p-3 search-suggestion-item" style="${idx === activeIndex ? 'background:rgba(255,255,255,0.06);' : ''}">
+          <div class="flex items-center gap-3" style="min-width:0;">
+            <span class="badge sugg-badge">${item.bucket === 'sector' ? 'SC' : item.bucket === 'company' ? 'CO' : 'EQ'}</span>
+            <span class="mono strong text-main" style="font-size:15px;">${highlight(item.ticker, query)}</span>
+            <span class="text-sm text-muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px;">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
+          </div>
+          <span class="text-xs text-dim" style="text-transform:uppercase;">${escapeHtml(item.bucket || item.source || '')}</span>
+        </a>`;
        suggestions.innerHTML = [
         groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Kode Saham</div>${groups.ticker.map(renderRow).join('')}` : '',
         groups.company.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Emiten</div>${groups.company.map(renderRow).join('')}` : '',
@@ -215,16 +215,16 @@ async function setupRunningTicker() {
    tickerContainer.innerHTML = tickerItems.map(item => {
        const change = Number(item.change_pct ?? item.change ?? 0);
        const price = item.price == null ? '—' : Number(item.price).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-       return `
-       <a href="#stock/${item.ticker}" class="tape-card" style="text-decoration:none;">
-           <div class="flex-col">
-               <div class="tape-pair">${item.ticker}</div>
-               <div class="tape-price">${price}</div>
-           </div>
-           <div class="flex-col items-end">
-               <div class="tape-chg ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
-           </div>
-       </a>`;
+      return `
+      <a href="#stock/${item.ticker}" class="tape-card">
+          <div class="flex-col">
+              <div class="tape-pair">${item.ticker}</div>
+              <div class="tape-price">${price}</div>
+          </div>
+          <div class="flex-col items-end">
+              <div class="tape-chg ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
+          </div>
+      </a>`;
    }).join('');
 }
 // INIT
