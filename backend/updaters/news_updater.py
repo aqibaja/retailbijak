@@ -1,5 +1,6 @@
 import logging
 import feedparser
+import re
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
@@ -19,6 +20,40 @@ RSS_FEEDS = {
     "CNBC Indonesia": "https://www.cnbcindonesia.com/market/rss",
     "Kontan": "https://investasi.kontan.co.id/rss"
 }
+
+def _extract_image_url(entry) -> str | None:
+    """Extract image URL from RSS entry via media:content, enclosure, or summary HTML."""
+    # 1. media:content (media RSS)
+    if hasattr(entry, 'media_content') and entry.media_content:
+        for media in entry.media_content:
+            if media.get('url') and media.get('medium') in ('image', None):
+                return media['url']
+    # 2. enclosures
+    if hasattr(entry, 'enclosures') and entry.enclosures:
+        for enc in entry.enclosures:
+            url = enc.get('href') or enc.get('url')
+            mime = (enc.get('type') or '').lower()
+            if url and ('image' in mime or not mime):
+                return url
+    # 3. media:thumbnail
+    if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+        for thumb in entry.media_thumbnail:
+            if thumb.get('url'):
+                return thumb['url']
+    # 4. Extract first <img> from summary HTML
+    summary = entry.get('summary', '') or entry.get('description', '') or ''
+    if '<img' in summary:
+        m = re.search(r'<img\s[^>]*src=["\']([^"\']+)["\']', summary)
+        if m:
+            return m.group(1)
+    # 5. Kontan-specific: content:encoded often has image
+    if hasattr(entry, 'content') and entry.content:
+        for c in entry.content:
+            if c.get('value') and '<img' in c['value']:
+                m = re.search(r'<img\s[^>]*src=["\']([^"\']+)["\']', c['value'])
+                if m:
+                    return m.group(1)
+    return None
 
 def update_news():
     """Fetch latest news from RSS feeds and store them in database."""
@@ -53,7 +88,8 @@ def update_news():
                         "link": entry.link,
                         "published_at": pub_date,
                         "source": source_name,
-                        "summary": summary
+                        "summary": summary,
+                        "image_url": _extract_image_url(entry)
                     }
                     all_news.append(news_item)
                 except Exception as e:
@@ -67,7 +103,8 @@ def update_news():
                 set_={
                     "title": stmt.excluded.title,
                     "published_at": stmt.excluded.published_at,
-                    "summary": stmt.excluded.summary
+                    "summary": stmt.excluded.summary,
+                    "image_url": stmt.excluded.image_url
                 }
             )
             db.execute(stmt)

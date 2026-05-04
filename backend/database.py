@@ -102,6 +102,7 @@ class News(Base):
     published_at = Column(DateTime, index=True)
     source = Column(String)
     summary = Column(String)
+    image_url = Column(String, nullable=True)
 
 
 class UserSetting(Base):

@@ -42,7 +42,7 @@ def get_news(db: Session = Depends(get_db), limit: int = 20):
         except Exception:
             news = []
 
-    data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary} for n in news]
+    data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary, "image_url": n.image_url} for n in news]
     return {"count": len(data), "data": data, "source": "db" if news else "no_data"}
 
 

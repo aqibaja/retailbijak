@@ -145,8 +145,12 @@ export async function renderNews(root) {
 
 function streamCardHtml(n, i) {
   const { c1, c2, initials } = generateFallbackGradient(n.title, n.source);
+  const hasImage = n.image_url && n.image_url.length > 4;
+  const thumbHtml = hasImage
+    ? `<img src="${n.image_url}" alt="" loading="lazy" style="width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;min-width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">${initials}</div>`
+    : `<div style="min-width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">${initials}</div>`;
   return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="text-decoration:none;border-left-color:${c1}">
-    <div style="min-width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff">${initials}</div>
+    ${thumbHtml}
     <div style="flex:1;min-width:0">
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)">${sourceCategory(n.source)}</span><span style="font-size:8px;color:var(--text-dim)">${relativeTime(n.published_at)}</span></div>
       <strong style="font-size:12px;color:var(--text-main);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title || 'Intel Pasar'}</strong>
