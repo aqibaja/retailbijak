@@ -192,9 +192,24 @@ function wireActions(root, mode, picks, loadFn) {
       const ticker = btn.getAttribute('data-toggle-factors');
       const el = root.querySelector(`#factors-${ticker}`);
       if (!el) return;
-      const isHidden = el.style.display === 'none';
-      el.style.display = isHidden ? 'block' : 'none';
-      btn.textContent = isHidden ? '▾ Faktor' : '▸ Faktor';
+      const isHidden = el.style.display === 'none' || el.classList.contains('factors-collapsed');
+      el.style.display = 'block';
+      el.classList.remove('factors-collapsed');
+      if (isHidden) {
+        el.style.maxHeight = '0';
+        el.style.opacity = '0';
+        el.classList.add('factors-expanding');
+        requestAnimationFrame(() => {
+          el.style.maxHeight = el.scrollHeight + 'px';
+          el.style.opacity = '1';
+        });
+        btn.textContent = '▾ Faktor';
+      } else {
+        el.style.maxHeight = '0';
+        el.style.opacity = '0';
+        el.classList.add('factors-collapsed');
+        btn.textContent = '▸ Faktor';
+      }
     });
   });
 
