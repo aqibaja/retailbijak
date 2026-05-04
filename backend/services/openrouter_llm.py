@@ -14,8 +14,8 @@ except ModuleNotFoundError:
     from backend.database import UserSetting
 
 OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
-DEFAULT_STOCK_ANALYSIS_MODEL = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
-DEFAULT_AI_PICKS_MODEL = 'openai/gpt-oss-120b:free'
+DEFAULT_STOCK_ANALYSIS_MODEL = 'google/gemma-4-26b-a4b-it'
+DEFAULT_AI_PICKS_MODEL = 'google/gemma-4-26b-a4b-it'
 
 
 def _setting(db: Session | None, key: str) -> str | None:

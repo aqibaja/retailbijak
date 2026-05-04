@@ -176,3 +176,10 @@ Saat melanjutkan pekerjaan di proyek ini:
 6. **Restart service**: `systemctl restart swingaq-backend`
 
 **Prinsip**: Frontend hanya fetch dari backend. Backend fetch Yahoo hanya di scheduler, bukan di request path.
+
+## 🤖 Model Routing (OpenCode Go)
+
+| Task | Model |
+|------|-------|
+| **Planning & Reasoning** | `deepseek-v4-pro` |
+| **Coding & Execution** | `deepseek-v4-flash` |
