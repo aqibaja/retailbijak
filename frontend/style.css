@@ -19,6 +19,11 @@
   --border-strong: rgba(255, 255, 255, 0.14);
   --border-focus: rgba(16, 185, 129, 0.4);
   
+  /* Dot Grid Background */
+  --dot-color: rgba(255, 255, 255, 0.025);
+  --dot-size: 1px;
+  --dot-spacing: 24px;
+  
   /* Text Colors */
   --text-main: #e5edf8;
   --text-muted: #94a3b8;
@@ -62,13 +67,14 @@
   --btn-primary-gradient: linear-gradient(135deg, #10b981, #0d885b);
   --ticker-bg: rgba(255, 255, 255, 0.02);
 }
-
-[data-theme="light"] {
-  --bg-base: #f6fbf8;
-  --bg-panel: #ffffff;
-  --bg-panel-hover: #fafdff;
-  --bg-elevated: #f3f8f5;
+/* ================= LIGHT THEME OVERRIDES ================= */
+html[data-theme="light"] {
+  --bg-base: #f4f7fc;
+  --bg-panel: rgba(255, 255, 255, 0.95);
+  --bg-panel-hover: rgba(248, 250, 252, 0.98);
+  --bg-elevated: #ffffff;
   --bg-mobile-surface: #ffffff;
+  --dot-color: rgba(15, 23, 42, 0.03);
   --border-subtle: rgba(15, 23, 42, 0.12);
   --border-strong: rgba(15, 23, 42, 0.18);
   --border-focus: rgba(16, 185, 129, 0.26);
@@ -797,14 +803,31 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .col-span-3 { grid-column: span 3; }
 
 /* ================= LAYOUT ================= */
-.topbar {
-  position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
-  background: rgba(11, 18, 32, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-subtle); padding: 0 24px 0 12px;
-  display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 1000;
-  transition: background var(--duration-normal) var(--ease-out);
-}
+.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: rgba(11, 18, 32, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); padding: 0 24px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 1000; transition: background var(--duration-normal) var(--ease-out); }
 .topbar.scrolled { background: rgba(8, 17, 31, 0.95); border-bottom-color: rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+/* Scroll Progress Bar */
+.topbar-progress {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary-color, #10b981), var(--accent-indigo, #6366f1), var(--primary-color, #10b981));
+  background-size: 200% 100%;
+  animation: progressGlow 2s ease-in-out infinite;
+  z-index: 1001;
+  transition: width 0.1s linear;
+  border-radius: 0 1px 1px 0;
+  box-shadow: 0 0 8px rgba(16,185,129,0.3);
+  opacity: 0.85;
+}
+@keyframes progressGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@media (max-width: 768px) {
+  .topbar-progress { height: 2px; }
+}
 .topbar-brand { flex: 0 0 auto; min-width: 170px; display: flex; align-items: center; }
 .topbar-brand-link { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--text-main); text-decoration: none; }
 .topbar-brand-link:hover { color: var(--text-main); }

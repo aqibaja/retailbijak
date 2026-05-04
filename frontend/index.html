@@ -19,7 +19,7 @@
  <link rel="apple-touch-icon" href="https://retailbijak.rich27.my.id/assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="style.css?v=20260504b">
- <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;}</style>
+ <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.14.0/dist/umd/lucide.min.js" defer></script>
@@ -27,6 +27,7 @@
 </head>
 <body>
  <header class="topbar">
+   <div class="topbar-progress" id="scroll-progress"></div>
    <div class="topbar-brand">
      <a href="#dashboard" class="topbar-brand-link" aria-label="RetailBijak dashboard">
        <img class="site-logo-img" src="assets/site-logo.png" alt="RetailBijak logo" onerror="this.style.display='none'">

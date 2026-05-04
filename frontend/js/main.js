@@ -157,10 +157,18 @@ function setupSearchOverlay() {
 }
 function setupScrollEffects() {
    const topbar = document.querySelector('.topbar');
+   const progressBar = document.getElementById('scroll-progress');
    if (!topbar) return;
    window.addEventListener('scroll', () => {
        if (window.scrollY > 20) topbar.classList.add('scrolled');
        else topbar.classList.remove('scrolled');
+       // Update scroll progress bar
+       if (progressBar) {
+           const scrollTop = window.scrollY;
+           const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+           const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
+           progressBar.style.width = progress + '%';
+       }
    }, { passive: true });
 }
 // Global button click effect
