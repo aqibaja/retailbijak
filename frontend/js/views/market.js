@@ -67,6 +67,7 @@ const brokerRow = (r) => `<div class="market-row-box"><div class="market-row"><d
 const actionRow = (r) => `<div class="market-row-box"><div class="market-row market-row-top"><div><div class="market-row-kicker">Katalis korporasi</div><div class="market-catalyst-title">${r.title || '-'}</div><div class="market-catalyst-meta"><span class="market-catalyst-chip">${r.code || '-'}</span><span class="market-sub">${r.date || ''}</span></div></div>${badge(String(r.type || 'event').toUpperCase())}</div></div>`;
 
 export async function renderMarket(root) {
+  document.title = 'RetailBijak — Pasar';
   root.innerHTML = `
     <section class="market-overview-page stagger-reveal">
       <header class="market-overview-head">

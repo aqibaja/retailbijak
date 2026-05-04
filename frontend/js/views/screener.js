@@ -63,6 +63,7 @@ const renderRow = (r) => `
 let currentResults = [];
 
 export async function renderScreener(root) {
+    document.title = 'RetailBijak — Pemindai';
     root.innerHTML = `
       <section class="stagger-reveal">
         <div class="mb-6 screener-hero">

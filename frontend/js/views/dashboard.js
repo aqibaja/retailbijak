@@ -29,6 +29,7 @@ function buildAiPickContext(item, mode = 'swing') {
 }
 
 export async function renderDashboard(root) {
+  document.title = 'RetailBijak — Dashboard';
   root.innerHTML = `
   <section class="dashboard-pro stagger-reveal">
     <div class="dash-hero-pro panel">

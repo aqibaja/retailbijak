@@ -9,6 +9,7 @@ function normalizeMaskedKey(value) {
 }
 
 export async function renderSettings(root) {
+    document.title = 'RetailBijak — Pengaturan';
     root.innerHTML = `
       <section class="settings-page-pro stagger-reveal">
         <div class="settings-hero">

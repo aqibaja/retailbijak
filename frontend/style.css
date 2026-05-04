@@ -843,9 +843,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent);
 }
 .panel:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255,255,255,0.18);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.35), 0 0 40px rgba(16,163,109,0.06);
+  border-color: rgba(255,255,255,0.14);
 }
 .panel-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -2370,3 +2368,10 @@ html[data-theme="light"] .news-meta {
   flex: 1;
   min-width: 140px;
 }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.07); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14); }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.07) transparent; }

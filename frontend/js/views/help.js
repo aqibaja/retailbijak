@@ -1,6 +1,7 @@
 import { observeElements } from '../main.js?v=20260504e';
 
 export function renderHelp(root) {
+    document.title = 'RetailBijak — Bantuan';
     root.innerHTML = `
       <section class="help-page-pro stagger-reveal">
         <div class="help-hero">

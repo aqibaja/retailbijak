@@ -35,6 +35,7 @@ function sourceCategory(source) {
 }
 
 export async function renderNews(root) {
+    document.title = 'RetailBijak — Berita';
     root.innerHTML = `
       <section class="market-overview-page">
         <div class="market-overview-head">

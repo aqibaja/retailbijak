@@ -55,6 +55,7 @@ function renderAiPickContextBanner(symbol) {
 export async function renderStockDetail(root, ticker) {
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
   currentSymbol = symbol;
+  document.title = `RetailBijak — ${symbol}`;
   const aiPickContext = renderAiPickContextBanner(symbol);
   const aiPickContextBanner = aiPickContext?.bannerHtml || '';
   const heroBackHref = aiPickContext?.heroBackHref || '#dashboard';

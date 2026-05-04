@@ -86,6 +86,7 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
 // ─── Render ────────────────────────────────────
 export async function renderPortfolio(root, activeTab) {
     const isPort = activeTab === 'portfolio';
+    document.title = 'RetailBijak — Portofolio';
     root.innerHTML = `
       <section class="grid grid-cols-12 stagger-reveal portfolio-page-pro">
         <div class="col-span-12 portfolio-header">
