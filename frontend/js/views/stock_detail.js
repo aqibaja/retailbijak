@@ -88,8 +88,8 @@ export async function renderStockDetail(root, ticker) {
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <!-- Fundamental & Catalyst dipindah ke sini (layout rebalance) -->
           <div class="panel"><h3 class="panel-title mb-3">Statistik Kunci</h3><div id="fundamental-panel" class="stats-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-          <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"></div></div>
-          <div class="panel"><h3 class="panel-title mb-1">Aksi Korporasi Terdekat</h3><div id="corporate-actions-strip"><div class="text-sm text-muted" style="padding:4px 0">Belum ada aksi korporasi terjadwal</div></div></div>
+          <div class="panel"><h3 class="panel-title mb-1">Katalis Terbaru</h3><div id="catalyst-strip"><div class="skeleton skeleton-text" style="width:70%"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
+          <div class="panel"><h3 class="panel-title mb-1">Aksi Korporasi Terdekat</h3><div id="corporate-actions-strip"><div class="skeleton skeleton-text" style="width:60%"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="stock-tabs" data-stock-tabs="1">
@@ -265,9 +265,15 @@ export async function renderStockDetail(root, ticker) {
   renderLevelSuggestions(candles, technical);
   renderLevelOverlay(candles, technical);
 
-  // Wire catalyst strip — news + announcements already fetched above
+  // Catalyst strip — news + announcements
   if (document.getElementById('catalyst-strip')) {
     renderCatalystStrip(symbol, news, announcements);
+  }
+
+  // Corporate actions — clear skeleton, show empty state
+  const caEl = document.getElementById('corporate-actions-strip');
+  if (caEl && caEl.querySelector('.skeleton')) {
+    caEl.innerHTML = '<div class="text-sm text-muted" style="padding:4px 0">Belum ada aksi korporasi terjadwal</div>';
   }
 
   // Berita tab — render news + announcements
@@ -304,7 +310,7 @@ function hydrateHeader(symbol, detail, fund, candles){
   // Last update timestamp
   const now = new Date(); const hh = String(now.getHours()).padStart(2,'0'); const mm = String(now.getMinutes()).padStart(2,'0');
   const ts = document.getElementById('live-badge');
-  if (ts) ts.textContent = `WIB ${hh}:${mm}`; ts.className = 'badge';
+  if (ts) { ts.textContent = `WIB ${hh}:${mm}`; ts.className = 'badge'; }
 }
 function renderStockChart(symbol, candles, technical){
   const container = document.getElementById('tvchart'); if (!container) return;
@@ -330,7 +336,7 @@ function renderStockChart(symbol, candles, technical){
         hide_legend: false,
         save_image: true,
         studies: ['RSI@tv-basicstudies', 'MASimple@tv-basicstudies'],
-        disabled_features: ['use_localstorage_for_settings'],
+        disabled_features: ['use_localstorage_for_settings', 'header_symbol_search', 'header_compare', 'header_undo_redo', 'header_screenshot'],
         enabled_features: ['study_templates'],
         overrides: {
           'mainSeriesProperties.candleStyle.upColor': '#10b981',

@@ -1261,7 +1261,9 @@ html[data-theme="light"] .news-meta {
 .search-suggestion-item:hover{background:rgba(16,185,129,.08)!important;}
 .intel-item small{display:block;margin-top:6px;color:var(--text-muted);font-weight:500;line-height:1.45;}
 
-/* Stock detail UI polish */
+/* TradingView widget font polish */
+#tvchart iframe { color-scheme: dark; }
+#tvchart .tv-widget__time-interval { font-size: 12px !important; }
 .stock-detail-pro{display:flex;flex-direction:column;gap:16px}.stock-hero{display:flex;justify-content:space-between;align-items:center;padding:24px 28px;background:linear-gradient(180deg,rgba(15,23,41,.86),rgba(11,18,32,.72))}.stock-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:16px}.stock-chart-card{min-height:520px;display:flex;flex-direction:column}.stock-chart-wrap{height:440px;width:100%;background:rgba(11,18,32,.35);border-radius:14px;overflow:hidden}.stock-side{min-width:0;display:flex;flex-direction:column;gap:10px}.stock-side .panel{min-width:0}.compact-right-scroll{min-width:0;overflow:visible;padding-right:0}.technical-grid,.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat-tile{border:1px solid var(--border-subtle);background:rgba(255,255,255,.025);border-radius:12px;padding:10px 12px;min-height:72px}.stat-tile span{display:block;color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.stat-tile strong{display:block;color:var(--text-main);font-size:15px;margin-top:4px}.stat-tile small{display:block;color:var(--text-muted);font-size:11px;margin-top:2px}.fallback-svg-chart{width:100%;height:100%;background:linear-gradient(180deg,rgba(16,185,129,.05),transparent)}
 @media(max-width:1100px){.stock-layout{grid-template-columns:1fr}.stock-hero{align-items:flex-start;gap:16px;flex-direction:column}.stock-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 
