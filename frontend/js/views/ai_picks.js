@@ -262,6 +262,7 @@ export async function renderAiPicks(root) {
     }
 
     // Cache miss: fetch from API
+    if (!listEl) { return; }
     listEl.innerHTML = renderLoadingState('Memuat pick unggulan', 'Menarik kandidat untuk mode ' + mode + '.');
     try {
       const payload = await fetchAiPicks(mode, 5);
