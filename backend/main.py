@@ -57,9 +57,9 @@ try:
 except ModuleNotFoundError:
     from scheduler import init_scheduler, scheduler
 try:
-    from backend.ai_picks import build_ai_picks_payload, get_latest_ai_pick_report, generate_and_store_daily_ai_pick_report
+    from backend.ai_picks import get_latest_ai_pick_report, build_ai_picks_fallback_payload, _current_jakarta_trading_date
 except ModuleNotFoundError:
-    from ai_picks import build_ai_picks_payload, get_latest_ai_pick_report, generate_and_store_daily_ai_pick_report
+    from ai_picks import get_latest_ai_pick_report, build_ai_picks_fallback_payload, _current_jakarta_trading_date
 try:
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
 except ModuleNotFoundError:
@@ -132,36 +132,15 @@ async def root():
 
 
 @app.get("/api/ai-picks")
-def get_ai_picks(mode: str = "swing", limit: int = 5, llm: bool = False, refresh: bool = False, db: Session = Depends(get_db)):
+def get_ai_picks(mode: str = "swing", limit: int = 5, db: Session = Depends(get_db)):
     safe_limit = max(0, min(int(limit or 0), 20))
     if safe_limit == 0:
-        payload = build_ai_picks_payload(mode=mode, limit=0)
-    elif refresh:
-        payload = generate_and_store_daily_ai_pick_report(mode=mode, limit=safe_limit or 5, db=db)
-    else:
-        payload = get_latest_ai_pick_report(mode=mode, db=db) or build_ai_picks_payload(mode=mode, limit=safe_limit)
-    if llm:
-        try:
-            from backend import ai_picks as ai_picks_module
-        except ModuleNotFoundError:
-            import ai_picks as ai_picks_module
-
-        try:
-            payload['llm'] = ai_picks_module.build_ai_picks_llm_payload(
-                mode=payload.get('mode') or mode,
-                picks=payload.get('data') or [],
-                market_context=payload.get('market_context') or {},
-                db=db,
-            )
-        except TypeError:
-            payload['llm'] = ai_picks_module.build_ai_picks_llm_payload(
-                mode=payload.get('mode') or mode,
-                picks=payload.get('data') or [],
-                market_context=payload.get('market_context') or {},
-            )
-    else:
-        payload.pop('llm', None)
-    return payload
+        return build_ai_picks_fallback_payload(mode=mode, trading_date=_current_jakarta_trading_date())
+    report = get_latest_ai_pick_report(mode=mode, db=db)
+    if report is None:
+        return build_ai_picks_fallback_payload(mode=mode, trading_date=_current_jakarta_trading_date())
+    report.pop('llm', None)
+    return report
 
 
 class SettingsPayload(BaseModel):

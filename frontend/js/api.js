@@ -111,12 +111,10 @@ export async function fetchPortfolio() {
     return apiFetch('/portfolio') || { count: 0, data: [] };
 }
 
-export async function fetchAiPicks(mode = 'swing', limit = 5, options = {}) {
+export async function fetchAiPicks(mode = 'swing', limit = 5) {
     const safeMode = encodeURIComponent(mode || 'swing');
     const safeLimit = Number(limit || 5);
-    const withLlm = options?.llm ? '&llm=1' : '';
-    const withRefresh = options?.refresh ? '&refresh=1' : '';
-    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}${withRefresh}`) || {
+    return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}`) || {
         mode: mode || 'swing',
         trading_date: null,
         generated_at: null,

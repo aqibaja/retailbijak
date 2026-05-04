@@ -18,9 +18,8 @@ def test_api_exposes_fetch_analysis_helper_with_optional_llm_query():
 
 def test_api_exposes_fetch_ai_picks_helper_with_safe_fallback_shape():
     content = API.read_text()
-    assert 'export async function fetchAiPicks(mode = \'swing\', limit = 5, options = {})' in content
-    assert "const withRefresh = options?.refresh ? '&refresh=1' : '';" in content
-    assert "return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}${withLlm}${withRefresh}`) || {" in content
+    assert "export async function fetchAiPicks(mode = 'swing', limit = 5)" in content
+    assert "return apiFetch(`/ai-picks?mode=${safeMode}&limit=${safeLimit}`) || {" in content
     assert "source: 'no_data'" in content
     assert "trading_date: null" in content
     assert "generated_at: null" in content
@@ -54,7 +53,6 @@ def test_ai_picks_view_contains_daily_briefing_hooks_and_actionable_fields():
     assert 'ai-picks-briefing-meta' in content
     assert 'ai-picks-freshness' in content
     assert 'ai-picks-generated-at' in content
-    assert 'Manual Refresh' in content
     assert 'entry_zone' in content
     assert 'stop_loss' in content
     assert 'take_profit' in content

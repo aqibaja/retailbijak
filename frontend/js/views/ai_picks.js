@@ -338,13 +338,7 @@ async function wireQuickActions(root, mode, picks = [], loadMode) {
 
   root.querySelectorAll('[data-ai-picks-retry]').forEach(button => {
     button.addEventListener('click', () => {
-      loadMode(mode, { refresh: true });
-    });
-  });
-
-  root.querySelectorAll('[data-ai-picks-refresh]').forEach(button => {
-    button.addEventListener('click', () => {
-      loadMode(mode, { refresh: true });
+      loadMode(mode);
     });
   });
 }
@@ -363,8 +357,7 @@ export async function renderAiPicks(root) {
         <div class="ai-picks-mode-switch" data-ai-picks-active-mode="${initialMode}">
           <button class="btn ${initialMode === 'swing' ? 'btn-primary' : ''}" data-ai-picks-mode="swing">Swing</button>
           <button class="btn ${initialMode === 'defensive' ? 'btn-primary' : ''}" data-ai-picks-mode="defensive">Defensive</button>
-          <button class="btn ${initialMode === 'catalyst' ? 'btn-primary' : ''}" data-ai-picks-mode="catalyst">Catalyst</button>
-          <button class="btn" data-ai-picks-refresh="1">Manual Refresh</button>
+          <button class="btn" data-ai-picks-mode="catalyst">Catalyst</button>
         </div>
       </div>
 
@@ -406,7 +399,7 @@ export async function renderAiPicks(root) {
   const universeEl = root.querySelector('#ai-picks-universe');
   const biasEl = root.querySelector('#ai-picks-bias');
 
-  const loadMode = async (mode = 'swing', options = {}) => {
+  const loadMode = async (mode = 'swing') => {
     setModeButtons(modeSwitch, mode);
     safeLocalStorageSet(AI_PICKS_MODE_KEY, mode);
     renderLoadingShell(metaEl, featuredEl, listEl, compareEl);
@@ -415,7 +408,7 @@ export async function renderAiPicks(root) {
     biasEl.textContent = 'Sinkronisasi';
 
     try {
-      const payload = await fetchAiPicks(mode, 5, { llm: true, refresh: options?.refresh });
+      const payload = await fetchAiPicks(mode, 5);
       metaEl.innerHTML = renderBriefingMeta(payload);
       toneEl.textContent = payload?.market_context?.breadth_label || 'data belum cukup';
       universeEl.textContent = `${payload?.summary?.eligible_count || 0} kandidat`;
