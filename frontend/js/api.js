@@ -3,7 +3,11 @@ const API_BASE = '/api';
 // ─── Fetch Wrappers ────────────────────────────────────
 export async function apiFetch(endpoint, options = {}) {
     try {
-        const res = await fetch(`${API_BASE}${endpoint}`, options);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const opts = { ...options, signal: controller.signal };
+        const res = await fetch(`${API_BASE}${endpoint}`, opts);
+        clearTimeout(timeout);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (e) {

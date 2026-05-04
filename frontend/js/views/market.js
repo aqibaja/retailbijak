@@ -1,4 +1,4 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260504e';
+import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260505b';
 import { observeElements } from '../main.js?v=20260504e';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });

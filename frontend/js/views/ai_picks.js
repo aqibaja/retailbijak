@@ -1,4 +1,4 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260504e';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260505b';
 import { observeElements } from '../main.js?v=20260504e';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
@@ -286,7 +286,9 @@ export async function renderAiPicks(root) {
       setActiveMode(mode);
       wireActions(root, mode, picks, loadMode);
       if (typeof lucide !== 'undefined') lucide.createIcons();
-    } catch {
+    } catch (e) {
+      console.error('AI Picks load error:', e);
+      if (!listEl) return;
       listEl.innerHTML = renderErrorState('Gagal memuat', 'Koneksi atau API sedang bermasalah. Coba lagi.');
       wireActions(root, mode, [], loadMode);
       showToast('AI Picks gagal dimuat.', 'error');

@@ -1,4 +1,4 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260504e';
+import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260505b';
 import { observeElements } from '../main.js?v=20260504e';
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
