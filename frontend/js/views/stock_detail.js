@@ -107,8 +107,8 @@
    107|          <div class="stock-tab-content active" data-tab-content="analisis">
    108|            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Ringkasan Sesi</h3><div id="snapshot-panel" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
    109|            <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-   110|            <div class="stock-side-panel" id="broker-activity-panel" class="hidden"></div>
-   111|            <div class="stock-side-panel" id="peer-comparison-panel" class="hidden"></div>
+   110|            <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
+   111|            <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
    112|            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
    113|          </div>
    114|          <div class="stock-tab-content" data-tab-content="chat">

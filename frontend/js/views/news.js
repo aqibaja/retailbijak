@@ -1,4 +1,4 @@
-     1|     1|import { fetchNews } from '../api.js?v=20260505f';
+1|     1|import { fetchNews } from '../api.js?v=20260505f';
      2|     2|
      3|     3|const NEWS_CACHE_KEY = 'retailbijak.news.cache';
      4|     4|
@@ -50,13 +50,13 @@
     50|    50|          </div>
     51|    51|        </div>
     52|    52|        <div class="market-section-group">
-    53|    53|          <div id="news-featured" class="market-section-group-grid" class="news-featured-grid">
-    54|    54|            <div class="market-card" id="news-featured-main" class="news-featured-card">
-    55|    55|              <div class="skeleton skeleton-card" class="skeleton-h-280"></div>
+    53|    53|          <div id="news-featured" class="market-section-group-grid news-featured-grid">
+    54|    54|            <div class="market-card news-featured-card" id="news-featured-main">
+    55|    55|              <div class="skeleton skeleton-card skeleton-h-280"></div>
     56|    56|            </div>
     57|    57|            <div class="flex-col gap-3" id="news-featured-side">
-    58|    58|              <div class="skeleton skeleton-card" class="skeleton-h-110"></div>
-    59|    59|              <div class="skeleton skeleton-card" class="skeleton-h-110"></div>
+    58|    58|              <div class="skeleton skeleton-card skeleton-h-110"></div>
+    59|    59|              <div class="skeleton skeleton-card skeleton-h-110"></div>
     60|    60|            </div>
     61|    61|          </div>
     62|    62|        </div>
@@ -66,10 +66,10 @@
     66|    66|            <p>Semua berita dan pengumuman dari berbagai sumber terintegrasi.</p>
     67|    67|          </div>
     68|    68|          <div id="news-stream" class="news-stream-grid-v2">
-    69|    69|            <div class="skeleton skeleton-card" class="skeleton-h-80"></div>
-    70|    70|            <div class="skeleton skeleton-card" class="skeleton-h-80"></div>
-    71|    71|            <div class="skeleton skeleton-card" class="skeleton-h-80"></div>
-    72|    72|            <div class="skeleton skeleton-card" class="skeleton-h-80"></div>
+    69|    69|            <div class="skeleton skeleton-card skeleton-h-80"></div>
+    70|    70|            <div class="skeleton skeleton-card skeleton-h-80"></div>
+    71|    71|            <div class="skeleton skeleton-card skeleton-h-80"></div>
+    72|    72|            <div class="skeleton skeleton-card skeleton-h-80"></div>
     73|    73|          </div>
     74|    74|        </div>
     75|    75|      </section>`;
@@ -82,7 +82,7 @@
     82|    82|
     83|    83|        if (!items.length) {
     84|    84|          document.querySelectorAll('[id^=news-]').forEach(el => {
-    85|    85|            if (el.id !== 'news-count') el.innerHTML = '<div class="dashboard-widget-state" class="grid-full"><strong class="dashboard-widget-state-title">Belum ada berita</strong><span class="dashboard-widget-state-note">Berita akan muncul setelah scheduler berjalan.</span></div>';
+    85|    85|            if (el.id !== 'news-count') el.innerHTML = '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Belum ada berita</strong><span class="dashboard-widget-state-note">Berita akan muncul setelah scheduler berjalan.</span></div>';
     86|    86|          });
     87|    87|          return;
     88|    88|        }
@@ -132,14 +132,14 @@
    132|   132|            if (label) label.textContent = filtered.length ? `· filter "${this.value}" (${filtered.length})` : '· tidak ditemukan';
    133|   133|            document.getElementById('news-stream').innerHTML = filtered.length
    134|   134|              ? filtered.map((n, i) => streamCardHtml(n, i)).join('')
-   135|   135|              : '<div class="dashboard-widget-state" class="grid-full"><strong class="dashboard-widget-state-title">Tidak ditemukan</strong><span class="dashboard-widget-state-note">Coba kata kunci lain.</span></div>';
+   135|   135|              : '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Tidak ditemukan</strong><span class="dashboard-widget-state-note">Coba kata kunci lain.</span></div>';
    136|   136|          });
    137|   137|        }
    138|   138|
    139|   139|    } catch (err) {
    140|   140|        document.getElementById('news-count').textContent = 'GAGAL';
    141|   141|        const stream = document.getElementById('news-stream');
-   142|   142|        if (stream) stream.innerHTML = '<div class="dashboard-widget-state" class="grid-full"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">Coba refresh halaman.</span></div>';
+   142|   142|        if (stream) stream.innerHTML = '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">Coba refresh halaman.</span></div>';
    143|   143|    }
    144|   144|}
    145|   145|
