@@ -272,7 +272,7 @@
    272|  const res = await fetchNews(3);
    273|  const items = Array.isArray(res?.data) && res.data.length ? res.data : [];
    274|  if (items.length) {
-   275|    document.getElementById('news-container').innerHTML = items.slice(0,3).map((n, index) => `
+   275|    document.getElementById('news-container').innerHTML = items.slice(0,2).map((n, index) => `
    276|      <a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}">
    277|        <span class="badge">${n.source||'NEWS'}</span>
    278|        <b>${n.title}</b>
