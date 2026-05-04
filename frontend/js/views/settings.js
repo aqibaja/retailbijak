@@ -49,7 +49,7 @@
     49|                </label>
     50|            </div>
     51|
-    52|            <div class="settings-section-head" class="mt-8">
+    52|            <div class="settings-section-head mt-8">
     53|              <h2>OpenRouter AI</h2>
     54|              <span>Aktifkan ringkasan AI untuk analisis saham dan AI Picks dengan model gratis default.</span>
     55|            </div>
