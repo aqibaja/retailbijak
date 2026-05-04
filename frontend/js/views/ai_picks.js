@@ -151,13 +151,13 @@ function renderCompactCard(item, mode) {
 
 // ─── Loading / Empty / Error States ────────────────────────
 function renderLoadingState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="loading"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon loading"><i data-lucide="loader" style="width:22px;height:22px"></i></div><div class="ai-picks-state-pulse skeleton-shimmer"></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="loading"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon loading"><i data-lucide="loader" class="lucide-lg"></i></div><div class="ai-picks-state-pulse skeleton-shimmer"></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
 }
 function renderEmptyState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="empty"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon empty"><i data-lucide="inbox" style="width:22px;height:22px"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="empty"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon empty"><i data-lucide="inbox" class="lucide-lg"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
 }
 function renderErrorState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="error"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon error"><i data-lucide="alert-triangle" style="width:22px;height:22px"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span><button class="btn btn-sm ai-picks-retry-btn" data-retry="1">Coba Lagi</button></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="error"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon error"><i data-lucide="alert-triangle" class="lucide-lg"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span><button class="btn btn-sm ai-picks-retry-btn" data-retry="1">Coba Lagi</button></div></div>`;
 }
 
 // ─── Wire event handlers ───────────────────────────────────

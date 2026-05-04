@@ -93,9 +93,9 @@ function setupSearchOverlay() {
        items.forEach(item => (groups[item.bucket || 'company'] || groups.company).push(item));
       const renderRow = (item, idx) => `
         <a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center p-3 search-suggestion-item${idx === activeIndex ? ' search-suggestion-active' : ''}">
-          <div class="flex items-center gap-3" style="min-width:0;">
+          <div class="flex items-center gap-3 search-suggestion-row">
             <span class="badge sugg-badge">${item.bucket === 'sector' ? 'SC' : item.bucket === 'company' ? 'CO' : 'EQ'}</span>
-            <span class="mono strong text-main" style="font-size:15px;">${highlight(item.ticker, query)}</span>
+            <span class="mono strong text-main search-suggestion-ticker">${highlight(item.ticker, query)}</span>
             <span class="text-sm text-muted search-suggestion-text">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
           </div>
           <span class="search-suggestion-label">${escapeHtml(item.bucket || item.source || '')}</span>

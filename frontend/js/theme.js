@@ -22,7 +22,7 @@ export function initTheme() {
 
     function updateLangBtn() {
         if (langToggleBtn) {
-            langToggleBtn.innerHTML = `<span style="font-size:12px;font-weight:700">${currentLang.toUpperCase()}</span>`;
+            langToggleBtn.innerHTML = `<span class="lang-toggle-text">${currentLang.toUpperCase()}</span>`;
         }
     }
 
