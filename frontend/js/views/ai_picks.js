@@ -71,6 +71,23 @@ function renderAiBrief(payload) {
   const asOf = payload?.as_of_label || '';
   const nextUp = payload?.next_update || 'jadwal belum tersedia';
 
+  // LLM narrative
+  const llm = payload?.llm || {};
+  const llmSummary = llm?.summary || '';
+  const pickNotes = llm?.pick_notes || {};
+  const llmStatus = llm?.status || 'disabled';
+  const llmModel = llm?.model || '';
+  const hasNarrative = llmStatus === 'ok' && llmSummary.length > 0;
+  const briefBody = hasNarrative
+    ? `<div class="text-sm text-muted ai-brief-narrative">${llmSummary}</div>`
+    : `<p class="text-sm text-muted">Briefing dan narasi tambahan akan tersedia saat scheduler harian selesai memproses semua kandidat.</p>`;
+
+  // Pick notes
+  const noteKeys = Object.keys(pickNotes);
+  const notesHtml = noteKeys.length
+    ? `<div class="ai-brief-notes mt-2">${noteKeys.map(t => `<div class="ai-brief-note"><strong>${t}</strong>: ${pickNotes[t]}</div>`).join('')}</div>`
+    : '';
+
   return `
     <div class="ai-picks-compact-hero">
       <div class="ai-picks-hero-row">
@@ -91,9 +108,11 @@ function renderAiBrief(payload) {
     </div>
 
     <details class="ai-picks-brief-collapsible panel">
-      <summary class="ai-picks-brief-summary">AI Desk Brief <span class="badge">live</span></summary>
+      <summary class="ai-picks-brief-summary">AI Desk Brief <span class="badge">${llmStatus === 'ok' ? 'live' : 'menunggu'}</span></summary>
       <div class="ai-picks-brief-body">
-        <p class="text-sm text-muted">Briefing dan narasi tambahan akan tersedia saat scheduler harian selesai memproses semua kandidat.</p>
+        ${briefBody}
+        ${notesHtml}
+        ${llmModel ? `<div class="text-xs text-dim mt-1">model: ${llmModel}</div>` : ''}
       </div>
     </details>`;
 }

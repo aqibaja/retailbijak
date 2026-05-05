@@ -136,7 +136,6 @@ def get_ai_picks(mode: str = "swing", limit: int = 5, db: Session = Depends(get_
     report = get_latest_ai_pick_report(mode=mode, db=db)
     if report is None:
         return build_ai_picks_fallback_payload(mode=mode, trading_date=_current_jakarta_trading_date())
-    report.pop('llm', None)
     return report
 
 
