@@ -893,15 +893,18 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .topbar-ticker-wrap .tape-row { animation-duration: 40s; padding-left: 0; display: flex; width: 100%; }
 .topbar-ticker-wrap .tape-card {
-  min-width: 120px; padding: 0 16px; margin-right: 0; border: none; background: transparent;
-  flex-direction: row; align-items: center; gap: 8px; height: 100%; border-right: 1px solid var(--border-subtle); border-radius: 0;
+  min-width: 140px; padding: 0 18px; margin-right: 0; border: none; background: transparent;
+  flex-direction: row; align-items: center; gap: 10px; height: 100%; border-right: 1px solid var(--border-subtle); border-radius: 0;
   justify-content: center;
 }
 .topbar-ticker-wrap .tape-card:hover { background: rgba(255,255,255,0.03); transform: none; box-shadow: none; }
 .topbar-ticker-wrap .tape-top { margin-bottom: 0; }
 .topbar-ticker-wrap .tape-mkt, .topbar-ticker-wrap .tape-vol { display: none; }
-.topbar-ticker-wrap .tape-price { font-size: 13px; margin-bottom: 0; }
-.topbar-ticker-wrap .tape-chg { font-size: 12px; }
+.topbar-ticker-wrap .tape-pair { font-size: 12px; font-weight: 800; letter-spacing: -.02em; }
+.topbar-ticker-wrap .tape-price { font-size: 13px; margin-bottom: 0; font-weight: 700; }
+.topbar-ticker-wrap .tape-chg { font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.topbar-ticker-wrap .tape-chg.up { background: rgba(52,211,153,.15); }
+.topbar-ticker-wrap .tape-chg.down { background: rgba(248,113,113,.15); }
 
 .sidebar {
   position: fixed; top: var(--header-h); left: 0; bottom: 0; width: var(--sidebar-w);
