@@ -237,6 +237,7 @@ function wireActions(root, mode, picks, loadFn) {
 
 // ─── Main render ──────────────────────────────────────────
 export async function renderAiPicks(root) {
+  document.title = 'RetailBijak — AI Picks';
   const initialMode = safeLocalStorageGet(AI_PICKS_MODE_KEY, 'swing') || 'swing';
   let currentMode = initialMode;
 

@@ -1,4 +1,5 @@
 import { fetchNews } from '../api.js?v=20260506z';
+import { observeElements } from '../main.js?v=20260506c';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
 
@@ -37,7 +38,7 @@ function sourceCategory(source) {
 export async function renderNews(root) {
     document.title = 'RetailBijak — Berita';
     root.innerHTML = `
-      <section class="market-overview-page">
+      <section class="market-overview-page stagger-reveal">
         <div class="market-overview-head">
           <div class="market-head-copy">
             <div class="market-row-kicker">Intel Pasar</div>
@@ -143,6 +144,8 @@ export async function renderNews(root) {
               : '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Tidak ditemukan</strong><span class="dashboard-widget-state-note">Coba kata kunci lain.</span></div>';
           });
         }
+
+        observeElements();
 
     } catch (err) {
         document.getElementById('news-count').textContent = 'GAGAL';
