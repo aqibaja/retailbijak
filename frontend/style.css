@@ -2832,6 +2832,19 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14); }
 * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.07) transparent; }
 
+/* Selection color */
+::selection { background: rgba(16,185,129,.25); color: #fff; }
+html[data-theme="light"] ::selection { background: rgba(16,185,129,.2); color: #0f172a; }
+/* Consistent placeholder across all inputs */
+::placeholder { color: var(--text-dim); font-size: 12px; opacity: .75; }
+/* Smooth theme transition on themed containers */
+body, .panel, .topbar, .sidebar, .bottom-nav, .market-card, .stock-side-panel,
+.stock-chart-card, .search-overlay, .modal-panel {
+  transition: background var(--duration-normal, .3s) var(--ease-out, ease),
+              border-color var(--duration-normal, .3s) var(--ease-out, ease),
+              box-shadow var(--duration-normal, .3s) var(--ease-out, ease);
+}
+
 /* ================= PAGE TRANSITIONS ================= */
 #app-root:not(.page-loading) {
     opacity: 1;
