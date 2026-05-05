@@ -96,7 +96,7 @@ export async function renderNews(root) {
         const { c1, c2 } = generateFallbackGradient(hero.title, hero.source);
         const hasHeroImage = hero.image_url && hero.image_url.length > 4;
         const heroBg = hasHeroImage
-          ? `background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.25) 50%,rgba(0,0,0,0.65) 100%),url("${hero.image_url}") center/cover`
+          ? `background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.25) 50%,rgba(0,0,0,0.65) 100%),url('${hero.image_url}') center/cover`
           : `background:linear-gradient(135deg,${c1},${c2})`;
         document.getElementById('news-featured-main').innerHTML = `
           <a href="${hero.link}" ${String(hero.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-hero-card" style="${heroBg}">
@@ -110,7 +110,7 @@ export async function renderNews(root) {
           const { c1, c2 } = generateFallbackGradient(n.title, n.source);
           const hasSideImage = n.image_url && n.image_url.length > 4;
           const sideBg = hasSideImage
-            ? `background:linear-gradient(180deg,rgba(0,0,0,0.6) 0%,rgba(0,0,0,0.15) 60%,rgba(0,0,0,0.5) 100%),url("${n.image_url}") center/cover`
+            ? `background:linear-gradient(180deg,rgba(0,0,0,0.6) 0%,rgba(0,0,0,0.15) 60%,rgba(0,0,0,0.5) 100%),url('${n.image_url}') center/cover`
             : `background:linear-gradient(135deg,${c1}22,${c2}15)`;
           return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-side-card" style="${sideBg}">
             <div class="news-side-source"><span>${sourceCategory(n.source)}</span><span>${relativeTime(n.published_at)}</span></div>
