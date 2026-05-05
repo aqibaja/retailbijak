@@ -1120,6 +1120,13 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 @keyframes modalPanelExit {
   to { opacity: 0; transform: translate(-50%,-50%) scale(0.92); }
 }
+@keyframes modalPanelEnter {
+  from { opacity: 0; transform: translate(-50%,-50%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+}
+@keyframes modalBackdropEnter {
+  from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
+}
 
 /* Navigation Items */
 .nav-item {
@@ -1771,8 +1778,8 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .signal-card-detailed small{font-size:10px;color:var(--text-muted);margin-top:1px}
 
 /* Alert Modal */
-.modal-backdrop{position:fixed;inset:0;background:rgba(8,14,28,.72);z-index:9999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.modal-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);width:min(400px,92%);max-height:80vh;overflow-y:auto;background:var(--bg-mobile-surface);border:1px solid var(--border-strong);border-radius:20px;padding:24px;z-index:10000;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(8,14,28,.72);z-index:9999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:modalBackdropEnter .25s var(--ease-out) both}
+.modal-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);width:min(400px,92%);max-height:80vh;overflow-y:auto;background:var(--bg-mobile-surface);border:1px solid var(--border-strong);border-radius:20px;padding:24px;z-index:10000;box-shadow:0 24px 80px rgba(0,0,0,.5);animation:modalPanelEnter .25s var(--ease-out) both}
 .modal-panel .form-input{background:rgba(11,18,32,.5);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-main);font-size:13px;padding:0 12px;outline:none;transition:border-color .2s,box-shadow .2s}
 .modal-panel .form-input:focus{border-color:var(--border-focus);box-shadow:0 0 0 2px rgba(16,185,129,.08)}
 
@@ -3767,6 +3774,11 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 700;
+  transition: transform .2s,box-shadow .2s;
+}
+.help-shortcut-card kbd:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99,102,241,.2);
 }
 .help-faq-stack {
   display: flex;

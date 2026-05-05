@@ -142,12 +142,29 @@ function setupSearchOverlay() {
        }
    });
    document.addEventListener('keydown', (e) => {
+       const tag = e.target.tagName;
+       const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable;
+       // Ctrl+K or Cmd+K → toggle search
        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
            e.preventDefault();
            toggle(!overlay.classList.contains('active'));
+           return;
        }
+       // / → focus search (only outside input/textarea)
+       if (e.key === '/' && !isInput) {
+           e.preventDefault();
+           toggle(true);
+           return;
+       }
+       // Escape → close search overlay
        if (e.key === 'Escape' && overlay.classList.contains('active')) {
            toggle(false);
+           e.preventDefault();
+           return;
+       }
+       // Escape → close ANY modal overlay (portfolio, alert, etc.)
+       if (e.key === 'Escape') {
+           document.querySelectorAll('[id$="-modal-overlay"]').forEach(el => el.remove());
        }
    });
    // Close on link click inside search

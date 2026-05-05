@@ -1,5 +1,5 @@
 import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506z';
-import { observeElements, flashUpdate } from '../main.js?v=20260506a';
+import { observeElements, flashUpdate } from '../main.js?v=20260506g';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -840,6 +840,22 @@ function showAlertModal(symbol) {
     </div>`;
   document.body.appendChild(overlay);
   if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  // Focus trap
+  const alertFocusable = overlay.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  if (alertFocusable.length) {
+    const afirst = alertFocusable[0], alast = alertFocusable[alertFocusable.length - 1];
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === afirst) { e.preventDefault(); alast.focus(); }
+      else if (!e.shiftKey && document.activeElement === alast) { e.preventDefault(); afirst.focus(); }
+    });
+  }
+  // Focus first input
+  setTimeout(() => {
+    const alertFirstInput = overlay.querySelector('.form-input, .modal-input');
+    if (alertFirstInput) alertFirstInput.focus();
+  }, 100);
 
   document.getElementById('alert-save-btn').addEventListener('click', async () => {
     const atype = document.getElementById('alert-type').value;

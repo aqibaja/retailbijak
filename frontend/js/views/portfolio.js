@@ -1,5 +1,29 @@
 import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260506z';
-import { observeElements } from '../main.js?v=20260506a';
+import { observeElements } from '../main.js?v=20260506g';
+
+// ─── Focus Trap ──────────────────────────────
+function trapFocus(container) {
+  const focusable = container.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  container.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
 
 // ─── Shared Modal ──────────────────────────────
 export function showModal({ title, fields = [], confirmText = 'Simpan', cancelText = 'Batal', onConfirm }) {
@@ -49,8 +73,10 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
       if (e.key === 'Enter') overlay.querySelector('.modal-confirm-btn')?.click();
     });
     // Focus first field
-    const firstInput = overlay.querySelector('.form-input');
+    const firstInput = overlay.querySelector('.form-input, .modal-input');
     if (firstInput) setTimeout(() => firstInput.focus(), 100);
+    // Focus trap
+    setTimeout(() => trapFocus(overlay), 150);
   });
 }
 
@@ -80,6 +106,8 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
     overlay.querySelector('.modal-backdrop')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-confirm-btn')?.addEventListener('click', () => close(true));
+    // Focus trap
+    setTimeout(() => trapFocus(overlay), 150);
   });
 }
 

@@ -1,4 +1,4 @@
-import { observeElements } from '../main.js?v=20260506a';
+import { observeElements } from '../main.js?v=20260506g';
 
 export function renderHelp(root) {
     document.title = 'RetailBijak — Bantuan';
@@ -51,12 +51,16 @@ export function renderHelp(root) {
             </div>
             <div class="help-shortcuts-grid">
                 <div class="help-shortcut-card">
+                    <kbd>/</kbd>
+                    <span>Fokus ke pencarian global</span>
+                </div>
+                <div class="help-shortcut-card">
                     <kbd>Ctrl+K</kbd>
                     <span>Buka pencarian global</span>
                 </div>
                 <div class="help-shortcut-card">
                     <kbd>Esc</kbd>
-                    <span>Tutup panel atau pencarian</span>
+                    <span>Tutup panel, modal, atau pencarian</span>
                 </div>
                 <div class="help-shortcut-card">
                     <kbd>↑↓</kbd>
