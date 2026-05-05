@@ -487,6 +487,9 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .scanner-row:hover { background: var(--bg-panel-hover); border-color: rgba(16,185,129,0.2); }
 .scanner-row-main { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
 .scanner-row-badge { width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.1); color: #10b981; font-weight: 800; display: grid; place-items: center; font-size: 14px; border: 1px solid rgba(16,185,129,0.2); flex-shrink: 0; }
+.scanner-row-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.scanner-row-ticker { font-size: 15px; font-weight: 800; font-family: var(--font-mono); }
+.scanner-row-title { display: flex; align-items: center; gap: 6px; }
 .scanner-row-name { font-size: 11px; color: var(--text-dim); margin: 2px 0 0; }
 .scanner-row-kicker { font-size: 10px; font-weight: 800; letter-spacing: .1em; background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
 .scanner-row-note { font-size: 10px; color: var(--text-dim); }
@@ -722,17 +725,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   border: 1px solid rgba(99,102,241,0.2);
 }
 
-.scanner-row {
-  height: 64px; padding: 0 24px; border-bottom: 1px solid var(--border-subtle);
-  display: flex; align-items: center; justify-content: space-between;
-  transition: all 0.2s var(--ease-out); text-decoration: none; color: inherit;
-  background: transparent;
-}
-.scanner-row:hover {
-  background: rgba(255,255,255,0.02);
-  transform: translateX(4px);
-}
-
+/* Skeleton Loading */
 .skeleton-shimmer {
   position: relative; overflow: hidden; background: var(--bg-elevated);
 }
@@ -1673,7 +1666,7 @@ html[data-theme="light"] .news-meta {
   text-decoration: none;
   transition: border-color .2s, transform .2s;
 }
-.news-side-card:hover { border-color: rgba(255,255,255,.12); }
+.news-side-card:hover { border-color: rgba(255,255,255,.12); transform: translateY(-1px); }
 .news-side-source {
   display: flex;
   gap: 6px;
