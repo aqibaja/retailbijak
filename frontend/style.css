@@ -546,7 +546,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .help-side-label { font-size:11px; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); font-weight:700; }
 .help-side-value { font-size:13px; color:var(--text-main); font-weight:600; }
 .help-layout { display:grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap:16px; }
-.help-guide-panel, .help-support-panel { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 20px; }
+.help-guide-panel, .help-support-panel { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; }
 .help-section-title { font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); margin:0; padding-bottom:12px; border-bottom:1px solid var(--border-subtle); }
 .help-guide-grid { display:grid; gap:12px; }
 .help-step-card { display:flex; gap:14px; padding:16px; border-radius:12px; background:var(--bg-panel); border:1px solid var(--border-subtle); }
@@ -557,7 +557,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .help-support-icon { width:56px; height:56px; background:linear-gradient(135deg, #6366f1, #4f46e5); border-radius:16px; display:grid; place-items:center; color:var(--text-main); box-shadow:0 12px 32px rgba(99,102,241,0.4); margin-bottom:20px; }
 .help-support-panel h3 { margin:0 0 8px; color:var(--text-main); font-size:18px; font-weight:800; }
 .help-support-panel p { margin:0 0 20px; color:var(--text-muted); line-height:1.6; font-size:13px; }
-.help-support-btn { width:100%; height:48px; background:linear-gradient(135deg, #6366f1, #4f46e5); box-shadow:0 0 20px rgba(99,102,241,0.3); }
+.help-support-btn {width:100%; height:48px; background:linear-gradient(135deg, #6366f1, #4f46e5); box-shadow:0 0 20px rgba(99,102,241,0.3); border-radius: 12px; }
 .settings-page-pro { display:grid; gap:18px; }
 .settings-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; }
 .settings-hero-copy { display:grid; gap:10px; max-width:72ch; }
@@ -1865,7 +1865,7 @@ html[data-theme="light"] .news-meta {
 .market-section-group-title { color: var(--text-main); font-size: 13px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; margin: 0; }
 .market-section-group-head p { color: var(--text-muted); font-size: 12px; line-height: 1.65; max-width: 72ch; }
 .market-section-summary { margin-bottom: 14px; color: #d7e2ef; font-size: 12px; line-height: 1.75; padding: 12px 14px; border-radius: 14px; border:1px solid rgba(148,163,184,.12); background: rgba(15,23,41,.45); }
-.market-section-group-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:22px; }
+.market-section-group-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:20px; }
 .market-section-group-grid-internals { grid-template-columns: minmax(0,1.12fr) repeat(2, minmax(0,.94fr)); }
 .market-card { background: linear-gradient(180deg, rgba(15,23,41,0.94), rgba(12,18,32,0.88)); border:1px solid rgba(148,163,184,.16); border-left:3px solid var(--market-accent); border-radius:20px; padding:22px; box-shadow: 0 12px 28px rgba(2,8,20,.32), 0 0 0 1px rgba(148,163,184,.04) inset; min-height: auto; }
 .market-card-subtle { background: linear-gradient(180deg, rgba(15,23,41,0.88), rgba(15,23,41,0.80)); }
@@ -1874,7 +1874,7 @@ html[data-theme="light"] .news-meta {
 .market-card-head { display:flex; flex-direction:column; gap:6px; }
 .market-card-head h3 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 0; }
 .market-card-head p { color: var(--text-muted); font-size: 12px; line-height: 1.7; max-width: 58ch; }
-.market-card-body { margin-top: 14px; }
+.market-card-body { margin-top: 12px; }
 .market-hero-head { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; }
 .market-hero-kicker { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:#93c5fd; font-weight:800; margin-bottom:8px; }
 .market-hero-badge { min-width: 102px; text-align:center; padding:10px 12px; border-radius:14px; font:800 1.05rem var(--font-mono); background: rgba(2,8,20,.45); border:1px solid rgba(148,163,184,.16); }
