@@ -178,7 +178,7 @@ async function loadMovers(){
   if (items.length) {
     const positiveCount = items.filter(item => Number(item.change_pct ?? 0) >= 0).length;
     if (moversSummaryChip) moversSummaryChip.textContent = `${positiveCount}/${items.length} positif`;
-    document.getElementById('movers-list').innerHTML = items.slice(0,5).map((r, index) => row({
+    document.getElementById('movers-list').innerHTML = items.slice(0,4).map((r, index) => row({
       ticker: r.ticker, name: r.name || r.sector || 'Ekuitas IDX', price: r.price ?? 0,
       change: r.change_pct ?? 0, rank: index + 1,
     })).join('');
