@@ -8,7 +8,7 @@ Referensi: planning/API_SPEC.md
 from pathlib import Path
 from typing import Any
 from collections import defaultdict
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends
@@ -57,9 +57,9 @@ try:
 except ModuleNotFoundError:
     from scheduler import init_scheduler, scheduler
 try:
-    from backend.ai_picks import get_latest_ai_pick_report, build_ai_picks_payload, build_ai_picks_fallback_payload, _current_jakarta_trading_date
+    from backend.ai_picks import get_latest_ai_pick_report, build_ai_picks_payload, build_ai_picks_fallback_payload, _current_jakarta_trading_date, generate_and_store_daily_ai_pick_report
 except ModuleNotFoundError:
-    from ai_picks import get_latest_ai_pick_report, build_ai_picks_payload, build_ai_picks_fallback_payload, _current_jakarta_trading_date
+    from ai_picks import get_latest_ai_pick_report, build_ai_picks_payload, build_ai_picks_fallback_payload, _current_jakarta_trading_date, generate_and_store_daily_ai_pick_report
 try:
     from backend.services.idx_api_client import get_idx_client, parse_idx_number
 except ModuleNotFoundError:
@@ -136,6 +136,15 @@ def get_ai_picks(mode: str = "swing", limit: int = 5, db: Session = Depends(get_
     report = get_latest_ai_pick_report(mode=mode, db=db)
     if report is None:
         return build_ai_picks_payload(mode=mode, limit=safe_limit)
+    # Stale check: rebuild jika report > 4 jam
+    gen_at = report.get('generated_at')
+    if gen_at:
+        try:
+            gen_dt = datetime.fromisoformat(gen_at)
+            if datetime.utcnow() - gen_dt > timedelta(hours=4):
+                return generate_and_store_daily_ai_pick_report(mode=mode, limit=safe_limit, db=db)
+        except (ValueError, TypeError):
+            pass
     return report
 
 

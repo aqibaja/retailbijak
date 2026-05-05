@@ -1,9 +1,9 @@
 import { renderDashboard } from './views/dashboard.js?v=20260506a';
 import { renderStockDetail } from './views/stock_detail.js?v=20260506f';
-import { renderScreener } from './views/screener.js?v=20260506a';
+import { renderScreener } from './views/screener.js?v=20260506g';
 import { renderPortfolio } from './views/portfolio.js?v=20260506a';
-import { renderMarket } from './views/market.js?v=20260506a';
-import { renderNews } from './views/news.js?v=20260506a';
+import { renderMarket } from './views/market.js?v=20260506j';
+import { renderNews } from './views/news.js?v=20260506n';
 import { renderSettings } from './views/settings.js?v=20260506a';
 import { renderHelp } from './views/help.js?v=20260506a';
 import { renderAiPicks } from './views/ai_picks.js?v=20260506d';

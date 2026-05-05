@@ -18,7 +18,7 @@
  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
  <link rel="apple-touch-icon" href="assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="style.css?v=20260506d">
+ <link rel="stylesheet" href="style.css?v=20260506j">
  <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -34,7 +34,17 @@
        <strong class="logo">RetailBijak</strong>
      </a>
    </div>
-   <div class="topbar-ticker-wrap"><div class="tape-row" id="running-ticker"></div></div>
+   <div class="topbar-status">
+    <div class="topbar-ihsg">
+      <span class="mono strong tabular-nums" id="topbar-ihsg-val">7,080.63</span>
+      <span class="mono text-xs" id="topbar-ihsg-pct">+0.00%</span>
+    </div>
+    <div class="topbar-market-status">
+      <span class="status-dot" id="market-dot"></span>
+      <span class="text-xs text-dim" id="market-status-text">IDX TUTUP</span>
+    </div>
+  </div>
+  <div class="topbar-ticker-wrap"><div class="tape-row" id="running-ticker"></div></div>
    <div class="topbar-actions flex items-center gap-4">
      <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari"><i data-lucide="search" style="width:18px;"></i></button>
      <button class="btn btn-icon" id="theme-toggle" aria-label="Ubah tema"><i data-lucide="moon" style="width:18px;"></i></button>

@@ -220,9 +220,12 @@ async function refreshTopbarMarket() {
 async function setupRunningTicker() {
    const tickerContainer = document.getElementById('running-ticker');
    if (!tickerContainer) return;
-   const res = await fetchTopMovers(4);
-  const rows = Array.isArray(res?.data) && res.data.length ? res.data.slice(0, 4) : [];
-  const tickerItems = [...rows, ...rows];
+   const res = await fetchTopMovers(8);
+  const seen = new Set();
+  const rows = Array.isArray(res?.data) && res.data.length
+    ? res.data.filter(r => { const ok = !seen.has(r.ticker); seen.add(r.ticker); return ok; }).slice(0, 8)
+    : [];
+  const tickerItems = rows.length ? [...rows, ...rows] : [];
    tickerContainer.innerHTML = tickerItems.map(item => {
        const change = Number(item.change_pct ?? item.change ?? 0);
        const price = item.price == null ? '—' : Number(item.price).toLocaleString('id-ID', { maximumFractionDigits: 0 });

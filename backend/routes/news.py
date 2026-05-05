@@ -160,7 +160,23 @@ def get_corporate_actions(year: int | None = None, month: int | None = None, lim
             seen.add(key)
             unique.append(a)
 
-    result = _resp_ok(unique[:limit], source="idx_corporate_live", count=len(unique[:limit]))
+    # Filter to upcoming/relevant events only (date >= today - 7 days)
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    grace = today.isoformat()[:10]  # start of today YYYY-MM-DD
+    future: list[dict[str, Any]] = []
+    for a in unique:
+        d = str(a.get("date") or "")
+        if d >= grace:
+            future.append(a)
+        elif a.get("end_date") and str(a.get("end_date")) >= grace:
+            # Event that started earlier but still ongoing
+            future.append(a)
+        elif a.get("ex_dividend") and str(a.get("ex_dividend")) >= grace:
+            future.append(a)
+        elif a.get("payment_date") and str(a.get("payment_date")) >= grace:
+            future.append(a)
+
+    result = _resp_ok(future[:limit], source="idx_corporate_live" if future else "no_data", count=len(future[:limit]))
     _corporate_actions_cache["data"] = result
     _corporate_actions_cache["ts"] = now
     return result
