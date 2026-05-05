@@ -2205,6 +2205,10 @@ html[data-theme="light"] .news-meta {
   border-radius: 1px;
 }
 
+/* Stretched link — makes anchor fill parent (catalyst tiles) */
+.stretched-link { position: absolute; inset: 0; z-index: 1; }
+.stretched-link + * { position: relative; z-index: 2; }
+
 /* Score Card Details Row */
 .score-details {
   display: flex;
