@@ -443,6 +443,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .gap-4 { gap: 16px; }
 .gap-6 { gap: 24px; }
 .p-5 { padding: 20px; }
+.p-2 { padding: 8px; }
+.py-4 { padding-top: 16px; padding-bottom: 16px; }
 .mb-6 { margin-bottom: 24px; }
 .dashboard-metrics > div span { display:block; font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
 .dashboard-metrics > div strong { font-size: 14px; }
@@ -550,7 +552,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .help-guide-panel, .help-support-panel { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; }
 .help-section-title { font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); margin:0; padding-bottom:12px; border-bottom:1px solid var(--border-subtle); }
 .help-guide-grid { display:grid; gap:12px; }
-.help-step-card { display:flex; gap:14px; padding:16px; border-radius:12px; background:var(--bg-panel); border:1px solid var(--border-subtle); }
+.help-step-card { display:flex; gap:14px; padding:16px; border-radius:12px; background:var(--bg-panel); border:1px solid var(--border-subtle); transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.help-step-card:hover { border-color: rgba(148,163,184,.18); box-shadow: 0 2px 8px rgba(0,0,0,.1); transform: translateY(-1px); }
 .help-step-index { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background: rgba(99,102,241,0.12); color:#c7d2fe; font-size:12px; font-weight:800; flex-shrink:0; }
 .help-step-card h3 { margin:0 0 6px; color:var(--text-main); font-size:15px; font-weight:700; }
 .help-step-card p { margin:0; color:var(--text-muted); line-height:1.6; font-size:13px; }
@@ -585,7 +588,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .settings-save-btn { height:44px; padding:0 24px; }
 .settings-note-title { display:flex; align-items:center; gap:8px; margin:0; color:var(--accent-indigo); letter-spacing:0.08em; font-size:12px; text-transform:uppercase; }
 .settings-note-stack { display:grid; gap:12px; }
-.settings-note-card { padding:12px; background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-subtle); line-height:1.5; color:var(--text-muted); font-size:13px; }
+.settings-note-card { padding:12px; background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-subtle); line-height:1.5; color:var(--text-muted); font-size:13px; transition:border-color .2s ease, box-shadow .2s ease; }
+.settings-note-card:hover { border-color: rgba(148,163,184,.18); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 /* Top glowing border */
 .scanner-form::before {
   content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
@@ -3582,6 +3586,11 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.6;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.help-faq-item:hover {
+  border-color: rgba(148,163,184,.18);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
 }
 .help-faq-item summary {
   cursor: pointer;
