@@ -28,9 +28,27 @@ _corporate_actions_cache: dict[str, Any] = {"data": None, "ts": 0}
 
 
 @router.get('/api/news')
-def get_news(db: Session = Depends(get_db), limit: int = 20):
-    """Get latest market news from DB; opportunistically refresh RSS if DB is empty."""
-    news = db.query(News).order_by(News.published_at.desc()).limit(limit).all()
+def get_news(db: Session = Depends(get_db), limit: int = 20, ticker: str = ''):
+    """Get latest market news from DB; optionally filter by ticker/company name."""
+    q = db.query(News)
+    if ticker:
+        like = f'%{ticker.upper()}%'
+        # Company name mapping for better relevance
+        names = {'BBCA': 'Bank Central Asia', 'BMRI': 'Bank Mandiri', 'BBRI': 'Bank Rakyat Indonesia',
+                 'TLKM': 'Telkom Indonesia', 'GOTO': 'GoTo Gojek', 'ASII': 'Astra International',
+                 'ADRO': 'Adaro Energy', 'BYAN': 'Bayan Resources', 'UNVR': 'Unilever Indonesia',
+                 'INDF': 'Indofood Sukses', 'HMSP': 'HM Sampoerna'}
+        name_likes = [f'%{n}%' for n in names.get(ticker.upper(), '').split()]
+        if name_likes and name_likes[0] != '%%':
+            from sqlalchemy import or_
+            filters = [News.title.ilike(like), News.summary.ilike(like)]
+            for nl in name_likes:
+                filters.append(News.title.ilike(nl))
+                filters.append(News.summary.ilike(nl))
+            q = q.filter(or_(*filters))
+        else:
+            q = q.filter(News.title.ilike(like) | News.summary.ilike(like))
+    news = q.order_by(News.published_at.desc()).limit(limit).all()
     if not news:
         try:
             try:

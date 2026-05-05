@@ -2321,6 +2321,17 @@ html[data-theme="light"] .news-meta {
   color: #34d399;
   border: 1px solid rgba(16,185,129,.25);
 }
+/* Stock detail — news feed cards */
+.stock-news-card{display:flex;flex-direction:column;gap:3px;padding:12px;border:1px solid var(--border-subtle);border-radius:12px;background:rgba(255,255,255,.025);text-decoration:none;transition:border-color .2s,background .2s}
+.stock-news-card:hover{border-color:rgba(99,102,241,.3);background:rgba(99,102,241,.06)}
+.stock-news-source{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim)}
+.stock-news-title{font-size:13px;font-weight:700;color:var(--text-main);line-height:1.45}
+.stock-news-date{font-size:10px;color:var(--text-dim)}
+.stock-news-summary{font-size:11px;color:var(--text-muted);line-height:1.5;margin:2px 0 0}
+.stock-news-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:24px 16px;text-align:center}
+.stock-news-empty strong{font-size:13px;color:var(--text-main)}
+.stock-news-empty span{font-size:11px;color:var(--text-muted);line-height:1.55}
+.stock-news-empty-icon{width:40px;height:40px;border-radius:12px;background:rgba(99,102,241,.1);color:#a5b4fc;display:grid;place-items:center}
 .panel-flush {
   border-radius: 14px;
   border: 1px solid var(--border-subtle);

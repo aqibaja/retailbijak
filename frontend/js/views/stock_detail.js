@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506a';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506e';
 import { observeElements, flashUpdate } from '../main.js?v=20260506a';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -245,7 +245,7 @@ export async function renderStockDetail(root, ticker) {
 
   const [detail, fund, tech, chart, analysis, news, announcements] = await Promise.all([
     fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol, { llm: true }).catch(()=>null),
-    fetchNews(6).catch(()=>null), apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
+    fetchNews(6, symbol).catch(()=>null), apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
   ]);
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   hydrateHeader(symbol, detail, fund, candles);
@@ -772,19 +772,16 @@ function renderStockNewsFeed(symbol, newsPayload) {
   if (!el) return;
   const items = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
   if (!items.length) {
-    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Menunggu aliran berita</strong><span class="dashboard-widget-state-note">Berita pasar akan muncul setelah scheduler berjalan. Cek halaman Berita untuk feed lengkap.</span></div>';
+    el.innerHTML = '<div class="stock-news-empty"><div class="stock-news-empty-icon"><i data-lucide="newspaper"></i></div><strong>Belum ada berita terkait</strong><span>Berita spesifik untuk saham ini akan muncul saat terdeteksi oleh pemantauan pasar.</span></div>';
     return;
   }
-  const upper = symbol.toUpperCase();
-  const filtered = items.filter(n => (n.title || '').toUpperCase().includes(upper) || (n.summary || '').toUpperCase().includes(upper)).slice(0, 5);
-  const display = filtered.length ? filtered : items.slice(0, 4);
-  const label = filtered.length ? `Terkait ${upper}` : 'Berita Pasar Terbaru';
-  el.innerHTML = `<div class="text-xs text-dim uppercase strong mb-2">${label}</div>` +
-    display.map(n => `<div class="stat-tile metric-neutral news-clickable" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')">
-      <span style="font-size:9px">${n.source || 'rss'} · ${(n.published_at || '').slice(0, 10) || ''}</span>
-      <strong>${(n.title || 'Berita').slice(0, 80)}</strong>
-      ${n.summary ? `<small style="font-size:10px">${n.summary.replace(/<[^>]*>/g,'').slice(0, 60)}</small>` : ''}
-    </div>`).join('');
+  el.innerHTML = items.slice(0, 5).map(n => `
+    <a href="${(n.link || '#').replace(/'/g, "\\'")}" target="_blank" rel="noopener noreferrer" class="stock-news-card">
+      <span class="stock-news-source">${n.source || 'rss'}</span>
+      <strong class="stock-news-title">${(n.title || 'Berita').replace(/</g,'&lt;').slice(0, 100)}</strong>
+      <span class="stock-news-date">${(n.published_at || '').slice(0, 10) || ''}</span>
+      ${n.summary ? `<p class="stock-news-summary">${n.summary.replace(/<[^>]*>/g,'').replace(/</g,'&lt;').slice(0, 80)}</p>` : ''}
+    </a>`).join('');
 }
 
 function renderStockAnnouncements(symbol, annPayload) {
