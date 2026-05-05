@@ -134,7 +134,7 @@ function renderList(results) {
     const hasResults = results.length > 0;
     if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
     contentArea.innerHTML = hasResults
-        ? `<div class="flex-col">${results.map(r => renderRow(r)).join('')}</div>`
+        ? `<div class="flex-col gap-1">${results.map(r => renderRow(r)).join('')}</div>`
         : renderEmptyState({
             title: 'Tidak ada sinyal terdeteksi',
             body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
@@ -170,7 +170,10 @@ function runScreener() {
             document.getElementById('sp-percent').textContent = `${data.percent}%`;
             document.getElementById('sp-fill').style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
-            currentResults.push(data.data);
+            // Dedup by ticker
+            if (!currentResults.some(r => r.ticker === data.data.ticker)) {
+                currentResults.push(data.data);
+            }
             countBadge.textContent = `${currentResults.length} TERDETEKSI`;
             renderList(currentResults);
         } else if (data.type === 'done') {

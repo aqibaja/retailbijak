@@ -94,8 +94,12 @@ export async function renderNews(root) {
 
         // Render featured hero
         const { c1, c2 } = generateFallbackGradient(hero.title, hero.source);
+        const hasHeroImage = hero.image_url && hero.image_url.length > 4;
+        const heroBg = hasHeroImage
+          ? `background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.25) 50%,rgba(0,0,0,0.65) 100%),url("${hero.image_url}") center/cover`
+          : `background:linear-gradient(135deg,${c1},${c2})`;
         document.getElementById('news-featured-main').innerHTML = `
-          <a href="${hero.link}" ${String(hero.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-hero-card" style="background:linear-gradient(135deg,${c1},${c2})">
+          <a href="${hero.link}" ${String(hero.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-hero-card" style="${heroBg}">
             <span class="news-hero-badge">${sourceCategory(hero.source)}</span>
             <strong class="news-hero-title-text">${hero.title || 'Intel Pasar'}</strong>
             <div class="news-hero-meta"><span>${hero.source || 'Market'}</span><span>•</span><span>${relativeTime(hero.published_at)}</span></div>
@@ -104,7 +108,11 @@ export async function renderNews(root) {
         // Render side featured
         document.getElementById('news-featured-side').innerHTML = side.map(n => {
           const { c1, c2 } = generateFallbackGradient(n.title, n.source);
-          return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-side-card" style="background:linear-gradient(135deg,${c1}22,${c2}15)">
+          const hasSideImage = n.image_url && n.image_url.length > 4;
+          const sideBg = hasSideImage
+            ? `background:linear-gradient(180deg,rgba(0,0,0,0.6) 0%,rgba(0,0,0,0.15) 60%,rgba(0,0,0,0.5) 100%),url("${n.image_url}") center/cover`
+            : `background:linear-gradient(135deg,${c1}22,${c2}15)`;
+          return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-side-card" style="${sideBg}">
             <div class="news-side-source"><span>${sourceCategory(n.source)}</span><span>${relativeTime(n.published_at)}</span></div>
             <strong class="news-side-title">${n.title || 'Intel Pasar'}</strong>
           </a>`;
