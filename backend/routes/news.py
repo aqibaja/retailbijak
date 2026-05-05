@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 try:
     from database import News, get_db
@@ -33,21 +34,18 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, ticker: str = ''):
     q = db.query(News)
     if ticker:
         like = f'%{ticker.upper()}%'
-        # Company name mapping for better relevance
+        # Company name mapping for stricter matching (full phrase, not per-word)
         names = {'BBCA': 'Bank Central Asia', 'BMRI': 'Bank Mandiri', 'BBRI': 'Bank Rakyat Indonesia',
                  'TLKM': 'Telkom Indonesia', 'GOTO': 'GoTo Gojek', 'ASII': 'Astra International',
                  'ADRO': 'Adaro Energy', 'BYAN': 'Bayan Resources', 'UNVR': 'Unilever Indonesia',
                  'INDF': 'Indofood Sukses', 'HMSP': 'HM Sampoerna'}
-        name_likes = [f'%{n}%' for n in names.get(ticker.upper(), '').split()]
-        if name_likes and name_likes[0] != '%%':
-            from sqlalchemy import or_
-            filters = [News.title.ilike(like), News.summary.ilike(like)]
-            for nl in name_likes:
-                filters.append(News.title.ilike(nl))
-                filters.append(News.summary.ilike(nl))
-            q = q.filter(or_(*filters))
-        else:
-            q = q.filter(News.title.ilike(like) | News.summary.ilike(like))
+        full_name = names.get(ticker.upper(), '')
+        filters = [News.title.ilike(like), News.summary.ilike(like)]
+        if full_name:
+            name_like = f'%{full_name}%'
+            filters.append(News.title.ilike(name_like))
+            filters.append(News.summary.ilike(name_like))
+        q = q.filter(or_(*filters))
     news = q.order_by(News.published_at.desc()).limit(limit).all()
     if not news:
         try:
@@ -56,7 +54,8 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, ticker: str = ''):
             except ModuleNotFoundError:
                 from backend.updaters.news_updater import update_news
             update_news()
-            news = db.query(News).order_by(News.published_at.desc()).limit(limit).all()
+            # Re-apply filter after refresh
+            news = q.order_by(News.published_at.desc()).limit(limit).all()
         except Exception:
             news = []
 
