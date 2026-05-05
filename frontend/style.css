@@ -1268,6 +1268,8 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
     margin-left: 0;
     padding: 12px;
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 36px);
+    width: 100%;
+    overflow-x: hidden;
   }
   .panel, .card, .glass-card {
     background: var(--bg-mobile-surface);
