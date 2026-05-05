@@ -163,6 +163,7 @@ export function showToast(message, type = 'info', duration = 4000) {
         <div class="toast-body">
             <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
             <span class="toast-message">${message}</span>
+            <button class="toast-close-btn" aria-label="Tutup">&times;</button>
         </div>
         <div class="toast-progress" style="animation-duration:${duration}ms"></div>
     `;
@@ -170,13 +171,29 @@ export function showToast(message, type = 'info', duration = 4000) {
     toast.style.animation = 'toastSlideIn 0.35s cubic-bezier(0.16,1,0.3,1)';
     container.appendChild(toast);
     
+    // Manual dismiss
+    toast.querySelector('.toast-close-btn').onclick = function(e) {
+        e.stopPropagation();
+        dismissToast(toast);
+    };
+    
     // Auto dismiss
+    const timer = setTimeout(() => dismissToast(toast), duration);
+    
+    // Store timer reference for cleanup
+    toast._dismissTimer = timer;
+}
+
+function dismissToast(toast) {
+    // Clear timer if still active
+    if (toast._dismissTimer) {
+        clearTimeout(toast._dismissTimer);
+        toast._dismissTimer = null;
+    }
+    toast.classList.add('toast-exit');
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, duration);
+        if (toast.parentNode) toast.remove();
+    }, 280);
 }
 
 /* cache-bust: 20260430m */
