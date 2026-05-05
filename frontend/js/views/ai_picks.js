@@ -71,22 +71,7 @@ function renderAiBrief(payload) {
   const asOf = payload?.as_of_label || '';
   const nextUp = payload?.next_update || 'jadwal belum tersedia';
 
-  // LLM narrative
-  const llm = payload?.llm || {};
-  const llmSummary = llm?.summary || '';
-  const pickNotes = llm?.pick_notes || {};
-  const llmStatus = llm?.status || 'disabled';
-  const llmModel = llm?.model || '';
-  const hasNarrative = llmStatus === 'ok' && llmSummary.length > 0;
-  const briefBody = hasNarrative
-    ? `<div class="text-sm text-muted ai-brief-narrative">${llmSummary}</div>`
-    : `<p class="text-sm text-muted">Briefing dan narasi tambahan akan tersedia saat scheduler harian selesai memproses semua kandidat.</p>`;
-
-  // Pick notes
-  const noteKeys = Object.keys(pickNotes);
-  const notesHtml = noteKeys.length
-    ? `<div class="ai-brief-notes mt-2">${noteKeys.map(t => `<div class="ai-brief-note"><strong>${t}</strong>: ${pickNotes[t]}</div>`).join('')}</div>`
-    : '';
+  const briefHtml = renderBriefBody(payload);
 
   return `
     <div class="ai-picks-compact-hero">
@@ -108,13 +93,38 @@ function renderAiBrief(payload) {
     </div>
 
     <details class="ai-picks-brief-collapsible panel">
-      <summary class="ai-picks-brief-summary">AI Desk Brief <span class="badge">${llmStatus === 'ok' ? 'live' : 'menunggu'}</span></summary>
+      <summary class="ai-picks-brief-summary">AI Desk Brief <span class="badge" id="brief-badge">${briefBadge(payload)}</span></summary>
       <div class="ai-picks-brief-body">
-        ${briefBody}
-        ${notesHtml}
-        ${llmModel ? `<div class="text-xs text-dim mt-1">model: ${llmModel}</div>` : ''}
+        ${briefHtml}
       </div>
     </details>`;
+}
+
+function briefBadge(payload) {
+  const status = payload?.llm?.status || 'disabled';
+  return status === 'ok' ? 'live' : 'menunggu';
+}
+
+function renderBriefBody(payload) {
+  const llm = payload?.llm || {};
+  const llmSummary = llm?.summary || '';
+  const pickNotes = llm?.pick_notes || {};
+  const llmStatus = llm?.status || 'disabled';
+  const llmModel = llm?.model || '';
+  const hasNarrative = llmStatus === 'ok' && llmSummary.length > 0;
+
+  const body = hasNarrative
+    ? `<div class="text-sm text-muted ai-brief-narrative">${llmSummary}</div>`
+    : `<p class="text-sm text-muted">Briefing dan narasi tambahan akan tersedia saat scheduler harian selesai memproses semua kandidat.</p>`;
+
+  const noteKeys = Object.keys(pickNotes);
+  const notes = noteKeys.length
+    ? `<div class="ai-brief-notes mt-2">${noteKeys.map(t => `<div class="ai-brief-note"><strong>${t}</strong>: ${pickNotes[t]}</div>`).join('')}</div>`
+    : '';
+
+  const modelLine = llmModel ? `<div class="text-xs text-dim mt-1">model: ${llmModel}</div>` : '';
+
+  return body + notes + modelLine;
 }
 
 // ─── Compact Card ──────────────────────────────────────────
@@ -273,6 +283,10 @@ export async function renderAiPicks(root) {
       const cached = modeCache[mode];
       root.querySelector('.ai-picks-compact-hero').innerHTML = extractHeroHtml(cached);
       root.querySelector('.ai-picks-summary-strip').innerHTML = extractSummaryHtml(cached);
+      const briefBody = root.querySelector('.ai-picks-brief-body');
+      if (briefBody) briefBody.innerHTML = renderBriefBody(cached);
+      const briefBadgeEl = root.querySelector('#brief-badge');
+      if (briefBadgeEl) briefBadgeEl.textContent = briefBadge(cached);
       listEl.innerHTML = renderCardList(cached.data, mode);
       setActiveMode(mode);
       wireActions(root, mode, cached.data || [], loadMode);
@@ -291,9 +305,11 @@ export async function renderAiPicks(root) {
       modeCache[mode] = payload;
 
       // Render hero + summary
-      // First remove old summary strip to prevent duplicate (outerHTML only replaces hero, not siblings)
+      // First remove old summary strip & brief to prevent duplicates (outerHTML only replaces hero, not siblings)
       const oldSummary = root.querySelector('.ai-picks-summary-strip');
       if (oldSummary) oldSummary.remove();
+      const oldBrief = root.querySelector('.ai-picks-brief-collapsible');
+      if (oldBrief) oldBrief.remove();
       const heroSection = root.querySelector('.ai-picks-compact-hero');
       if (heroSection) heroSection.outerHTML = renderAiBrief(payload);
       const summarySection = root.querySelector('.ai-picks-summary-strip');
