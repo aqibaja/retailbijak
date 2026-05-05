@@ -101,8 +101,11 @@ function renderAiBrief(payload) {
 }
 
 function briefBadge(payload) {
-  const status = payload?.llm?.status || 'disabled';
-  return status === 'ok' ? 'live' : 'menunggu';
+  const hasPicks = Array.isArray(payload?.data) && payload.data.length > 0;
+  const llmOk = payload?.llm?.status === 'ok' && payload?.llm?.summary?.length > 0;
+  if (llmOk) return 'live';
+  if (hasPicks) return 'siap';
+  return 'menunggu';
 }
 
 function renderBriefBody(payload) {
