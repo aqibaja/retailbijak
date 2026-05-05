@@ -1335,6 +1335,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
   .stock-detail-pro .stock-hero .badge { font-size: 10px; padding: 3px 6px; }
   .stock-detail-pro .stock-hero .text-sm.text-muted { font-size: 11px !important; }
   .stock-detail-pro .stock-chart-wrap { height: 220px !important; }
+  .ai-picks-summary-strip { grid-template-columns: 1fr; }
+  .dash-summary-strip { grid-template-columns: 1fr; gap: 10px; }
 }
 /* Search Overlay (Command Palette Style) */
 .search-overlay {
@@ -3649,4 +3651,8 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 }
 @media (max-width: 700px) {
   .help-shortcuts-grid { grid-template-columns: 1fr; }
+  .news-featured-grid { grid-template-columns: 1fr; }
+  .news-hero-card { min-height: 200px; }
+  .news-side-card { min-height: 80px; padding: 14px; }
+  .stock-stats-v2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
