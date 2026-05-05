@@ -498,3 +498,396 @@ function renderDecisionPanel(candles, tech){
   // Confluence: count bullish/bearish indicators
   const macdStatus = (ind.macd?.status || '').toLowerCase();
   const trendStatus = (ind.trend?.status || '').toLowerCase();
+
+  const volRatio = Number(ind.volume?.ratio || 0);
+  const stochK = Number(ind.stochastic?.k || 50);
+  const confluenceBull = [rating === 'BULLISH', macdStatus.includes('bull'), trendStatus.includes('bull'), rsi > 50 && rsi < 70, volRatio >= 1].filter(Boolean).length;
+  const confluenceBear = [rating === 'BEARISH', macdStatus.includes('bear'), trendStatus.includes('bear'), rsi >= 70, volRatio < 0.5].filter(Boolean).length;
+  const totalChecked = 5;
+  const netScore = Math.round((confluenceBull / totalChecked) * 100);
+  const scoreLabel = netScore >= 70 ? 'Bullish kuat' : netScore >= 50 ? 'Bullish moderat' : netScore >= 30 ? 'Sideways' : 'Bearish';
+
+  // Multi-TF trends from candle closes
+  const closes = candles.map(c => Number(c.close)).filter(Number.isFinite);
+  function tfTrend(days) { const s = closes.slice(-days); if (s.length < 2) return '→'; return s[0] <= s[s.length-1] ? '↑' : '↓'; }
+  const tf7 = tfTrend(7), tf30 = tfTrend(30), tf90 = tfTrend(90);
+  const tfClass = (t) => t === '↑' ? 'text-up' : t === '↓' ? 'text-down' : 'text-dim';
+
+  // Dynamic recommendation
+  const isOverbought = rsi >= 70;
+  const action = rating === 'BEARISH' ? 'HINDARI DULU'
+    : (rsi >= 80 || (isOverbought && rr < 1.2)) ? 'TAHAN / PANTAU'
+    : netScore >= 70 ? 'AKUMULASI BERTAHAP'
+    : netScore >= 50 ? 'PANTAU KONFIRMASI'
+    : 'HINDARI DULU';
+  const caution = rsi >= 80
+    ? 'RSI ekstrem — risiko koreksi tinggi. Jangan chasing, tunggu pullback.'
+    : rr < 1
+      ? 'Rasio risk/reward kurang ideal — jangan chasing, tunggu pullback/level lebih murah.'
+      : netScore >= 70
+        ? 'Setup bullish terkonfirmasi. Pantau breakout resistance dengan volume.'
+        : netScore >= 50
+          ? 'Setup bullish muncul. Tunggu konfirmasi volume dan candle penutup.'
+          : 'Belum ada setup jelas. Tahan posisi/tunggu.';  
+
+  // RR visual bar
+  const barPct = Math.min(Math.max((rr / 3) * 100, 5), 100);
+
+  document.getElementById('decision-panel').innerHTML = `
+    <div class="score-card">
+      <div class="score-card-head">
+        <span class="score-card-label">Skor Keputusan</span>
+        <span class="score-card-badge ${netScore >= 70 ? 'buy' : netScore >= 50 ? 'warn' : 'avoid'}">${action}</span>
+      </div>
+      <div class="score-card-number"><span class="score-card-num ${netScore >= 70 ? 'good' : netScore >= 50 ? 'warn' : 'bad'}">${netScore}</span><span class="score-card-max">/100</span></div>
+      <div class="score-progress">
+        <div class="score-progress-label"><span>Konfluensi ${confluenceBull}/${totalChecked}</span><span>${scoreLabel}</span></div>
+        <div class="score-progress-track"><div class="score-progress-marker" style="left:50%"></div><div class="score-progress-fill ${netScore >= 70 ? 'good' : netScore >= 50 ? 'warn' : 'bad'}" style="width:${netScore}%"></div></div>
+      </div>
+      <div class="score-details">
+        <span class="score-detail-item">Multi-TF: <strong class="${tfClass(tf7)}">7D ${tf7}</strong> <strong class="${tfClass(tf30)}">30D ${tf30}</strong> <strong class="${tfClass(tf90)}">90D ${tf90}</strong></span>
+        <span class="score-detail-item">R/R: <strong>${nf(rr,2)}x</strong></span>
+        <span class="score-detail-item">Level: <strong class="up">${money(levels.entry)}</strong> → <strong class="up">${money(levels.target)}</strong></span>
+      </div>
+      <div class="score-caution">${caution}</div>
+      <div class="score-levels">Stop <span class="down">${money(levels.stop)}</span> · Entry <span class="up">${money(levels.entry)}</span> · Target <span class="up">${money(levels.target)}</span></div>
+    </div>`;
+}
+function renderLevelOverlay(candles, tech){
+  const overlay=document.getElementById('level-overlay'); if(!overlay) return; overlay.innerHTML = '';
+}
+function renderLevelSuggestions(candles, tech){
+  const el=document.getElementById('level-suggestions'); if(!el) return; const levels=getLevels(candles, tech);
+  const items=[['STOP', levels.stop, 'Kendali risiko', 'metric-bad'], ['ENTRY', levels.entry, 'Zona pullback', 'metric-good'], ['TARGET', levels.target, 'Zona reward', 'metric-warn']];
+  el.innerHTML = items.map(([label, price, note, cls]) => `<span class="sugg-chip ${cls}"><strong>${label}</strong> ${money(price)} <small>${note}</small></span>`).join('');
+}
+function renderMarketStatsV2(d, candles, tech){
+  const el = document.getElementById('market-stats-v2'); if (!el) return;
+  const last = candles[candles.length-1] || {}; const prev = candles[candles.length-2] || last;
+  const delta = Number(last.close || 0) - Number(prev.close || 0); const pct = prev.close ? (delta / prev.close) * 100 : null;
+  const volRatio = tech?.indicators?.volume?.ratio;
+  const rsiVal = Number(tech?.indicators?.rsi?.value);
+  const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
+  const peLabel = d.trailing_pe ? `${nf(d.trailing_pe,1)}x` : '—';
+  const pbLabel = d.price_to_book ? `${nf(d.price_to_book,1)}x` : '—';
+  const roeLabel = d.roe ? pf(Number(d.roe) * (Math.abs(d.roe) <= 1 ? 100 : 1)) : '—';
+  const derLabel = nf(d.debt_to_equity,2);
+
+  function statTile(label, value, changeText = '', changeCls = '') {
+    const cls = changeCls ? (changeCls === 'metric-good' ? 'label-up' : changeCls === 'metric-bad' ? 'label-down' : 'label-warn') : '';
+    return `<div class="stock-stat-v2 ${cls}"><span>${label}</span><strong>${value}</strong>${changeText ? `<span class="stat-change ${changeCls === 'metric-good' ? 'up' : changeCls === 'metric-bad' ? 'down' : 'neutral'}">${changeText}</span>` : ''}</div>`;
+  }
+
+  el.innerHTML = [
+    statTile('Harga', money(last.close), pct == null ? '—' : pf(pct), delta >= 0 ? 'metric-good' : 'metric-bad'),
+    statTile('Volume', nf(last.volume,0), volRatio ? `${nf(volRatio,2)}x` : '', volRatio >= 1.5 ? 'metric-good' : volRatio < 0.5 ? 'metric-bad' : 'metric-neutral'),
+    statTile('Rentang', `${money(last.high)}/${money(last.low)}`, 'sesi harian', 'metric-neutral'),
+    statTile('ROE', roeLabel, hasFundamental ? 'profitabilitas' : '', isNaN(d.roe) ? '' : d.roe > 15 ? 'metric-good' : d.roe > 5 ? 'metric-neutral' : 'metric-bad'),
+    statTile('P/E', peLabel, hasFundamental ? 'valuasi' : '', d.trailing_pe ? (d.trailing_pe > 25 ? 'metric-bad' : d.trailing_pe < 12 ? 'metric-good' : 'metric-neutral') : ''),
+    statTile('DER', derLabel, hasFundamental ? 'leverage' : '', d.debt_to_equity > 2 ? 'metric-bad' : d.debt_to_equity > 0 ? 'metric-neutral' : ''),
+  ].join('');
+}
+
+function renderSnapshotPanel(d, candles, tech){
+  const el = document.getElementById('snapshot-panel'); if (!el) return;
+  const last = candles[candles.length-1] || {}; const prev = candles[candles.length-2] || last;
+  const delta = Number(last.close || 0) - Number(prev.close || 0); const pct = prev.close ? (delta / prev.close) * 100 : null;
+  const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
+  const cards = [
+    ['Buka', money(last.open), 'setup hari ini', 'metric-neutral'],
+    ['Tinggi / Rendah', `${money(last.high)} / ${money(last.low)}`, 'rentang sesi', 'metric-neutral'],
+    ['Penutupan Sebelumnya', money(prev.close), pct == null ? 'baseline harian' : pf(pct), delta >= 0 ? 'metric-good' : 'metric-bad'],
+    ['Laju Volume', nf(last.volume,0), tech?.indicators?.volume?.ratio ? `${nf(tech.indicators.volume.ratio,2)}x rata-rata` : 'pantau aliran', sentimentClass('spike', tech?.indicators?.volume?.ratio)],
+    ['Cakupan Fundamental', hasFundamental ? 'Siap Dibaca' : 'Fundamental Menunggu', hasFundamental ? 'snapshot basis data' : 'menunggu basis data lebih kaya', hasFundamental ? 'metric-good' : 'metric-warn'],
+    ['Bias Tren', tech?.rating || 'PANTAU', tech?.summary || 'snapshot teknikal', sentimentClass(tech?.rating, tech?.score)],
+  ];
+  el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+}
+
+function renderAiPreview(symbol, d, candles, tech, analysis){
+  const host = document.querySelector('.ai-thread-mock'); if (!host) return;
+  const levels = getLevels(candles, tech); const last = candles[candles.length-1] || {}; const rsi = Number(tech?.indicators?.rsi?.value);
+  const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
+  const valuation = d.trailing_pe ? (d.trailing_pe < 12 ? 'valuasi murah' : d.trailing_pe > 25 ? 'valuasi premium' : 'valuasi wajar') : 'valuasi belum lengkap';
+  const setupBias = tech?.rating === 'BULLISH' ? 'Bias bullish, fokus akumulasi bertahap.' : tech?.rating === 'BEARISH' ? 'Bias defensif, hindari entry agresif.' : 'Bias netral, tunggu konfirmasi lanjutan.';
+  const quickTake = rsi >= 70 ? `${symbol} mulai panas; utamakan disiplin entry dan jangan chasing.` : `${symbol} masih layak dipantau untuk setup berikutnya.`;
+  const biasTrigger = tech?.rating === 'BULLISH' ? 'Bias menguat jika volume tetap sehat dan harga bertahan di atas area entry.' : tech?.rating === 'BEARISH' ? 'Bias membaik bila harga kembali merebut area trend kunci dengan volume lebih baik.' : 'Bias berubah jika breakout didukung volume atau pullback tertahan rapi.';
+  const waitingNote = rsi >= 70 ? 'Tunggu pullback sehat atau konsolidasi singkat sebelum agresif masuk.' : 'Tunggu konfirmasi volume, candle penutup, dan reaksi harga di area entry.';
+  const riskNote = rsi >= 70 ? 'RSI sudah panas sehingga risiko false breakout naik.' : 'Jaga invalidasi di bawah area support agar risk/reward tetap sehat.';
+  const tradeMap = `Pantau ${money(levels.entry)} · invalid ${money(levels.stop)} · target ${money(levels.target)}.`;
+  const catalyst = analysis?.valuation?.label || analysis?.swing?.label || 'belum ada katalis dominan';
+  const llmStatus = analysis?.llm?.status || 'disabled';
+  const llmRuntimeMessage = analysis?.llm?.runtime_message || '';
+  const llmHeadline = llmStatus === 'ok'
+    ? (analysis?.llm?.summary || 'Asisten AI aktif, ringkasan terbaru siap dibaca.')
+    : llmStatus === 'error'
+      ? (llmRuntimeMessage || analysis?.llm?.summary || 'Asisten AI aktif tetapi respons terbaru gagal dimuat.')
+      : (llmRuntimeMessage || 'OpenRouter belum aktif. Aktifkan API key untuk membuka ringkasan AI penuh.');
+  const llmBadge = llmStatus === 'ok' ? 'Asisten AI aktif' : llmStatus === 'error' ? 'Asisten AI tertunda' : 'OpenRouter belum aktif';
+  host.innerHTML = `<div class="stat-tile metric-neutral"><span>Pembacaan Cepat AI</span><div class="text-sm text-muted mt-1">${quickTake}</div></div><div class="stat-tile ${sentimentClass(tech?.rating, tech?.score)}"><span>Bias Saat Ini</span><div class="text-sm text-muted mt-1">${setupBias}</div></div><div class="stat-tile metric-warn"><span>Risiko</span><div class="text-sm text-muted mt-1">${riskNote}</div></div><div class="stat-tile metric-good"><span>Peta Trading</span><div class="text-sm text-muted mt-1">${tradeMap}</div></div><div class="stat-tile ${llmStatus === 'ok' ? 'metric-good' : llmStatus === 'error' ? 'metric-warn' : 'metric-neutral'}"><span>${llmBadge}</span><div class="text-sm text-muted mt-1">${llmHeadline}</div></div>`;
+}
+
+function renderBelowChart(candles, tech){
+  const el = document.getElementById('below-chart-fill'); if (!el) return;
+  const data = candles.slice(-7); const last = candles[candles.length-1] || {}; const first = data[0] || last;
+  const highs = data.map(d=>d.high).filter(Number.isFinite), lows = data.map(d=>d.low).filter(Number.isFinite);
+  const rangePct = first?.close ? ((last.close - first.close) / first.close) * 100 : null;
+  const volumeRatio = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value; const levels = getLevels(candles, tech);
+  const cards = [
+    ['Rentang 7H', rangePct == null ? '—' : pf(rangePct), `${money(Math.min(...lows))} - ${money(Math.max(...highs))}`, rangePct >= 0 ? 'metric-good' : 'metric-bad'],
+    ['Konteks Volume', volumeRatio ? `${nf(volumeRatio,2)}x rata-rata` : '—', volumeRatio >= 1.5 ? 'aktif' : 'normal', volumeRatio >= 1.5 ? 'metric-good' : 'metric-neutral'],
+    ['Rencana Level', `${money(levels.stop)} / ${money(levels.target)}`, 'stop / target', 'metric-neutral'],
+    ['Pembacaan Cepat', rsi >= 70 ? 'Tunggu pullback' : (tech.rating || 'Pantau'), rsi >= 70 ? 'RSI jenuh beli' : 'setup', rsi >= 70 ? 'metric-warn' : sentimentClass(tech.rating, tech.score)],
+  ];
+  el.innerHTML = cards.map(([l,v,s,c]) => tile(l,v,s,c)).join('');
+}
+
+function catalystTile(label, title, body, cls = 'metric-neutral', href = 'news://pending', meta = ''){
+  const safeHref = href || 'news://pending';
+  const cardHref = safeHref;
+  return `<div class="stat-tile ${cls}" style="position:relative"><span>${label}</span><strong>${title}</strong><small>${body}</small><small>${meta || `<a href="${safeHref}" class="catalyst-link" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`}</small><a class="stretched-link" href="${cardHref}" target="_blank" rel="noopener noreferrer" aria-label="Buka sumber katalis"></a></div>`;
+}
+
+function scoreCatalystRow(row, symbolUpper){
+  const haystack = `${row?.ticker || ''} ${row?.code || ''} ${row?.title || ''} ${row?.summary || ''} ${row?.subject || ''}`.toUpperCase();
+  let score = 0;
+  if ((row?.ticker || '').toUpperCase() === symbolUpper) score += 10;
+  if ((row?.code || '').toUpperCase() === symbolUpper) score += 10;
+  if (haystack.includes(symbolUpper)) score += 5;
+  if (row?.link) score += 1;
+  return score;
+}
+
+function rankCatalystRows(rows, symbolUpper){
+  return rows
+    .map((row) => ({ ...row, score: scoreCatalystRow(row, symbolUpper) }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function formatRelativeCatalystTime(value){
+  if (!value) return 'sumber live';
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return 'sumber live';
+  const diffMs = Date.now() - dt.getTime();
+  const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+  if (diffMin < 60) return `${diffMin || 1}m lalu`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}j lalu`;
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay}h lalu`;
+}
+
+function renderCatalystStrip(symbol, newsPayload, announcementsPayload){
+  const el = document.getElementById('catalyst-strip'); if (!el) return;
+  const symbolUpper = String(symbol || '').toUpperCase();
+  const newsRows = rankCatalystRows(Array.isArray(newsPayload?.data) ? newsPayload.data : [], symbolUpper);
+  const announcementRows = rankCatalystRows(Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [], symbolUpper);
+  const relevantNews = newsRows[0]?.score > 0 ? newsRows[0] : null;
+  const latestAnnouncement = announcementRows[0]?.score > 0 ? announcementRows[0] : announcementRows[0] || null;
+  const newsHref = relevantNews?.link || 'news://pending';
+  const annHref = latestAnnouncement?.link || 'news://pending';
+  const newsMeta = `${formatRelativeCatalystTime(relevantNews?.published_at)} · <a href="${newsHref}" class="catalyst-link" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
+  const annMeta = `${formatRelativeCatalystTime(latestAnnouncement?.date)} · <a href="${annHref}" class="catalyst-link" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`;
+  const cards = [
+    relevantNews
+      ? catalystTile('Katalis Terbaru', 'Denyut Berita', (relevantNews.title || relevantNews.summary || 'Berita terbaru tersedia').slice(0, 96), 'metric-good', newsHref, newsMeta)
+      : catalystTile('Katalis Terbaru', 'Denyut Berita', `Menunggu katalis terbaru untuk ${symbolUpper} · sumber ${newsPayload?.source || 'no_data'}`, 'metric-warn', newsHref, newsMeta),
+    latestAnnouncement
+      ? catalystTile('Katalis Terbaru', 'Pemantau Pengumuman', `${latestAnnouncement.title || latestAnnouncement.subject || 'Pengumuman'} · ${(latestAnnouncement.date || '').slice(0, 10) || 'IDX'}`, 'metric-neutral', annHref, annMeta)
+      : catalystTile('Katalis Terbaru', 'Pemantau Pengumuman', `Belum ada pengumuman baru · sumber ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, annMeta),
+    catalystTile('Katalis Terbaru', 'Lensa Katalis', `Sinyal teknikal tetap jadi basis utama sambil menunggu berita/pengumuman emiten ${symbolUpper}.`, 'metric-neutral', newsHref, `Bias pemantauan · <a href="${newsHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`),
+    catalystTile('Katalis Terbaru', 'Cek Sumber', `Berita ${newsPayload?.source || 'no_data'} · Pengumuman ${announcementsPayload?.source || 'no_data'}`, 'metric-neutral', annHref, `Peta sumber · <a href="${annHref}" target="_blank" rel="noopener noreferrer">Tautan Katalis</a>`),
+  ];
+  el.innerHTML = cards.join('');
+}
+
+function renderCatalystStripV2(symbol, newsPayload, announcementsPayload){
+  const el = document.getElementById('catalyst-strip-v2'); if (!el) return;
+  const symbolUpper = String(symbol || '').toUpperCase();
+  const newsRows = rankCatalystRows(Array.isArray(newsPayload?.data) ? newsPayload.data : [], symbolUpper);
+  const announcementRows = rankCatalystRows(Array.isArray(announcementsPayload?.data) ? announcementsPayload.data : [], symbolUpper);
+  const relevantNews = newsRows[0];
+  const latestAnnouncement = announcementRows[0];
+
+  function metaRow(icon, iconCls, title, time, href, isAvailable) {
+    const safeHref = href || 'news://pending';
+    return `<a href="${safeHref}" class="catalyst-row catalyst-link" target="_blank" rel="noopener noreferrer">
+      <span class="catalyst-icon ${iconCls}">${icon}</span>
+      <div class="catalyst-body">
+        <span class="catalyst-title">${title}</span>
+        <div class="catalyst-meta">
+          <span>${isAvailable ? (time || 'baru') : 'menunggu data'}</span>
+          <a href="${safeHref}" class="catalyst-link" onclick="event.stopPropagation()">Buka</a>
+        </div>
+      </div>
+    </a>`;
+  }
+
+  const rows = [];
+  if (relevantNews && relevantNews.score > 0) {
+    rows.push(metaRow('B', 'news', (relevantNews.title || 'Berita').slice(0, 80), formatRelativeCatalystTime(relevantNews?.published_at), relevantNews?.link, true));
+  }
+  if (latestAnnouncement && latestAnnouncement.score > 0) {
+    rows.push(metaRow('P', 'ann', (latestAnnouncement.title || latestAnnouncement.subject || 'Pengumuman').slice(0, 72), (latestAnnouncement.date || '').slice(0, 10), latestAnnouncement?.link, true));
+  }
+  // Always show market pulse
+  rows.push(metaRow('M', 'mkt', 'Pantauan pasar: sinyal teknikal jadi basis utama', '', 'news://pending', false));
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="catalyst-row"><div class="catalyst-body"><span class="catalyst-title">Menunggu katalis terbaru</span><div class="catalyst-meta"><span>Belum ada berita atau pengumuman untuk ${symbolUpper}</span></div></div></div>`;
+  } else {
+    el.innerHTML = rows.join('');
+  }
+}
+
+function renderAnalysisPanel(data, tech){
+  const noData = String(tech.rating || '').toUpperCase().includes('NO DATA');
+  const rows = noData
+    ? [['Skor Swing', '—', 'belum ada data'], ['Sinyal', 'BELUM ADA DATA', 'belum ada data'], ['Valuasi', '—', 'belum ada data'], ['Kualitas', '—', 'belum ada data'], ['Risiko', '—', 'belum ada data']]
+    : [['Skor Swing', data.swing?.score ?? tech.score ?? '—', tech.score >= 60 ? 'bullish' : 'pantau'], ['Sinyal', tech.rating || data.swing?.label || 'NETRAL', tech.rating], ['Valuasi', data.valuation?.label || 'wajar', data.valuation?.label || 'wajar'], ['Kualitas', data.dividend?.label || 'lemah', data.dividend?.label || 'lemah'], ['Risiko', data.gorengan?.label || 'normal', data.gorengan?.label || 'normal']];
+  document.getElementById('analysis-panel').innerHTML = rows.map(([l,v,s]) => tile(l, v, s)).join('');
+}
+function renderTradePlan(candles, tech){
+  const last = candles[candles.length-1] || {}; const sr = tech?.indicators?.support_resistance || {}; const atr = tech?.indicators?.atr?.value;
+  const entry = last.close, stop = sr.support_20d && sr.support_20d > 0 ? sr.support_20d : (entry - (atr || entry*.08)); const target = sr.resistance_20d || (entry + (atr || entry*.1));
+  const el = document.getElementById('trade-plan'); if (el) el.innerHTML = [ ['Zona Entry', `${money(entry)} ± ${nf((atr || entry*.03),0)}`, 'tunggu pullback'], ['Area Stop', money(Math.max(1, stop)), 'kendali risiko'], ['Target Dekat', money(target), 'resistansi'] ].map(([l,v,s]) => `<div class="plan-card"><div class="text-xs text-dim uppercase strong">${l}</div><div class="mono strong text-main mt-1">${v}</div><div class="text-xs text-muted mt-1">${s}</div></div>`).join('');
+}
+function renderStockNotes(tech){
+  const pct = tech?.change_pct; const vol = tech?.indicators?.volume?.ratio; const rsi = tech?.indicators?.rsi?.value;
+  const notes = [
+    {t:'Momentum', v: pct >= 0 ? `Harga naik ${pf(pct)}; trend sedang kuat.` : `Harga turun ${pf(pct)}; tunggu konfirmasi.`, c: pct >= 0 ? 'metric-good' : 'metric-bad'},
+    {t:'Volume', v: vol ? `Volume ${nf(vol,2)}x rata-rata 20 hari.` : 'Volume belum lengkap.', c: vol >= 1.5 ? 'metric-good' : 'metric-neutral'},
+    {t:'Risiko', v: rsi >= 70 ? 'RSI jenuh beli — jangan chasing, tunggu pullback.' : 'Risiko relatif terkendali.', c: rsi >= 70 ? 'metric-warn' : 'metric-good'}
+  ];
+  document.getElementById('insight-cards').innerHTML = notes.map(n => `<div class="stat-tile ${n.c}"><span>${n.t}</span><div class="text-sm text-muted mt-1">${n.v}</div></div>`).join('');
+}
+function renderFallbackSvgChart(data){
+  const container = document.getElementById('tvchart');
+  const vals = data.map(d=>d.close), min=Math.min(...vals), max=Math.max(...vals), w=720,h=320,p=24;
+  const pts = vals.map((v,i)=>`${p+i*(w-2*p)/Math.max(vals.length-1,1)},${h-p-((v-min)/Math.max(max-min,1))*(h-2*p)}`).join(' ');
+  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="fallback-svg-chart"><polyline fill="none" stroke="#10b981" stroke-width="3" points="${pts}"/><text x="${p}" y="${p}" fill="#94a3b8">${nf(vals[vals.length-1],0)}</text></svg>`;
+}
+function renderStockNewsFeed(symbol, newsPayload) {
+  const el = document.getElementById('stock-news-feed');
+  if (!el) return;
+  const items = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
+  if (!items.length) {
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Menunggu aliran berita</strong><span class="dashboard-widget-state-note">Berita pasar akan muncul setelah scheduler berjalan. Cek halaman Berita untuk feed lengkap.</span></div>';
+    return;
+  }
+  const upper = symbol.toUpperCase();
+  const filtered = items.filter(n => (n.title || '').toUpperCase().includes(upper) || (n.summary || '').toUpperCase().includes(upper)).slice(0, 5);
+  const display = filtered.length ? filtered : items.slice(0, 4);
+  const label = filtered.length ? `Terkait ${upper}` : 'Berita Pasar Terbaru';
+  el.innerHTML = `<div class="text-xs text-dim uppercase strong mb-2">${label}</div>` +
+    display.map(n => `<div class="stat-tile metric-neutral news-clickable" onclick="window.open('${(n.link || 'news://pending').replace(/'/g, "\\'")}','_blank')">
+      <span style="font-size:9px">${n.source || 'rss'} · ${(n.published_at || '').slice(0, 10) || ''}</span>
+      <strong>${(n.title || 'Berita').slice(0, 80)}</strong>
+      ${n.summary ? `<small style="font-size:10px">${n.summary.replace(/<[^>]*>/g,'').slice(0, 60)}</small>` : ''}
+    </div>`).join('');
+}
+
+function renderStockAnnouncements(symbol, annPayload) {
+  const el = document.getElementById('stock-announcements-feed');
+  if (!el) return;
+  const items = Array.isArray(annPayload?.data) ? annPayload.data : [];
+  if (!items.length) {
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Belum ada pengumuman</strong><span class="dashboard-widget-state-note">Pengumuman dari IDX akan muncul setelah scheduler berjalan.</span></div>';
+    return;
+  }
+  const upper = symbol.toUpperCase();
+  const filtered = items.filter(a => (a.title || a.subject || '').toUpperCase().includes(upper)).slice(0, 5);
+  const display = filtered.length ? filtered : items.slice(0, 3);
+  el.innerHTML = display.map(a => {
+    const title = a.title || a.subject || 'Pengumuman';
+    const date = (a.date || '').slice(0, 10) || '';
+    const link = a.link || 'news://pending';
+    return `<div class="stat-tile metric-warn" style="cursor:pointer" onclick="window.open('${link.replace(/'/g, "\\'")}','_blank')"><span>IDX</span><strong>${title.slice(0, 72)}</strong><small>${date}</small></div>`;
+  }).join('');
+}
+
+function renderBrokerActivity(data) {
+  const el = document.getElementById('broker-activity-panel');
+  if (!el) return;
+  el.style.display = '';
+  el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2">Aktivitas Broker (5 hari)</div>' + 
+    data.slice(0, 6).map(r => {
+      const net = Number(r.net_volume || 0);
+      const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
+      return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono" style="font-size:11px">${r.broker || '—'}</span><span class="mono ${cls}" style="font-size:11px">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
+    }).join('');
+}
+
+// ─── Alert Modal ────────────────────────
+function showAlertModal(symbol) {
+  const existing = document.getElementById('alert-modal-overlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'alert-modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-backdrop" onclick="this.closest('#alert-modal-overlay')?.remove()"></div>
+    <div class="modal-panel">
+      <div class="flex justify-between items-center mb-3"><h3 class="panel-title m-0">Atur Peringatan ${symbol}</h3><button class="btn btn-icon" onclick="document.getElementById('alert-modal-overlay')?.remove()"><i data-lucide="x"></i></button></div>
+      <div class="mb-2"><label class="text-xs text-dim uppercase strong">Tipe</label>
+        <select id="alert-type" class="form-input alert-input">
+          <option value="price_above">Harga di atas</option><option value="price_below">Harga di bawah</option>
+          <option value="rsi_above">RSI di atas</option><option value="rsi_below">RSI di bawah</option>
+        </select></div>
+      <div class="mb-2"><label class="text-xs text-dim uppercase strong">Nilai</label><input type="number" id="alert-value" class="form-input alert-input" step="10" min="1" /></div>
+      <button id="alert-save-btn" class="btn btn-primary alert-save-btn">Simpan Peringatan</button>
+      <div id="alert-list" class="mt-3"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  document.getElementById('alert-save-btn').addEventListener('click', async () => {
+    const atype = document.getElementById('alert-type').value;
+    const avalue = parseFloat(document.getElementById('alert-value').value);
+    if (!avalue || avalue <= 0) return showToast('Masukkan nilai yang valid', 'error');
+    const res = await apiFetch('/alerts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ticker:symbol, alert_type:atype, value:avalue}) });
+    if (res?.ok) { showToast(res.message, 'success'); loadAlertList(symbol); }
+    else showToast('Gagal membuat alert', 'error');
+  });
+  loadAlertList(symbol);
+}
+
+async function loadAlertList(symbol) {
+  const el = document.getElementById('alert-list');
+  if (!el) return;
+  const res = await apiFetch(`/alerts?ticker=${encodeURIComponent(symbol)}`);
+  const items = Array.isArray(res?.data) ? res.data : [];
+  if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
+  el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
+    items.map(a => `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle)"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
+  el.querySelectorAll('[data-alert-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.alertId;
+      const del = await apiFetch(`/alerts/${id}`, { method: 'DELETE' });
+      if (del?.ok) { showToast(del.message, 'success'); loadAlertList(symbol); }
+    });
+  });
+}
+
+// ─── Peer Comparison ────────────────────
+function renderPeerComparison(symbol) {
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/peers?limit=5`).then(res => {
+    const el = document.getElementById('peer-comparison-panel');
+    if (!el || !res?.data?.length) return;
+    el.style.display = '';
+    el.innerHTML = '<div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Peer Comparison</span></div>' +
+      '<div class="peer-row peer-row-divider"><span class="text-xs text-dim peer-table-header">KODE</span><span class="text-xs text-dim peer-table-header">NAMA</span><span class="text-xs text-dim peer-table-header" style="text-align:right">HARGA</span><span class="text-xs text-dim peer-table-header" style="text-align:right">CHG%</span></div>' +
+      res.data.map(p => {
+        const changeCls = p.change_pct > 0 ? 'text-up' : p.change_pct < 0 ? 'text-down' : 'text-dim';
+        const arrow = p.change_pct > 0 ? '▲' : p.change_pct < 0 ? '▼' : '—';
+        return `<a href="#stock/${p.ticker}" class="peer-row">
+          <span class="peer-code">${p.ticker}</span>
+          <span class="peer-name">${(p.name || p.sector || '').slice(0, 18)}</span>
+          <span class="peer-price">${p.price != null ? nf(p.price,0) : '—'}</span>
+          <span class="peer-change ${changeCls}">${p.change_pct != null ? `${arrow} ${pf(p.change_pct)}` : '—'}</span>
+        </a>`;
+      }).join('');
+  }).catch(() => {});
+}
+
+function fallbackIssuerName(ticker){ const names={GOTO:'GoTo Gojek Tokopedia Tbk.',BBCA:'Bank Central Asia Tbk.',BMRI:'Bank Mandiri Tbk.',BBRI:'Bank Rakyat Indonesia Tbk.',TLKM:'Telkom Indonesia Tbk.'}; return names[ticker] || `${ticker} — Ekuitas IDX`; }
+function makeFallbackCandles(ticker){ const baseMap={GOTO:96,BBCA:9800,BMRI:5850,BBRI:4100,TLKM:3420}; const base=baseMap[ticker]||1000; const out=[]; for(let i=59;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const wave=Math.sin(i/3)*0.025; const close=Math.round(base*(1+wave+(60-i)*0.0008)); out.push({date:d.toISOString().slice(0,10),open:close-2,high:close+4,low:close-5,close,volume:10000000+i*123456}); } return out; }
