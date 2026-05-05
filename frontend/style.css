@@ -996,6 +996,45 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .btn-primary:active { transform: scale(0.97); box-shadow: 0 0 12px rgba(16,185,129,0.25); }
 .btn-sm:active { transform: scale(0.96); }
 
+/* Disabled states */
+.btn:disabled, button:disabled, input:disabled, select:disabled, textarea:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.btn:disabled:hover, button:disabled:hover, a[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+a[aria-disabled="true"] { pointer-events: none; text-decoration: none; }
+
+/* Scroll margin for sticky header */
+section[id], [id^="tab-"], [id^="section-"],
+.stock-tab-content[id], .panel[id], .card[id] {
+  scroll-margin-top: 80px;
+}
+
+/* Content link styling */
+.content-link, p a, .text-main a, .description a {
+  color: var(--primary-color);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s, color .2s;
+}
+.content-link:hover, p a:hover, .text-main a:hover, .description a:hover {
+  border-bottom-color: var(--primary-color);
+  color: #34d399;
+}
+.content-link:focus-visible, p a:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* Interactive item press states */
 .nav-item:active { transform: scale(0.92); }
 .bottom-nav-item:active { transform: scale(0.92); }
