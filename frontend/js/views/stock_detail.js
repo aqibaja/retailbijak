@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506e';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506z';
 import { observeElements, flashUpdate } from '../main.js?v=20260506a';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
