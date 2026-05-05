@@ -1,0 +1,36 @@
+{
+  "name": "RetailBijak — IDX Stock Intelligence",
+  "short_name": "RetailBijak",
+  "description": "Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "categories": ["finance", "investing", "productivity"],
+  "lang": "id",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any monochrome"
+    },
+    {
+      "src": "assets/br-logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "180x80",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/site-logo.png",
+      "type": "image/png",
+      "sizes": "1000x550",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

@@ -78,6 +78,8 @@ html[data-theme="light"] {
   --border-subtle: rgba(15, 23, 42, 0.12);
   --border-strong: rgba(15, 23, 42, 0.18);
   --border-focus: rgba(16, 185, 129, 0.26);
+  background: var(--bg-base) !important;
+  color: var(--text-main) !important;
   --panel-bg: #ffffff;
   --panel-border: rgba(15,23,42,0.10);
   --input-bg: #ffffff;
@@ -3831,4 +3833,31 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ================= PRINT STYLES ================= */
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  .sidebar, .bottom-nav, .topbar, .topbar-ticker-wrap,
+  .search-overlay, #toast-container, .btn, .nav-item,
+  .initial-loader, .skeleton, .skeleton-shimmer,
+  .loading-spinner-wrap, .scroll-progress { display: none !important; }
+  .main-content { margin: 0 !important; padding: 20px !important; width: 100% !important; }
+  .panel, .card, [class*="card"], [class*="panel"] {
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  .empty-state, .empty-state-v2, .stock-news-empty,
+  .dashboard-widget-state, .market-empty { display: none !important; }
+  table { font-size: 10px; }
+  a { color: #1a56db !important; text-decoration: underline; }
+  .mono { font-family: "JetBrains Mono", "SF Mono", monospace !important; }
+  .text-main, .text-muted, .text-dim { color: #222 !important; }
+  .stock-chart { max-width: 100%; page-break-inside: avoid; }
+  .dash-grid, .market-grid, .stock-grid { page-break-before: auto; }
+  .live-dot, .status-dot { display: none !important; }
+  [class*="skeleton"] { display: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
