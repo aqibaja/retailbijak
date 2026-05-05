@@ -989,6 +989,72 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .btn-primary:hover { background: linear-gradient(135deg,#10b981,#109969); box-shadow: 0 0 24px rgba(16,185,129,0.4); border-color: transparent; color: #fff;}
 .btn-icon { padding: 8px; border-radius: 8px; color: var(--text-muted); border: 1px solid transparent; height: auto;}
 .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+.btn-icon:active { transform: scale(0.94); background: rgba(255,255,255,0.08); }
+.btn-primary:active { transform: scale(0.97); box-shadow: 0 0 12px rgba(16,185,129,0.25); }
+.btn-sm:active { transform: scale(0.96); }
+
+/* Interactive item press states */
+.nav-item:active { transform: scale(0.92); }
+.bottom-nav-item:active { transform: scale(0.92); }
+a:active, button:active { transform: scale(0.98); }
+a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
+
+/* Clickable card/row press feedback */
+.mover-row:active,
+.news-card:active,
+.dash-mover-row:active,
+.dash-intel-card:active,
+.intel-item:active,
+.stock-news-card:active,
+.suggestion-pill:active,
+.scanner-row:active,
+.dash-summary-card:active,
+.dash-quote-card:active,
+.market-stat-box:active,
+.help-step-card:active {
+  transform: scale(0.985);
+  background: rgba(255,255,255,0.02);
+}
+[class*="card"]:active,
+[class*="panel"]:active {
+  transform: scale(0.985);
+}
+/* But not on primary/modals */
+.modal-panel:active,
+.toast:active,
+.initial-loader:active,
+.search-modal:active {
+  transform: none !important;
+}
+
+/* ================= VIEW CONTENT ENTRANCE ================= */
+/* Staggered entrance for content children */
+.view-content > * {
+  animation: viewFadeIn 0.35s var(--ease-out) both;
+}
+.view-content > *:nth-child(2) { animation-delay: 30ms; }
+.view-content > *:nth-child(3) { animation-delay: 60ms; }
+.view-content > *:nth-child(4) { animation-delay: 90ms; }
+.view-content > *:nth-child(5) { animation-delay: 120ms; }
+.view-content > *:nth-child(6) { animation-delay: 150ms; }
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ================= MODAL EXIT ANIMATION ================= */
+.modal-backdrop.closing {
+  animation: modalBackdropExit .2s var(--ease-out) both;
+}
+.modal-panel.closing {
+  animation: modalPanelExit .2s var(--ease-out) both;
+}
+@keyframes modalBackdropExit {
+  to { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
+}
+@keyframes modalPanelExit {
+  to { opacity: 0; transform: translate(-50%,-50%) scale(0.92); }
+}
 
 /* Navigation Items */
 .nav-item {

@@ -67,6 +67,9 @@ export function handleRoute(hash) {
             // Re-initialize icons for newly injected HTML
             if (typeof lucide !== 'undefined') lucide.createIcons();
             
+            // View content entrance animation
+            if (currentToken === routeToken) root.classList.add('view-content');
+            
         } catch (e) {
             console.error("Routing error:", e);
             root.innerHTML = `<div class="p-4 text-down">Gagal memuat tampilan.</div>`;
