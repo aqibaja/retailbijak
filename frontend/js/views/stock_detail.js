@@ -859,7 +859,7 @@ async function loadAlertList(symbol) {
   const items = Array.isArray(res?.data) ? res.data : [];
   if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
   el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
-    items.map(a => `<div class="flex justify-between items-center gap-2 py-1" style="border-bottom:1px solid var(--border-subtle)"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
+    items.map(a => `<div class="flex justify-between items-center gap-2 py-1 alert-row"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
   el.querySelectorAll('[data-alert-id]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.alertId;
