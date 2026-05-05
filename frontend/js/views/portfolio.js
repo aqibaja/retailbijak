@@ -96,7 +96,7 @@ export async function renderPortfolio(root, activeTab) {
             <p>Kelola posisi aktif dan pantau aset kandidat.</p>
           </div>
           <div class="portfolio-meta-rail">
-            <div class="portfolio-tab-switch flex p-1" style="background:rgba(15,23,41,.5);border-radius:10px;border:1px solid var(--border-subtle);">
+            <div class="portfolio-tab-switch flex p-1">
               <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">Portofolio</a>
               <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
             </div>
