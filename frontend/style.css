@@ -3656,3 +3656,179 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   .news-side-card { min-height: 80px; padding: 14px; }
   .stock-stats-v2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ================= ACCESSIBILITY: REDUCED MOTION ================= */
+/* Only show outline on keyboard focus, not mouse click */
+:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Disable all animations/transitions when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-shimmer,
+  .skeleton,
+  .loading-pulse {
+    animation: none !important;
+    background: var(--bg-panel-hover) !important;
+  }
+  .live-dot { animation: none !important; }
+  .toast-enter,
+  .toast-exit,
+  .modal-enter,
+  .modal-exit,
+  .fade-in,
+  .slide-up,
+  .slide-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ================= EMPTY & ERROR STATE COMPONENTS ================= */
+/* Backward-compatible aliases — all existing view empty states map to same polished design */
+.empty-state-v2,
+.stock-news-empty,
+.dashboard-widget-state,
+.market-empty,
+.market-empty-rich,
+.ai-picks-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+  gap: 10px;
+}
+.stock-news-empty-icon,
+.market-empty-icon,
+.empty-icon,
+.ai-picks-state-icon,
+.dashboard-widget-state .dashboard-widget-state-icon {
+  font-size: 32px;
+  opacity: 0.35;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stock-news-empty strong,
+.dashboard-widget-state-title,
+.market-empty strong,
+.ai-picks-state-card strong,
+.ai-picks-state-stack strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: block;
+}
+.stock-news-empty span,
+.dashboard-widget-state-note,
+.market-empty span,
+.market-empty-rich span,
+.ai-picks-state-card span,
+.ai-picks-state-stack span,
+.ai-picks-state-stack .text-sm,
+.empty-state-small {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 280px;
+  display: block;
+}
+.market-empty-refresh,
+.dashboard-widget-state .btn,
+.stock-news-empty .btn {
+  margin-top: 8px;
+}
+.empty-state-v2 .empty-icon {
+  font-size: 32px;
+  opacity: 0.35;
+  margin-bottom: 4px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+  gap: 10px;
+}
+.empty-state-icon {
+  font-size: 32px;
+  opacity: 0.35;
+  margin-bottom: 4px;
+}
+.empty-state-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.empty-state-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 10px;
+}
+.error-state-icon {
+  font-size: 30px;
+  opacity: 0.4;
+}
+.error-state-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--down-color);
+}
+.error-state-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 260px;
+}
+
+/* ================= LOADING SPINNER ================= */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.loading-spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 12px;
+}
+.loading-spinner-text {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
