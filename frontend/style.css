@@ -455,7 +455,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
 }
 .dashboard-card-wide { grid-column: span 2; }
-.screener-hero { display: grid; gap: 8px; }
+.screener-hero { display: grid; gap: 10px; }
 .screener-kicker {
   display: inline-flex; width: fit-content; padding: 4px 10px; border-radius: 999px;
   background: rgba(99,102,241,0.12); color: #a5b4fc; font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -473,13 +473,13 @@ button, input, select { font-family: inherit; border: none; background: none; co
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: var(--panel-radius);
-  padding: 32px;
+  padding: 28px;
   position: relative;
   box-shadow: 0 20px 60px rgba(0,0,0,0.2), 0 0 80px rgba(16,163,109,0.03);
 }
-.scanner-toolbar { align-items: flex-start; gap: 12px; }
-.scanner-control-stack { display: flex; flex-direction: column; gap: 6px; }
-.scanner-toolbar-hint { color: var(--text-dim); font-size: 11px; line-height: 1.4; }
+.scanner-toolbar { align-items: flex-start; gap: 14px; }
+.scanner-control-stack { display: flex; flex-direction: column; gap: 8px; }
+.scanner-toolbar-hint { color: var(--text-dim); font-size: 11px; line-height: 1.5; max-width: 140px; }
 .scanner-empty-rich { display: grid; gap: 12px; justify-items: start; }
 .scanner-empty-title { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0; }
 .scanner-empty-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
@@ -687,7 +687,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   font-size: 12px;
 }
 .scanner-form-note {
-  margin: -4px 0 0;
+  margin: 0;
   color: var(--text-muted);
   font-size: 13px;
   line-height: 1.6;
