@@ -14,12 +14,6 @@ const renderEmptyState = ({
   </div>
 `;
 
-const rowMeta = (r) => `
-  <div class="scanner-row-meta">
-    <span class="scanner-row-kicker">SINYAL</span>
-    <span class="scanner-row-note">CCI ${r.cci ?? '—'} · MA ${r.magic_line ?? '—'} · Vol ${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</span>
-  </div>`;
-
 const renderSkeleton = () => `
   <div class="flex-col gap-3 p-5">
     ${Array(5).fill('<div class="skeleton skeleton-card skeleton-h-80"></div>').join('')}
@@ -33,10 +27,8 @@ const renderRow = (r) => `
       <div class="scanner-row-copy">
         <div class="scanner-row-title">
           <div class="text-main scanner-row-ticker">${r.ticker}</div>
-          <span class="scanner-row-kicker">SINYAL</span>
         </div>
         <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}</div>
-        ${rowMeta(r)}
       </div>
     </div>
     <div class="scanner-row-stats">
@@ -134,7 +126,7 @@ function renderList(results) {
     const hasResults = results.length > 0;
     if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
     contentArea.innerHTML = hasResults
-        ? `<div class="flex-col gap-1">${results.map(r => renderRow(r)).join('')}</div>`
+        ? `<div class="flex-col gap-3">${results.map(r => renderRow(r)).join('')}</div>`
         : renderEmptyState({
             title: 'Tidak ada sinyal terdeteksi',
             body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
