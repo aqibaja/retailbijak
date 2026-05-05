@@ -1538,7 +1538,7 @@ html[data-theme="light"] .news-meta {
 /* Decision Panel V2 */
 .decision-confluence{margin:6px 0}
 .confluence-bar-wrap{display:flex;align-items:center;gap:8px}
-.confluence-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-weight:800;min-width:52px}
+.confluence-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;font-weight:800;min-width:52px}
 .confluence-track{flex:1;height:6px;border-radius:999px;background:rgba(15,23,41,.5);overflow:hidden;display:flex}
 .confluence-fill{height:100%;transition:width .3s ease}
 .confluence-fill.bullish{background:linear-gradient(90deg,rgba(16,185,129,.6),rgba(52,211,153,.8))}
@@ -1609,7 +1609,7 @@ html[data-theme="light"] .news-meta {
 
 /* Alert Modal */
 .modal-backdrop{position:fixed;inset:0;background:rgba(8,14,28,.72);z-index:9999;backdrop-filter:blur(4px)}
-.modal-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(400px,92%);max-height:80vh;overflow-y:auto;background:var(--bg-mobile-surface);border:1px solid var(--border-strong);border-radius:20px;padding:24px;z-index:10000;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.modal-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);width:min(400px,92%);max-height:80vh;overflow-y:auto;background:var(--bg-mobile-surface);border:1px solid var(--border-strong);border-radius:20px;padding:24px;z-index:10000;box-shadow:0 24px 80px rgba(0,0,0,.5)}
 .modal-panel .form-input{background:rgba(11,18,32,.5);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-main);font-size:13px;padding:0 12px;outline:none}
 .modal-panel .form-input:focus{border-color:var(--border-focus)}
 
@@ -3364,6 +3364,10 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 .news-card-stream {
   padding: 16px 18px !important;
   margin-bottom: 0;
+  transition: border-color .2s ease, background .2s ease;
+}
+.news-card-stream:hover {
+  border-left-color: rgba(99,102,241,.4) !important;
 }
 
 /* Dashboard: intel cards spacing */
