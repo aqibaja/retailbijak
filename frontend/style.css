@@ -296,6 +296,8 @@ html[data-theme="light"] {
 [data-theme="light"] .dash-quote-card { background: var(--bg-panel); }
 [data-theme="light"] .modal-backdrop { background: rgba(248,250,252,.72); }
 [data-theme="light"] .modal-panel { background: #fff; border-color: rgba(15,23,42,.1); }
+[data-theme="light"] .modal-input { background: #fff; border-color: #e2e8f0; }
+[data-theme="light"] .screener-control-select { background: #fff; }
 [data-theme="light"] .score-card { background: var(--bg-panel); }
 [data-theme="light"] .indicator-toggle { background: rgba(15,23,42,.06); }
 [data-theme="light"] .table th { background: rgba(248,250,252,.9); }
@@ -984,7 +986,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .nav-item {
   position: relative; display: flex; justify-content: center; align-items: center;
   width: 44px; height: 44px; border-radius: 10px; margin-bottom: 12px;
-  color: rgba(226,232,240,0.6); transition: all .2s;
+  color: rgba(226,232,240,0.6); transition: all .2s var(--ease-out);
 }
 .nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
 .nav-item.active { 
@@ -1176,9 +1178,10 @@ button, input, select { font-family: inherit; border: none; background: none; co
     box-shadow: 0 -10px 24px rgba(2,8,20,.45);
   }
   .bottom-nav-item {
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    color: rgba(226,232,240,.58); padding: 8px 10px; font-size: 10px; font-weight: 700;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    color: rgba(226,232,240,.58); padding: 6px 12px; font-size: 10px; font-weight: 700;
     transition: color 0.2s ease, text-shadow 0.2s ease;
+    min-width: 56px;
   }
   .bottom-nav-item:hover {
     color: rgba(226,232,240,.85);
@@ -1187,6 +1190,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
     color: var(--primary-color);
     text-shadow: 0 0 12px rgba(16,185,129,.35);
   }
+  .bottom-nav-item svg.lucide { width: 20px; height: 20px; }
   .fab-search {
     position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
     width: 52px; height: 52px; border-radius: 50%; background: var(--btn-primary-gradient);
@@ -2079,7 +2083,7 @@ html[data-theme="light"] .news-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 10px;
 }
 .stock-hero-price {
   font-size: 28px;
@@ -2108,7 +2112,7 @@ html[data-theme="light"] .news-meta {
   gap: 8px;
   margin-top: 4px;
 }
-.stock-hero-meta .badge { font-size: 9px; padding: 2px 7px; border-radius: 4px; }
+.stock-hero-meta .badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 800; }
 .stock-hero-meta .live-time { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: .04em; }
 
 /* Score Card — Prominent Decision Panel */
@@ -2994,19 +2998,21 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 /* ================= MODAL / PORTFOLIO ================= */
 .modal-input {
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
+  height: 40px;
+  padding: 0 14px;
   border-radius: 10px;
   background: rgba(11,18,32,.5);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .modal-input:focus {
-  border-color: var(--primary-color);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(16,185,129,.08);
 }
+.modal-input::placeholder { color: var(--text-dim); font-size: 12px; }
 .modal-btn {
   flex: 1;
   height: 36px;
