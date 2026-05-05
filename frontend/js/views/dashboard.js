@@ -116,7 +116,7 @@ async function loadMarketSummary(){
   if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi: ${dataDate}` : 'Sinkronisasi: menunggu data.';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
-  const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? pf(c) : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
+  const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? (c >= 0 ? '▲' : '▼') + ' ' + pf(Math.abs(c)).replace('+', '') : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
   document.getElementById('ihsg-open').textContent = summary?.open != null ? nf(summary.open) : '—';
   document.getElementById('ihsg-high').textContent = summary?.high != null ? nf(summary.high) : '—';
   document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';
