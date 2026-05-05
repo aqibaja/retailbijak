@@ -133,8 +133,8 @@ export async function renderStockDetail(root, ticker) {
             </div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
-            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="stats-grid"></div></div>
-            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Pengumuman IDX</h3><div id="stock-announcements-feed" class="stats-grid"></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Pengumuman IDX</h3><div id="stock-announcements-feed" class="flex-col gap-2"></div></div>
           </div>
         </div>
       </div>
@@ -789,7 +789,7 @@ function renderStockAnnouncements(symbol, annPayload) {
   if (!el) return;
   const items = Array.isArray(annPayload?.data) ? annPayload.data : [];
   if (!items.length) {
-    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Belum ada pengumuman</strong><span class="dashboard-widget-state-note">Pengumuman dari IDX akan muncul setelah scheduler berjalan.</span></div>';
+    el.innerHTML = '<div class="stock-news-empty"><div class="stock-news-empty-icon"><i data-lucide="building"></i></div><strong>Belum ada pengumuman</strong><span>Pengumuman IDX untuk saham ini akan muncul setelah tersedia.</span></div>';
     return;
   }
   const upper = symbol.toUpperCase();
@@ -798,8 +798,12 @@ function renderStockAnnouncements(symbol, annPayload) {
   el.innerHTML = display.map(a => {
     const title = a.title || a.subject || 'Pengumuman';
     const date = (a.date || '').slice(0, 10) || '';
-    const link = a.link || 'news://pending';
-    return `<div class="stat-tile metric-warn" style="cursor:pointer" onclick="window.open('${link.replace(/'/g, "\\'")}','_blank')"><span>IDX</span><strong>${title.slice(0, 72)}</strong><small>${date}</small></div>`;
+    const link = a.link || '#';
+    return `<a href="${link.replace(/'/g, "\\'")}" target="_blank" rel="noopener noreferrer" class="stock-news-card">
+      <span class="stock-news-source">IDX</span>
+      <strong class="stock-news-title">${title.replace(/</g,'&lt;').slice(0, 80)}</strong>
+      <span class="stock-news-date">${date}</span>
+    </a>`;
   }).join('');
 }
 

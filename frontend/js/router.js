@@ -1,5 +1,5 @@
 import { renderDashboard } from './views/dashboard.js?v=20260506a';
-import { renderStockDetail } from './views/stock_detail.js?v=20260506e';
+import { renderStockDetail } from './views/stock_detail.js?v=20260506f';
 import { renderScreener } from './views/screener.js?v=20260506a';
 import { renderPortfolio } from './views/portfolio.js?v=20260506a';
 import { renderMarket } from './views/market.js?v=20260506a';
