@@ -258,19 +258,35 @@ async function setupRunningTicker() {
       </a>`;
    }).join('');
 }
+// Network status indicator
+function setupNetworkStatus() {
+  const el = document.getElementById('network-status');
+  if (!el) return;
+  const show = (online) => {
+    el.textContent = online ? 'Koneksi tersambung kembali.' : 'Koneksi terputus — beberapa fitur mungkin tidak berfungsi.';
+    el.className = `network-status ${online ? 'online' : ''}`;
+    el.classList.remove('hidden');
+    if (online) setTimeout(() => el.classList.add('hidden'), 3000);
+  };
+  window.addEventListener('online', () => show(true));
+  window.addEventListener('offline', () => show(false));
+  // Initial check
+  if (!navigator.onLine) show(false);
+}
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
-   try {
-       initTheme();
-       if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-       setupSearchOverlay();
-       setupScrollEffects();
-       setupRunningTicker();
-       refreshTopbarMarket();
-       setInterval(refreshTopbarMarket, 60000);
-   } catch (e) {
-       console.error('Init error:', e);
-   }
+  try {
+      initTheme();
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      setupSearchOverlay();
+      setupScrollEffects();
+      setupRunningTicker();
+      refreshTopbarMarket();
+      setInterval(refreshTopbarMarket, 60000);
+      setupNetworkStatus();
+  } catch (e) {
+      console.error('Init error:', e);
+  }
 });
 // Routing
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));

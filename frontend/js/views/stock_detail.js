@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506z';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506z';
 import { observeElements, flashUpdate } from '../main.js?v=20260506g';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -141,9 +141,29 @@ export async function renderStockDetail(root, ticker) {
     </section>`;
   observeElements();
   if (typeof lucide !== 'undefined') lucide.createIcons();
+  // Check watchlist state
+  let isWatched = false;
+  fetchWatchlist().then(wl => {
+    if (wl?.data) { isWatched = wl.data.some(w => w.ticker === symbol); updateWatchlistBtn(); }
+  }).catch(() => {});
+  function updateWatchlistBtn() {
+    const btn = document.getElementById('btn-add-watchlist');
+    if (!btn) return;
+    btn.textContent = isWatched ? '✓ Dipantau' : '+ Pantau';
+    btn.classList.toggle('btn-secondary', isWatched);
+    btn.classList.toggle('btn-primary', !isWatched);
+  }
   document.getElementById('btn-add-watchlist').addEventListener('click', async () => {
-    const res = await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
-    showToast(res?.ok ? `${symbol} ditambahkan ke Daftar Pantau` : `Gagal menambahkan ${symbol}`, res?.ok ? 'success' : 'error');
+    const res = isWatched
+      ? await deleteWatchlistItem(symbol)
+      : await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
+    if (res && res.ok !== false) {
+      isWatched = !isWatched;
+      updateWatchlistBtn();
+      showToast(isWatched ? `${symbol} ditambahkan ke Daftar Pantau` : `${symbol} dihapus dari Daftar Pantau`, 'success');
+    } else {
+      showToast(`Gagal ${isWatched ? 'menghapus' : 'menambahkan'} ${symbol}`, 'error');
+    }
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
 
