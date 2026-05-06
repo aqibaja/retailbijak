@@ -316,8 +316,8 @@ html[data-theme="light"] {
 [data-theme="light"] .dash-quote-card { background: var(--bg-panel); }
 [data-theme="light"] .modal-backdrop { background: rgba(248,250,252,.72); }
 [data-theme="light"] .modal-panel { background: #fff; border-color: rgba(15,23,42,.1); }
-[data-theme="light"] .modal-input { background: #fff; border-color: #e2e8f0; }
-[data-theme="light"] .screener-control-select { background: #fff; }
+[data-theme="light"] .modal-input { background: var(--input-bg); border-color: var(--border-subtle); }
+[data-theme="light"] .screener-control-select { background: var(--input-bg); }
 [data-theme="light"] .score-card { background: var(--bg-panel); }
 [data-theme="light"] .indicator-toggle { background: rgba(15,23,42,.06); }
 [data-theme="light"] .table th { background: rgba(248,250,252,.9); }
@@ -381,10 +381,10 @@ html[data-theme="light"] {
 [data-theme="light"] .news-card-stream { background: #fff !important; border-color: rgba(15,23,42,.1) !important; }
 [data-theme="light"] .signal-card-detailed { background: #fff; border-color: rgba(15,23,42,.08); }
 [data-theme="light"] .modal-stock { background: #fff; border-color: rgba(15,23,42,.1); }
-[data-theme="light"] .modal-stock .form-input { background: #fff; border-color: #e2e8f0; }
+[data-theme="light"] .modal-stock .form-input { background: var(--input-bg); border-color: var(--input-border); }
 [data-theme="light"] .screener-bar-v2 { background: #fff; border-color: rgba(15,23,42,.1); }
-[data-theme="light"] .screener-bar-v2 .screener-input { background: #fff; border-color: #e2e8f0; }
-[data-theme="light"] .screener-bar-v2 .screener-select { background: #fff; border-color: #e2e8f0; }
+[data-theme="light"] .screener-bar-v2 .screener-input { background: var(--input-bg); border-color: var(--input-border); }
+[data-theme="light"] .screener-bar-v2 .screener-select { background: var(--input-bg); border-color: var(--input-border); }
 [data-theme="light"] .portfolio-table-v2 th { color: var(--text-dim); }
 [data-theme="light"] .chat-input-area { background: #fff; border-color: rgba(15,23,42,.12); }
 [data-theme="light"] .chat-prompt { background: #fff; border-color: rgba(15,23,42,.08); }
@@ -690,7 +690,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 /* Top glowing border */
 .scanner-form::before {
   content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
-  background: linear-gradient(90deg,#10b981,#34d399,#6366f1);
+  background: linear-gradient(90deg,var(--primary-color),var(--up-color),var(--accent-indigo));
   border-radius: 0 0 2px 2px;
 }
 
@@ -868,7 +868,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 
 /* kun.pro gradient text utility */
 .text-gradient {
-  background: linear-gradient(135deg, #10b981, #34d399, #6ee7b7);
+  background: linear-gradient(135deg, var(--primary-color), var(--up-color), #6ee7b7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1701,11 +1701,11 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 .search-hints span{font-size:10px;color:var(--text-dim);background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px;font-family:var(--font-mono)}
 
 /* Additional Light Theme Consistency Fixes */
-html[data-theme="light"] .scanner-form { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-html[data-theme="light"] .scanner-results { background: #ffffff; border-color: #e2e8f0; }
-html[data-theme="light"] .scanner-row { border-bottom: 1px solid #f1f5f9; }
-html[data-theme="light"] .panel { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-html[data-theme="light"] .news-card { background: #ffffff; border-color: #e2e8f0; }
+html[data-theme="light"] .scanner-form { background: var(--panel-bg); border-color: var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+html[data-theme="light"] .scanner-results { background: var(--panel-bg); border-color: var(--border-subtle); }
+html[data-theme="light"] .scanner-row { border-bottom: 1px solid var(--border-subtle); }
+html[data-theme="light"] .panel { background: var(--panel-bg); border-color: var(--border-subtle); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+html[data-theme="light"] .news-card { background: var(--panel-bg); border-color: var(--border-subtle); }
 html[data-theme="light"] .news-title { color: var(--text-main); }
 
 /* Ticker Fix */
