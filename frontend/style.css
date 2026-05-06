@@ -1265,7 +1265,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
     background: rgba(15,23,41,.75);
     border: 1px solid rgba(148,163,184,.22);
   }
-  .topbar-ticker-wrap { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .topbar-ticker-wrap { display: flex; overflow: hidden; max-width: 100%; }
   .main-content {
     margin-left: 0;
     padding: 12px;
@@ -1342,6 +1342,12 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   .bottom-nav-item.active {
     color: var(--primary-color);
     text-shadow: 0 0 12px rgba(16,185,129,.35);
+    position: relative;
+  }
+  .bottom-nav-item.active::before {
+    content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 24px; height: 2px; border-radius: 0 0 2px 2px;
+    background: var(--primary-color);
   }
   .bottom-nav-item svg.lucide { width: 20px; height: 20px; }
   .fab-search {
