@@ -3090,7 +3090,7 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .network-status {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
   text-align: center; padding: 6px; font-size: 11px; font-weight: 700;
-  background: #dc2626; color: #fff; backdrop-filter: blur(8px);
+  background: #dc2626; color: #fff; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   transition: transform .3s var(--ease-out), opacity .3s var(--ease-out);
   transform: translateY(0); opacity: 1;
 }

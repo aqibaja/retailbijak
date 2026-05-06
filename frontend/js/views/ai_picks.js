@@ -231,7 +231,11 @@ function wireActions(root, mode, picks, loadFn) {
 
   // Retry
   root.querySelectorAll('[data-retry]').forEach(btn => {
-    btn.addEventListener('click', () => loadFn(mode));
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      btn.textContent = 'Memuat...';
+      loadFn(mode);
+    });
   });
 }
 
