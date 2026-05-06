@@ -362,6 +362,7 @@ body, .panel, .topbar, .sidebar, .bottom-nav, .market-card, .stock-side-panel,
               box-shadow var(--duration-normal) var(--ease-out);
 }
 
+@font-face{font-family:Inter;font-display:swap;src:local(Inter)}@font-face{font-family:JetBrains Mono;font-display:swap;src:local("JetBrains Mono")}
 /* ================= RESET & BASE ================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; font-size: 14px; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; }
@@ -2756,6 +2757,7 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
   place-items: center;
   color: #a5b4fc;
   font-size: 24px;
+  flex-shrink: 0;
 }
 .empty-state-v2 h3 {
   margin: 0;

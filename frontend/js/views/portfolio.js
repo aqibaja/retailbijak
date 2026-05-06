@@ -145,7 +145,7 @@ export async function renderPortfolio(root, activeTab) {
 }
 
 async function renderWatchlistTab(el) {
-    const data = await fetchWatchlist();
+    let data; try { data = await fetchWatchlist(); } catch (e) { data = null; console.warn('fetchWatchlist failed', e); }
     const rows = Array.isArray(data?.data) ? data.data : [];
 
     el.innerHTML = `
@@ -204,7 +204,7 @@ async function renderWatchlistTab(el) {
 }
 
 async function renderPortfolioTab(el) {
-    const data = await fetchPortfolio();
+    let data; try { data = await fetchPortfolio(); } catch (e) { data = null; console.warn('fetchPortfolio failed', e); }
     const rows = Array.isArray(data?.data) ? data.data : [];
 
     el.innerHTML = `

@@ -117,7 +117,8 @@ export async function renderSettings(root) {
 
     observeElements();
 
-    const settings = await fetchSettings();
+    let settings;
+    try { settings = await fetchSettings(); } catch (e) { settings = null; console.warn('fetchSettings failed', e); }
     const compact = document.getElementById('setting-compact');
     const refresh = document.getElementById('setting-refresh');
     const openrouterKey = document.getElementById('setting-openrouter-key');

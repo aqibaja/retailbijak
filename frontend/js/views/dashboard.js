@@ -104,7 +104,8 @@ export async function renderDashboard(root) {
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }
 
-async function loadMarketSummary(){
+async function loadMarketSummary() {
+  try {
   const summary = await fetchMarketSummary();
   const isLive = summary && summary.status !== 'no_data' && summary.value;
   document.getElementById('market-fold-status').textContent = isLive ? 'DB SYNCED' : 'IDX REFERENCE';
@@ -125,7 +126,7 @@ async function loadMarketSummary(){
   if (biasLabel) biasLabel.textContent = v == null ? 'Menunggu snapshot' : c >= 0 ? 'Tape Berisiko' : 'Tape Defensif';
   if (biasNote) biasNote.textContent = v == null ? 'Ringkasan belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} defensif, selektivitas lebih penting.`;
   return summary;
-}
+} catch (e) { console.warn('loadMarketSummary failed',e); return null; }
 
 async function loadIntel(){
   const [summary, breadthRes, gainersRes, losersRes, sectorRes] = await Promise.all([
@@ -171,7 +172,8 @@ async function loadIntel(){
   ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
 }
 
-async function loadMovers(){
+async function loadMovers() {
+  try {
   const res = await fetchTopMovers(5, 'gainers');
   const items = Array.isArray(res?.data) && res.data.length ? res.data : [];
   const moversSummaryChip = document.getElementById('dash-movers-summary-chip');
@@ -185,6 +187,9 @@ async function loadMovers(){
   } else {
     if (moversSummaryChip) moversSummaryChip.textContent = 'Data belum tersedia';
     document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Belum ada data penggerak</strong><span class="dashboard-widget-state-note">Top movers akan muncul setelah scheduler memperbarui basis data.</span></div>';
+  }
+  } catch (e) { console.warn('loadMovers failed', e);
+    document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat data</strong><span class="dashboard-widget-state-note">Terjadi kesalahan saat mengambil data penggerak pasar.</span></div>';
   }
 }
 
