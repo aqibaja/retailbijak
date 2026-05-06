@@ -1,5 +1,5 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260506J';
-import { observeElements } from '../main.js?v=20260506J';
+import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260506K';
+import { observeElements } from '../main.js?v=20260506K';
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
 const DEFAULT_PICKS_MODEL = 'google/gemma-4-26b-a4b-it';
@@ -178,7 +178,13 @@ export async function renderSettings(root) {
             openrouter_stock_analysis_model: openrouterStockModel.value.trim() || DEFAULT_STOCK_MODEL,
             openrouter_ai_picks_model: openrouterPicksModel.value.trim() || DEFAULT_PICKS_MODEL,
         };
-        const saved = await updateSettings(payload);
+        const saved = await updateSettings(payload).catch(e => {
+            console.warn('updateSettings failed', e);
+            btn.disabled = false;
+            btn.textContent = 'Simpan Konfigurasi';
+            showToast('Gagal menyimpan konfigurasi', 'error');
+            return null;
+        });
         
         btn.disabled = false;
         btn.textContent = 'Simpan Konfigurasi';

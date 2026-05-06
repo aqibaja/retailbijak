@@ -1,5 +1,5 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506J';
-import { observeElements, flashUpdate } from '../main.js?v=20260506J';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506K';
+import { observeElements, flashUpdate } from '../main.js?v=20260506K';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -156,14 +156,19 @@ export async function renderStockDetail(root, ticker) {
     btn.classList.toggle('btn-primary', !isWatched);
   }
   document.getElementById('btn-add-watchlist').addEventListener('click', async () => {
-    const res = isWatched
-      ? await deleteWatchlistItem(symbol)
-      : await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
-    if (res && res.ok !== false) {
-      isWatched = !isWatched;
-      updateWatchlistBtn();
-      showToast(isWatched ? `${symbol} ditambahkan ke Daftar Pantau` : `${symbol} dihapus dari Daftar Pantau`, 'success');
-    } else {
+    try {
+      const res = isWatched
+        ? await deleteWatchlistItem(symbol)
+        : await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
+      if (res && res.ok !== false) {
+        isWatched = !isWatched;
+        updateWatchlistBtn();
+        showToast(isWatched ? `${symbol} ditambahkan ke Daftar Pantau` : `${symbol} dihapus dari Daftar Pantau`, 'success');
+      } else {
+        showToast(`Gagal ${isWatched ? 'menghapus' : 'menambahkan'} ${symbol}`, 'error');
+      }
+    } catch (e) {
+      console.warn('watchlist toggle failed', e);
       showToast(`Gagal ${isWatched ? 'menghapus' : 'menambahkan'} ${symbol}`, 'error');
     }
   });
@@ -894,9 +899,14 @@ function showAlertModal(symbol) {
     const atype = document.getElementById('alert-type').value;
     const avalue = parseFloat(document.getElementById('alert-value').value);
     if (!avalue || avalue <= 0) return showToast('Masukkan nilai yang valid', 'error');
-    const res = await apiFetch('/alerts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ticker:symbol, alert_type:atype, value:avalue}) });
-    if (res?.ok) { showToast(res.message, 'success'); loadAlertList(symbol); }
-    else showToast('Gagal membuat alert', 'error');
+    try {
+      const res = await apiFetch('/alerts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ticker:symbol, alert_type:atype, value:avalue}) });
+      if (res?.ok) { showToast(res.message, 'success'); loadAlertList(symbol); }
+      else showToast('Gagal membuat alert', 'error');
+    } catch (e) {
+      console.warn('alert creation failed', e);
+      showToast('Gagal membuat alert', 'error');
+    }
   });
   loadAlertList(symbol);
 }
@@ -904,18 +914,29 @@ function showAlertModal(symbol) {
 async function loadAlertList(symbol) {
   const el = document.getElementById('alert-list');
   if (!el) return;
-  const res = await apiFetch(`/alerts?ticker=${encodeURIComponent(symbol)}`);
-  const items = Array.isArray(res?.data) ? res.data : [];
-  if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
-  el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
-    items.map(a => `<div class="flex justify-between items-center gap-2 py-1 alert-row"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
-  el.querySelectorAll('[data-alert-id]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.alertId;
-      const del = await apiFetch(`/alerts/${id}`, { method: 'DELETE' });
-      if (del?.ok) { showToast(del.message, 'success'); loadAlertList(symbol); }
+  try {
+    const res = await apiFetch(`/alerts?ticker=${encodeURIComponent(symbol)}`);
+    const items = Array.isArray(res?.data) ? res.data : [];
+    if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
+    el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
+      items.map(a => `<div class="flex justify-between items-center gap-2 py-1 alert-row"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
+    el.querySelectorAll('[data-alert-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.alertId;
+        try {
+          const del = await apiFetch(`/alerts/${id}`, { method: 'DELETE' });
+          if (del?.ok) { showToast(del.message, 'success'); loadAlertList(symbol); }
+          else showToast('Gagal menghapus alert', 'error');
+        } catch (e) {
+          console.warn('alert deletion failed', e);
+          showToast('Gagal menghapus alert', 'error');
+        }
     });
   });
+  } catch (e) {
+    console.warn('loadAlertList failed', e);
+    el.innerHTML = '<div class="text-xs text-dim mt-2">Gagal memuat peringatan.</div>';
+  }
 }
 
 // ─── Peer Comparison ────────────────────

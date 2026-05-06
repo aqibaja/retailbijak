@@ -1,4 +1,4 @@
-import { observeElements } from '../main.js?v=20260506J';
+import { observeElements } from '../main.js?v=20260506K';
 
 export function renderHelp(root) {
     document.title = 'RetailBijak — Bantuan';

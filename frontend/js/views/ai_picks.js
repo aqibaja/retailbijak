@@ -1,5 +1,5 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260506J';
-import { observeElements } from '../main.js?v=20260506J';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260506K';
+import { observeElements } from '../main.js?v=20260506K';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -199,10 +199,15 @@ function wireActions(root, mode, picks, loadFn) {
       const ticker = btn.getAttribute('data-save');
       if (!ticker) return;
       btn.disabled = true;
-      const res = await saveWatchlistItem({ ticker, notes: `Dari AI Picks (${mode})` });
+      try {
+        const res = await saveWatchlistItem({ ticker, notes: `Dari AI Picks (${mode})` });
+        if (res) showToast(`${ticker} ditambahkan.`, 'success');
+        else showToast(`Gagal ${ticker}.`, 'error');
+      } catch (e) {
+        console.warn('saveWatchlistItem failed', e);
+        showToast(`Gagal ${ticker}.`, 'error');
+      }
       btn.disabled = false;
-      if (res) showToast(`${ticker} ditambahkan.`, 'success');
-      else showToast(`Gagal ${ticker}.`, 'error');
     });
   });
 
@@ -342,13 +347,17 @@ export async function renderAiPicks(root) {
   };
 
   // Mode switch (event delegation — survives outerHTML/innerHTML replacement)
-  root.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-mode]');
-    if (btn) {
-      e.preventDefault();
-      loadMode(btn.getAttribute('data-mode') || 'swing');
-    }
-  });
+  // Guard against double listeners accumulating on persistent root element
+  if (!root.dataset.aiPicksDelegated) {
+    root.dataset.aiPicksDelegated = '1';
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-mode]');
+      if (btn) {
+        e.preventDefault();
+        loadMode(btn.getAttribute('data-mode') || 'swing');
+      }
+    });
+  }
 
   // Initial load
   await loadMode(initialMode);

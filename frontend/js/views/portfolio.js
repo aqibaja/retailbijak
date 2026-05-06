@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260506J';
-import { observeElements } from '../main.js?v=20260506J';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260506K';
+import { observeElements } from '../main.js?v=20260506K';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -74,9 +74,14 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
         const el = document.getElementById(`modal-field-${i}`);
         return el ? (fields[i].type === 'number' ? Number(el.value) : el.value) : null;
       });
-      const result = await onConfirm(values);
-      if (result !== false) {
-        close(values);
+      try {
+        const result = await onConfirm(values);
+        if (result !== false) {
+          close(values);
+        }
+      } catch (e) {
+        console.warn('onConfirm failed', e);
+        showToast('Terjadi kesalahan, coba lagi', 'error');
       }
     });
     // Form submit catches Enter key (keyboard + iOS "Go" button)
@@ -219,10 +224,15 @@ async function renderWatchlistTab(el) {
             const ticker = e.currentTarget.getAttribute('data-ticker');
             const ok = await showConfirm({ title: 'Hapus dari Pantauan?', message: `Yakin ingin menghapus ${ticker} dari daftar pantau?`, confirmText: 'Hapus', danger: true });
             if (ok) {
-                await deleteWatchlistItem(ticker);
-                showToast(`${ticker} dihapus`, 'success');
-                await renderWatchlistTab(el);
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+                try {
+                    await deleteWatchlistItem(ticker);
+                    showToast(`${ticker} dihapus`, 'success');
+                    await renderWatchlistTab(el);
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                } catch (e) {
+                    console.warn('deleteWatchlistItem failed', e);
+                    showToast(`Gagal menghapus ${ticker}`, 'error');
+                }
             }
         });
     });
@@ -284,10 +294,15 @@ async function renderPortfolioTab(el) {
             const ticker = e.currentTarget.getAttribute('data-ticker');
             const ok = await showConfirm({ title: 'Hapus Posisi?', message: `Yakin ingin menghapus ${ticker} dari portofolio?`, confirmText: 'Hapus', danger: true });
             if (ok) {
-                await deletePortfolioPosition(ticker);
-                showToast(`${ticker} dihapus`, 'success');
-                await renderPortfolioTab(el);
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+                try {
+                    await deletePortfolioPosition(ticker);
+                    showToast(`${ticker} dihapus`, 'success');
+                    await renderPortfolioTab(el);
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                } catch (e) {
+                    console.warn('deletePortfolioPosition failed', e);
+                    showToast(`Gagal menghapus ${ticker}`, 'error');
+                }
             }
         });
     });

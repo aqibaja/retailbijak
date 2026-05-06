@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260506J';
-import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260506J';
-import { initTheme } from './theme.js?v=20260506J';
+import { handleRoute } from './router.js?v=20260506K';
+import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260506K';
+import { initTheme } from './theme.js?v=20260506K';
 // ================= ANIMATION ENGINE =================
 export function observeElements(selector = '.stagger-reveal') {
    const observer = new IntersectionObserver((entries) => {
