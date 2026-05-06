@@ -1,5 +1,5 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506K';
-import { observeElements, flashUpdate } from '../main.js?v=20260506K';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506L';
+import { observeElements, flashUpdate } from '../main.js?v=20260506L';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -355,6 +355,13 @@ function hydrateHeader(symbol, detail, fund, candles){
 function renderStockChart(symbol, candles, technical){
   const container = document.getElementById('tvchart'); if (!container) return;
 
+  // Read current theme for chart colors
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const isLight = theme === 'light';
+  const cs = getComputedStyle(document.documentElement);
+  const textDim = isLight ? '#64748b' : '#94a3b8';
+  const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
+
   // Try TradingView widget first
   if (typeof TradingView !== 'undefined' && container.clientWidth > 0) {
     try {
@@ -366,10 +373,10 @@ function renderStockChart(symbol, candles, technical){
         symbol: tvSymbol,
         interval: 'D',
         timezone: 'Asia/Jakarta',
-        theme: 'dark',
+        theme: isLight ? 'Light' : 'dark',
         style: '1',
         locale: 'id_ID',
-        toolbar_bg: '#0b1220',
+        toolbar_bg: isLight ? '#f1f5f9' : '#0b1220',
         enable_publishing: false,
         allow_symbol_change: false,
         hide_top_toolbar: false,
@@ -410,7 +417,7 @@ function renderStockChart(symbol, candles, technical){
 
   if (typeof LightweightCharts !== 'undefined') {
     container.innerHTML = '';
-    const chart = LightweightCharts.createChart(container, { width:container.clientWidth, height:container.clientHeight, layout:{ textColor:'#94a3b8', background:{ type:'solid', color:'transparent' }}, grid:{ vertLines:{ color:'rgba(255,255,255,.035)'}, horzLines:{ color:'rgba(255,255,255,.035)'}}, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:false }});
+    const chart = LightweightCharts.createChart(container, { width:container.clientWidth, height:container.clientHeight, layout:{ textColor:textDim, background:{ type:'solid', color:'transparent' }}, grid:{ vertLines:{ color:gridColor}, horzLines:{ color:gridColor}}, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:false }});
     const active = Array.from(document.querySelectorAll('.indicator-toggle.active')).map(el => el.dataset.indicator);
     const chartData = data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close }));
 
@@ -794,7 +801,7 @@ function renderFallbackSvgChart(data){
   const container = document.getElementById('tvchart');
   const vals = data.map(d=>d.close), min=Math.min(...vals), max=Math.max(...vals), w=720,h=320,p=24;
   const pts = vals.map((v,i)=>`${p+i*(w-2*p)/Math.max(vals.length-1,1)},${h-p-((v-min)/Math.max(max-min,1))*(h-2*p)}`).join(' ');
-  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="fallback-svg-chart"><polyline fill="none" stroke="#10b981" stroke-width="3" points="${pts}"/><text x="${p}" y="${p}" fill="#94a3b8">${nf(vals[vals.length-1],0)}</text></svg>`;
+  container.innerHTML = `<svg viewBox="0 0 ${w} ${h}" class="fallback-svg-chart"><polyline fill="none" stroke="var(--primary-color,#10b981)" stroke-width="3" points="${pts}"/><text x="${p}" y="${p}" fill="var(--text-dim,#94a3b8)">${nf(vals[vals.length-1],0)}</text></svg>`;
 }
 function renderStockNewsFeed(symbol, newsPayload) {
   const el = document.getElementById('stock-news-feed');

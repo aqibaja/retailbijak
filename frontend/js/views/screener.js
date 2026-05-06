@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260506K';
-import { observeElements } from '../main.js?v=20260506K';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260506L';
+import { observeElements } from '../main.js?v=20260506L';
 
 const renderEmptyState = ({
   title = 'Belum ada hasil scan',
