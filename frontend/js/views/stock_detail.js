@@ -1,5 +1,5 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506M';
-import { observeElements, flashUpdate } from '../main.js?v=20260506M';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506N';
+import { observeElements, flashUpdate } from '../main.js?v=20260506N';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -352,6 +352,29 @@ function hydrateHeader(symbol, detail, fund, candles){
   const ts = document.getElementById('live-badge');
   if (ts) { ts.textContent = `WIB ${wibTime}`; ts.className = 'badge'; }
 }
+/* ─── Theme-aware chart color helpers ─── */
+function getThemeColors() {
+  const style = getComputedStyle(document.documentElement);
+  return {
+    up: style.getPropertyValue('--up-color').trim() || '#34d399',
+    down: style.getPropertyValue('--down-color').trim() || '#f87171',
+    primary: style.getPropertyValue('--primary-color').trim() || '#10b981',
+    accentIndigo: style.getPropertyValue('--accent-indigo').trim() || '#6366f1',
+    accentAmber: style.getPropertyValue('--warn-color').trim() || '#fbbf24',
+    textDim: style.getPropertyValue('--text-dim').trim() || '#475569',
+    textMuted: style.getPropertyValue('--text-muted').trim() || '#94a3b8',
+  };
+}
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function hexWithAlpha(hex, alpha) {
+  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  return hex + a;
+}
 function renderStockChart(symbol, candles, technical){
   const container = document.getElementById('tvchart'); if (!container) return;
 
@@ -361,6 +384,7 @@ function renderStockChart(symbol, candles, technical){
   const cs = getComputedStyle(document.documentElement);
   const textDim = isLight ? '#64748b' : '#94a3b8';
   const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
+  const c = getThemeColors();
 
   // Try TradingView widget first
   if (typeof TradingView !== 'undefined' && container.clientWidth > 0) {
@@ -386,10 +410,10 @@ function renderStockChart(symbol, candles, technical){
         disabled_features: ['use_localstorage_for_settings', 'header_symbol_search', 'header_compare', 'header_undo_redo', 'header_screenshot'],
         enabled_features: ['study_templates'],
         overrides: {
-          'mainSeriesProperties.candleStyle.upColor': '#10b981',
-          'mainSeriesProperties.candleStyle.downColor': '#ef4444',
-          'mainSeriesProperties.candleStyle.wickUpColor': '#10b981',
-          'mainSeriesProperties.candleStyle.wickDownColor': '#ef4444',
+          'mainSeriesProperties.candleStyle.upColor': c.primary,
+          'mainSeriesProperties.candleStyle.downColor': c.down,
+          'mainSeriesProperties.candleStyle.wickUpColor': c.primary,
+          'mainSeriesProperties.candleStyle.wickDownColor': c.down,
         },
       });
       document.getElementById('chart-subtitle').textContent = `${tvSymbol} · live dari TradingView`;
@@ -421,21 +445,21 @@ function renderStockChart(symbol, candles, technical){
     const active = Array.from(document.querySelectorAll('.indicator-toggle.active')).map(el => el.dataset.indicator);
     const chartData = data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close }));
 
-    const cs = chart.addCandlestickSeries({ upColor:'#10b981', downColor:'#ef4444', borderVisible:false, wickUpColor:'#10b981', wickDownColor:'#ef4444' });
+    const cs = chart.addCandlestickSeries({ upColor:c.primary, downColor:c.down, borderVisible:false, wickUpColor:c.primary, wickDownColor:c.down });
     cs.setData(chartData);
 
-    const vol = active.includes('vol') ? chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:'#64748b55' }) : null;
+    const vol = active.includes('vol') ? chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:hexWithAlpha(c.textMuted, 0.33) }) : null;
     if (vol) {
-      vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume, color:d.close >= d.open ? '#10b98155' : '#ef444455' })));
+      vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume, color:d.close >= d.open ? hexWithAlpha(c.up, 0.33) : hexWithAlpha(c.down, 0.33) })));
       chart.priceScale('').applyOptions({ scaleMargins:{ top:.82, bottom:0 }});
     }
 
     if (active.includes('sma') && data.some(d => d.sma_20 != null)) {
-      chart.addLineSeries({ color:'#fbbf24', lineWidth:1, priceLineVisible:false, lastValueVisible:false })
+      chart.addLineSeries({ color:c.accentAmber, lineWidth:1, priceLineVisible:false, lastValueVisible:false })
         .setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_20 })).filter(d => d.value != null));
     }
     if (active.includes('sma') && data.some(d => d.sma_50 != null)) {
-      chart.addLineSeries({ color:'#6366f1', lineWidth:1, priceLineVisible:false, lastValueVisible:false })
+      chart.addLineSeries({ color:c.accentIndigo, lineWidth:1, priceLineVisible:false, lastValueVisible:false })
         .setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_50 })).filter(d => d.value != null));
     }
 
@@ -443,7 +467,7 @@ function renderStockChart(symbol, candles, technical){
     const bb = ind.bollinger_bands || {};
     if (active.includes('boll') && bb.upper != null && bb.lower != null && data.length) {
       const lastTime = String(data[data.length-1].date).slice(0,10);
-      [[bb.upper,'rgba(99,102,241,.4)'], [bb.lower,'rgba(99,102,241,.4)'], [bb.middle,'rgba(99,102,241,.2)']].forEach(([val,clr],i) => {
+      [[bb.upper,hexToRgba(c.accentIndigo,.4)], [bb.lower,hexToRgba(c.accentIndigo,.4)], [bb.middle,hexToRgba(c.accentIndigo,.2)]].forEach(([val,clr],i) => {
         if (val == null) return;
         chart.addLineSeries({ color:clr, lineWidth:1, priceLineVisible:false, lastValueVisible:false, lineStyle:i===2?2:0 })
           .setData([{ time:data[0].date.slice(0,10), value:val }, { time:lastTime, value:val }]);
@@ -454,10 +478,10 @@ function renderStockChart(symbol, candles, technical){
     if (active.includes('sr') && data.length) {
       const lastTime = String(data[data.length-1].date).slice(0,10);
       if (sr.support_20d != null)
-        chart.addLineSeries({ color:'rgba(52,211,153,.5)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
+        chart.addLineSeries({ color:hexToRgba(c.up,.5), lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
           .setData([{ time:data[0].date.slice(0,10), value:sr.support_20d }, { time:lastTime, value:sr.support_20d }]);
       if (sr.resistance_20d != null)
-        chart.addLineSeries({ color:'rgba(248,113,113,.5)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
+        chart.addLineSeries({ color:hexToRgba(c.down,.5), lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false })
           .setData([{ time:data[0].date.slice(0,10), value:sr.resistance_20d }, { time:lastTime, value:sr.resistance_20d }]);
     }
 
