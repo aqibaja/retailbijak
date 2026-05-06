@@ -907,7 +907,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, #10b981, #6366f1);
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-indigo));
   width: 0%;
   border-radius: 0 10px 10px 0;
   transition: width .08s linear;
@@ -1063,7 +1063,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   background: var(--btn-primary-gradient); border: 0; color: #fff; 
   box-shadow: 0 0 16px var(--primary-glow);
 }
-.btn-primary:hover { background: linear-gradient(135deg,#10b981,#109969); box-shadow: 0 0 24px rgba(16,185,129,0.4); border-color: transparent; color: #fff;}
+.btn-primary:hover { background: linear-gradient(135deg,var(--primary-color),var(--primary-dark)); box-shadow: 0 0 24px rgba(16,185,129,0.4); border-color: transparent; color: #fff;}
 .btn-icon { padding: 8px; border-radius: 8px; color: var(--text-muted); border: 1px solid transparent; height: auto;}
 .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
 .btn-icon:active { transform: scale(0.94); background: rgba(255,255,255,0.08); }
@@ -1655,7 +1655,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 }
 .search-overlay.active { opacity: 1; pointer-events: auto; }
 .search-modal {
-  width: min(680px,calc(100vw - 28px)); background: #0f172a; border: 1px solid rgba(255,255,255,0.06);
+  width: min(680px,calc(100vw - 28px)); background: var(--bg-elevated); border: 1px solid rgba(255,255,255,0.06);
   border-radius: 16px; box-shadow: 0 30px 90px rgba(0,0,0,.55);
   transform: translateY(-24px) scale(0.93); transition: transform .3s var(--ease-spring);
   overflow: hidden; max-height: 80vh; display: flex; flex-direction: column;
