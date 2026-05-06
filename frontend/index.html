@@ -31,7 +31,7 @@
  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
  <link rel="apple-touch-icon" href="assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" crossorigin>
- <link rel="stylesheet" href="style.css?v=20260506A">
+ <link rel="stylesheet" href="style.css?v=20260506B">
  <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -92,7 +92,15 @@
    <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase"></i><span>Aset</span></a>
    <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;"></i><span>AI</span></a>
  </nav>
- <div class="search-overlay" id="search-overlay"><div class="search-modal"><input type="text" id="global-search-input" placeholder="Cari kode saham, emiten, atau sektor..."><div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div></div></div>
+ <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham">
+  <div class="search-modal">
+    <div class="search-input-wrap">
+      <i data-lucide="search" style="width:18px;flex-shrink:0;color:var(--text-muted)"></i>
+      <input type="text" id="global-search-input" placeholder="Cari kode saham, emiten, atau sektor..." aria-label="Kata kunci pencarian" autocomplete="off" />
+    </div>
+    <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div>
+  </div>
+</div>
  <div id="toast-container"></div>
  <script>
   // Error catcher — pakai window.addEventListener('error') karena window.onerror
