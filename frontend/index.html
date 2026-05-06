@@ -28,18 +28,18 @@
  <meta name="twitter:card" content="summary_large_image">
  <meta name="twitter:title" content="RetailBijak — IDX Stock Intelligence">
  <meta name="twitter:description" content="Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker, technical & fundamental analysis real-time.">
- <link rel="icon" href="assets/favicon.svg?v=20260507A" type="image/svg+xml">
+ <link rel="icon" href="assets/favicon.svg?v=20260507C" type="image/svg+xml">
  <link rel="apple-touch-icon" href="assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" crossorigin>
- <link rel="stylesheet" href="style.css?v=20260507A">
- <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
+ <link rel="stylesheet" href="style.css?v=20260507C">
+ <style>html{background:var(--bg-base,#0b1220);color:var(--text-main,#e5edf8);}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.14.0/dist/umd/lucide.min.js" defer crossorigin="anonymous"></script>
     <script src="https://s3.tradingview.com/tv.js" defer crossorigin="anonymous"></script>
 </head>
 <body>
-<a href="#app-root" class="skip-link">Langsung ke konten</a>
+<a href="#app-root" class="skip-link" data-i18n="skip_link">Langsung ke konten</a>
 <header class="topbar">
    <div class="topbar-progress" id="scroll-progress"></div>
    <div class="topbar-brand">
@@ -60,8 +60,9 @@
   </div>
   <div class="topbar-ticker-wrap"><div class="tape-row" id="running-ticker"></div></div>
    <div class="topbar-actions flex items-center gap-4">
-     <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari"><i data-lucide="search" style="width:18px;"></i></button>
-     <button class="btn btn-icon" id="theme-toggle" aria-label="Ubah tema"><i data-lucide="moon" style="width:18px;"></i></button>
+    <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari"><i data-lucide="search" style="width:18px;"></i></button>
+    <button class="btn btn-icon" id="lang-toggle" aria-label="Ganti bahasa" title="ID/EN"><span class="lang-toggle-text">ID</span></button>
+    <button class="btn btn-icon" id="theme-toggle" aria-label="Ubah tema"><i data-lucide="moon" style="width:18px;"></i></button>
      <a href="#settings" class="btn btn-icon" aria-label="Pengaturan"><i data-lucide="settings" style="width:18px;"></i></a>
    </div>
  </header>
@@ -86,18 +87,18 @@
   </div>
 </main>
 <nav class="bottom-nav" role="navigation" aria-label="Navigasi mobile">
-  <a href="#dashboard" class="bottom-nav-item active" data-view="dashboard"><i data-lucide="layout-grid" aria-hidden="true"></i><span>Beranda</span></a>
-  <a href="#screener" class="bottom-nav-item" data-view="screener"><i data-lucide="radar" aria-hidden="true"></i><span>Pindai</span></a>
-  <a href="#market" class="bottom-nav-item" data-view="market"><i data-lucide="globe" aria-hidden="true"></i><span>Pasar</span></a>
-  <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper" aria-hidden="true"></i><span>Berita</span></a>
-  <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase" aria-hidden="true"></i><span>Aset</span></a>
+  <a href="#dashboard" class="bottom-nav-item active" data-view="dashboard"><i data-lucide="layout-grid" aria-hidden="true"></i><span data-i18n="dashboard">Beranda</span></a>
+  <a href="#screener" class="bottom-nav-item" data-view="screener"><i data-lucide="radar" aria-hidden="true"></i><span data-i18n="scanner">Pindai</span></a>
+  <a href="#market" class="bottom-nav-item" data-view="market"><i data-lucide="globe" aria-hidden="true"></i><span data-i18n="market">Pasar</span></a>
+  <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper" aria-hidden="true"></i><span data-i18n="news">Berita</span></a>
+  <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase" aria-hidden="true"></i><span data-i18n="portfolio">Aset</span></a>
   <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;" aria-hidden="true"></i><span>AI</span></a>
 </nav>
  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham">
   <div class="search-modal">
     <div class="search-input-wrap">
       <i data-lucide="search" style="width:18px;flex-shrink:0;color:var(--text-muted)"></i>
-      <input type="text" id="global-search-input" placeholder="Cari kode saham, emiten, atau sektor..." aria-label="Kata kunci pencarian" autocomplete="off" />
+      <input type="text" id="global-search-input" data-i18n="search_placeholder" placeholder="Cari kode saham, emiten, atau sektor..." aria-label="Kata kunci pencarian" autocomplete="off" />
     </div>
     <div class="search-hints"><span>Cmd+K</span><span>↵ pilih</span><span>Esc tutup</span></div>
     <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div>
@@ -125,7 +126,7 @@
    if (el) el.classList.remove('page-loading');
   }, 5000);
  </script>
- <script type="module" src="js/main.js?v=20260507A"></script>
+ <script type="module" src="js/main.js?v=20260507C"></script>
  <script nomodule>
   // Fallback untuk browser tanpa ES module support
   document.getElementById('app-root').innerHTML =

@@ -1,5 +1,6 @@
 export const translations = {
     en: {
+        'skip_link': 'Skip to content',
         'dashboard': 'Dashboard',
         'scanner': 'Scanner',
         'market': 'Market',
@@ -15,6 +16,7 @@ export const translations = {
         'terminal_notes': 'Terminal Notes'
     },
     id: {
+        'skip_link': 'Langsung ke konten',
         'dashboard': 'Dasbor',
         'scanner': 'Pemindai',
         'market': 'Pasar',
@@ -37,8 +39,11 @@ export function setLanguage(lang) {
 }
 
 export function applyTranslations() {
-    const lang = localStorage.getItem('retail-lang') || 'en';
-    const dict = translations[lang] || translations.en;
+    const lang = localStorage.getItem('retail-lang') || 'id';
+    const dict = translations[lang] || translations[Object.keys(translations)[0]];
+    
+    // Update html lang attribute
+    document.documentElement.setAttribute('lang', lang);
     
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');

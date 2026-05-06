@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260507B';
-import { observeElements } from '../main.js?v=20260507B';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260507C';
+import { observeElements } from '../main.js?v=20260507C';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {

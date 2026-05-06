@@ -1,13 +1,13 @@
-import { renderDashboard } from './views/dashboard.js?v=20260507B';
-import { renderStockDetail } from './views/stock_detail.js?v=20260507B';
-import { renderScreener } from './views/screener.js?v=20260507B';
-import { renderPortfolio } from './views/portfolio.js?v=20260507B';
-import { renderMarket } from './views/market.js?v=20260507B';
-import { renderNews } from './views/news.js?v=20260507B';
-import { renderSettings } from './views/settings.js?v=20260507B';
-import { renderHelp } from './views/help.js?v=20260507B';
-import { renderAiPicks } from './views/ai_picks.js?v=20260507B';
-import { clearViewTimers } from './main.js?v=20260507B';
+import { renderDashboard } from './views/dashboard.js?v=20260507C';
+import { renderStockDetail } from './views/stock_detail.js?v=20260507C';
+import { renderScreener } from './views/screener.js?v=20260507C';
+import { renderPortfolio } from './views/portfolio.js?v=20260507C';
+import { renderMarket } from './views/market.js?v=20260507C';
+import { renderNews } from './views/news.js?v=20260507C';
+import { renderSettings } from './views/settings.js?v=20260507C';
+import { renderHelp } from './views/help.js?v=20260507C';
+import { renderAiPicks } from './views/ai_picks.js?v=20260507C';
+import { clearViewTimers } from './main.js?v=20260507C';
 
 let routeToken = 0;
 
