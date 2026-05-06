@@ -828,12 +828,12 @@ button, input, select { font-family: inherit; border: none; background: none; co
 
 /* Skeleton Loading */
 .skeleton-shimmer {
-  position: relative; overflow: hidden; background: var(--bg-elevated);
+  position: relative; overflow: hidden; background: var(--bg-elevated); will-change: transform;
 }
 .skeleton-shimmer::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-  animation: skeleton-shimmer 1.5s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
 }
 @keyframes skeleton-shimmer {
   0% { transform: translateX(-100%); }

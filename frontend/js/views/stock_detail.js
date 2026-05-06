@@ -382,7 +382,8 @@ function renderStockChart(symbol, candles, technical){
   const theme = document.documentElement.getAttribute('data-theme') || 'dark';
   const isLight = theme === 'light';
   const cs = getComputedStyle(document.documentElement);
-  const textDim = isLight ? '#64748b' : '#94a3b8';
+  const textDim = cs.getPropertyValue('--text-dim').trim() || (isLight ? '#64748b' : '#94a3b8');
+  const bgBase = cs.getPropertyValue('--bg-base').trim() || (isLight ? '#f4f7fc' : '#0b1220');
   const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
   const c = getThemeColors();
 
@@ -400,7 +401,7 @@ function renderStockChart(symbol, candles, technical){
         theme: isLight ? 'Light' : 'dark',
         style: '1',
         locale: 'id_ID',
-        toolbar_bg: isLight ? '#f1f5f9' : '#0b1220',
+        toolbar_bg: isLight ? '#f1f5f9' : bgBase,
         enable_publishing: false,
         allow_symbol_change: false,
         hide_top_toolbar: false,

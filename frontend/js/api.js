@@ -164,7 +164,6 @@ export function showToast(message, type = 'info', duration = 4000) {
     toast.className = `toast toast-${type}`;
     toast.style.pointerEvents = 'auto';
     toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'polite');
     toast.innerHTML = `
         <div class="toast-body">
             <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ'}</span>
