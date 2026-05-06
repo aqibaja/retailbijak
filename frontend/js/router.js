@@ -1,12 +1,13 @@
-import { renderDashboard } from './views/dashboard.js?v=20260506N';
-import { renderStockDetail } from './views/stock_detail.js?v=20260506N';
-import { renderScreener } from './views/screener.js?v=20260506N';
-import { renderPortfolio } from './views/portfolio.js?v=20260506N';
-import { renderMarket } from './views/market.js?v=20260506N';
-import { renderNews } from './views/news.js?v=20260506N';
-import { renderSettings } from './views/settings.js?v=20260506N';
-import { renderHelp } from './views/help.js?v=20260506N';
-import { renderAiPicks } from './views/ai_picks.js?v=20260506N';
+import { renderDashboard } from './views/dashboard.js?v=20260507B';
+import { renderStockDetail } from './views/stock_detail.js?v=20260507B';
+import { renderScreener } from './views/screener.js?v=20260507B';
+import { renderPortfolio } from './views/portfolio.js?v=20260507B';
+import { renderMarket } from './views/market.js?v=20260507B';
+import { renderNews } from './views/news.js?v=20260507B';
+import { renderSettings } from './views/settings.js?v=20260507B';
+import { renderHelp } from './views/help.js?v=20260507B';
+import { renderAiPicks } from './views/ai_picks.js?v=20260507B';
+import { clearViewTimers } from './main.js?v=20260507B';
 
 let routeToken = 0;
 
@@ -20,6 +21,9 @@ function normalizeRoute(hash) {
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');
     if (!root) return;
+    
+    // Clear any view-specific timers/intervals from previous view
+    clearViewTimers();
 
     const cleanPath = normalizeRoute(hash);
     const [view, ...rest] = cleanPath.split('/');

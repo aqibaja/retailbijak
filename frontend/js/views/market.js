@@ -1,5 +1,5 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260506N';
-import { observeElements } from '../main.js?v=20260506N';
+import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260507B';
+import { observeElements, registerViewTimer } from '../main.js?v=20260507B';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
 const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -330,6 +330,7 @@ export async function renderMarket(root) {
     const pulseEl2 = document.getElementById('market-summary-sentence');
     if (pulseEl2) pulseEl2.textContent = pulseEl2.textContent.replace(/\d+s lalu$/, '') + ' 90s lalu';
   }, 90000);
+  registerViewTimer('i_' + window._marketPollTimer);
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }

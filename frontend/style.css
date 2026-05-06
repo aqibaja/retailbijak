@@ -492,7 +492,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .input-error:focus, input:invalid:focus, select:invalid:focus,
 [aria-invalid="true"]:focus {
-  border-color: #f87171 !important;
+  border-color: var(--down-color) !important;
   box-shadow: 0 0 0 3px rgba(248,113,113,0.16) !important;
 }
 .form-hint {
@@ -974,7 +974,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .tape-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .tape-pair { font-size: 14px; font-weight: 700; color: #fff; }
-.tape-mkt { font-size: 10px; padding: 3px 8px; border-radius: 999px; background: rgba(99,102,241,0.15); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.2); font-weight: 600; letter-spacing: 0.05em; }
+.tape-mkt { font-size: 10px; padding: 3px 8px; border-radius: 999px; background: var(--accent-badge-bg); color: var(--accent-text); border: 1px solid rgba(167,139,250,0.2); font-weight: 600; letter-spacing: 0.05em; }
 .tape-price { font-size: 18px; font-weight: 800; color: #fff; line-height: 1; margin-bottom: 6px; letter-spacing: -0.02em; font-family: var(--font-mono); }
 .tape-bot { display: flex; justify-content: space-between; align-items: center; }
 .tape-chg { font-size: 12px; font-weight: 700; font-family: var(--font-mono); }
@@ -1891,7 +1891,7 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .confluence-score .max{color:var(--text-dim);font-size:13px;font-weight:600}
 .info-tip{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:999px;background:rgba(99,102,241,.15);color:var(--accent-text);font-size:10px;font-weight:800;cursor:help;margin-left:4px;position:relative}
 .info-tip:hover .info-popup{opacity:1;visibility:visible}
-.info-popup{position:absolute;left:24px;top:-4px;background:#1a2340;border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.5;color:var(--text-muted);white-space:nowrap;z-index:100;opacity:0;visibility:hidden;transition:all .15s;max-width:320px;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.info-popup{position:absolute;left:24px;top:-4px;background:var(--panel-bg);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.5;color:var(--text-muted);white-space:nowrap;z-index:100;opacity:0;visibility:hidden;transition:all .15s;max-width:320px;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .confluence-marker{position:absolute;width:2px;height:10px;background:var(--text-dim);border-radius:1px;top:-2px;margin-left:-1px;opacity:.6}
 
 /* Indicator Overbought / Oversold Alerts */
@@ -2157,8 +2157,8 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .market-session-pill { display:inline-flex; align-items:center; gap:6px; min-height: 28px; padding: 0 12px; border-radius:999px; border:1px solid rgba(148,163,184,.16); background: rgba(15,23,41,.7); color: var(--text-main); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .market-session-pill.is-up { color: var(--up-color); border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.10); }
 .market-session-pill.is-down { color: var(--down-color); border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.10); }
-.market-session-pill.is-warn { color: #fbbf24; border-color: rgba(251,191,36,.28); background: rgba(251,191,36,.10); }
-.market-session-pill.is-muted { color: #cbd5e1; border-color: rgba(148,163,184,.22); background: rgba(148,163,184,.10); }
+.market-session-pill.is-warn { color: var(--warn-color); border-color: rgba(251,191,36,.28); background: rgba(251,191,36,.10); }
+.market-session-pill.is-muted { color: var(--text-muted); border-color: rgba(148,163,184,.22); background: rgba(148,163,184,.10); }
 .market-head-status { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex-wrap: wrap; justify-content: flex-start; min-width: 140px; }
 .market-data-quality { width: min(280px, 100%); display:flex; flex-direction:column; gap:6px; padding:12px 14px; border-radius:16px; border:1px solid rgba(148,163,184,.14); background: rgba(15,23,41,.62); }
 .market-data-quality-label { color: var(--text-dim); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -2581,9 +2581,9 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
   border-radius: 999px;
   transition: width .4s ease;
 }
-.score-progress-fill.good { background: linear-gradient(90deg, rgba(16,185,129,.6), #34d399); }
-.score-progress-fill.warn { background: linear-gradient(90deg, rgba(251,191,36,.5), #fbbf24); }
-.score-progress-fill.bad { background: linear-gradient(90deg, rgba(239,68,68,.5), #fb7185); }
+.score-progress-fill.good { background: linear-gradient(90deg, var(--up-bg), var(--up-color)); }
+.score-progress-fill.warn { background: linear-gradient(90deg, rgba(251,191,36,.5), var(--warn-color)); }
+.score-progress-fill.bad { background: linear-gradient(90deg, rgba(239,68,68,.5), var(--danger-text)); }
 .score-progress-marker {
   position: absolute;
   width: 2px;

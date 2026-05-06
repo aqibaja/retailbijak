@@ -1,7 +1,17 @@
-import { handleRoute } from './router.js?v=20260506N';
-import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260506N';
-import { initTheme } from './theme.js?v=20260506N';
+import { handleRoute } from './router.js?v=20260507B';
+import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260507B';
+import { initTheme } from './theme.js?v=20260507B';
 // ================= ANIMATION ENGINE =================
+// View lifecycle: cleanup timers when navigating away
+window.__viewTimers = [];
+export function registerViewTimer(id) { window.__viewTimers.push(id); }
+export function clearViewTimers() {
+  window.__viewTimers.forEach(id => {
+    if (id.startsWith('i_')) clearInterval(parseInt(id.slice(2)));
+    else clearTimeout(parseInt(id));
+  });
+  window.__viewTimers = [];
+}
 export function observeElements(selector = '.stagger-reveal') {
    const observer = new IntersectionObserver((entries) => {
        entries.forEach((entry, i) => {
