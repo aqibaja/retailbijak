@@ -29,7 +29,12 @@ export function handleRoute(hash) {
     // Update active state in desktop and mobile nav
     document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
         const targetView = el.getAttribute('data-view');
-        if (targetView) el.classList.toggle('active', targetView === baseRoute);
+        if (targetView) {
+            const isActive = targetView === baseRoute;
+            el.classList.toggle('active', isActive);
+            if (isActive) el.setAttribute('aria-current', 'page');
+            else el.removeAttribute('aria-current');
+        }
     });
 
     // Fade out transition

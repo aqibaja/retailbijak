@@ -28,10 +28,10 @@
  <meta name="twitter:card" content="summary_large_image">
  <meta name="twitter:title" content="RetailBijak — IDX Stock Intelligence">
  <meta name="twitter:description" content="Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker, technical & fundamental analysis real-time.">
- <link rel="icon" href="assets/favicon.svg?v=20260506N" type="image/svg+xml">
+ <link rel="icon" href="assets/favicon.svg?v=20260507A" type="image/svg+xml">
  <link rel="apple-touch-icon" href="assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" crossorigin>
- <link rel="stylesheet" href="style.css?v=20260506N">
+ <link rel="stylesheet" href="style.css?v=20260507A">
  <style>html{background:#0b1220;color:#e5edf8;}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
@@ -65,17 +65,17 @@
      <a href="#settings" class="btn btn-icon" aria-label="Pengaturan"><i data-lucide="settings" style="width:18px;"></i></a>
    </div>
  </header>
- <aside class="sidebar">
-   <nav class="flex-col items-center gap-2" style="width:100%;">
-     <a href="#dashboard" class="nav-item active" data-view="dashboard" data-tooltip="Dashboard"><i data-lucide="layout-grid" style="width:20px;"></i></a>
-     <a href="#screener" class="nav-item" data-view="screener" data-tooltip="Pemindai"><i data-lucide="radar" style="width:20px;"></i></a>
-     <a href="#market" class="nav-item" data-view="market" data-tooltip="Pasar"><i data-lucide="globe" style="width:20px;"></i></a>
-     <a href="#portfolio" class="nav-item" data-view="portfolio" data-tooltip="Aset"><i data-lucide="briefcase" style="width:20px;"></i></a>
-     <a href="#news" class="nav-item" data-view="news" data-tooltip="Berita"><i data-lucide="newspaper" style="width:20px;"></i></a>
-     <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks"><i data-lucide="sparkles" style="width:20px;"></i></a>
-   </nav>
- </aside>
- <main class="main-content" id="app-root">
+<aside class="sidebar" role="navigation" aria-label="Navigasi utama">
+  <nav class="flex-col items-center gap-2" style="width:100%;">
+    <a href="#dashboard" class="nav-item active" data-view="dashboard" data-tooltip="Dashboard" aria-current="page"><i data-lucide="layout-grid" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#screener" class="nav-item" data-view="screener" data-tooltip="Pemindai"><i data-lucide="radar" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#market" class="nav-item" data-view="market" data-tooltip="Pasar"><i data-lucide="globe" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#portfolio" class="nav-item" data-view="portfolio" data-tooltip="Aset"><i data-lucide="briefcase" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#news" class="nav-item" data-view="news" data-tooltip="Berita"><i data-lucide="newspaper" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks"><i data-lucide="sparkles" style="width:20px;" aria-hidden="true"></i></a>
+  </nav>
+</aside>
+<main class="main-content" id="app-root" role="main">
   <div class="initial-loader">
     <div class="initial-loader-content">
       <div class="initial-loader-logo">📈</div>
@@ -85,14 +85,14 @@
     </div>
   </div>
 </main>
- <nav class="bottom-nav">
-   <a href="#dashboard" class="bottom-nav-item active" data-view="dashboard"><i data-lucide="layout-grid"></i><span>Beranda</span></a>
-   <a href="#screener" class="bottom-nav-item" data-view="screener"><i data-lucide="radar"></i><span>Pindai</span></a>
-   <a href="#market" class="bottom-nav-item" data-view="market"><i data-lucide="globe"></i><span>Pasar</span></a>
-   <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper"></i><span>Berita</span></a>
-   <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase"></i><span>Aset</span></a>
-   <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;"></i><span>AI</span></a>
- </nav>
+<nav class="bottom-nav" role="navigation" aria-label="Navigasi mobile">
+  <a href="#dashboard" class="bottom-nav-item active" data-view="dashboard"><i data-lucide="layout-grid" aria-hidden="true"></i><span>Beranda</span></a>
+  <a href="#screener" class="bottom-nav-item" data-view="screener"><i data-lucide="radar" aria-hidden="true"></i><span>Pindai</span></a>
+  <a href="#market" class="bottom-nav-item" data-view="market"><i data-lucide="globe" aria-hidden="true"></i><span>Pasar</span></a>
+  <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper" aria-hidden="true"></i><span>Berita</span></a>
+  <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase" aria-hidden="true"></i><span>Aset</span></a>
+  <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;" aria-hidden="true"></i><span>AI</span></a>
+</nav>
  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham">
   <div class="search-modal">
     <div class="search-input-wrap">
@@ -103,8 +103,8 @@
     <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div>
   </div>
 </div>
- <div id="toast-container"></div>
-<div id="network-status" class="network-status hidden"></div>
+ <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+<div id="network-status" class="network-status hidden" role="status" aria-live="assertive"></div>
  <script>
   // Error catcher — pakai window.addEventListener('error') karena window.onerror
   // TIDAK menangkap error dari ES Modules (type="module")
@@ -125,7 +125,7 @@
    if (el) el.classList.remove('page-loading');
   }, 5000);
  </script>
- <script type="module" src="js/main.js?v=20260506N"></script>
+ <script type="module" src="js/main.js?v=20260507A"></script>
  <script nomodule>
   // Fallback untuk browser tanpa ES module support
   document.getElementById('app-root').innerHTML =
