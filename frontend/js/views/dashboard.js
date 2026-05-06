@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260506H';
-import { observeElements, animateValue } from '../main.js?v=20260506g';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260506I';
+import { observeElements, animateValue } from '../main.js?v=20260506I';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -127,6 +127,7 @@ async function loadMarketSummary() {
   if (biasNote) biasNote.textContent = v == null ? 'Ringkasan belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} defensif, selektivitas lebih penting.`;
   return summary;
 } catch (e) { console.warn('loadMarketSummary failed',e); return null; }
+}
 
 async function loadIntel(){
   const [summary, breadthRes, gainersRes, losersRes, sectorRes] = await Promise.all([

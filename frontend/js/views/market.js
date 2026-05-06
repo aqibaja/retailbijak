@@ -1,5 +1,5 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260506H';
-import { observeElements } from '../main.js?v=20260506g';
+import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260506I';
+import { observeElements } from '../main.js?v=20260506I';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
 const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
