@@ -80,7 +80,7 @@ export async function renderDashboard(root) {
           </div>
         </div>
         <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu data.</strong></div>
-        <div class="dashboard-chart-wrap"><canvas id="ihsgMainChart"></canvas></div>
+        <div class="dashboard-chart-wrap"><div class="skeleton skeleton-chart"></div><canvas id="ihsgMainChart"></canvas></div>
       </div>
       <div class="panel dash-movers-panel">
         <div class="flex justify-between items-center mb-3">
@@ -330,6 +330,9 @@ function initChart(summary) {
         const first = chartRes.data[0]?.date || '';
         const last = chartRes.data[chartRes.data.length - 1]?.date || '';
         sub.textContent = `IDX ${chartRes.period} · ${chartRes.count} points`;
+        // Hide chart skeleton
+        const chartSkel = document.querySelector('.dashboard-chart-wrap .skeleton-chart');
+        if (chartSkel) chartSkel.style.display = 'none';
       }
     } else {
       document.getElementById('ihsg-chart-subtitle').textContent = 'Data IHSG menunggu scheduler.';
