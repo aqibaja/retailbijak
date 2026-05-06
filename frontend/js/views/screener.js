@@ -1,4 +1,4 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260506z';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260506H';
 import { observeElements } from '../main.js?v=20260506g';
 
 const renderEmptyState = ({

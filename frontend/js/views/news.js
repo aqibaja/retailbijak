@@ -1,4 +1,4 @@
-import { fetchNews } from '../api.js?v=20260506z';
+import { fetchNews } from '../api.js?v=20260506H';
 import { observeElements } from '../main.js?v=20260506g';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
