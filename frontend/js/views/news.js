@@ -160,7 +160,7 @@ function streamCardHtml(n, i) {
   const thumbHtml = hasImage
     ? `<span class="news-stream-thumb"><img src="${n.image_url}" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.style.background=\'linear-gradient(135deg,${c1},${c2})\';this.parentElement.textContent=\'${initials}\'" /><span class="news-stream-thumb" style="display:none;background:linear-gradient(135deg,${c1},${c2})">${initials}</span></span>`
     : `<span class="news-stream-thumb" style="background:linear-gradient(135deg,${c1},${c2})">${initials}</span>`;
-  return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="text-decoration:none;border-left-color:${c1}">
+  return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="border-left-color:${c1}">
     ${thumbHtml}
     <div class="news-stream-body">
       <div class="news-stream-head"><span class="news-stream-source">${sourceCategory(n.source)}</span><span class="news-stream-time">${relativeTime(n.published_at)}</span></div>

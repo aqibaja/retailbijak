@@ -39,14 +39,14 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
         <h3 class="text-sm strong m-0 text-main">${title}</h3>
         <button class="btn btn-icon modal-close-btn" aria-label="Tutup"><i data-lucide="x"></i></button>
       </div>
-      <div class="modal-fields">${fields.map((f, i) => `
+      <form class="modal-fields" onsubmit="return false">${fields.map((f, i) => `
         <div class="mb-4">
           <label class="text-xs text-dim uppercase strong block mb-2">${f.label}</label>
           ${f.type === 'number'
             ? `<input type="number" id="modal-field-${i}" class="modal-input" value="${f.value ?? ''}" step="${f.step ?? '1'}" min="${f.min ?? ''}" />`
             : `<input type="text" id="modal-field-${i}" class="modal-input" value="${f.value ?? ''}" placeholder="${f.placeholder ?? ''}" />`
           }
-        </div>`).join('')}</div>
+        </div>`).join('')}</form>
       <div class="flex gap-3 mt-4">
         <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
         <button class="btn btn-primary modal-confirm-btn modal-btn">${confirmText}</button>
@@ -68,9 +68,13 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
       const result = await onConfirm(values);
       if (result !== false) { overlay.remove(); resolve(values); }
     });
-    // Enter to submit
+    // Enter to submit (keyboard + iOS "Go" button)
     overlay.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') overlay.querySelector('.modal-confirm-btn')?.click();
+    });
+    overlay.querySelector('.modal-fields')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      overlay.querySelector('.modal-confirm-btn')?.click();
     });
     // Focus first field
     const firstInput = overlay.querySelector('.form-input, .modal-input');
