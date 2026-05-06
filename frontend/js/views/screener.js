@@ -53,8 +53,17 @@ const renderRow = (r) => `
 `;
 
 let currentResults = [];
+let scanEventSource = null;
+let scanErrorHandled = false;
 
 export async function renderScreener(root) {
+    // Cleanup any stale EventSource from previous screener view
+    if (scanEventSource) {
+        scanEventSource.close();
+        scanEventSource = null;
+    }
+    scanErrorHandled = false;
+    currentResults = [];
     document.title = 'RetailBijak — Pemindai';
     root.innerHTML = `
       <section class="stagger-reveal">
@@ -125,16 +134,20 @@ function renderList(results) {
     const toolbar = document.getElementById('screener-toolbar');
     const hasResults = results.length > 0;
     if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
-    contentArea.innerHTML = hasResults
-        ? `<div class="flex-col gap-3">${results.map(r => renderRow(r)).join('')}</div>`
-        : renderEmptyState({
+    const sc = document.getElementById('screener-search');
+    if (hasResults) {
+        contentArea.innerHTML = `<div class="flex-col gap-3">${results.map(r => renderRow(r)).join('')}</div>`;
+    } else if (sc && sc.value !== '' && currentResults.length > 0) {
+        // Filter returned nothing — clear search and re-render full list
+        sc.value = '';
+        renderList(currentResults);
+        return;
+    } else {
+        contentArea.innerHTML = renderEmptyState({
             title: 'Tidak ada sinyal terdeteksi',
             body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
             action: 'Coba jalankan scan lagi nanti.',
-          });
-    if (!hasResults) {
-        const sc = document.getElementById('screener-search');
-        if (sc) sc.value = '';
+        });
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -146,22 +159,37 @@ function runScreener() {
     const countBadge = document.getElementById('screener-count');
     const toolbar = document.getElementById('screener-toolbar');
 
+    // Prevent concurrent scans
+    if (scanEventSource) {
+        scanEventSource.close();
+        scanEventSource = null;
+    }
+    scanErrorHandled = false;
+
     btn.disabled = true;
     btn.classList.add('btn-loading');
     if (toolbar) toolbar.style.display = 'none';
-    document.getElementById('screener-search').value = '';
+    const searchInput = document.getElementById('screener-search');
+    if (searchInput) searchInput.value = '';
     countBadge.textContent = 'MEMINDAI...';
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
     progBox.style.display = 'block';
 
-    const es = new EventSource(`${getScanEventSourceUrl('1d')}&rule=SwingAQ`);
-    es.onmessage = (event) => {
+    // Check if we're still mounted before touching DOM
+    const isMounted = () => document.getElementById('screener-content') !== null;
+
+    scanEventSource = new EventSource(`${getScanEventSourceUrl('1d')}&rule=SwingAQ`);
+    scanEventSource.onmessage = (event) => {
+        if (!isMounted()) { scanEventSource.close(); scanEventSource = null; return; }
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
-            document.getElementById('sp-text').textContent = `Memindai ${data.ticker}...`;
-            document.getElementById('sp-percent').textContent = `${data.percent}%`;
-            document.getElementById('sp-fill').style.width = `${data.percent}%`;
+            const spText = document.getElementById('sp-text');
+            const spPercent = document.getElementById('sp-percent');
+            const spFill = document.getElementById('sp-fill');
+            if (spText) spText.textContent = `Memindai ${data.ticker}...`;
+            if (spPercent) spPercent.textContent = `${data.percent}%`;
+            if (spFill) spFill.style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
             // Dedup by ticker
             if (!currentResults.some(r => r.ticker === data.data.ticker)) {
@@ -176,16 +204,29 @@ function runScreener() {
             countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
             showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal.`, 'success');
-            es.close();
+            scanEventSource.close();
+            scanEventSource = null;
         }
     };
-    es.onerror = () => {
-        es.close();
+    scanEventSource.onerror = () => {
+        if (scanErrorHandled || !isMounted()) {
+            if (scanEventSource) { scanEventSource.close(); scanEventSource = null; }
+            return;
+        }
+        scanErrorHandled = true;
+        scanEventSource.close();
+        scanEventSource = null;
         btn.disabled = false;
         btn.classList.remove('btn-loading');
         progBox.style.display = 'none';
-        countBadge.textContent = 'GAGAL';
-        renderList([]);
-        showToast('Pemindaian gagal.', 'error');
+        countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERPUTUS` : 'GAGAL';
+        if (currentResults.length > 0) {
+            // Keep partial results visible
+            renderList(currentResults);
+            showToast('Pemindaian terputus. Hasil parsial ditampilkan.', 'warning');
+        } else {
+            renderList([]);
+            showToast('Pemindaian gagal.', 'error');
+        }
     };
 }

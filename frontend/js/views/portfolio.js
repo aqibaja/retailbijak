@@ -33,7 +33,7 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
   const overlay = document.createElement('div');
   overlay.id = 'stock-modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-backdrop" onclick="this.closest('#stock-modal-overlay')?.remove()"></div>
+    <div class="modal-backdrop"></div>
     <div class="modal-panel">
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-sm strong m-0 text-main">${title}</h3>
@@ -57,25 +57,36 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   return new Promise((resolve) => {
-    const close = () => { overlay.remove(); document.body.style.overflow = ''; resolve(null); };
-    overlay.querySelector('.modal-close-btn')?.addEventListener('click', close);
-    overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', close);
-    overlay.querySelector('.modal-backdrop')?.addEventListener('click', close);
+    const close = (resolveVal = null) => {
+      overlay.querySelector('.modal-backdrop')?.classList.add('closing');
+      overlay.querySelector('.modal-panel')?.classList.add('closing');
+      setTimeout(() => {
+        overlay.remove();
+        document.body.style.overflow = '';
+        resolve(resolveVal);
+      }, 200);
+    };
+    overlay.querySelector('.modal-close-btn')?.addEventListener('click', () => close());
+    overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', () => close());
+    overlay.querySelector('.modal-backdrop')?.addEventListener('click', () => close());
     overlay.querySelector('.modal-confirm-btn')?.addEventListener('click', async () => {
       const values = fields.map((_, i) => {
         const el = document.getElementById(`modal-field-${i}`);
         return el ? (fields[i].type === 'number' ? Number(el.value) : el.value) : null;
       });
       const result = await onConfirm(values);
-      if (result !== false) { overlay.remove(); resolve(values); }
+      if (result !== false) {
+        close(values);
+      }
     });
-    // Enter to submit (keyboard + iOS "Go" button)
-    overlay.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') overlay.querySelector('.modal-confirm-btn')?.click();
-    });
+    // Form submit catches Enter key (keyboard + iOS "Go" button)
     overlay.querySelector('.modal-fields')?.addEventListener('submit', (e) => {
       e.preventDefault();
       overlay.querySelector('.modal-confirm-btn')?.click();
+    });
+    // Escape to close
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
     });
     // Focus first field
     const firstInput = overlay.querySelector('.form-input, .modal-input');
@@ -93,7 +104,7 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
   const overlay = document.createElement('div');
   overlay.id = 'stock-modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-backdrop" onclick="this.closest('#stock-modal-overlay')?.remove()"></div>
+    <div class="modal-backdrop"></div>
     <div class="modal-panel modal-panel-narrow">
       <div class="text-center py-4">
         <h3 class="text-sm strong m-0 text-main">${title}</h3>
@@ -108,10 +119,22 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
   document.body.style.overflow = 'hidden';
 
   return new Promise((resolve) => {
-    const close = (val) => { overlay.remove(); document.body.style.overflow = ''; resolve(val); };
+    const close = (val) => {
+      overlay.querySelector('.modal-backdrop')?.classList.add('closing');
+      overlay.querySelector('.modal-panel')?.classList.add('closing');
+      setTimeout(() => {
+        overlay.remove();
+        document.body.style.overflow = '';
+        resolve(val);
+      }, 200);
+    };
     overlay.querySelector('.modal-backdrop')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-confirm-btn')?.addEventListener('click', () => close(true));
+    // Escape to close
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close(false);
+    });
     // Focus trap
     setTimeout(() => trapFocus(overlay), 150);
   });

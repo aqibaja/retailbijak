@@ -95,6 +95,7 @@ export async function renderStockDetail(root, ticker) {
           <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
+          <div id="trade-plan" class="trade-plan-grid mt-4"></div>
           <div class="panel-flush mt-16"><h3 class="panel-flush-title">Market Stats</h3><div id="market-stats-v2" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
           <div class="panel-flush mt-16"><h3 class="panel-flush-title">Katalis Terbaru</h3><div id="catalyst-strip-v2" class="catalyst-strip-v2"><div class="skeleton skeleton-text skeleton-w-60"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
         </div>
@@ -127,6 +128,7 @@ export async function renderStockDetail(root, ticker) {
           </div>
           <div class="stock-tab-content" data-tab-content="analisis">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Ringkasan Sesi</h3><div id="snapshot-panel" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="stock-side-panel ai-thread-mock"><h3 class="stock-side-panel-title">Pembacaan Cepat AI</h3><div class="ai-thread-mock-inner"></div></div>
             <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
@@ -294,7 +296,6 @@ export async function renderStockDetail(root, ticker) {
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
   renderLevelSuggestions(candles, technical);
-  renderLevelOverlay(candles, technical);
 
   // Catalyst strip — news + announcements
   if (document.getElementById('catalyst-strip-v2')) {
@@ -579,9 +580,6 @@ function renderDecisionPanel(candles, tech){
       <div class="score-levels">Stop <span class="down">${money(levels.stop)}</span> · Entry <span class="up">${money(levels.entry)}</span> · Target <span class="up">${money(levels.target)}</span></div>
     </div>`;
 }
-function renderLevelOverlay(candles, tech){
-  const overlay=document.getElementById('level-overlay'); if(!overlay) return; overlay.innerHTML = '';
-}
 function renderLevelSuggestions(candles, tech){
   const el=document.getElementById('level-suggestions'); if(!el) return; const levels=getLevels(candles, tech);
   const items=[['STOP', levels.stop, 'Kendali risiko', 'metric-bad'], ['ENTRY', levels.entry, 'Zona pullback', 'metric-good'], ['TARGET', levels.target, 'Zona reward', 'metric-warn']];
@@ -631,7 +629,7 @@ function renderSnapshotPanel(d, candles, tech){
 }
 
 function renderAiPreview(symbol, d, candles, tech, analysis){
-  const host = document.querySelector('.ai-thread-mock'); if (!host) return;
+  const host = document.querySelector('.ai-thread-mock-inner'); if (!host) return;
   const levels = getLevels(candles, tech); const last = candles[candles.length-1] || {}; const rsi = Number(tech?.indicators?.rsi?.value);
   const hasFundamental = Boolean(d && (d.trailing_pe || d.price_to_book || d.roe || d.revenue || d.updated_at));
   const valuation = d.trailing_pe ? (d.trailing_pe < 12 ? 'valuasi murah' : d.trailing_pe > 25 ? 'valuasi premium' : 'valuasi wajar') : 'valuasi belum lengkap';

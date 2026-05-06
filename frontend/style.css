@@ -344,6 +344,8 @@ html[data-theme="light"] {
 [data-theme="light"] .stock-stat-v2 { background: rgba(15,23,42,.04); }
 [data-theme="light"] .tech-tile-v2 { background: rgba(15,23,42,.03); }
 [data-theme="light"] .stock-detail-pro .decision-confluence { background: transparent; }
+[data-theme="light"] .sugg-chip { background: rgba(15,23,42,.04); border-color: rgba(15,23,42,.1); }
+[data-theme="light"] .plan-card { background: rgba(15,23,42,.03); }
 [data-theme="light"] .dash-news-card { background: var(--bg-panel); }
 [data-theme="light"] .dash-intel-card { background: var(--bg-panel); }
 [data-theme="light"] .ai-picks-card { background: var(--bg-panel); }
@@ -1493,7 +1495,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   .stock-detail-pro .technical-grid,
   .stock-detail-pro .stats-grid,
   .stock-detail-pro .insight-grid,
-  .stock-detail-pro .trade-plan,
+  .stock-detail-pro .trade-plan-grid,
   .stock-detail-pro .action-bar,
   .stock-detail-pro .sample-prompts { grid-template-columns: 1fr !important; }
   .stock-detail-pro .signal-card { min-width: 88px; padding: 8px; }
@@ -4139,6 +4141,105 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 }
 
 /* ================= PRINT STYLES ================= */
+/* ─── Stock Detail: missing classes ─── */
+.chart-card-v2 {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.stock-detail-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.chart-top-spacing {
+  height: 6px;
+}
+.signal-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.pill-good {
+  background: rgba(16,185,129,.15);
+  color: #34d399;
+}
+.pill-bad {
+  background: rgba(239,68,68,.12);
+  color: #fb7185;
+}
+.pill-warn {
+  background: rgba(251,191,36,.12);
+  color: #fbbf24;
+}
+.level-suggestions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.sugg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+}
+.sugg-chip strong {
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+.sugg-chip small {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+.sugg-chip.metric-bad {
+  background: rgba(239,68,68,.08);
+  border-color: rgba(239,68,68,.2);
+}
+.sugg-chip.metric-good {
+  background: rgba(16,185,129,.08);
+  border-color: rgba(16,185,129,.2);
+}
+.sugg-chip.metric-warn {
+  background: rgba(251,191,36,.08);
+  border-color: rgba(251,191,36,.2);
+}
+.trade-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+.plan-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-thread-mock-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* ─── End stock detail classes ─── */
+
 @media print {
   body { background: #fff !important; color: #111 !important; }
   .sidebar, .bottom-nav, .topbar, .topbar-ticker-wrap,

@@ -31,7 +31,7 @@ function buildAiPickContext(item, mode = 'swing') {
 export async function renderDashboard(root) {
   document.title = 'RetailBijak — Dashboard';
   root.innerHTML = `
-  <section class="dashboard-pro stagger-reveal">
+  <section class="dashboard-pro stagger-reveal" aria-label="Dashboard Pasar">
     <div class="dash-hero-pro panel">
       <div class="dash-copy">
         <div class="screener-kicker">RUANG KERJA IDX</div>
@@ -41,7 +41,7 @@ export async function renderDashboard(root) {
           <a href="#screener" class="btn btn-primary dash-primary-cta">Jalankan Pemindai</a>
           <a href="#market" class="btn dash-secondary-cta">Ikhtisar Pasar</a>
         </div>
-        <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack">
+        <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack" aria-live="polite" aria-atomic="true">
           <div class="dash-summary-card">
             <span>Bias Pasar</span>
             <strong id="dash-bias-label">Memuat...</strong>
@@ -59,11 +59,11 @@ export async function renderDashboard(root) {
           </div>
         </div>
       </div>
-      <div class="dash-quote-card dash-mobile-status">
+      <div class="dash-quote-card dash-mobile-status" aria-live="polite" aria-atomic="true">
         <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div>
         <div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
         <div class="text-xs text-dim uppercase strong">IHSG</div>
-        <div class="flex justify-between items-end gap-3"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
+        <div class="flex justify-between items-end gap-3" role="group" aria-label="IHSG nilai dan perubahan"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
         <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">—</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
         <div class="dash-quote-freshness" id="dash-quote-freshness">Sinkronisasi: menunggu ringkasan pasar.</div>
       </div>
@@ -73,28 +73,28 @@ export async function renderDashboard(root) {
       <div class="panel dash-chart-panel">
         <div class="flex justify-between items-center mb-3">
           <div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div>
-          <div class="dashboard-chip-row">
-            <button class="btn btn-mini ihsg-range" data-range="1W">1W</button>
-            <button class="btn btn-primary btn-mini ihsg-range" data-range="1M">1M</button>
-            <button class="btn btn-mini ihsg-range" data-range="1Q">1Q</button>
+          <div class="dashboard-chip-row" role="group" aria-label="Rentang waktu grafik">
+            <button class="btn btn-mini ihsg-range" data-range="1W" aria-pressed="false">1W</button>
+            <button class="btn btn-primary btn-mini ihsg-range" data-range="1M" aria-pressed="true">1M</button>
+            <button class="btn btn-mini ihsg-range" data-range="1Q" aria-pressed="false">1Q</button>
           </div>
         </div>
         <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu data.</strong></div>
-        <div class="dashboard-chart-wrap"><div class="skeleton skeleton-chart"></div><canvas id="ihsgMainChart"></canvas></div>
+        <div class="dashboard-chart-wrap"><div class="skeleton skeleton-chart" aria-hidden="true"></div><canvas id="ihsgMainChart" role="img" aria-label="Grafik pergerakan IHSG"></canvas></div>
       </div>
       <div class="panel dash-movers-panel">
         <div class="flex justify-between items-center mb-3">
           <div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape dimuat</span></div></div>
           <a href="#market" class="text-xs text-primary strong">Lihat Semua</a>
         </div>
-        <div id="movers-list" class="flex-col gap-2"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan data</strong></div></div>
+        <div id="movers-list" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan data</strong></div></div>
       </div>
     </div>
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
-      <div class="panel"><h3 class="panel-title mb-3">Intelijen Pasar</h3><div id="market-intel" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dari feed.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Intelijen Pasar</h3><div id="market-intel" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dari feed.</span></div></div></div>
     </div>
   </section>`;
   observeElements();
@@ -117,7 +117,7 @@ async function loadMarketSummary() {
   if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi: ${dataDate}` : 'Sinkronisasi: menunggu data.';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
-  const ch = document.getElementById('ihsg-change'); ch.textContent = v != null ? (c >= 0 ? '▲' : '▼') + ' ' + pf(Math.abs(c)).replace('+', '') : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
+  const ch = document.getElementById('ihsg-change'); ch.innerHTML = v != null ? `<span aria-hidden="true">${c >= 0 ? '▲' : '▼'}</span> <span>${pf(Math.abs(c)).replace('+', '')}</span>` : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
   document.getElementById('ihsg-open').textContent = summary?.open != null ? nf(summary.open) : '—';
   document.getElementById('ihsg-high').textContent = summary?.high != null ? nf(summary.high) : '—';
   document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';
@@ -275,18 +275,23 @@ async function loadAiPickWidget() {
 }
 
 async function loadNews(){
-  const res = await fetchNews(3);
-  const items = Array.isArray(res?.data) && res.data.length ? res.data : [];
-  if (items.length) {
-    document.getElementById('news-container').innerHTML = items.slice(0,2).map((n, index) => `
-      <a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}">
-        <span class="badge">${n.source||'NEWS'}</span>
-        <b>${n.title}</b>
-        <span class="dash-news-meta">${index===0?'Headline':'Brief'} · ${n.source||'NEWS'}</span>
-        ${n.summary ? `<small>${String(n.summary).replace(/<[^>]+>/g,'').slice(0,72)}</small>` : ''}
-      </a>`).join('');
-  } else {
-    document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Berita belum tersedia</strong><span class="dashboard-widget-state-note">Feed berita akan muncul setelah scheduler berjalan. Cek halaman Berita untuk update.</span></div>';
+  try {
+    const res = await fetchNews(3);
+    const items = Array.isArray(res?.data) && res.data.length ? res.data : [];
+    if (items.length) {
+      document.getElementById('news-container').innerHTML = items.slice(0,2).map((n, index) => `
+        <a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}">
+          <span class="badge">${n.source||'NEWS'}</span>
+          <b>${n.title}</b>
+          <span class="dash-news-meta">${index===0?'Headline':'Brief'} · ${n.source||'NEWS'}</span>
+          ${n.summary ? `<small>${String(n.summary).replace(/<[^>]+>/g,'').slice(0,72)}</small>` : ''}
+        </a>`).join('');
+    } else {
+      document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Berita belum tersedia</strong><span class="dashboard-widget-state-note">Feed berita akan muncul setelah scheduler berjalan. Cek halaman Berita untuk update.</span></div>';
+    }
+  } catch (e) {
+    console.warn('loadNews failed', e);
+    document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">Terjadi kesalahan saat mengambil feed berita. Silakan coba lagi.</span></div>';
   }
 }
 
@@ -316,6 +321,21 @@ function initChart(summary) {
   const ctx = document.getElementById('ihsgMainChart');
   if (!ctx || typeof Chart === 'undefined') return;
 
+  // Read theme-aware CSS custom properties from the document
+  const style = getComputedStyle(document.documentElement);
+  const primaryColor = style.getPropertyValue('--primary-color').trim() || '#10b981';
+  const textDim = style.getPropertyValue('--text-dim').trim() || '#64748b';
+  const borderSubtle = style.getPropertyValue('--border-subtle').trim() || 'rgba(255,255,255,.04)';
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  const gradientColor = hexToRgba(primaryColor, 0.36);
+  const gradientEnd = hexToRgba(primaryColor, 0);
+  const gridColor = borderSubtle;
+
   const render = async (range = '1M') => {
     const chartRes = await loadIhsgChartData(range);
     let labels, data;
@@ -336,29 +356,34 @@ function initChart(summary) {
         if (chartSkel) chartSkel.style.display = 'none';
       }
     } else {
-      document.getElementById('ihsg-chart-subtitle').textContent = 'Data IHSG menunggu scheduler.';
+      const sub = document.getElementById('ihsg-chart-subtitle');
+      if (sub) sub.textContent = 'Data IHSG menunggu scheduler.';
+      // Hide skeleton even on empty data so canvas fallback is visible
+      const chartSkel = document.querySelector('.dashboard-chart-wrap .skeleton-chart');
+      if (chartSkel) chartSkel.style.display = 'none';
       return;
     }
 
     const canvasHeight = ctx.height || 320;
     const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, canvasHeight);
-    g.addColorStop(0, 'rgba(16,185,129,.36)');
-    g.addColorStop(1, 'rgba(16,185,129,0)');
+    g.addColorStop(0, gradientColor);
+    g.addColorStop(1, gradientEnd);
     if (ihsgChart) ihsgChart.destroy();
     ihsgChart = new Chart(ctx, {
       type: 'line',
-      data: { labels, datasets: [{ data, borderColor: '#10b981', backgroundColor: g, borderWidth: 2, pointRadius: labels.length > 30 ? 0 : 2, fill: true, tension: .42 }] },
+      data: { labels, datasets: [{ data, borderColor: primaryColor, backgroundColor: g, borderWidth: 2, pointRadius: labels.length > 30 ? 0 : 2, fill: true, tension: .42 }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `IHSG ${nf(c.parsed.y, 2)}` } } },
-        scales: { x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 10 } }, y: { position: 'right', grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', callback: (v) => nf(v, 0) } } }
+        scales: { x: { grid: { display: false }, ticks: { color: textDim, maxTicksLimit: 10 } }, y: { position: 'right', grid: { color: gridColor }, ticks: { color: textDim, callback: (v) => nf(v, 0) } } }
       }
     });
   };
   render('1M');
   document.querySelectorAll('.ihsg-range').forEach(btn => btn.addEventListener('click', () => {
-    document.querySelectorAll('.ihsg-range').forEach(b => b.classList.remove('btn-primary'));
+    document.querySelectorAll('.ihsg-range').forEach(b => { b.classList.remove('btn-primary'); b.setAttribute('aria-pressed', 'false'); });
     btn.classList.add('btn-primary');
+    btn.setAttribute('aria-pressed', 'true');
     render(btn.dataset.range);
   }));
 }

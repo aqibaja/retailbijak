@@ -162,7 +162,7 @@ function renderCompactCard(item, mode) {
       <div class="ai-picks-card-thesis">${item.thesis || '-'}</div>
 
       <div class="ai-picks-card-actions">
-        <button class="btn btn-sm" data-open-detail="${item.ticker}">Buka Detail</button>
+        <button class="btn btn-sm" data-open-detail="${item.ticker}" aria-label="Buka detail ${item.ticker}">Buka Detail</button>
         <button class="btn btn-sm btn-primary" data-save="${item.ticker}" data-mode="${mode}">Simpan</button>
         <button class="btn btn-sm ai-picks-factor-toggle" data-toggle-factors="${item.ticker}">▸ Faktor</button>
       </div>

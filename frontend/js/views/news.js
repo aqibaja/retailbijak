@@ -175,7 +175,7 @@ function streamCardHtml(n, i) {
   const { c1, c2, initials } = generateFallbackGradient(n.title, n.source);
   const hasImage = n.image_url && n.image_url.length > 4;
   const thumbHtml = hasImage
-    ? `<span class="news-stream-thumb"><img src="${n.image_url}" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.style.background=\'linear-gradient(135deg,${c1},${c2})\';this.parentElement.textContent=\'${initials}\'" /><span class="news-stream-thumb" style="display:none;background:linear-gradient(135deg,${c1},${c2})">${initials}</span></span>`
+    ? `<span class="news-stream-thumb"><img src="${n.image_url}" alt="" loading="lazy" onerror="this.style.display='none'" /><span class="news-stream-thumb" style="display:none;background:linear-gradient(135deg,${c1},${c2})">${initials}</span></span>`
     : `<span class="news-stream-thumb" style="background:linear-gradient(135deg,${c1},${c2})">${initials}</span>`;
   return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="border-left-color:${c1}">
     ${thumbHtml}
