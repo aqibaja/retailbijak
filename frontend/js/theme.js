@@ -6,7 +6,7 @@ export function initTheme() {
     const htmlEl = document.documentElement;
 
     let isDark = localStorage.getItem('retail-theme') === 'dark' || localStorage.getItem('retail-theme') === null;
-    let currentLang = localStorage.getItem('retail-lang') || 'en';
+    let currentLang = localStorage.getItem('retail-lang') || 'id';
 
     function applyTheme() {
         if (isDark) {

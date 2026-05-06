@@ -1279,7 +1279,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; --header-h: 56px; --bottom-nav-h: 68px; --gap-sm: 10px; --gap-md: 14px; }
-  html, body { overflow-x: hidden; }
+  html, body { overflow-x: hidden; overscroll-behavior-y: none; -webkit-overflow-scrolling: touch; }
   .sidebar { display: none; }
   .topbar {
     padding: 0 10px;

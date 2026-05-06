@@ -12,6 +12,10 @@ export async function apiFetch(endpoint, options = {}) {
         return await res.json();
     } catch (e) {
         console.error(`API error: ${endpoint}`, e);
+        // Only show toast for non-abort errors (timeout = silent)
+        if (e.name !== 'AbortError') {
+            showToast('Gagal mengambil data. Coba lagi.', 'error', 3000);
+        }
         return null;
     }
 }
