@@ -3,7 +3,7 @@ import { observeElements } from '../main.js?v=20260506g';
 
 const renderEmptyState = ({
   title = 'Belum ada hasil scan',
-  body = 'Pilih timeframe di panel kiri lalu klik Jalankan Pemindaian SwingAQ untuk melihat sinyal beli institusional secara live.',
+  body = 'Pilih timeframe lalu klik Jalankan Pemindaian SwingAQ untuk melihat sinyal beli institusional secara live.',
   action = 'Pengurutan tersedia setelah hasil scan muncul.',
 } = {}) => `
   <div class="empty-state-v2">

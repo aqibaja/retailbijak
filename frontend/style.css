@@ -1279,7 +1279,8 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   .page-header, .panel, .card, .glass-card, .modal-content { max-width: 100%; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   .grid, .scanner-layout, .stock-layout, .dash-grid-pro, .dash-bottom-grid { grid-template-columns: 1fr !important; }
-  .news-grid { grid-template-columns: 1fr; }
+  .news-grid,
+  .news-featured-grid { grid-template-columns: 1fr; }
   .col-span-8, .col-span-4, .col-span-7, .col-span-5, .col-span-12 { grid-column: span 12 !important; }
   .panel, .card, .table-container, .stock-hero, .dash-hero-pro { border-radius: 16px; }
   .panel, .card { padding: 16px; }
@@ -1291,6 +1292,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   .form-row, .settings-grid, .stats-grid, .technical-grid, .suggestion-grid { grid-template-columns: 1fr !important; }
   .stock-chart-wrap, .dashboard-chart-wrap { min-height: 240px; height: 260px; }
   .stock-side { grid-template-columns: 1fr !important; }
+  #peer-comparison-panel { overflow-x: auto; }
   .dash-hero-pro, .dash-grid-pro, .dash-bottom-grid { gap: 12px; }
   .dash-actions { flex-direction: column; width: 100%; }
   .dash-actions .btn { width: 100%; }
@@ -1380,7 +1382,9 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   .screener-hero h1 { font-size: clamp(22px, 7vw, 30px) !important; }
   .screener-toolbar { width: 100%; flex-direction: column; align-items: stretch; }
   .scanner-control-stack { width: 100%; }
-  .scanner-select { width: 100% !important; }
+  .scanner-select,
+  .screener-control-select,
+  .screener-control-search { width: 100% !important; }
   .scanner-row { flex-direction: column; align-items: stretch; }
   .scanner-row-stats { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
   .scanner-row > div:first-child { gap: 12px !important; }
@@ -1411,6 +1415,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 @media (max-width: 420px) {
   .scanner-row > div:last-child { display: grid !important; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px !important; }
   .scanner-row > div:last-child > div { text-align: left !important; }
+  .scanner-row { padding: 12px 14px !important; }
   .scanner-row .mono { font-size: 12px !important; }
   #tab-content table { min-width: 500px; }
 }
@@ -1616,6 +1621,7 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 
 /* TradingView widget font polish */
 .fallback-svg-chart { width: 100%; height: auto; display: block; max-width: 100%; }
+.broker-name,.broker-net{font-size:11px}.broker-net{text-align:right}
 #tvchart iframe { color-scheme: dark; }
 
 /* Dashboard card hover transitions */
@@ -3847,6 +3853,7 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   .news-featured-grid { grid-template-columns: 1fr; }
   .news-hero-card { min-height: 200px; }
   .news-side-card { min-height: 80px; padding: 14px; }
+  .news-hero-badge { max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stock-stats-v2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

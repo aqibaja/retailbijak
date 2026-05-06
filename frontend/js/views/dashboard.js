@@ -331,7 +331,8 @@ function initChart(summary) {
       return;
     }
 
-    const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 320);
+    const canvasHeight = ctx.height || 320;
+    const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, canvasHeight);
     g.addColorStop(0, 'rgba(16,185,129,.36)');
     g.addColorStop(1, 'rgba(16,185,129,0)');
     if (ihsgChart) ihsgChart.destroy();

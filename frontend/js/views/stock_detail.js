@@ -316,9 +316,9 @@ function hydrateHeader(symbol, detail, fund, candles){
   chEl.innerHTML = `${isUp ? '+' : ''}${nf(change,0)} <small>(${pf(pct)})</small>`;
   chEl.className = `stock-hero-change ${isUp ? 'up' : 'down'}`;
   // Last update timestamp
-  const now = new Date(); const hh = String(now.getHours()).padStart(2,'0'); const mm = String(now.getMinutes()).padStart(2,'0');
+  const now = new Date(); const wibTime = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false });
   const ts = document.getElementById('live-badge');
-  if (ts) { ts.textContent = `WIB ${hh}:${mm}`; ts.className = 'badge'; }
+  if (ts) { ts.textContent = `WIB ${wibTime}`; ts.className = 'badge'; }
 }
 function renderStockChart(symbol, candles, technical){
   const container = document.getElementById('tvchart'); if (!container) return;
@@ -815,7 +815,7 @@ function renderBrokerActivity(data) {
     data.slice(0, 6).map(r => {
       const net = Number(r.net_volume || 0);
       const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
-      return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono" style="font-size:11px">${r.broker || '—'}</span><span class="mono ${cls}" style="font-size:11px">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
+      return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono broker-name">${r.broker || '—'}</span><span class="mono ${cls} broker-net">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
     }).join('');
 }
 
@@ -892,7 +892,7 @@ function renderPeerComparison(symbol) {
     if (!el || !res?.data?.length) return;
     el.style.display = '';
     el.innerHTML = '<div class="flex justify-between items-center mb-2"><span class="text-xs text-dim uppercase strong">Peer Comparison</span></div>' +
-      '<div class="peer-row peer-row-divider"><span class="text-xs text-dim peer-table-header">KODE</span><span class="text-xs text-dim peer-table-header">NAMA</span><span class="text-xs text-dim peer-table-header" style="text-align:right">HARGA</span><span class="text-xs text-dim peer-table-header" style="text-align:right">CHG%</span></div>' +
+      '<div class="peer-row peer-row-divider"><span class="text-xs text-dim peer-table-header">KODE</span><span class="text-xs text-dim peer-table-header">NAMA</span><span class="text-xs text-dim peer-table-header peer-header-right">HARGA</span><span class="text-xs text-dim peer-table-header peer-header-right">CHG%</span></div>' +
       res.data.map(p => {
         const changeCls = p.change_pct > 0 ? 'text-up' : p.change_pct < 0 ? 'text-down' : 'text-dim';
         const arrow = p.change_pct > 0 ? '▲' : p.change_pct < 0 ? '▼' : '—';
