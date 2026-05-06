@@ -1,5 +1,5 @@
-import { fetchNews } from '../api.js?v=20260506L';
-import { observeElements } from '../main.js?v=20260506L';
+import { fetchNews } from '../api.js?v=20260506M';
+import { observeElements } from '../main.js?v=20260506M';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
 
@@ -48,7 +48,7 @@ export async function renderNews(root) {
               <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
               <div class="news-search-wrap">
                 <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
-                <button id="news-search-clear" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
+                <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
               </div>
             </div>
           </div>
@@ -86,7 +86,7 @@ export async function renderNews(root) {
 
         if (!items.length) {
           document.querySelectorAll('[id^=news-]').forEach(el => {
-            if (el.id !== 'news-count') el.innerHTML = '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Belum ada berita</strong><span class="dashboard-widget-state-note">Berita akan muncul setelah scheduler berjalan.</span></div>';
+            if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Belum ada berita</h3><p>Berita akan muncul setelah scheduler berjalan.</p></div>';
           });
           return;
         }
@@ -151,7 +151,7 @@ export async function renderNews(root) {
             if (label) label.textContent = filtered.length ? `· filter "${this.value}" (${filtered.length})` : '· tidak ditemukan';
             document.getElementById('news-stream').innerHTML = filtered.length
               ? filtered.map((n, i) => streamCardHtml(n, i)).join('')
-              : '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Tidak ditemukan</strong><span class="dashboard-widget-state-note">Coba kata kunci lain.</span></div>';
+              : '<div class="empty-state-v2 grid-full"><h3>Tidak ditemukan</h3><p>Coba kata kunci lain.</p></div>';
           });
           if (clearBtn) {
             clearBtn.addEventListener('click', function() {
@@ -167,7 +167,7 @@ export async function renderNews(root) {
     } catch (err) {
         document.getElementById('news-count').textContent = 'GAGAL';
         const stream = document.getElementById('news-stream');
-        if (stream) stream.innerHTML = '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">Coba refresh halaman.</span></div>';
+        if (stream) stream.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Gagal memuat berita</h3><p>Coba refresh halaman.</p></div>';
     }
 }
 

@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260506L';
-import { observeElements } from '../main.js?v=20260506L';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260506M';
+import { observeElements } from '../main.js?v=20260506M';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -37,7 +37,7 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
     <div class="modal-panel">
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-sm strong m-0 text-main">${title}</h3>
-        <button class="btn btn-icon modal-close-btn" aria-label="Tutup"><i data-lucide="x"></i></button>
+        <button class="btn btn-icon modal-close-btn" type="button" aria-label="Tutup"><i data-lucide="x"></i></button>
       </div>
       <form class="modal-fields" onsubmit="return false">${fields.map((f, i) => `
         <div class="mb-4">
@@ -48,8 +48,8 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
           }
         </div>`).join('')}</form>
       <div class="flex gap-3 mt-4">
-        <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
-        <button class="btn btn-primary modal-confirm-btn modal-btn">${confirmText}</button>
+        <button type="button" class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
+        <button type="button" class="btn btn-primary modal-confirm-btn modal-btn">${confirmText}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -116,8 +116,8 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
         <p class="text-xs text-muted mt-2 line-height-150">${message}</p>
       </div>
       <div class="flex gap-2 mt-4">
-        <button class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
-        <button class="btn modal-confirm-btn modal-btn ${danger ? 'modal-btn-danger' : 'btn-primary'}">${confirmText}</button>
+        <button type="button" class="btn modal-cancel-btn modal-btn modal-btn-cancel">${cancelText}</button>
+        <button type="button" class="btn modal-confirm-btn modal-btn ${danger ? 'modal-btn-danger' : 'btn-primary'}">${confirmText}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -181,7 +181,7 @@ async function renderWatchlistTab(el) {
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
-        <button id="add-watchlist" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+        <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
       ${rows.length ? `
       <div class="table-wrapper">
@@ -191,7 +191,7 @@ async function renderWatchlistTab(el) {
             <tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="text-muted text-sm">${r.notes || '-'}</td>
-              <td class="text-right"><button class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
+              <td class="text-right"><button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>
       </div>` : `
@@ -199,7 +199,7 @@ async function renderWatchlistTab(el) {
         <div class="empty-icon"><i data-lucide="eye" class="watchlist-empty-icon"></i></div>
         <h3>Daftar Pantau Kosong</h3>
         <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
-        <button id="add-watchlist-empty" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
+        <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
       </div>`}`;
 
     // Watchlist add
@@ -245,7 +245,7 @@ async function renderPortfolioTab(el) {
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
-        <button id="add-portfolio" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+        <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
       ${rows.length ? `
       <div class="table-wrapper">
@@ -256,7 +256,7 @@ async function renderPortfolioTab(el) {
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="mono font-size-14">${r.lots}</td>
               <td class="mono font-size-14 text-muted">Rp ${(r.avg_price || 0).toLocaleString()}</td>
-              <td class="text-right"><button class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
+              <td class="text-right"><button type="button" class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>
       </div>` : `
@@ -264,7 +264,7 @@ async function renderPortfolioTab(el) {
         <div class="empty-icon"><i data-lucide="briefcase" class="watchlist-empty-icon"></i></div>
         <h3>Belum Ada Posisi</h3>
         <p>Mulai catat posisi saham Anda untuk melacak portofolio.</p>
-        <button id="add-portfolio-empty" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
+        <button id="add-portfolio-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
       </div>`}`;
 
     // Portfolio add

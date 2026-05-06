@@ -1,5 +1,5 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260506L';
-import { observeElements } from '../main.js?v=20260506L';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260506M';
+import { observeElements } from '../main.js?v=20260506M';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -78,9 +78,9 @@ function renderAiBrief(payload) {
       <div class="ai-picks-hero-row">
         <h1 class="ai-picks-hero-title">AI Picks Hari Ini</h1>
         <div class="ai-picks-mode-switch" id="ai-picks-mode-switch">
-          <button class="btn btn-sm" data-mode="swing">Swing</button>
-          <button class="btn btn-sm" data-mode="defensive">Defensive</button>
-          <button class="btn btn-sm" data-mode="catalyst">Catalyst</button>
+          <button type="button" class="btn btn-sm" data-mode="swing">Swing</button>
+          <button type="button" class="btn btn-sm" data-mode="defensive">Defensive</button>
+          <button type="button" class="btn btn-sm" data-mode="catalyst">Catalyst</button>
         </div>
       </div>
       <div class="ai-picks-hero-meta">${asOf} · generated ${genAt} · ${freshness} · update ${nextUp}</div>
@@ -162,9 +162,9 @@ function renderCompactCard(item, mode) {
       <div class="ai-picks-card-thesis">${item.thesis || '-'}</div>
 
       <div class="ai-picks-card-actions">
-        <button class="btn btn-sm" data-open-detail="${item.ticker}" aria-label="Buka detail ${item.ticker}">Buka Detail</button>
-        <button class="btn btn-sm btn-primary" data-save="${item.ticker}" data-mode="${mode}">Simpan</button>
-        <button class="btn btn-sm ai-picks-factor-toggle" data-toggle-factors="${item.ticker}">▸ Faktor</button>
+        <button type="button" class="btn btn-sm" data-open-detail="${item.ticker}" aria-label="Buka detail ${item.ticker}">Buka Detail</button>
+        <button type="button" class="btn btn-sm btn-primary" data-save="${item.ticker}" data-mode="${mode}">Simpan</button>
+        <button type="button" class="btn btn-sm ai-picks-factor-toggle" data-toggle-factors="${item.ticker}">▸ Faktor</button>
       </div>
 
       <div class="ai-picks-card-factors" id="factors-${item.ticker}">
@@ -188,7 +188,7 @@ function renderEmptyState(title, note) {
   return `<div class="panel ai-picks-state-card" data-state="empty"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon empty"><i data-lucide="inbox" class="lucide-lg"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span></div></div>`;
 }
 function renderErrorState(title, note) {
-  return `<div class="panel ai-picks-state-card" data-state="error"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon error"><i data-lucide="alert-triangle" class="lucide-lg"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span><button class="btn btn-sm ai-picks-retry-btn" data-retry="1">Coba Lagi</button></div></div>`;
+  return `<div class="panel ai-picks-state-card" data-state="error"><div class="ai-picks-state-stack"><div class="ai-picks-state-icon error"><i data-lucide="alert-triangle" class="lucide-lg"></i></div><strong>${title}</strong><span class="text-sm text-muted">${note}</span><button type="button" class="btn btn-sm ai-picks-retry-btn" data-retry="1">Coba Lagi</button></div></div>`;
 }
 
 // ─── Wire event handlers ───────────────────────────────────
@@ -257,9 +257,9 @@ export async function renderAiPicks(root) {
         <div class="ai-picks-hero-row">
           <h1 class="ai-picks-hero-title">AI Picks Hari Ini</h1>
           <div class="ai-picks-mode-switch" id="ai-picks-mode-switch">
-            <button class="btn btn-sm" data-mode="swing">Swing</button>
-            <button class="btn btn-sm" data-mode="defensive">Defensive</button>
-            <button class="btn btn-sm" data-mode="catalyst">Catalyst</button>
+            <button type="button" class="btn btn-sm" data-mode="swing">Swing</button>
+            <button type="button" class="btn btn-sm" data-mode="defensive">Defensive</button>
+            <button type="button" class="btn btn-sm" data-mode="catalyst">Catalyst</button>
           </div>
         </div>
         <div class="ai-picks-hero-meta">Memuat briefing...</div>
@@ -377,9 +377,9 @@ function extractHeroHtml(payload) {
     <div class="ai-picks-hero-row">
       <h1 class="ai-picks-hero-title">AI Picks Hari Ini</h1>
       <div class="ai-picks-mode-switch" id="ai-picks-mode-switch">
-        <button class="btn btn-sm" data-mode="swing">Swing</button>
-        <button class="btn btn-sm" data-mode="defensive">Defensive</button>
-        <button class="btn btn-sm" data-mode="catalyst">Catalyst</button>
+        <button type="button" class="btn btn-sm" data-mode="swing">Swing</button>
+        <button type="button" class="btn btn-sm" data-mode="defensive">Defensive</button>
+        <button type="button" class="btn btn-sm" data-mode="catalyst">Catalyst</button>
       </div>
     </div>
     <div class="ai-picks-hero-meta">${asOf} · generated ${genAt} · ${label}</div>`;

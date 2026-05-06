@@ -1,5 +1,5 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260506L';
-import { observeElements } from '../main.js?v=20260506L';
+import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260506M';
+import { observeElements } from '../main.js?v=20260506M';
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
 const DEFAULT_PICKS_MODEL = 'google/gemma-4-26b-a4b-it';
@@ -87,7 +87,7 @@ export async function renderSettings(root) {
 
             <div class="settings-actions-row">
                 <span id="settings-status" class="text-xs text-dim mono strong settings-status-text">TERSAMBUNG KE LAYANAN LOKAL</span>
-                <button id="save-settings" class="btn btn-primary settings-save-btn">Simpan Konfigurasi</button>
+                <button id="save-settings" type="button" class="btn btn-primary settings-save-btn">Simpan Konfigurasi</button>
             </div>
           </div>
 

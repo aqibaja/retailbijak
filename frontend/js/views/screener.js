@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260506L';
-import { observeElements } from '../main.js?v=20260506L';
+import { getScanEventSourceUrl, showToast } from '../api.js?v=20260506M';
+import { observeElements } from '../main.js?v=20260506M';
 
 const renderEmptyState = ({
   title = 'Belum ada hasil scan',
@@ -76,7 +76,7 @@ export async function renderScreener(root) {
             <div class="scanner-header-text">PUSAT KONTROL</div>
             <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
             <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
-            <button id="btn-run-screener" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
+            <button id="btn-run-screener" type="button" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
             <div id="screener-progress" class="hidden panel-lite p-4 scanner-progress">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
               <div class="screener-progress-track"><div id="sp-fill" class="screener-progress-fill"></div></div>

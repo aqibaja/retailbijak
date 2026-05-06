@@ -1,5 +1,5 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506L';
-import { observeElements, flashUpdate } from '../main.js?v=20260506L';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260506M';
+import { observeElements, flashUpdate } from '../main.js?v=20260506M';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -101,9 +101,9 @@ export async function renderStockDetail(root, ticker) {
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="stock-tabs" data-stock-tabs="1">
-            <button class="stock-tab active" data-tab="chat">AI Chat</button>
-            <button class="stock-tab" data-tab="analisis">Analisis</button>
-            <button class="stock-tab" data-tab="berita">Berita</button>
+            <button type="button" class="stock-tab active" data-tab="chat">AI Chat</button>
+            <button type="button" class="stock-tab" data-tab="analisis">Analisis</button>
+            <button type="button" class="stock-tab" data-tab="berita">Berita</button>
           </div>
           <div class="stock-tab-content active" data-tab-content="chat">
             <div class="stock-chat-card">
@@ -115,14 +115,14 @@ export async function renderStockDetail(root, ticker) {
                 </div>
               </div>
               <div class="sample-prompts" id="chat-quick-prompts">
-                <button class="stat-tile metric-neutral chat-prompt" data-prompt="Apa sinyal teknikal?"><span>Teknikal</span><strong>Sinyal hari ini?</strong><small>RSI, MACD, trend</small></button>
-                <button class="stat-tile metric-good chat-prompt" data-prompt="Apa level support dan resistance?"><span>Level</span><strong>S/R terdekat?</strong><small>support + resistance</small></button>
-                <button class="stat-tile metric-warn chat-prompt" data-prompt="Apa rekomendasi entry plan?"><span>Trading</span><strong>Entry plan</strong><small>level + target</small></button>
-                <button class="stat-tile metric-neutral chat-prompt" data-prompt="Apa berita terbaru?"><span>Berita</span><strong>Berita terkini</strong><small>katalis terbaru</small></button>
+                <button type="button" class="stat-tile metric-neutral chat-prompt" data-prompt="Apa sinyal teknikal?"><span>Teknikal</span><strong>Sinyal hari ini?</strong><small>RSI, MACD, trend</small></button>
+                <button type="button" class="stat-tile metric-good chat-prompt" data-prompt="Apa level support dan resistance?"><span>Level</span><strong>S/R terdekat?</strong><small>support + resistance</small></button>
+                <button type="button" class="stat-tile metric-warn chat-prompt" data-prompt="Apa rekomendasi entry plan?"><span>Trading</span><strong>Entry plan</strong><small>level + target</small></button>
+                <button type="button" class="stat-tile metric-neutral chat-prompt" data-prompt="Apa berita terbaru?"><span>Berita</span><strong>Berita terkini</strong><small>katalis terbaru</small></button>
               </div>
               <div class="chat-input-area">
                 <input type="text" id="stock-chat-input" class="form-input" placeholder="Tanya: risiko, entry, berita, atau analisis..." />
-                <button id="stock-chat-send" class="btn btn-primary chat-send-btn"><i data-lucide="send"></i></button>
+                <button id="stock-chat-send" type="button" class="btn btn-primary chat-send-btn"><i data-lucide="send"></i></button>
               </div>
             </div>
           </div>
@@ -132,7 +132,7 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
-            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
+            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
@@ -864,14 +864,14 @@ function showAlertModal(symbol) {
   overlay.innerHTML = `
     <div class="modal-backdrop" onclick="this.closest('#alert-modal-overlay')?.remove()"></div>
     <div class="modal-panel">
-      <div class="flex justify-between items-center mb-3"><h3 class="panel-title m-0">Atur Peringatan ${symbol}</h3><button class="btn btn-icon" onclick="document.getElementById('alert-modal-overlay')?.remove()"><i data-lucide="x"></i></button></div>
+      <div class="flex justify-between items-center mb-3"><h3 class="panel-title m-0">Atur Peringatan ${symbol}</h3><button type="button" class="btn btn-icon" onclick="document.getElementById('alert-modal-overlay')?.remove()"><i data-lucide="x"></i></button></div>
       <div class="mb-2"><label class="text-xs text-dim uppercase strong">Tipe</label>
         <select id="alert-type" class="form-input alert-input">
           <option value="price_above">Harga di atas</option><option value="price_below">Harga di bawah</option>
           <option value="rsi_above">RSI di atas</option><option value="rsi_below">RSI di bawah</option>
         </select></div>
       <div class="mb-2"><label class="text-xs text-dim uppercase strong">Nilai</label><input type="number" id="alert-value" class="form-input alert-input" step="10" min="1" /></div>
-      <button id="alert-save-btn" class="btn btn-primary alert-save-btn">Simpan Peringatan</button>
+      <button id="alert-save-btn" type="button" class="btn btn-primary alert-save-btn">Simpan Peringatan</button>
       <div id="alert-list" class="mt-3"></div>
     </div>`;
   document.body.appendChild(overlay);
@@ -926,7 +926,7 @@ async function loadAlertList(symbol) {
     const items = Array.isArray(res?.data) ? res.data : [];
     if (!items.length) { el.innerHTML = '<div class="text-xs text-dim mt-2">Belum ada peringatan aktif.</div>'; return; }
     el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2 mt-2">Peringatan Aktif</div>' +
-      items.map(a => `<div class="flex justify-between items-center gap-2 py-1 alert-row"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
+      items.map(a => `<div class="flex justify-between items-center gap-2 py-1 alert-row"><span class="text-xs">${a.alert_type.replace('_',' ')} ${a.value}</span><button type="button" class="btn btn-mini text-down alert-delete-btn" data-alert-id="${a.id}">Hapus</button></div>`).join('');
     el.querySelectorAll('[data-alert-id]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.alertId;
