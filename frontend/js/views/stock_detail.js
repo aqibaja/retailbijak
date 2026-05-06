@@ -199,6 +199,9 @@ export async function renderStockDetail(root, ticker) {
 
   async function sendChatMessage(msg) {
     if (!msg || !msg.trim() || !chatMessages) return;
+    // Disable input & send button during request
+    if (chatInput) chatInput.disabled = true;
+    if (chatSend) { chatSend.disabled = true; chatSend.classList.add('btn-loading'); }
     // Add user message bubble
     const userBubble = document.createElement('div');
     userBubble.className = 'chat-bubble user-bubble';
@@ -237,6 +240,9 @@ export async function renderStockDetail(root, ticker) {
       errEl.className = 'chat-bubble ai-bubble chat-error';
       errEl.textContent = 'Gagal terhubung ke asisten AI. Coba lagi.';
       chatMessages.appendChild(errEl);
+    } finally {
+      if (chatInput) chatInput.disabled = false;
+      if (chatSend) { chatSend.disabled = false; chatSend.classList.remove('btn-loading'); }
     }
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }

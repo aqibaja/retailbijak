@@ -2965,6 +2965,15 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
   font-weight: 800;
 }
 
+/* Skip to content link (accessibility) */
+.skip-link {
+  position: fixed; top: -100%; left: 50%; transform: translateX(-50%); z-index: 99999;
+  background: var(--primary-color); color: #fff; padding: 10px 20px;
+  border-radius: 0 0 12px 12px; font-size: 13px; font-weight: 700;
+  text-decoration: none; transition: top 0.2s;
+}
+.skip-link:focus { top: 0; outline: 2px solid #fff; outline-offset: 2px; }
+
 /* Toast Notification Styles */
 .toast {
   position: relative;

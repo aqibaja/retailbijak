@@ -147,6 +147,7 @@ function runScreener() {
     const toolbar = document.getElementById('screener-toolbar');
 
     btn.disabled = true;
+    btn.classList.add('btn-loading');
     if (toolbar) toolbar.style.display = 'none';
     document.getElementById('screener-search').value = '';
     countBadge.textContent = 'MEMINDAI...';
@@ -170,6 +171,7 @@ function runScreener() {
             renderList(currentResults);
         } else if (data.type === 'done') {
             btn.disabled = false;
+            btn.classList.remove('btn-loading');
             progBox.style.display = 'none';
             countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
@@ -180,6 +182,7 @@ function runScreener() {
     es.onerror = () => {
         es.close();
         btn.disabled = false;
+        btn.classList.remove('btn-loading');
         progBox.style.display = 'none';
         countBadge.textContent = 'GAGAL';
         renderList([]);
