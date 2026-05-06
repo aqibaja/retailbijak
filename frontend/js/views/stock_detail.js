@@ -839,6 +839,15 @@ function showAlertModal(symbol) {
       <div id="alert-list" class="mt-3"></div>
     </div>`;
   document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  // Reset body scroll when overlay is removed (covers inline onclick handlers)
+  const scrollObserver = new MutationObserver(() => {
+    if (!document.body.contains(overlay)) {
+      document.body.style.overflow = '';
+      scrollObserver.disconnect();
+    }
+  });
+  scrollObserver.observe(document.body, { childList: true, subtree: true });
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   // Focus trap

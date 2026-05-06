@@ -80,5 +80,5 @@ export function handleRoute(hash) {
             if (currentToken === routeToken) root.classList.remove('page-loading');
         });
         
-    }, 120); // Reduced wait to minimize stale dashboard flashes
+    }, 60); // Minimal wait — views render instantly with skeletons
 }

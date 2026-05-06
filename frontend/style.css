@@ -1024,7 +1024,6 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .btn:disabled, button:disabled, input:disabled, select:disabled, textarea:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  pointer-events: none;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -1032,7 +1031,23 @@ button, input, select { font-family: inherit; border: none; background: none; co
   opacity: 0.45;
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: none !important;
+}
+/* Loading button state: subtle shimmer instead of text fade */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255,255,255,.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
 }
 a[aria-disabled="true"] { pointer-events: none; text-decoration: none; }
 
@@ -1855,18 +1870,29 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
   line-height: 1.6;
   margin: 6px 0 0;
 }
+.news-search-wrap { position: relative; display: inline-flex; align-items: center; }
 .news-search {
   width: 280px;
   height: 32px;
   font-size: 12px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: rgba(15,23,41,.6);
+  border-radius: 8px;
+  padding: 0 28px 0 12px;
+  background: rgba(255,255,255,.04);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   outline: none;
   transition: border-color .2s;
 }
+.news-search-clear {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,.08); color: var(--text-muted);
+  font-size: 14px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .2s, background .2s;
+}
+.news-search-clear:hover { background: rgba(255,255,255,.15); color: var(--text-main); }
+.news-search-clear.hidden { display: none; }
 .news-search:focus { border-color: rgba(16,185,129,.3); box-shadow: 0 0 0 2px rgba(16,185,129,.08); }
 .news-search::placeholder { color: var(--text-dim); font-size: 11px; }
 
@@ -3415,7 +3441,14 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   width: 100px;
   height: 36px;
   font-size: 12px;
+  border-radius: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-main);
+  outline: none;
+  padding: 0 10px;
 }
+.screener-control-search:focus { border-color: var(--border-focus); }
 .screener-content-area {
   flex: 1;
   overflow-y: auto;

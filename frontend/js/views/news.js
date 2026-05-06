@@ -46,7 +46,10 @@ export async function renderNews(root) {
             <p class="news-hero-sub">Ringkasan berita pasar, pengumuman emiten, dan intelijen data IDX dalam satu aliran.</p>
             <div class="market-meta-rail mt-10">
               <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
-              <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
+              <div class="news-search-wrap">
+                <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
+                <button id="news-search-clear" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
+              </div>
             </div>
           </div>
         </div>
@@ -125,8 +128,15 @@ export async function renderNews(root) {
         // Search filter
         window.__newsAllItems = stream;
         const searchInput = document.getElementById('news-search-input');
+        const clearBtn = document.getElementById('news-search-clear');
         if (searchInput) {
+          const updateClearBtn = () => {
+            if (!clearBtn) return;
+            const hasVal = searchInput.value.trim().length > 0;
+            clearBtn.classList.toggle('hidden', !hasVal);
+          };
           searchInput.addEventListener('input', function() {
+            updateClearBtn();
             const q = this.value.trim().toUpperCase();
             const label = document.getElementById('news-filter-label');
             if (!q || q.length < 2) {
@@ -143,6 +153,13 @@ export async function renderNews(root) {
               ? filtered.map((n, i) => streamCardHtml(n, i)).join('')
               : '<div class="dashboard-widget-state grid-full"><strong class="dashboard-widget-state-title">Tidak ditemukan</strong><span class="dashboard-widget-state-note">Coba kata kunci lain.</span></div>';
           });
+          if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+              searchInput.value = '';
+              searchInput.dispatchEvent(new Event('input'));
+              searchInput.focus();
+            });
+          }
         }
 
         observeElements();

@@ -53,10 +53,11 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   return new Promise((resolve) => {
-    const close = () => { overlay.remove(); resolve(null); };
+    const close = () => { overlay.remove(); document.body.style.overflow = ''; resolve(null); };
     overlay.querySelector('.modal-close-btn')?.addEventListener('click', close);
     overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', close);
     overlay.querySelector('.modal-backdrop')?.addEventListener('click', close);
@@ -104,9 +105,10 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
 
   return new Promise((resolve) => {
-    const close = (val) => { overlay.remove(); resolve(val); };
+    const close = (val) => { overlay.remove(); document.body.style.overflow = ''; resolve(val); };
     overlay.querySelector('.modal-backdrop')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-confirm-btn')?.addEventListener('click', () => close(true));
