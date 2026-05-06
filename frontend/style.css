@@ -287,6 +287,11 @@ html[data-theme="light"] {
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.2); }
 [data-theme="light"] * { scrollbar-color: rgba(15, 23, 42, 0.12) transparent; }
 
+/* Light Theme: score caution bg */
+[data-theme="light"] .score-caution { background: rgba(15,23,42,.06); }
+[data-theme="light"] .ai-picks-reason-chip { background: rgba(99,102,241,.08); color: #6366f1; }
+[data-theme="light"] .ai-picks-factor-track { background: rgba(15,23,42,.12); }
+
 /* Light Theme: remaining dark-only backgrounds */
 [data-theme="light"] .search-overlay { background: rgba(248,250,252,.85); }
 [data-theme="light"] .search-modal { background: #fff; border-color: rgba(15,23,42,.1); box-shadow: 0 30px 90px rgba(15,23,42,.12); }
@@ -1496,6 +1501,18 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   .ai-picks-summary-strip { grid-template-columns: 1fr; }
   .dash-summary-strip,
   .dashboard-metrics { grid-template-columns: 1fr; gap: 10px; }
+  .score-details { gap: 8px; }
+}
+
+/* Very small screens (< 360px) */
+@media (max-width: 360px) {
+  .search-overlay { padding-top: 40px; align-items: center; }
+  .search-modal { max-height: 85vh; width: calc(100vw - 12px); border-radius: 12px; }
+  .score-details { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .ai-picks-mode-switch .btn-sm { padding: 4px 8px; font-size: 10px; }
+  .ai-picks-card { padding: 10px 12px; }
+  .ai-picks-card-meta { gap: 4px 8px; font-size: 11px; }
+  .ai-picks-hero-row { flex-direction: column; align-items: flex-start; }
 }
 /* Search Overlay (Command Palette Style) */
 .search-overlay {
@@ -2945,6 +2962,10 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
   background: rgba(99,102,241,0.15);
   color: #a5b4fc;
 }
+.toast-warning .toast-icon {
+  background: rgba(251,191,36,0.15);
+  color: #fbbf24;
+}
 .toast-message {
   flex: 1;
   min-width: 0;
@@ -2957,6 +2978,7 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 }
 .toast-success .toast-progress { background: linear-gradient(90deg, #34d399, #10b981); }
 .toast-error .toast-progress { background: linear-gradient(90deg, #fb7185, #ef4444); }
+.toast-warning .toast-progress { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
 .toast-info .toast-progress { background: linear-gradient(90deg, #a5b4fc, #6366f1); }
 
 @keyframes toastSlideIn {

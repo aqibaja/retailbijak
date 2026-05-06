@@ -161,7 +161,7 @@ export function showToast(message, type = 'info', duration = 4000) {
     toast.style.pointerEvents = 'auto';
     toast.innerHTML = `
         <div class="toast-body">
-            <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+            <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ'}</span>
             <span class="toast-message">${message}</span>
             <button class="toast-close-btn" aria-label="Tutup">&times;</button>
         </div>
