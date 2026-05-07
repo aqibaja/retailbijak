@@ -233,6 +233,7 @@ export async function renderStockDetail(root, ticker) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg }),
+        timeout: 30000,
       });
       loadingEl.remove();
       const reply = res?.reply || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
