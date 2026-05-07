@@ -1,5 +1,5 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507C';
-import { observeElements, registerViewTimer } from '../main.js?v=20260507C';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507E';
+import { observeElements, registerViewTimer } from '../main.js?v=20260507E';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
 const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
@@ -326,8 +326,8 @@ export async function renderMarket(root) {
   // TV Stock Heatmap
   setTimeout(() => {
     loadTVWidget('tv-stock-heatmap', 'stock-heatmap', {
-      dataSource: 'IDX',
-      exchanges: [],
+      dataSource: 'All Stocks',
+      exchanges: ['IDX'],
       grouping: 'sector',
       blockSize: 'market_cap_basic',
       blockColor: 'change',

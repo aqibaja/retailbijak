@@ -1,5 +1,5 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507C';
-import { observeElements, animateValue } from '../main.js?v=20260507C';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507E';
+import { observeElements, animateValue } from '../main.js?v=20260507E';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
