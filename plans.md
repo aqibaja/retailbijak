@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▰▱ 95% |
+| **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -297,6 +297,24 @@
 | 2026-05-09 | 1.7.2 | ✅ | Chart.js lazy load — hanya dimuat saat dashboard route |
 | 2026-05-09 | 1.7.1 | ✅ | Dynamic import per route — lazy load view modules via import() |
 | 2026-05-09 | 1.7.6 | ✅ | PWA service worker — cache-first untuk static assets, network-first API |
+| 2026-05-09 | 1.2.1 | ✅ | Light theme refactor — CSS vars `--topbar-bg`, `--sidebar-bg`, `--scrollbar-*`, hapus 6+ override redundan |
+
+---
+
+### Sisa Minor (P1 sudah tuntas)
+- 1.2.2 CSS size optimasi (opsional, dari 213KB) — bisa dikerjakan kapan saja
+
+## Fase 2: Fitur IDX Wajib — Rencana Eksekusi
+
+> **Mulai:** setelah P1 selesai
+> **Prioritas:** Foreign Flow > News Aggregation > Alerts
+
+### Urutan Eksekusi P2
+1. **2.1.1** Backend: BrokerSummary endpoint — net foreign per ticker + agregat IHSG (60m)
+2. **2.1.2** Backend: Scheduler — fetch foreign flow harian (45m)
+3. **2.1.3** Frontend: Foreign Flow card — top movers (45m)
+4. **2.1.4** Frontend: Stock detail tab — foreign flow history (30m)
+5. **2.1.5** Foreign flow signal — warna + progress bar (20m)
 
 ---
 
