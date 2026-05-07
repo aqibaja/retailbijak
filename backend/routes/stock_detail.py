@@ -333,6 +333,42 @@ def get_broker_activity(ticker: str, limit: int = 10, db: Session = Depends(get_
 # ─── Alert CRUD ───────────────────────────
 
 
+@router.get('/api/stocks/{ticker}/foreign-flow')
+def get_stock_foreign_flow(ticker: str, limit: int = 20, db: Session = Depends(get_db)):
+    """Daily aggregate foreign flow for a specific stock (all brokers combined)."""
+    base = _ticker_base(ticker)
+    try:
+        from sqlalchemy import func
+        rows = db.query(
+            BrokerSummary.date,
+            func.sum(BrokerSummary.buy_volume).label('buy_vol'),
+            func.sum(BrokerSummary.sell_volume).label('sell_vol'),
+            func.sum(BrokerSummary.net_volume).label('net_vol'),
+            func.sum(BrokerSummary.buy_value).label('buy_val'),
+            func.sum(BrokerSummary.sell_value).label('sell_val'),
+            func.sum(BrokerSummary.net_value).label('net_val'),
+        ).filter(
+            BrokerSummary.ticker == base
+        ).group_by(BrokerSummary.date).order_by(
+            BrokerSummary.date.desc()
+        ).limit(limit).all()
+
+        data = []
+        for r in rows:
+            data.append({
+                'date': r.date.isoformat()[:10] if r.date else '',
+                'buy_value': round(float(r.buy_val or 0), 2),
+                'sell_value': round(float(r.sell_val or 0), 2),
+                'net_value': round(float(r.net_val or 0), 2),
+                'buy_volume': int(r.buy_vol or 0),
+                'sell_volume': int(r.sell_vol or 0),
+                'net_volume': int(r.net_vol or 0),
+            })
+        return {'ticker': base, 'count': len(data), 'data': data, 'source': 'db' if data else 'no_data'}
+    except Exception as exc:
+        return {'ticker': base, 'count': 0, 'data': [], 'source': 'no_data', 'message': str(exc)}
+
+
 class AlertPayload(BaseModel):
     ticker: str = Field(min_length=1)
     alert_type: str = Field(pattern=r'^(price_above|price_below|rsi_above|rsi_below)$')

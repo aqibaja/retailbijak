@@ -115,6 +115,7 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-side-panel ai-thread-mock"><h3 class="stock-side-panel-title">Pembacaan Cepat AI</h3><div class="ai-thread-mock-inner"></div></div>
             <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal (Custom)</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
+            <div class="stock-side-panel hidden" id="foreign-flow-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
             <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
           </div>
@@ -356,6 +357,13 @@ export async function renderStockDetail(root, ticker) {
   apiFetch(`/stocks/${encodeURIComponent(symbol)}/broker-activity?limit=6`).then(brokerRes => {
     if (brokerRes && brokerRes.source === 'db' && brokerRes.data?.length) {
       renderBrokerActivity(brokerRes.data);
+    }
+  }).catch(() => {});
+
+  // Foreign Flow History (async, non-blocking)
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/foreign-flow?limit=14`).then(ffRes => {
+    if (ffRes && ffRes.source === 'db' && ffRes.data?.length) {
+      renderStockForeignFlow(ffRes.data);
     }
   }).catch(() => {});
 
@@ -910,6 +918,38 @@ function renderBrokerActivity(data) {
       const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
       return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono broker-name">${r.broker || '—'}</span><span class="mono ${cls} broker-net">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
     }).join('');
+}
+
+function renderStockForeignFlow(data) {
+  const el = document.getElementById('foreign-flow-panel');
+  if (!el || !data?.length) return;
+  el.style.display = '';
+  const totalNet = data.reduce((s, r) => s + Number(r.net_value || 0), 0);
+  const avgNet = totalNet / data.length;
+  const trend = avgNet >= 0 ? 'up' : 'down';
+  const days = data.slice(0, 14);
+  const maxAbs = Math.max(...days.map(r => Math.abs(Number(r.net_value || 0))), 1);
+  el.innerHTML = `<div class="stock-side-panel">
+    <h3 class="stock-side-panel-title">Aliran Asing (14 hari)</h3>
+    <div class="text-xs text-dim mb-2">Total net ${trend === 'up' ? 'beli' : 'jual'} ${nf(Math.abs(totalNet/1e9), 2)}M dalam ${data.length} sesi</div>
+    <div class="flex-col gap-1">
+      ${days.map(r => {
+        const nv = Number(r.net_value || 0);
+        const isUp = nv >= 0;
+        const pct = Math.abs(nv) / maxAbs * 100;
+        return `<div class="flex items-center gap-2" style="padding:3px 0">
+          <span class="text-xs text-dim" style="width:42px;flex-shrink:0">${String(r.date || '').slice(5,10)}</span>
+          <div style="flex:1;height:14px;background:var(--bg-panel);border-radius:4px;overflow:hidden;display:flex;flex-direction:row-reverse">
+            <div style="width:${isUp ? pct : 0}%;height:100%;background:var(--up-color);border-radius:4px;min-width:${nv === 0 ? 0 : 2}px"></div>
+          </div>
+          <div style="flex:1;height:14px;background:var(--bg-panel);border-radius:4px;overflow:hidden">
+            <div style="width:${!isUp ? pct : 0}%;height:100%;background:var(--down-color);border-radius:4px;min-width:${nv === 0 ? 0 : 2}px"></div>
+          </div>
+          <span class="mono text-xs ${isUp ? 'text-up' : 'text-down'}" style="width:60px;text-align:right;flex-shrink:0">${isUp ? '+' : ''}${nf(nv/1e9, 2)}M</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
 }
 
 // ─── Alert Modal ────────────────────────
