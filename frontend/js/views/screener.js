@@ -1,4 +1,4 @@
-import { getScanEventSourceUrl, showToast } from '../api.js?v=20260507F';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507F';
 import { observeElements } from '../main.js?v=20260507F';
 
 const renderEmptyState = ({
@@ -104,12 +104,33 @@ export async function renderScreener(root) {
             <div id="screener-content" class="screener-content-area">${renderEmptyState()}</div>
           </div>
         </div>
+      </section>
+      <section class="market-section-group market-section-group-heatmap mt-6">
+        <header class="market-section-group-head">
+          <div class="market-section-group-title">Pemindai Saham TradingView</div>
+          <p>Screen saham IDX secara real-time — filter berdasarkan performa, volume, fundamental, dan lainnya.</p>
+        </header>
+        <div id="tv-screener" class="market-heatmap-wrap" style="min-height:580px;"></div>
       </section>`;
     observeElements();
     if (typeof lucide !== 'undefined') lucide.createIcons();
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
+
+    // TV Screener Widget — load after DOM ready
+    setTimeout(() => {
+      loadTVWidget('tv-screener', 'screener', {
+        width: '100%',
+        height: 580,
+        defaultColumn: 'change',
+        defaultScreen: 'most_volatile',
+        market: 'indonesia',
+        showToolbar: true,
+        locale: 'id_ID',
+        colorTheme: getTVTheme(),
+      });
+    }, 300);
 }
 
 function sortResults() {
