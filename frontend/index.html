@@ -31,7 +31,7 @@
  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" type="image/svg+xml">
  <link rel="apple-touch-icon" href="assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" crossorigin>
- <link rel="stylesheet" href="style.css?v=20260507I">
+ <link rel="stylesheet" href="style.css?v=20260507J">
  <style>html{background:var(--bg-base,#0b1220);color:var(--text-main,#e5edf8);}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer crossorigin="anonymous"></script>
@@ -89,11 +89,27 @@
 <nav class="bottom-nav" role="navigation" aria-label="Navigasi mobile">
   <a href="#dashboard" class="bottom-nav-item active" data-view="dashboard"><i data-lucide="layout-grid" aria-hidden="true"></i><span data-i18n="dashboard">Beranda</span></a>
   <a href="#screener" class="bottom-nav-item" data-view="screener"><i data-lucide="radar" aria-hidden="true"></i><span data-i18n="scanner">Pindai</span></a>
-  <a href="#market" class="bottom-nav-item" data-view="market"><i data-lucide="globe" aria-hidden="true"></i><span data-i18n="market">Pasar</span></a>
-  <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper" aria-hidden="true"></i><span data-i18n="news">Berita</span></a>
   <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase" aria-hidden="true"></i><span data-i18n="portfolio">Aset</span></a>
-  <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;" aria-hidden="true"></i><span>AI</span></a>
+  <button type="button" class="bottom-nav-item" id="bottom-more-btn" aria-label="Menu lainnya"><i data-lucide="more-horizontal" aria-hidden="true"></i><span>Lainnya</span></button>
 </nav>
+
+<!-- More Drawer (mobile nav extras) -->
+<div class="more-drawer-overlay" id="more-drawer" role="dialog" aria-modal="true" aria-label="Menu lainnya" hidden>
+  <div class="more-drawer-backdrop" onclick="closeMoreDrawer()"></div>
+  <div class="more-drawer-panel">
+    <div class="more-drawer-header">
+      <span class="more-drawer-title">Menu</span>
+      <button type="button" class="btn btn-icon" onclick="closeMoreDrawer()" aria-label="Tutup"><i data-lucide="x"></i></button>
+    </div>
+    <div class="more-drawer-body">
+      <a href="#market" class="more-drawer-item" data-view="market" onclick="closeMoreDrawer()"><i data-lucide="globe" aria-hidden="true"></i><span>Pasar</span><small>Ringkasan IHSG & pergerakan</small></a>
+      <a href="#news" class="more-drawer-item" data-view="news" onclick="closeMoreDrawer()"><i data-lucide="newspaper" aria-hidden="true"></i><span>Berita</span><small>Berita pasar & emiten</small></a>
+      <a href="#ai-picks" class="more-drawer-item" data-view="ai-picks" onclick="closeMoreDrawer()"><i data-lucide="sparkles" aria-hidden="true"></i><span>AI Picks</span><small>Rekomendasi AI</small></a>
+      <a href="#settings" class="more-drawer-item" data-view="settings" onclick="closeMoreDrawer()"><i data-lucide="settings" aria-hidden="true"></i><span>Pengaturan</span><small>Tema, bahasa, API</small></a>
+      <a href="#help" class="more-drawer-item" data-view="help" onclick="closeMoreDrawer()"><i data-lucide="book-open" aria-hidden="true"></i><span>Bantuan</span><small>Pintasan & panduan</small></a>
+    </div>
+  </div>
+</div>
  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham">
   <div class="search-modal">
     <div class="search-input-wrap">
@@ -126,7 +142,7 @@
    if (el) el.classList.remove('page-loading');
   }, 5000);
  </script>
- <script type="module" src="js/main.js?v=20260507I"></script>
+ <script type="module" src="js/main.js?v=20260507J"></script>
  <script nomodule>
   // Fallback untuk browser tanpa ES module support
   document.getElementById('app-root').innerHTML =

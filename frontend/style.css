@@ -4444,6 +4444,52 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   border-radius: 4px;
 }
 
+/* ─── More Drawer (Mobile Nav Extras) ─── */
+.more-drawer-overlay {
+  position: fixed; inset: 0; z-index: 950;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.more-drawer-overlay[hidden] { display: none; }
+.more-drawer-backdrop {
+  position: absolute; inset: 0; background: rgba(2,8,20,0.7);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.more-drawer-panel {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  background: var(--bg-panel); border-radius: 20px 20px 0 0;
+  border: 1px solid var(--border-subtle); border-bottom: none;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 32px rgba(2,8,20,0.5);
+  max-height: 80vh; overflow-y: auto;
+}
+.more-drawer-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.more-drawer-title { font-size: 16px; font-weight: 800; color: var(--text-main); }
+.more-drawer-body { display: flex; flex-direction: column; gap: 6px; }
+.more-drawer-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 14px;
+  color: var(--text-main); text-decoration: none;
+  transition: background 0.15s ease;
+}
+.more-drawer-item:hover { background: rgba(255,255,255,0.04); }
+.more-drawer-item:active { background: rgba(255,255,255,0.08); }
+.more-drawer-item svg.lucide { width: 22px; height: 22px; color: var(--primary-color); flex-shrink: 0; }
+.more-drawer-item span { font-size: 14px; font-weight: 600; }
+.more-drawer-item small { font-size: 11px; color: var(--text-dim); display: block; margin-top: 2px; }
+[data-theme="light"] .more-drawer-overlay .more-drawer-backdrop { background: rgba(0,0,0,0.25); }
+[data-theme="light"] .more-drawer-item:hover { background: rgba(0,0,0,0.04); }
+[data-theme="light"] .more-drawer-item:active { background: rgba(0,0,0,0.08); }
+
+/* ─── bottom-nav-item as <button> ─── */
+.bottom-nav-item {
+  cursor: pointer; background: none; border: none; font-family: inherit;
+}
+
 /* ─── IHSG Chart Empty State ─── */
 .dashboard-chart-wrap .chart-empty-state {
   display: none; flex-direction: column; align-items: center; justify-content: center;

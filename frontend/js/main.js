@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260507I';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507I';
-import { initTheme } from './theme.js?v=20260507I';
+import { handleRoute } from './router.js?v=20260507J';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507J';
+import { initTheme } from './theme.js?v=20260507J';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -56,6 +56,22 @@ export function flashUpdate(element, isUp) {
    void element.offsetWidth; // Trigger reflow
    element.classList.add(isUp ? 'flash-up' : 'flash-down');
 }
+// ─── More Drawer (mobile nav) ────────────────────
+function closeMoreDrawer() {
+  const drawer = document.getElementById('more-drawer');
+  if (drawer) drawer.hidden = true;
+}
+function openMoreDrawer() {
+  const drawer = document.getElementById('more-drawer');
+  if (drawer) {
+    drawer.hidden = false;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+// Expose globally for inline onclick handlers
+window.closeMoreDrawer = closeMoreDrawer;
+window.openMoreDrawer = openMoreDrawer;
+
 // ================= UI CORE =================
 function setupSearchOverlay() {
    const overlay = document.getElementById('search-overlay');
@@ -306,6 +322,10 @@ document.addEventListener('DOMContentLoaded', () => {
       setInterval(refreshTopbarMarket, 60000);
       setupNetworkStatus();
       try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
+
+      // More Drawer button
+      const moreBtn = document.getElementById('bottom-more-btn');
+      if (moreBtn) moreBtn.addEventListener('click', openMoreDrawer);
   } catch (e) {
       console.error('Init error:', e);
   }

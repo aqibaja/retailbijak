@@ -1,6 +1,6 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507I';
-import { observeElements, animateValue } from '../main.js?v=20260507I';
-import { nf, pf } from '../utils/format.js?v=20260507I';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507J';
+import { observeElements, animateValue } from '../main.js?v=20260507J';
+import { nf, pf } from '../utils/format.js?v=20260507J';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
