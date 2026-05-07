@@ -252,6 +252,8 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
     try:
         f_sym = _ticker_with_suffix(ticker)
         f_row = db.query(Fundamental).filter(Fundamental.ticker == f_sym).first()
+        if not f_row:
+            f_row = db.query(Fundamental).filter(Fundamental.ticker == base).first()
         if f_row:
             fund = {
                 'trailing_pe': f_row.trailing_pe,
@@ -263,10 +265,31 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
     except Exception:
         fund = None
 
+    # Stock name lookup for news matching
+    company_names = [base]
     try:
-        raw_news = db.query(News).order_by(News.published_at.desc()).limit(5).all()
+        stock = db.query(Stock).filter(Stock.ticker == base).first()
+        if stock and stock.name:
+            # Clean company name: remove PT, (Persero), Tbk
+            clean = stock.name.replace('PT ', '').replace('(Persero)', '').replace('Tbk.', '').replace('Tbk', '').replace('.', '').strip()
+            company_names.append(clean.upper())
+            # Also add full original name for matching
+            company_names.append(stock.name.upper())
+    except Exception:
+        pass
+
+    try:
+        raw_news = db.query(News).order_by(News.published_at.desc()).limit(30).all()
+        seen_titles = set()
         for n in raw_news:
-            if base in (n.title or '').upper() or base in (n.summary or '').upper():
+            if len(news_rows) >= 5:
+                break
+            title_upper = (n.title or '').upper()
+            summary_upper = (n.summary or '').upper()
+            # Match ticker or company name
+            matched = any(cn in title_upper or cn in summary_upper for cn in company_names if cn)
+            if matched and n.title and n.title not in seen_titles:
+                seen_titles.add(n.title)
                 news_rows.append({'title': n.title, 'published_at': str(n.published_at)[:10] if n.published_at else ''})
     except Exception:
         pass
