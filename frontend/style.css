@@ -906,6 +906,39 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .opacity-50 { opacity: 0.5; }
 .opacity-75 { opacity: 0.75; }
 
+/* ─── Keyboard Shortcuts Overlay ─────────────── */
+.shortcuts-overlay {
+  position: fixed; inset: 0; z-index: 1800;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(2,6,23,.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.shortcuts-overlay[hidden] { display: none; }
+.shortcuts-backdrop { position: absolute; inset: 0; }
+.shortcuts-panel {
+  position: relative; width: min(480px, calc(100vw - 28px)); max-height: min(600px, calc(100vh - 40px));
+  background: var(--bg-mobile-surface); border: 1px solid var(--border-strong);
+  border-radius: 20px; padding: 20px; overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+}
+.shortcuts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.shortcuts-title { font-size: 18px; font-weight: 800; color: var(--text-main); }
+.shortcuts-body { display: flex; flex-direction: column; gap: 16px; }
+.shortcuts-group { display: flex; flex-direction: column; gap: 6px; }
+.shortcuts-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); font-weight: 800; margin-bottom: 2px; }
+.shortcuts-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.025); }
+.shortcuts-row kbd { display: inline-block; padding: 3px 8px; font: 700 12px var(--font-mono); background: rgba(255,255,255,.08); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-main); min-width: 28px; text-align: center; }
+.shortcuts-row span { font-size: 13px; color: var(--text-muted); flex: 1; }
+[data-theme="light"] .shortcuts-overlay { background: rgba(0,0,0,.25); }
+[data-theme="light"] .shortcuts-row { background: rgba(0,0,0,.03); }
+[data-theme="light"] .shortcuts-row kbd { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.12); }
+
+/* ─── Help page shortcut cards interactive ───── */
+.help-shortcut-card { cursor: pointer; transition: all .15s var(--ease-out); }
+.help-shortcut-card:hover { background: rgba(99,102,241,.08); border-color: rgba(99,102,241,.25); transform: translateY(-1px); }
+.help-shortcut-card:active { transform: scale(.97); }
+.help-shortcut-card kbd { transition: background .2s; }
+.help-shortcut-card:hover kbd { background: rgba(99,102,241,.2); }
+
 /* kun.pro gradient text utility */
 .text-gradient {
   background: linear-gradient(135deg, var(--primary-color), var(--up-color), #6ee7b7);

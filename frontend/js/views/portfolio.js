@@ -1,4 +1,5 @@
 import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
+import { money } from '../utils/format.js?v=20260507M';
 import { observeElements } from '../main.js?v=20260507M';
 
 // ─── Focus Trap ──────────────────────────────
@@ -289,7 +290,7 @@ async function renderPortfolioTab(el) {
             <tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="mono font-size-14">${r.lots}</td>
-              <td class="mono font-size-14 text-muted">Rp ${(r.avg_price || 0).toLocaleString()}</td>
+              <td class="mono font-size-14 text-muted">${money(r.avg_price)}</td>
               <td class="text-right"><button type="button" class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>

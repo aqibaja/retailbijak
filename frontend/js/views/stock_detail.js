@@ -264,6 +264,21 @@ export async function renderStockDetail(root, ticker) {
     fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol, { llm: true }).catch(()=>null),
     fetchNews(6, symbol).catch(()=>null), apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
   ]);
+  // Partial failure check: jika semua critical endpoint gagal, tampilkan warning
+  const allFailed = !detail && !fund && !tech;
+  if (allFailed) {
+    const badge = document.getElementById('live-badge');
+    if (badge) { badge.textContent = 'OFFLINE'; badge.classList.add('badge-warn'); }
+    // Show a non-blocking warning banner below hero
+    const hero = root.querySelector('.stock-hero-v2');
+    if (hero && !root.querySelector('.stock-partial-fail-banner')) {
+      hero.insertAdjacentHTML('afterend',
+        `<div class="stock-partial-fail-banner" style="padding:12px 14px;border-radius:12px;border:1px solid rgba(248,113,113,.25);background:rgba(248,113,113,.08);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-muted);line-height:1.5">
+          <i data-lucide="alert-triangle" style="width:16px;flex-shrink:0;color:#f87171"></i>
+          <span>Data <strong>${symbol}</strong> tidak bisa dimuat dari server. Menampilkan data offline — harga dan sinyal mungkin tidak akurat.</span>
+        </div>`);
+    }
+  }
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   hydrateHeader(symbol, detail, fund, candles);
   const technical = tech?.technical || {};

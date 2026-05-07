@@ -72,6 +72,66 @@ function openMoreDrawer() {
 window.closeMoreDrawer = closeMoreDrawer;
 window.openMoreDrawer = openMoreDrawer;
 
+// ─── Keyboard Shortcuts Overlay ────────────────
+function openShortcuts() {
+  const el = document.getElementById('shortcuts-overlay');
+  if (el) { el.hidden = false; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+}
+function closeShortcuts() {
+  const el = document.getElementById('shortcuts-overlay');
+  if (el) el.hidden = true;
+}
+window.openShortcuts = openShortcuts;
+window.closeShortcuts = closeShortcuts;
+
+let _goBuffer = '';
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Skip if user is typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+    // ? or Shift+/ → open shortcuts
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      e.preventDefault();
+      openShortcuts();
+      return;
+    }
+    // Esc → close shortcuts
+    if (e.key === 'Escape') {
+      const shortcuts = document.getElementById('shortcuts-overlay');
+      if (shortcuts && !shortcuts.hidden) { closeShortcuts(); e.preventDefault(); return; }
+    }
+    // T → toggle theme
+    if (e.key === 't' || e.key === 'T') {
+      const btn = document.getElementById('theme-toggle');
+      if (btn) { btn.click(); e.preventDefault(); return; }
+    }
+    // / → focus search
+    if (e.key === '/') {
+      const input = document.getElementById('global-search-input');
+      const overlay = document.getElementById('search-overlay');
+      if (input && overlay) {
+        overlay.classList.add('active');
+        setTimeout(() => input.focus(), 50);
+        e.preventDefault(); return;
+      }
+    }
+    // Go-style navigation: g then d/s/p/m/n
+    if (e.key === 'g' || e.key === 'G') {
+      _goBuffer = 'g';
+      setTimeout(() => { _goBuffer = ''; }, 800);
+      e.preventDefault(); return;
+    }
+    if (_goBuffer === 'g') {
+      _goBuffer = '';
+      const navMap = { d: 'dashboard', s: 'screener', p: 'portfolio', m: 'market', n: 'news' };
+      const route = navMap[e.key.toLowerCase()];
+      if (route) { window.location.hash = `#${route}`; e.preventDefault(); }
+      return;
+    }
+  });
+}
+
 // ─── Lucide Icons Auto-Render via MutationObserver ───
 function setupLucideAutoRender() {
   if (typeof lucide === 'undefined' || !lucide.createIcons) return;
@@ -330,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
       refreshTopbarMarket();
       setInterval(refreshTopbarMarket, 60000);
       setupNetworkStatus();
+      setupKeyboardShortcuts();
       try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
 
       // More Drawer button

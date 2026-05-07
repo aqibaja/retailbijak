@@ -19,6 +19,8 @@
  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
  <link rel="dns-prefetch" href="https://s3.tradingview.com">
+ <link rel="preload" href="style.css?v=20260507M" as="style">
+ <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" crossorigin>
  <meta property="og:type" content="website">
  <meta property="og:title" content="RetailBijak — IDX Stock Intelligence">
  <meta property="og:description" content="Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker, technical & fundamental analysis real-time.">
@@ -120,6 +122,41 @@
     <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div>
   </div>
 </div>
+
+<!-- Keyboard Shortcuts Overlay -->
+<div class="shortcuts-overlay" id="shortcuts-overlay" role="dialog" aria-modal="true" aria-label="Pintasan keyboard" hidden>
+  <div class="shortcuts-backdrop" onclick="closeShortcuts()"></div>
+  <div class="shortcuts-panel">
+    <div class="shortcuts-header">
+      <span class="shortcuts-title">Pintasan Keyboard</span>
+      <button type="button" class="btn btn-icon" onclick="closeShortcuts()" aria-label="Tutup"><i data-lucide="x"></i></button>
+    </div>
+    <div class="shortcuts-body">
+      <div class="shortcuts-group">
+        <div class="shortcuts-group-title">Navigasi</div>
+        <div class="shortcuts-row"><kbd>G</kbd> <kbd>D</kbd> <span>Dashboard</span></div>
+        <div class="shortcuts-row"><kbd>G</kbd> <kbd>S</kbd> <span>Pemindai</span></div>
+        <div class="shortcuts-row"><kbd>G</kbd> <kbd>P</kbd> <span>Portofolio</span></div>
+        <div class="shortcuts-row"><kbd>G</kbd> <kbd>M</kbd> <span>Market</span></div>
+        <div class="shortcuts-row"><kbd>G</kbd> <kbd>N</kbd> <span>Berita</span></div>
+      </div>
+      <div class="shortcuts-group">
+        <div class="shortcuts-group-title">Pencarian</div>
+        <div class="shortcuts-row"><kbd>/</kbd> <span>Fokus ke pencarian</span></div>
+        <div class="shortcuts-row"><kbd>Ctrl+K</kbd> <span>Buka pencarian global</span></div>
+        <div class="shortcuts-row"><kbd>↑</kbd> <kbd>↓</kbd> <span>Navigasi hasil</span></div>
+        <div class="shortcuts-row"><kbd>Enter</kbd> <span>Buka item terpilih</span></div>
+        <div class="shortcuts-row"><kbd>Esc</kbd> <span>Tutup panel / modal</span></div>
+      </div>
+      <div class="shortcuts-group">
+        <div class="shortcuts-group-title">Tampilan</div>
+        <div class="shortcuts-row"><kbd>T</kbd> <span>Ganti tema (terang/gelap)</span></div>
+        <div class="shortcuts-row"><kbd>?</kbd> <span>Buka pintasan ini</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 <div id="network-status" class="network-status hidden" role="status" aria-live="assertive"></div>
  <script>

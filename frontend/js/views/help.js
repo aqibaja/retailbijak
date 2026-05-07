@@ -50,23 +50,23 @@ export function renderHelp(root) {
               <h2 class="help-section-title">Pintasan Keyboard</h2>
             </div>
             <div class="help-shortcuts-grid">
-                <div class="help-shortcut-card">
+            <div class="help-shortcut-card" onclick="openShortcuts()">
                     <kbd>/</kbd>
                     <span>Fokus ke pencarian global</span>
                 </div>
-                <div class="help-shortcut-card">
+                <div class="help-shortcut-card" onclick="openShortcuts()">
                     <kbd>Ctrl+K</kbd>
                     <span>Buka pencarian global</span>
                 </div>
-                <div class="help-shortcut-card">
+                <div class="help-shortcut-card" onclick="openShortcuts()">
                     <kbd>Esc</kbd>
                     <span>Tutup panel, modal, atau pencarian</span>
                 </div>
-                <div class="help-shortcut-card">
+                <div class="help-shortcut-card" onclick="openShortcuts()">
                     <kbd>↑↓</kbd>
                     <span>Navigasi hasil pencarian</span>
                 </div>
-                <div class="help-shortcut-card">
+                <div class="help-shortcut-card" onclick="openShortcuts()">
                     <kbd>Enter</kbd>
                     <span>Buka item terpilih</span>
                 </div>
