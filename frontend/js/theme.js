@@ -1,11 +1,18 @@
-import { setLanguage, applyTranslations } from './i18n.js?v=20260507L';
+import { setLanguage, applyTranslations } from './i18n.js?v=20260507M';
 
 export function initTheme() {
     const themeToggleBtn = document.getElementById('theme-toggle');
     const langToggleBtn = document.getElementById('lang-toggle');
     const htmlEl = document.documentElement;
 
-    let isDark = localStorage.getItem('retail-theme') === 'dark' || localStorage.getItem('retail-theme') === null;
+    let isDark;
+    const saved = localStorage.getItem('retail-theme');
+    if (saved) {
+        isDark = saved === 'dark';
+    } else {
+        // Auto-detect system preference
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
     let currentLang = localStorage.getItem('retail-lang') || 'id';
 
     function applyTheme() {
@@ -17,7 +24,6 @@ export function initTheme() {
             if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="moon"></i>';
         }
         localStorage.setItem('retail-theme', isDark ? 'dark' : 'light');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function updateLangBtn() {

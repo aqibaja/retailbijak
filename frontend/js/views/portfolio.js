@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507L';
-import { observeElements } from '../main.js?v=20260507L';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
+import { observeElements } from '../main.js?v=20260507M';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -54,7 +54,6 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
     </div>`;
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   return new Promise((resolve) => {
     const close = (resolveVal = null) => {
@@ -171,7 +170,6 @@ export async function renderPortfolio(root, activeTab) {
     observeElements();
     if (isPort) await renderPortfolioTab(root.querySelector('#tab-content'));
     else await renderWatchlistTab(root.querySelector('#tab-content'));
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function renderWatchlistTab(el) {
@@ -223,7 +221,6 @@ async function renderWatchlistTab(el) {
                 showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
             }
         });
-        if (vals) { await renderWatchlistTab(el); if (typeof lucide !== 'undefined') lucide.createIcons(); }
     });
 
     // Watchlist delete
@@ -236,7 +233,6 @@ async function renderWatchlistTab(el) {
                     await deleteWatchlistItem(ticker);
                     showToast(`${ticker} dihapus`, 'success');
                     await renderWatchlistTab(el);
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
                 } catch (e) {
                     console.warn('deleteWatchlistItem failed', e);
                     showToast(`Gagal menghapus ${ticker}`, 'error');
@@ -323,7 +319,6 @@ async function renderPortfolioTab(el) {
                 showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
             }
         });
-        if (vals) { await renderPortfolioTab(el); if (typeof lucide !== 'undefined') lucide.createIcons(); }
     });
 
     // Portfolio delete
@@ -336,7 +331,6 @@ async function renderPortfolioTab(el) {
                     await deletePortfolioPosition(ticker);
                     showToast(`${ticker} dihapus`, 'success');
                     await renderPortfolioTab(el);
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
                 } catch (e) {
                     console.warn('deletePortfolioPosition failed', e);
                     showToast(`Gagal menghapus ${ticker}`, 'error');

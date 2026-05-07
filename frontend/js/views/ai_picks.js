@@ -1,7 +1,7 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507L';
-import { observeElements } from '../main.js?v=20260507L';
-import { nf, pct } from '../utils/format.js?v=20260507L';
-import { ssSet } from '../utils/storage.js?v=20260507L';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507M';
+import { observeElements } from '../main.js?v=20260507M';
+import { nf, pct } from '../utils/format.js?v=20260507M';
+import { ssSet } from '../utils/storage.js?v=20260507M';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -269,7 +269,6 @@ export async function renderAiPicks(root) {
     </section>`;
 
   observeElements();
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   const listEl = root.querySelector('#ai-picks-list');
   const modeSwitch = root.querySelector('#ai-picks-mode-switch');
@@ -299,7 +298,6 @@ export async function renderAiPicks(root) {
       listEl.innerHTML = renderCardList(cached.data, mode);
       setActiveMode(mode);
       wireActions(root, mode, cached.data || [], loadMode);
-      if (typeof lucide !== 'undefined') lucide.createIcons();
       return;
     }
 
@@ -332,7 +330,6 @@ export async function renderAiPicks(root) {
 
       setActiveMode(mode);
       wireActions(root, mode, picks, loadMode);
-      if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch (e) {
       console.error('AI Picks load error:', e);
       if (!listEl) return;

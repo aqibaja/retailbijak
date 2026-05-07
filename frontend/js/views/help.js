@@ -1,4 +1,4 @@
-import { observeElements } from '../main.js?v=20260507L';
+import { observeElements } from '../main.js?v=20260507M';
 
 export function renderHelp(root) {
     document.title = 'RetailBijak — Bantuan';
@@ -118,5 +118,4 @@ export function renderHelp(root) {
       </section>
     `;
     observeElements();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 }

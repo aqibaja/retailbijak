@@ -1,6 +1,6 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507L';
-import { observeElements, registerViewTimer } from '../main.js?v=20260507L';
-import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=20260507L';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
+import { observeElements, registerViewTimer } from '../main.js?v=20260507M';
+import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=20260507M';
 
 const safeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : []);
 
@@ -239,7 +239,6 @@ export async function renderMarket(root) {
     loadingEl.hidden = false;
     contentEl.hidden = true;
   }
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   const settle = (p) => Promise.resolve(p).then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error, value: null }));
 
@@ -412,5 +411,4 @@ export async function renderMarket(root) {
     el.classList.add('stagger-item');
   });
 
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 }

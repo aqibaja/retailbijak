@@ -1,7 +1,7 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507L';
-import { observeElements, flashUpdate } from '../main.js?v=20260507L';
-import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507L';
-import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260507L';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
+import { observeElements, flashUpdate } from '../main.js?v=20260507M';
+import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507M';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260507M';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -126,7 +126,6 @@ export async function renderStockDetail(root, ticker) {
       </div>
     </section>`;
   observeElements();
-  if (typeof lucide !== 'undefined') lucide.createIcons();
   // Check watchlist state
   let isWatched = false;
   fetchWatchlist().then(wl => {
@@ -927,7 +926,6 @@ function showAlertModal(symbol) {
     }
   });
   scrollObserver.observe(document.body, { childList: true, subtree: true });
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   // Focus trap
   const alertFocusable = overlay.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');

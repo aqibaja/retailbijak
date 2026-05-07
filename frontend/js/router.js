@@ -1,13 +1,13 @@
-import { renderDashboard } from './views/dashboard.js?v=20260507L';
-import { renderStockDetail } from './views/stock_detail.js?v=20260507L';
-import { renderScreener } from './views/screener.js?v=20260507L';
-import { renderPortfolio } from './views/portfolio.js?v=20260507L';
-import { renderMarket } from './views/market.js?v=20260507L';
-import { renderNews } from './views/news.js?v=20260507L';
-import { renderSettings } from './views/settings.js?v=20260507L';
-import { renderHelp } from './views/help.js?v=20260507L';
-import { renderAiPicks } from './views/ai_picks.js?v=20260507L';
-import { clearViewTimers } from './main.js?v=20260507L';
+import { renderDashboard } from './views/dashboard.js?v=20260507M';
+import { renderStockDetail } from './views/stock_detail.js?v=20260507M';
+import { renderScreener } from './views/screener.js?v=20260507M';
+import { renderPortfolio } from './views/portfolio.js?v=20260507M';
+import { renderMarket } from './views/market.js?v=20260507M';
+import { renderNews } from './views/news.js?v=20260507M';
+import { renderSettings } from './views/settings.js?v=20260507M';
+import { renderHelp } from './views/help.js?v=20260507M';
+import { renderAiPicks } from './views/ai_picks.js?v=20260507M';
+import { clearViewTimers } from './main.js?v=20260507M';
 
 let routeToken = 0;
 
@@ -74,7 +74,6 @@ export function handleRoute(hash) {
             else renderDashboard(root); // Fallback
             
             // Re-initialize icons for newly injected HTML
-            if (typeof lucide !== 'undefined') lucide.createIcons();
             
             // View content entrance animation
             if (currentToken === routeToken) root.classList.add('view-content');

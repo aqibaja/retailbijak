@@ -1,7 +1,7 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507L';
-import { observeElements, animateValue } from '../main.js?v=20260507L';
-import { nf, pf } from '../utils/format.js?v=20260507L';
-import { ssSet } from '../utils/storage.js?v=20260507L';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507M';
+import { observeElements, animateValue } from '../main.js?v=20260507M';
+import { nf, pf } from '../utils/format.js?v=20260507M';
+import { ssSet } from '../utils/storage.js?v=20260507M';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -94,7 +94,6 @@ export async function renderDashboard(root) {
     </div>
   </section>`;
   observeElements();
-  if (typeof lucide !== 'undefined') lucide.createIcons();
   const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
   initChart(market);
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);

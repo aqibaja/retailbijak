@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507L';
-import { observeElements } from '../main.js?v=20260507L';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
+import { observeElements } from '../main.js?v=20260507M';
 
 const renderEmptyState = ({
   title = 'Belum ada hasil scan',
@@ -113,7 +113,6 @@ export async function renderScreener(root) {
         <div id="tv-screener" class="market-heatmap-wrap" style="min-height:580px;"></div>
       </section>`;
     observeElements();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
@@ -170,7 +169,6 @@ function renderList(results) {
             action: 'Coba jalankan scan lagi nanti.',
         });
     }
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function runScreener() {

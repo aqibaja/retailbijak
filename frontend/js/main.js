@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260507L';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507L';
-import { initTheme } from './theme.js?v=20260507L';
+import { handleRoute } from './router.js?v=20260507M';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507M';
+import { initTheme } from './theme.js?v=20260507M';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -71,6 +71,15 @@ function openMoreDrawer() {
 // Expose globally for inline onclick handlers
 window.closeMoreDrawer = closeMoreDrawer;
 window.openMoreDrawer = openMoreDrawer;
+
+// ─── Lucide Icons Auto-Render via MutationObserver ───
+function setupLucideAutoRender() {
+  if (typeof lucide === 'undefined' || !lucide.createIcons) return;
+  lucide.createIcons(); // Initial render
+  const target = document.getElementById('app-root') || document.body;
+  const observer = new MutationObserver(() => lucide.createIcons());
+  observer.observe(target, { childList: true, subtree: true });
+}
 
 // ================= UI CORE =================
 function setupSearchOverlay() {
@@ -314,7 +323,7 @@ function setupNetworkStatus() {
 document.addEventListener('DOMContentLoaded', () => {
   try {
       initTheme();
-      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      setupLucideAutoRender();
       setupSearchOverlay();
       setupScrollEffects();
       setupRunningTicker();
