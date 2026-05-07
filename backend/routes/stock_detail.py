@@ -73,17 +73,22 @@ def get_stock_analysis(ticker: str, llm: bool = Query(False), db: Session = Depe
 
 @router.get('/api/stocks/{ticker}/fundamental')
 def get_fundamental(ticker: str, db: Session = Depends(get_db)):
-    ticker = _ticker_with_suffix(ticker)
+    ticker_with_suffix = _ticker_with_suffix(ticker)
+    ticker_base = _ticker_base(ticker)
 
-    fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker).first()
+    # Try both formats (DB may store with or without .JK)
+    fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker_with_suffix).first()
+    if not fundamental:
+        fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker_base).first()
+    
     if not fundamental:
         # On-demand fetch from yfinance if DB is empty
         try:
             import yfinance as yf
-            tk = yf.Ticker(ticker)
+            tk = yf.Ticker(ticker_with_suffix)
             info = tk.info or {}
             if info and info.get('currentPrice'):
-                fundamental = Fundamental(ticker=ticker)
+                fundamental = Fundamental(ticker=ticker_base)
                 fundamental.trailing_pe = info.get('trailingPE')
                 fundamental.forward_pe = info.get('forwardPE')
                 fundamental.price_to_book = info.get('priceToBook')
@@ -100,6 +105,16 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
                 fundamental.updated_at = datetime.now(timezone.utc)
                 db.add(fundamental)
                 db.commit()
+                # Update the stock record with sector too
+                if info.get('sector'):
+                    try:
+                        stock = db.query(Stock).filter(Stock.ticker == ticker_base).first()
+                        if stock:
+                            stock.sector = info.get('sector')
+                            stock.industry = info.get('industry')
+                            db.commit()
+                    except:
+                        pass
         except Exception as e:
             print(f"yfinance fallback failed for {ticker}: {e}")
 
