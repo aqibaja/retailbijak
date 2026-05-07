@@ -33,14 +33,17 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, ticker: str = ''):
     """Get latest market news from DB; optionally filter by ticker/company name."""
     q = db.query(News)
     if ticker:
-        like = f'%{ticker.upper()}%'
+        ticker_upper = ticker.upper()
+        like = f'%{ticker_upper}%'
         # Company name mapping for stricter matching (full phrase, not per-word)
         names = {'BBCA': 'Bank Central Asia', 'BMRI': 'Bank Mandiri', 'BBRI': 'Bank Rakyat Indonesia',
                  'TLKM': 'Telkom Indonesia', 'GOTO': 'GoTo Gojek', 'ASII': 'Astra International',
                  'ADRO': 'Adaro Energy', 'BYAN': 'Bayan Resources', 'UNVR': 'Unilever Indonesia',
                  'INDF': 'Indofood Sukses', 'HMSP': 'HM Sampoerna'}
-        full_name = names.get(ticker.upper(), '')
+        full_name = names.get(ticker_upper, '')
         filters = [News.title.ilike(like), News.summary.ilike(like)]
+        # Also match via tickers JSON column (more accurate)
+        filters.append(News.tickers.ilike(f'%{ticker_upper}%'))
         if full_name:
             name_like = f'%{full_name}%'
             filters.append(News.title.ilike(name_like))

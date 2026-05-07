@@ -103,6 +103,7 @@ class News(Base):
     source = Column(String)
     summary = Column(String)
     image_url = Column(String, nullable=True)
+    tickers = Column(String, nullable=True)  # JSON array of related IDX tickers
 
 
 class UserSetting(Base):

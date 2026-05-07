@@ -1,6 +1,7 @@
 import logging
 import feedparser
 import re
+import json
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 
@@ -18,8 +19,26 @@ logger = logging.getLogger(__name__)
 
 RSS_FEEDS = {
     "CNBC Indonesia": "https://www.cnbcindonesia.com/market/rss",
-    "Kontan": "https://investasi.kontan.co.id/rss"
+    "Kontan": "https://investasi.kontan.co.id/rss",
+    "Bisnis.com": "https://markets.bisnis.com/rss",
+    "Katadata": "https://katadata.co.id/feed.xml"
 }
+
+# IDX ticker pattern — 2-4 uppercase letters, optionally followed by a period
+_TICKER_RE = re.compile(r'\b([A-Z]{2,4})(?:\.JK)?\b')
+# Known IDX tickers from database (populated at runtime to avoid hardcoding)
+_KNOWN_TICKERS = {}  # ticker -> True cache
+
+def _extract_tickers(text: str) -> list[str]:
+    """Extract potential IDX ticker codes from text."""
+    if not text:
+        return []
+    matches = _TICKER_RE.findall(text.upper())
+    # Filter to known tickers if cache is populated
+    if _KNOWN_TICKERS:
+        return list(dict.fromkeys(t for t in matches if t in _KNOWN_TICKERS))
+    # Without cache, return all uppercase 2-4 letter matches (may include false positives)
+    return list(dict.fromkeys(matches[:5]))  # Max 5 tickers per article
 
 def _extract_image_url(entry) -> str | None:
     """Extract image URL from RSS entry via media:content, enclosure, or summary HTML."""
@@ -61,6 +80,16 @@ def update_news():
     db = SessionLocal()
     
     try:
+        # Populate known tickers from Stock table
+        try:
+            from database import Stock
+            stocks = db.query(Stock.ticker).all()
+            for s in stocks:
+                _KNOWN_TICKERS[s.ticker.upper()] = True
+            logger.info(f"Loaded {len(_KNOWN_TICKERS)} known IDX tickers for news matching")
+        except Exception:
+            pass
+        
         all_news = []
         
         for source_name, url in RSS_FEEDS.items():
@@ -82,6 +111,10 @@ def update_news():
                     # Extract summary and handle missing fields
                     summary = entry.get('summary', '')
                     
+                    # Extract ticker mentions
+                    text_for_tickers = f"{entry.title} {summary}"
+                    tickers = _extract_tickers(text_for_tickers)
+                    
                     news_item = {
                         "id": entry.link,
                         "title": entry.title,
@@ -89,7 +122,8 @@ def update_news():
                         "published_at": pub_date,
                         "source": source_name,
                         "summary": summary,
-                        "image_url": _extract_image_url(entry)
+                        "image_url": _extract_image_url(entry),
+                        "tickers": json.dumps(tickers) if tickers else None
                     }
                     all_news.append(news_item)
                 except Exception as e:
