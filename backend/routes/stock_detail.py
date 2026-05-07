@@ -266,10 +266,12 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
         fund = None
 
     # Stock name lookup for news matching
+    company_name = None
     company_names = [base]
     try:
         stock = db.query(Stock).filter(Stock.ticker == base).first()
         if stock and stock.name:
+            company_name = stock.name
             # Clean company name: remove PT, (Persero), Tbk
             clean = stock.name.replace('PT ', '').replace('(Persero)', '').replace('Tbk.', '').replace('Tbk', '').replace('.', '').strip()
             company_names.append(clean.upper())
@@ -301,6 +303,7 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
         fundamental=fund,
         news=news_rows,
         db=db,
+        company_name=company_name,
     )
     return llm_response
 

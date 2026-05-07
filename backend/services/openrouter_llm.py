@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import re
 import os
+import urllib.parse
 from typing import Any
 
+import feedparser
 import requests
 from sqlalchemy.orm import Session
 
@@ -124,9 +126,47 @@ def _chat_completion(*, api_key: str, model: str, system_prompt: str, user_promp
     return parsed
 
 
+def _fetch_web_news(ticker: str, company_name: str | None = None) -> list[dict[str, str]]:
+    """Fetch latest news from Google News RSS — real-time, no API key needed."""
+    query = f'{ticker}'
+    if company_name:
+        clean = company_name.replace('PT ', '').replace('(Persero)', '').replace('Tbk.', '').replace('Tbk', '').strip()
+        query = f'{ticker} {clean}'
+    query += ' saham Indonesia'
+    url = f'https://news.google.com/rss/search?q={urllib.parse.quote(query)}&hl=id&gl=ID&ceid=ID:id'
+    try:
+        feed = feedparser.parse(url)
+    except Exception:
+        return []
+    results = []
+    seen = set()
+    for entry in feed.entries:
+        title = (entry.get('title') or '').strip()
+        if not title or title in seen:
+            continue
+        seen.add(title)
+        published = (entry.get('published') or '')[:10]
+        source = ''
+        src = entry.get('source')
+        if src:
+            source = src.get('title', '') if isinstance(src, dict) else str(src)
+        summary = (entry.get('summary') or '')[:200]
+        results.append({
+            'title': title,
+            'published_at': published,
+            'source': source,
+            'url': entry.get('link', ''),
+            'snippet': summary,
+        })
+        if len(results) >= 5:
+            break
+    return results
+
+
 def build_stock_chat_llm_payload(*, ticker: str, message: str, technical: dict | None = None,
                                    fundamental: dict | None = None, news: list | None = None,
-                                   db: Session | None = None) -> dict[str, Any]:
+                                   db: Session | None = None,
+                                   company_name: str | None = None) -> dict[str, Any]:
     """Chat AI untuk stock detail — tanya apa saja tentang saham."""
     config = get_openrouter_config(db)
     model = config['stock_analysis_model']
@@ -141,7 +181,7 @@ def build_stock_chat_llm_payload(*, ticker: str, message: str, technical: dict |
             'runtime_message': runtime['message'],
         }
 
-    # Build context string from technical, fundamental, news
+    # Build context string from technical, fundamental, news + web news
     context_parts = []
     if technical:
         tech_indicators = technical.get('indicators', {})
@@ -168,18 +208,27 @@ def build_stock_chat_llm_payload(*, ticker: str, message: str, technical: dict |
             f'ROE {fundamental.get("roe", "—")}%, '
             f'DER {fundamental.get("debt_to_equity", "—")}.'
         )
-    if news:
+
+    # Web news (real-time from Google News)
+    web_news = _fetch_web_news(ticker, company_name)
+    if web_news:
+        news_lines = [f'- {n["title"]} ({n["source"]}, {n["published_at"]})' for n in web_news]
+        context_parts.append('BERITA TERBARU DARI INTERNET:\n' + '\n'.join(news_lines))
+    elif news:
         news_str = '; '.join([f'{n.get("title","")} ({n.get("published_at","")})' for n in news[:3]])
-        context_parts.append(f'BERITA: {news_str}')
+        context_parts.append(f'BERITA DARI DATABASE: {news_str}')
 
     context = '\n'.join(context_parts) if context_parts else 'Data saham terbatas.'
 
     system_prompt = (
         f'Kamu analis saham IDX yang ramah dan ringkas. Jawab dalam Bahasa Indonesia. '
         f'Gunakan data berikut sebagai referensi utama untuk menjawab pertanyaan tentang {ticker}:\n{context}\n\n'
-        f'Jika data di atas tidak mencukupi, gunakan pengetahuan umummu tentang {ticker} dan pasar IDX '
-        f'untuk tetap memberikan jawaban yang informatif dan relevan. '
-        f'Jangan bilang "tidak memiliki akses" — kamu adalah AI analis dengan pengetahuan pasar saham Indonesia. '
+        f'Kamu memiliki akses ke BERITA REAL-TIME dari internet (Google News) yang sudah disertakan di atas. '
+        f'Gunakan berita tersebut untuk diskusi tentang sentimen terbaru, berita spesifik, '
+        f'atau peristiwa terkini yang memengaruhi saham ini. '
+        f'Jika data teknikal/fundamental/berita di atas tidak mencukupi, gunakan pengetahuan umummu '
+        f'tentang {ticker} dan pasar IDX untuk tetap memberikan jawaban yang informatif dan relevan. '
+        f'Jangan bilang \"tidak memiliki akses\" — kamu adalah AI analis dengan pengetahuan pasar saham Indonesia. '
         f'Beri jawaban yang informatif tapi tidak panjang lebar. '
         f'Jika ditanya entry/stop/target, beri angka spesifik berdasarkan data teknikal. '
         f'Jika ditanya rekomendasi, sertakan disclaimer singkat. '
