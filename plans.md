@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▱▱▱ 70% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 80% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -287,8 +287,12 @@
 | 2026-05-07 | 1.3.3 | ✅ | Ticker overflow fix mobile — tape-card lebih kecil di <420px |
 | 2026-05-07 | 1.3.4 | ✅ | Scanner results mobile — 4 kolom stats scroll horizontal di <480px |
 | 2026-05-07 | 1.3.5 | ✅ | Tablet breakpoint (768-1024px) — sidebar thinner 48px |
-| 2026-05-07 | 1.5.2 | ✅ | AI Picks fallback cycle fix — skip cache kosong, rebuild otomatis |
-| 2026-05-07 | 1.2.4 | ✅ | Utility classes CSS — 35+ utility (border, shadow, flex, gap, round, opacity, dll) |
+|| 2026-05-07 | 1.2.4 | ✅ | Utility classes CSS — 35+ utility (border, shadow, flex, gap, round, opacity, dll) |
+| 2026-05-08 | 1.4.4 | ✅ | Format Rupiah konsisten — migrasi portfolio.js ke money() shared |
+| 2026-05-08 | 1.5.4 | ✅ | Stock detail partial failure — warning banner + OFFLINE badge jika semua API gagal |
+| 2026-05-08 | 1.6.6 | ✅ | Keyboard shortcut overlay interactive — `?` trigger, `g+d/s/p/m/n` navigasi, `T` tema, overlay modal |
+| 2026-05-08 | 1.7.4 | ✅ | Image optimization — site-logo.png 374KB→7KB (96×53) |
+| 2026-05-08 | 1.7.5 | ✅ | Resource hints — preload CSS + font stylesheet |
 
 ---
 
