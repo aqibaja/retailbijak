@@ -323,7 +323,11 @@ export async function renderAiPicks(root) {
 
       // Render cards
       if (!picks.length) {
-        listEl.innerHTML = renderEmptyState('Belum ada kandidat', 'Mode ini belum menemukan kandidat cukup kuat. Coba mode lain atau tunggu briefing berikutnya.');
+        const source = payload?.source || '';
+        const isFallback = source === 'no_data';
+        listEl.innerHTML = isFallback
+          ? renderErrorState('Data pasar belum cukup', 'Data akumulasi institusi IDX belum tersedia untuk hari ini. Signal akan muncul setelah sesi berjalan.')
+          : renderEmptyState('Belum ada kandidat', 'Mode ini belum menemukan kandidat cukup kuat. Coba mode lain atau tunggu briefing berikutnya.');
       } else {
         listEl.innerHTML = renderCardList(picks, mode);
       }

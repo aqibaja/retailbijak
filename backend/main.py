@@ -134,6 +134,12 @@ def get_ai_picks(mode: str = "swing", limit: int = 5, db: Session = Depends(get_
     if safe_limit == 0:
         return build_ai_picks_fallback_payload(mode=mode, trading_date=_current_jakarta_trading_date())
     report = get_latest_ai_pick_report(mode=mode, db=db)
+    # Jika report ada tapi data kosong (fallback/no_data): rebuild ulang
+    if report is not None:
+        data = report.get('data') or []
+        source = report.get('source') or ''
+        if len(data) == 0 and source in ('no_data', 'db'):
+            report = None  # Treat as no report — force rebuild
     if report is None:
         return build_ai_picks_payload(mode=mode, limit=safe_limit)
     # Stale check: rebuild jika report > 4 jam
