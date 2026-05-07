@@ -1,6 +1,6 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507H';
-import { observeElements } from '../main.js?v=20260507H';
-import { nf, pct } from '../utils/format.js?v=20260507H';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507I';
+import { observeElements } from '../main.js?v=20260507I';
+import { nf, pct } from '../utils/format.js?v=20260507I';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';

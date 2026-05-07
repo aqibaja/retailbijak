@@ -38,3 +38,19 @@ export const fmtRp = (n) => {
 // fmt(val, digits=2) → "1.234,57"
 export const fmt = (n, digits = 2) =>
   Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
+
+// ─── Markdown Renderer (lightweight, no deps) ──────────────
+export const renderMarkdown = (text) => {
+  if (!text) return '';
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/\n/g, '<br>');
+  return html;
+};

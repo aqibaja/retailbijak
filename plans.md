@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 22% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 32% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -274,6 +274,9 @@
 | 2026-05-07 | 1.6.5 | ✅ | Market card hover lift removed → subtle border only |
 | 2026-05-07 | 1.4.1 | ✅ | Created `js/utils/format.js` with nf, pct, pf, money, fmtRp, fmt |
 | 2026-05-07 | 1.4.1 | ✅ | stock_detail.js, ai_picks.js, market.js → shared import |
+| 2026-05-07 | 1.4.1 | ✅ | dashboard.js → shared import |
+| 2026-05-07 | 1.6.7 | ✅ | AI Chat markdown rendering — **bold**, *italic*, `code`, links, line breaks |
+| 2026-05-07 | 1.5.1 | ✅ | IHSG chart empty state — "Data IHSG belum tersedia" visible message |
 
 ---
 

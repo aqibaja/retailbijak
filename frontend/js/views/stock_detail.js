@@ -1,6 +1,6 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507H';
-import { observeElements, flashUpdate } from '../main.js?v=20260507H';
-import { nf, pct, pf, money } from '../utils/format.js?v=20260507H';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507I';
+import { observeElements, flashUpdate } from '../main.js?v=20260507I';
+import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507I';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -237,7 +237,7 @@ export async function renderStockDetail(root, ticker) {
       const reply = res?.reply || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
       const aiBubble = document.createElement('div');
       aiBubble.className = 'chat-bubble ai-bubble';
-      aiBubble.textContent = reply;
+      aiBubble.innerHTML = renderMarkdown(reply);
       chatMessages.appendChild(aiBubble);
       if (res?.status === 'error' || res?.status === 'disabled') {
         aiBubble.classList.add('chat-error');

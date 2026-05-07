@@ -1,5 +1,6 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507H';
-import { observeElements, animateValue } from '../main.js?v=20260507H';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507I';
+import { observeElements, animateValue } from '../main.js?v=20260507I';
+import { nf, pf } from '../utils/format.js?v=20260507I';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -11,10 +12,7 @@ const SUGGESTION_PRESETS = [
   { ticker: 'TLKM', reason: 'Quality defensive name untuk pullback map.' },
   { ticker: 'ANTM', reason: 'Komoditas tetap menarik saat flow sektor bergeser.' },
 ];
-
-const nf = (n, d = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
-const pf = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
-
+const activeRanges = { '1W': false, '1M': true, '1Q': false, '1Y': false };
 function safeSessionStorageSet(key, value) {
   try { sessionStorage.setItem(key, value); } catch { /* ignore */ }
 }
@@ -80,7 +78,7 @@ export async function renderDashboard(root) {
           </div>
         </div>
         <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu data.</strong></div>
-        <div class="dashboard-chart-wrap"><div class="skeleton skeleton-chart" aria-hidden="true"></div><canvas id="ihsgMainChart" role="img" aria-label="Grafik pergerakan IHSG"></canvas></div>
+        <div class="dashboard-chart-wrap"><div class="skeleton skeleton-chart" aria-hidden="true"></div><canvas id="ihsgMainChart" role="img" aria-label="Grafik pergerakan IHSG"></canvas><div id="ihsg-chart-empty" class="chart-empty-state" style="display:none;"><i data-lucide="bar-chart-3"></i><p>Data IHSG belum tersedia</p><small>Menunggu jadwal sinkronasi harian dari IDX</small></div></div>
       </div>
       <div class="panel dash-movers-panel">
         <div class="flex justify-between items-center mb-3">
@@ -358,9 +356,13 @@ function initChart(summary) {
     } else {
       const sub = document.getElementById('ihsg-chart-subtitle');
       if (sub) sub.textContent = 'Data IHSG menunggu scheduler.';
-      // Hide skeleton even on empty data so canvas fallback is visible
+      // Hide skeleton and show empty state
       const chartSkel = document.querySelector('.dashboard-chart-wrap .skeleton-chart');
       if (chartSkel) chartSkel.style.display = 'none';
+      const emptyEl = document.getElementById('ihsg-chart-empty');
+      if (emptyEl) emptyEl.style.display = 'flex';
+      const canvas = document.getElementById('ihsgMainChart');
+      if (canvas) canvas.style.display = 'none';
       return;
     }
 
