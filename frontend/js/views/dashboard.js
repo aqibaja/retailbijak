@@ -1,6 +1,7 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507K';
-import { observeElements, animateValue } from '../main.js?v=20260507K';
-import { nf, pf } from '../utils/format.js?v=20260507K';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507L';
+import { observeElements, animateValue } from '../main.js?v=20260507L';
+import { nf, pf } from '../utils/format.js?v=20260507L';
+import { ssSet } from '../utils/storage.js?v=20260507L';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -13,9 +14,6 @@ const SUGGESTION_PRESETS = [
   { ticker: 'ANTM', reason: 'Komoditas tetap menarik saat flow sektor bergeser.' },
 ];
 const activeRanges = { '1W': false, '1M': true, '1Q': false, '1Y': false };
-function safeSessionStorageSet(key, value) {
-  try { sessionStorage.setItem(key, value); } catch { /* ignore */ }
-}
 
 function buildAiPickContext(item, mode = 'swing') {
   return JSON.stringify({
@@ -204,7 +202,7 @@ async function loadAiPickWidget() {
       event.preventDefault(); event.stopPropagation();
       const ticker = detailButton.getAttribute('data-dash-ai-pick-open-detail');
       if (!ticker) return;
-      safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(featured, mode));
+      ssSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(featured, mode));
       window.location.hash = `#stock/${ticker}`;
     });
   };
@@ -216,7 +214,7 @@ async function loadAiPickWidget() {
         const ticker = button.getAttribute('data-dash-ai-pick-alt-detail');
         const item = alternatives.find(candidate => candidate.ticker === ticker);
         if (!ticker || !item) return;
-        safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
+        ssSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
         window.location.hash = `#stock/${ticker}`;
       });
     });

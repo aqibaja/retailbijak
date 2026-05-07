@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 45% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 50% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -279,6 +279,8 @@
 | 2026-05-07 | 1.5.1 | ✅ | IHSG chart empty state — "Data IHSG belum tersedia" visible message |
 | 2026-05-07 | 1.3.1 | ✅ | Bottom nav 6→4 item (Dashboard, Screener, Portfolio, More). Market, News, AI Picks, Settings, Help pindah ke More drawer |
 | 2026-05-07 | 1.5.3 | ✅ | Portfolio error vs empty distinction — API error tampilkan "Gagal Memuat" + refresh button, empty data show "Belum Ada Posisi" |
+| 2026-05-07 | 1.3.2 | ✅ | Mobile landscape optimization — compact topbar/nav, hide ticker, smaller charts |
+| 2026-05-07 | 1.4.2 | ✅ | Created `js/utils/storage.js` with ssGet/ssSet/ssRemove. Migrated stock_detail, dashboard, ai_picks |
 
 ---
 

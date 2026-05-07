@@ -1,6 +1,7 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507K';
-import { observeElements } from '../main.js?v=20260507K';
-import { nf, pct } from '../utils/format.js?v=20260507K';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507L';
+import { observeElements } from '../main.js?v=20260507L';
+import { nf, pct } from '../utils/format.js?v=20260507L';
+import { ssSet } from '../utils/storage.js?v=20260507L';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -14,10 +15,6 @@ function safeLocalStorageGet(key, fallback = null) {
 }
 function safeLocalStorageSet(key, value) {
   try { localStorage.setItem(key, value); }
-  catch { /* ignore */ }
-}
-function safeSessionStorageSet(key, value) {
-  try { sessionStorage.setItem(key, value); }
   catch { /* ignore */ }
 }
 
@@ -216,7 +213,7 @@ function wireActions(root, mode, picks, loadFn) {
       const ticker = btn.getAttribute('data-open-detail');
       const item = picks.find(c => c.ticker === ticker);
       if (!ticker || !item) return;
-      safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
+      ssSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
       window.location.hash = `#stock/${ticker}`;
     });
   });

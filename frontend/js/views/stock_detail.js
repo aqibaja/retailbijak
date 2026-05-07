@@ -1,35 +1,20 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507K';
-import { observeElements, flashUpdate } from '../main.js?v=20260507K';
-import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507K';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507L';
+import { observeElements, flashUpdate } from '../main.js?v=20260507L';
+import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507L';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260507L';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
 let currentSymbol = null;
 
-function safeSessionStorageGet(key) {
-  try {
-    return sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeSessionStorageRemove(key) {
-  try {
-    sessionStorage.removeItem(key);
-  } catch {
-    // ignore session cleanup issues
-  }
-}
-
 function renderAiPickContextBanner(symbol) {
-  const raw = safeSessionStorageGet(AI_PICKS_CONTEXT_KEY);
+  const raw = ssGet(AI_PICKS_CONTEXT_KEY);
   if (!raw) return '';
 
   try {
     const data = JSON.parse(raw);
     if (!data || String(data.ticker || '').toUpperCase() !== String(symbol || '').toUpperCase()) return '';
-    safeSessionStorageRemove(AI_PICKS_CONTEXT_KEY);
+    ssRemove(AI_PICKS_CONTEXT_KEY);
     const labels = Array.isArray(data.reason_labels) ? data.reason_labels.filter(Boolean).slice(0, 2).join(' · ') : '';
     const fit = data.fit_label || 'Explainable candidate siap ditelaah lebih dalam.';
     const levels = [
@@ -45,10 +30,9 @@ function renderAiPickContextBanner(symbol) {
       heroBackHref,
     };
   } catch {
-    safeSessionStorageRemove(AI_PICKS_CONTEXT_KEY);
+    ssRemove(AI_PICKS_CONTEXT_KEY);
     return { bannerHtml: '', heroBackHref: '#dashboard' };
   }
-}
 
 export async function renderStockDetail(root, ticker) {
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
