@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 0% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 22% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -255,6 +255,25 @@
 
 ### Berikutnya
 2.2 (Order Book) → 2.3 (News) → 2.4 (Alerts) → 2.5 (Aksi Korporasi) → 3.x
+
+---
+
+## Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-07 | 1.1.1 | ✅ | Breakpoint 767/768px merged → `@media (max-width: 767px)` |
+| 2026-05-07 | 1.1.2 | ✅ | `@keyframes flash-up/down` added to CSS |
+| 2026-05-07 | 1.1.3 | ✅ | showAlertModal() already exists, backend endpoint needed |
+| 2026-05-07 | 1.1.4 | ✅ | `user-scalable=no` removed, `maximum-scale=5` |
+| 2026-05-07 | 1.1.5 | ✅ | `aira-current` typo already fixed |
+| 2026-05-07 | 1.6.1 | ✅ | Custom scrollbar already exists (lines 3238-3243) |
+| 2026-05-07 | 1.6.2 | ✅ | All 9 views already set document.title |
+| 2026-05-07 | 1.6.3 | ✅ | Inline SVG favicon (📈) |
+| 2026-05-07 | 1.6.4 | ✅ | Theme-color meta already exists (dark + light) |
+| 2026-05-07 | 1.6.5 | ✅ | Market card hover lift removed → subtle border only |
+| 2026-05-07 | 1.4.1 | ✅ | Created `js/utils/format.js` with nf, pct, pf, money, fmtRp, fmt |
+| 2026-05-07 | 1.4.1 | ✅ | stock_detail.js, ai_picks.js, market.js → shared import |
 
 ---
 

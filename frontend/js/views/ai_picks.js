@@ -1,11 +1,10 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507G';
-import { observeElements } from '../main.js?v=20260507G';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507H';
+import { observeElements } from '../main.js?v=20260507H';
+import { nf, pct } from '../utils/format.js?v=20260507H';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
-const nf = (n, d = 0) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
-const pct = (n) => `${Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
-
+let currentMode = 'momentum';
 // ─── In-memory mode cache ──────────────────────────────────
 const modeCache = {};
 

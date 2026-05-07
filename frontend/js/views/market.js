@@ -1,16 +1,8 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507G';
-import { observeElements, registerViewTimer } from '../main.js?v=20260507G';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507H';
+import { observeElements, registerViewTimer } from '../main.js?v=20260507H';
+import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=20260507H';
 
-const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
-const pct = (n) => `${Number(n ?? 0) >= 0 ? '+' : ''}${Number(n ?? 0).toFixed(2)}%`;
 const safeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : []);
-const fmtRp = (n) => {
-  const abs = Math.abs(Number(n ?? 0));
-  if (abs >= 1_000_000_000_000) return `Rp ${(Number(n) / 1_000_000_000_000).toFixed(1)}T`;
-  if (abs >= 1_000_000_000) return `Rp ${(Number(n) / 1_000_000_000).toFixed(1)}M`;
-  if (abs >= 1_000_000) return `Rp ${(Number(n) / 1_000_000).toFixed(1)}Jt`;
-  return `Rp ${Number(n).toLocaleString('id-ID')}`;
-};
 
 async function fetchCorporateActions() { return apiFetch('/corporate-actions?limit=6') || { count: 0, data: [], source: 'no_data' }; }
 async function fetchCompanyAnnouncements() { return apiFetch('/company-announcements?limit=6') || { count: 0, data: [], source: 'no_data' }; }
