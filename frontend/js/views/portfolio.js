@@ -1,4 +1,4 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast } from '../api.js?v=20260507C';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507C';
 import { observeElements } from '../main.js?v=20260507C';
 
 // ─── Focus Trap ──────────────────────────────
@@ -194,7 +194,8 @@ async function renderWatchlistTab(el) {
               <td class="text-right"><button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>
-      </div>` : `
+      </div>
+      <div id="watchlist-mini-charts" class="portfolio-mini-grid mt-3"></div>` : `
       <div class="empty-state-v2">
         <div class="empty-icon"><i data-lucide="eye" class="watchlist-empty-icon"></i></div>
         <h3>Daftar Pantau Kosong</h3>
@@ -236,6 +237,29 @@ async function renderWatchlistTab(el) {
             }
         });
     });
+    
+    // Load TV mini charts for the first 4 watchlist items
+    const miniGrid = document.getElementById('watchlist-mini-charts');
+    if (miniGrid && rows.length) {
+      const watchSymbols = rows.slice(0, 4);
+      miniGrid.innerHTML = watchSymbols.map((r, i) => `<div id="tv-mini-${i}" class="portfolio-mini-card"></div>`).join('');
+      watchSymbols.forEach((r, i) => {
+        setTimeout(() => {
+          const containerId = `tv-mini-${i}`;
+          loadTVWidget(containerId, 'mini-symbol-overview', {
+            symbol: `IDX:${r.ticker.toUpperCase().replace('.JK','')}`,
+            width: '100%',
+            height: 160,
+            dateRange: '3M',
+            colorTheme: getTVTheme(),
+            isTransparent: false,
+            autosize: false,
+            chartOnly: false,
+            locale: 'id_ID',
+          });
+        }, i * 200);
+      });
+    }
 }
 
 async function renderPortfolioTab(el) {

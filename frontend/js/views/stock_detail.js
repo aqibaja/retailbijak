@@ -1,4 +1,4 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast } from '../api.js?v=20260507C';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507C';
 import { observeElements, flashUpdate } from '../main.js?v=20260507C';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -80,6 +80,7 @@ export async function renderStockDetail(root, ticker) {
           </div>
         </div>
       </div>
+      <div id="tv-symbol-profile" class="stock-side-panel hidden"></div>
       <div class="stock-layout">
         <div class="panel chart-card-v2">
           <div class="flex justify-between items-center mb-3">
@@ -128,8 +129,9 @@ export async function renderStockDetail(root, ticker) {
           </div>
           <div class="stock-tab-content" data-tab-content="analisis">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Ringkasan Sesi</h3><div id="snapshot-panel" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Analisis Teknikal TradingView</h3><div id="tv-technical-analysis"></div></div>
             <div class="stock-side-panel ai-thread-mock"><h3 class="stock-side-panel-title">Pembacaan Cepat AI</h3><div class="ai-thread-mock-inner"></div></div>
-            <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal (Custom)</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
             <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
@@ -296,6 +298,42 @@ export async function renderStockDetail(root, ticker) {
   const analysisPayload = { ...(analysisData || {}), llm: analysis?.llm || analysisData?.llm || null };
   renderTechnicalPanel(technical);
   renderSnapshotPanel(fund?.data || detail?.data || {}, candles, technical);
+  
+  // TV Technical Analysis widget
+  const taContainer = document.getElementById('tv-technical-analysis');
+  if (taContainer) {
+    const tvSymbol = `IDX:${symbol}`;
+    setTimeout(() => {
+      loadTVWidget('tv-technical-analysis', 'technical-analysis', {
+        symbol: tvSymbol,
+        interval: '1D',
+        width: '100%',
+        height: 380,
+        colorTheme: getTVTheme(),
+        isTransparent: false,
+        displayMode: 'single',
+        locale: 'id_ID',
+        showIntervalTabs: true,
+      });
+    }, 50);
+  }
+  
+  // TV Symbol Profile widget
+  const spContainer = document.getElementById('tv-symbol-profile');
+  if (spContainer && fund?.data?.name) {
+    const tvSymbol = `IDX:${symbol}`;
+    spContainer.classList.remove('hidden');
+    setTimeout(() => {
+      loadTVWidget('tv-symbol-profile', 'symbol-profile', {
+        symbol: tvSymbol,
+        width: '100%',
+        height: 280,
+        colorTheme: getTVTheme(),
+        isTransparent: false,
+        locale: 'id_ID',
+      });
+    }, 100);
+  }
   renderMarketStatsV2(fund?.data || detail?.data || {}, candles, technical);
   renderDecisionPanel(candles, technical);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);

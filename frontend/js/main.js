@@ -1,5 +1,5 @@
 import { handleRoute } from './router.js?v=20260507C';
-import { fetchMarketSummary, searchStocks, fetchTopMovers } from './api.js?v=20260507C';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, loadTVWidget, getTVTheme, initTVThemeSync } from './api.js?v=20260507C';
 import { initTheme } from './theme.js?v=20260507C';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
@@ -243,31 +243,36 @@ async function refreshTopbarMarket() {
        console.warn('Gagal memperbarui topbar', e);
    }
 }
-// Running Ticker Setup
-async function setupRunningTicker() {
-   const tickerContainer = document.getElementById('running-ticker');
-   if (!tickerContainer) return;
-   const res = await fetchTopMovers(8);
-  const seen = new Set();
-  const rows = Array.isArray(res?.data) && res.data.length
-    ? res.data.filter(r => { const ok = !seen.has(r.ticker); seen.add(r.ticker); return ok; }).slice(0, 8)
-    : [];
-  const tickerItems = rows.length ? [...rows, ...rows] : [];
-   tickerContainer.innerHTML = tickerItems.map(item => {
-       const change = Number(item.change_pct ?? item.change ?? 0);
-       const price = item.price == null ? '—' : Number(item.price).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-      return `
-      <a href="#stock/${item.ticker}" class="tape-card">
-          <div class="flex-col">
-              <div class="tape-pair">${item.ticker}</div>
-              <div class="tape-price">${price}</div>
-          </div>
-          <div class="flex-col items-end">
-              <div class="tape-chg ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
-          </div>
-      </a>`;
-   }).join('');
+// Running Ticker Setup — TradingView Ticker Tape
+const TICKER_SYMBOLS = [
+  'IDX:BBRI', 'IDX:BBCA', 'IDX:TLKM', 'IDX:ASII', 'IDX:BMRI',
+  'IDX:UNVR', 'IDX:ADRO', 'IDX:GOTO', 'IDX:BYAN', 'IDX:ICBP',
+  'IDX:INDF', 'IDX:ANTM', 'IDX:PGAS', 'IDX:SMCB', 'IDX:EXCL',
+  'IDX:JPFA', 'IDX:ACES', 'IDX:WIKA', 'IDX:ADHI', 'IDX:CPIN',
+  'IDX:SIDO', 'IDX:LSIP', 'IDX:MAPI', 'IDX:ERAA', 'IDX:CTRA',
+];
+function setupRunningTicker() {
+  const tickerContainer = document.getElementById('running-ticker');
+  if (!tickerContainer) return;
+  tickerContainer.innerHTML = '<div class="tv-ticker-tape-wrap" id="tv-ticker-tape"></div>';
+  const symbols = TICKER_SYMBOLS.map(s => ({ proName: s, title: s.replace('IDX:', '') }));
+  setTimeout(() => {
+    loadTVWidget('tv-ticker-tape', 'ticker-tape', {
+      symbols,
+      showSymbolLogo: false,
+      colorTheme: getTVTheme(),
+      locale: 'id_ID',
+      displayMode: 'adaptive',
+      isTransparent: false,
+    });
+  }, 100);
 }
+
+// Listen for theme changes to refresh ticker
+window.addEventListener('tv-theme-change', (e) => {
+  const tape = document.getElementById('tv-ticker-tape');
+  if (tape) setupRunningTicker();
+});
 // Network status indicator
 function setupNetworkStatus() {
   const el = document.getElementById('network-status');
@@ -294,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
       refreshTopbarMarket();
       setInterval(refreshTopbarMarket, 60000);
       setupNetworkStatus();
+      try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
   } catch (e) {
       console.error('Init error:', e);
   }

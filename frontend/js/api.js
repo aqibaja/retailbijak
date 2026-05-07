@@ -202,3 +202,56 @@ function dismissToast(toast) {
 }
 
 /* cache-bust: 20260507C */
+
+// ─── TradingView Embed Widget Loader ────────────────────
+export function loadTVWidget(containerId, widgetType, config) {
+  const container = document.getElementById(containerId);
+  if (!container) { console.warn(`TV widget container #${containerId} not found`); return; }
+  
+  // Clear container
+  container.innerHTML = '';
+  
+  // Create wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tradingview-widget-container';
+  
+  // Create widget div (some scripts look for this)
+  const widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container__widget';
+  wrapper.appendChild(widgetDiv);
+  
+  // Create script with JSON config as textContent
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = `https://s3.tradingview.com/external-embedding/embed-widget-${widgetType}.js`;
+  script.async = true;
+  script.textContent = JSON.stringify(config);
+  
+  wrapper.appendChild(script);
+  container.appendChild(wrapper);
+}
+
+export function getTVTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  return isLight ? 'light' : 'dark';
+}
+
+// Listen for theme changes to update TV widgets
+let tvThemeChangeHandler = null;
+export function initTVThemeSync() {
+  if (tvThemeChangeHandler) return; // already initialized
+  tvThemeChangeHandler = () => {
+    // Dispatch custom event so widgets can refresh when theme changes
+    window.dispatchEvent(new CustomEvent('tv-theme-change', { detail: { theme: getTVTheme() } }));
+  };
+  // Watch for data-theme attribute changes
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.attributeName === 'data-theme') {
+        tvThemeChangeHandler();
+        break;
+      }
+    }
+  });
+  observer.observe(document.documentElement, { attributes: true });
+}

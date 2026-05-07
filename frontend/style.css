@@ -4395,3 +4395,31 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   [data-theme="dark"] body { background: #fff !important; color: #111 !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* TradingView Embed Widgets */
+.portfolio-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.portfolio-mini-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+.market-heatmap-wrap {
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-panel);
+  margin-top: 12px;
+}
+.market-section-group-heatmap {
+  margin-top: 24px;
+}
+.tv-ticker-tape-wrap {
+  width: 100%;
+  height: 52px;
+}
+

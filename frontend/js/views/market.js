@@ -1,4 +1,4 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch } from '../api.js?v=20260507C';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507C';
 import { observeElements, registerViewTimer } from '../main.js?v=20260507C';
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
@@ -154,6 +154,13 @@ export async function renderMarket(root) {
             </div>
           </section>
         </div>
+        <section class=\"market-section-group market-section-group-heatmap mt-4\">
+          <header class=\"market-section-group-head\">
+            <div class=\"market-section-group-title\">Heatmap Pasar IDX</div>
+            <p>Peta performa sektor bursa IDX — ukuran = kapitalisasi pasar, warna = perubahan.</p>
+          </header>
+          <div id=\"tv-stock-heatmap\" class=\"market-heatmap-wrap\"></div>
+        </section>
       </div>
     </section>
     <div id=\"market-data-quality-bar\" class=\"market-data-quality-bar\"></div>`;
@@ -315,6 +322,27 @@ export async function renderMarket(root) {
   document.getElementById('announcements-card').innerHTML = card('Berita & Pengumuman Korporasi', 'Pemberitahuan emiten yang ditarik dari endpoint pengumuman IDX', `<div class=\"market-section-summary\">${safeRows(announcementsData).length ? `${safeRows(announcementsData).length} pengumuman perusahaan terbaru tersedia untuk review cepat.` : 'Belum ada pengumuman baru yang berhasil ditarik.'}</div><div class=\"market-list-stack\">${safeRows(announcementsData).slice(0, 3).map(actionRow).join('') || emptyState('Belum ada pengumuman terbaru yang tervalidasi.', 'Endpoint pengumuman belum mengembalikan item baru untuk sesi ini.')}</div>`).replace('class=\"market-card\"', 'class=\"market-card market-card-feed\"');
 
   contentEl.dataset.marketReady = '1';
+  
+  // TV Stock Heatmap
+  setTimeout(() => {
+    loadTVWidget('tv-stock-heatmap', 'stock-heatmap', {
+      dataSource: 'SPX500',
+      exchanges: ['IDX'],
+      grouping: 'sector',
+      blockSize: 'market_cap_basic',
+      blockColor: 'change',
+      hasTopBar: false,
+      isDataSetEnabled: false,
+      isZoomEnabled: true,
+      hasSymbolTooltip: true,
+      isMonoSize: false,
+      autosize: true,
+      width: '100%',
+      height: 500,
+      colorTheme: getTVTheme(),
+      locale: 'id_ID',
+    });
+  }, 200);
   // Stagger reveal for section groups
   document.querySelectorAll('.market-section-group').forEach((el, i) => {
     el.style.setProperty('--stagger-delay', `${i * 90}ms`);
