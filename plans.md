@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 55% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▱▱▱ 70% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -283,6 +283,12 @@
 | 2026-05-07 | 1.4.2 | ✅ | Created `js/utils/storage.js` with ssGet/ssSet/ssRemove. Migrated stock_detail, dashboard, ai_picks |
 | 2026-05-07 | 1.4.3 | ✅ | Single lucide.createIcons() via MutationObserver — removed 20+ redundant calls from all views |
 | 2026-05-07 | 1.2.3 | ✅ | prefers-color-scheme auto-detection — system theme used if no saved preference |
+| 2026-05-07 | 1.3.6 | ✅ | viewport-fit=cover untuk iPhone notch & safe-area |
+| 2026-05-07 | 1.3.3 | ✅ | Ticker overflow fix mobile — tape-card lebih kecil di <420px |
+| 2026-05-07 | 1.3.4 | ✅ | Scanner results mobile — 4 kolom stats scroll horizontal di <480px |
+| 2026-05-07 | 1.3.5 | ✅ | Tablet breakpoint (768-1024px) — sidebar thinner 48px |
+| 2026-05-07 | 1.5.2 | ✅ | AI Picks fallback cycle fix — skip cache kosong, rebuild otomatis |
+| 2026-05-07 | 1.2.4 | ✅ | Utility classes CSS — 35+ utility (border, shadow, flex, gap, round, opacity, dll) |
 
 ---
 
