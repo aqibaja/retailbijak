@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507J';
-import { observeElements } from '../main.js?v=20260507J';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507K';
+import { observeElements } from '../main.js?v=20260507K';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -175,7 +175,8 @@ export async function renderPortfolio(root, activeTab) {
 }
 
 async function renderWatchlistTab(el) {
-    let data; try { data = await fetchWatchlist(); } catch (e) { data = null; console.warn('fetchWatchlist failed', e); }
+    let data, fetchError;
+    try { data = await fetchWatchlist(); } catch (e) { fetchError = true; data = null; console.warn('fetchWatchlist failed', e); }
     const rows = Array.isArray(data?.data) ? data.data : [];
 
     el.innerHTML = `
@@ -183,7 +184,13 @@ async function renderWatchlistTab(el) {
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
         <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
-      ${rows.length ? `
+      ${fetchError ? `
+      <div class="empty-state-v2">
+        <div class="empty-icon"><i data-lucide="alert-triangle" class="watchlist-empty-icon" style="color:var(--warn-color);"></i></div>
+        <h3>Gagal Memuat</h3>
+        <p>Data tidak dapat dimuat. Coba refresh halaman atau periksa koneksi.</p>
+        <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
+      </div>` : rows.length ? `
       <div class="table-wrapper">
         <table class="table">
           <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
@@ -263,7 +270,8 @@ async function renderWatchlistTab(el) {
 }
 
 async function renderPortfolioTab(el) {
-    let data; try { data = await fetchPortfolio(); } catch (e) { data = null; console.warn('fetchPortfolio failed', e); }
+    let data, fetchError;
+    try { data = await fetchPortfolio(); } catch (e) { fetchError = true; data = null; console.warn('fetchPortfolio failed', e); }
     const rows = Array.isArray(data?.data) ? data.data : [];
 
     el.innerHTML = `
@@ -271,7 +279,13 @@ async function renderPortfolioTab(el) {
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
         <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
-      ${rows.length ? `
+      ${fetchError ? `
+      <div class="empty-state-v2">
+        <div class="empty-icon"><i data-lucide="alert-triangle" class="watchlist-empty-icon" style="color:var(--warn-color);"></i></div>
+        <h3>Gagal Memuat</h3>
+        <p>Data portofolio tidak dapat dimuat. Coba refresh halaman atau periksa koneksi.</p>
+        <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
+      </div>` : rows.length ? `
       <div class="table-wrapper">
         <table class="table">
           <thead><tr><th>Kode Saham</th><th>Lot</th><th>Harga Rata-Rata</th><th class="text-right">Aksi</th></tr></thead>

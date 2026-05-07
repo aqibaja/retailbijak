@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 40% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 45% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -278,6 +278,7 @@
 | 2026-05-07 | 1.6.7 | ✅ | AI Chat markdown rendering — **bold**, *italic*, `code`, links, line breaks |
 | 2026-05-07 | 1.5.1 | ✅ | IHSG chart empty state — "Data IHSG belum tersedia" visible message |
 | 2026-05-07 | 1.3.1 | ✅ | Bottom nav 6→4 item (Dashboard, Screener, Portfolio, More). Market, News, AI Picks, Settings, Help pindah ke More drawer |
+| 2026-05-07 | 1.5.3 | ✅ | Portfolio error vs empty distinction — API error tampilkan "Gagal Memuat" + refresh button, empty data show "Belum Ada Posisi" |
 
 ---
 

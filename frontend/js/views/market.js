@@ -1,6 +1,6 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507J';
-import { observeElements, registerViewTimer } from '../main.js?v=20260507J';
-import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=20260507J';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260507K';
+import { observeElements, registerViewTimer } from '../main.js?v=20260507K';
+import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=20260507K';
 
 const safeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : []);
 

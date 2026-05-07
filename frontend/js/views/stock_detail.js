@@ -1,6 +1,6 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507J';
-import { observeElements, flashUpdate } from '../main.js?v=20260507J';
-import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507J';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507K';
+import { observeElements, flashUpdate } from '../main.js?v=20260507K';
+import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507K';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
