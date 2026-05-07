@@ -76,6 +76,11 @@
   --input-border: rgba(255,255,255,0.08);
   --btn-primary-gradient: linear-gradient(135deg, #10b981, #0d885b);
   --ticker-bg: rgba(255, 255, 255, 0.02);
+  --topbar-bg: rgba(11, 18, 32, 0.85);
+  --sidebar-bg: rgba(11, 18, 32, 0.95);
+  --bottom-nav-bg: rgba(7, 12, 22, 0.96);
+  --scrollbar-track: rgba(255,255,255,0.02);
+  --scrollbar-thumb: rgba(255,255,255,0.12);
 }
 /* ================= LIGHT THEME OVERRIDES ================= */
 html[data-theme="light"] {
@@ -98,6 +103,11 @@ html[data-theme="light"] {
   --text-muted: #475569;
   --text-dim: #64748b;
   --ticker-bg: #ffffff;
+  --topbar-bg: rgba(255,255,255,0.82);
+  --sidebar-bg: rgba(255,255,255,0.9);
+  --bottom-nav-bg: rgba(255,255,255,0.94);
+  --scrollbar-track: rgba(15,23,42,0.04);
+  --scrollbar-thumb: rgba(15,23,42,0.18);
   --primary-color: #10b981;
   --primary-glow: rgba(16, 185, 129, 0.16);
   --primary-dark: #059669;
@@ -203,30 +213,19 @@ html[data-theme="light"] {
 [data-theme="light"] .topbar,
 [data-theme="light"] .sidebar,
 [data-theme="light"] .bottom-nav,
-[data-theme="light"] .panel,
 [data-theme="light"] .card,
 [data-theme="light"] .glass-card,
 [data-theme="light"] .market-card,
-[data-theme="light"] .scanner-form,
-[data-theme="light"] .scanner-results,
-[data-theme="light"] .dashboard-card-lite,
-[data-theme="light"] .panel-lite,
-[data-theme="light"] .stat-tile,
 [data-theme="light"] .market-loading-shell {
   background: var(--bg-panel);
   color: var(--text-main);
   border-color: var(--border-subtle);
 }
 
-[data-theme="light"] .topbar {
-  background: rgba(255,255,255,0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
+[data-theme="light"] .topbar { background: var(--topbar-bg); }
 [data-theme="light"] .topbar.scrolled { background: rgba(255,255,255,0.92); }
-[data-theme="light"] .sidebar { background: rgba(255,255,255,0.9); }
-[data-theme="light"] .bottom-nav { background: rgba(255,255,255,0.94); border-top-color: var(--border-subtle); }
+[data-theme="light"] .sidebar { background: var(--sidebar-bg); }
+[data-theme="light"] .bottom-nav { background: var(--bottom-nav-bg); border-top-color: var(--border-subtle); }
 [data-theme="light"] .nav-item { color: var(--text-muted); }
 [data-theme="light"] .nav-item:hover { color: var(--text-main); background: rgba(16,185,129,0.08); }
 [data-theme="light"] .nav-item.active { background: rgba(16,185,129,0.14); color: var(--up-color); }
@@ -289,7 +288,6 @@ html[data-theme="light"] {
 [data-theme="light"] [style*="background:rgba(239,68,68,0.15)"] { color: var(--down-color) !important; }
 
 /* Light Theme: scrollbar thumb visible on light bg */
-[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.12); }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.2); }
 [data-theme="light"] * { scrollbar-color: rgba(15, 23, 42, 0.12) transparent; }
 
@@ -974,7 +972,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .col-span-3 { grid-column: span 3; }
 
 /* ================= LAYOUT ================= */
-.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: rgba(11, 18, 32, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); padding: 0 24px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 1000; transition: background var(--duration-normal) var(--ease-out); }
+.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--topbar-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); padding: 0 24px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 1000; transition: background var(--duration-normal) var(--ease-out); }
 .topbar.scrolled { background: rgba(8, 17, 31, 0.95); border-bottom-color: rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
 /* Scroll Progress Bar */
 .topbar-progress {
@@ -1085,7 +1083,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 
 .sidebar {
   position: fixed; top: var(--header-h); left: 0; bottom: 0; width: var(--sidebar-w);
-  background: rgba(11, 18, 32, 0.95); border-right: 1px solid var(--border-subtle);
+  background: var(--sidebar-bg); border-right: 1px solid var(--border-subtle);
   display: flex; flex-direction: column; align-items: center; padding: 24px 0;
   z-index: 900; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
@@ -3326,10 +3324,10 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,.07); border-radius: 999px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14); }
-* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.07) transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
 
 /* Selection color */
 ::selection { background: rgba(16,185,129,.25); color: #fff; }
