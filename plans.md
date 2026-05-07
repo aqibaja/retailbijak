@@ -11,7 +11,7 @@
 | Fase | Status | Progress |
 |------|--------|----------|
 | **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-| **P2: Fitur IDX Wajib** | 🟡 Progress | ▰▰▱▱▱▱▱▱▱▱ 20% |
+| **P2: Fitur IDX Wajib** | 🟡 Progress | ▰▰▰▰▱▱▱▱▱▱ 35% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
 ---
@@ -301,6 +301,8 @@
 | 2026-05-09 | 2.1.1 | ✅ | Backend: `/api/foreign-flow` — aggregate BrokerSummary per ticker, real net foreign data |
 | 2026-05-09 | 2.1.3 | ✅ | Frontend: Foreign Flow card di dashboard — top movers, progress bar, net buy/sell count |
 | 2026-05-09 | 2.1.5 | ✅ | Foreign flow signal — warna hijau/merah + progress bar visual |
+| 2026-05-09 | 2.3.1 | ✅ | RSS: tambah sumber Bisnis.com + Katadata, ekstraksi ticker dari konten berita |
+| 2026-05-09 | 2.3.2 | ✅ | News by ticker — filter via kolom `tickers` + backend route upgrade |
 
 ---
 
