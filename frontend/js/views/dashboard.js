@@ -1,4 +1,4 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260507M';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260507M';
 import { observeElements, animateValue } from '../main.js?v=20260507M';
 import { nf, pf } from '../utils/format.js?v=20260507M';
 import { ssSet } from '../utils/storage.js?v=20260507M';
@@ -89,6 +89,7 @@ export async function renderDashboard(root) {
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
       <div class="panel"><h3 class="panel-title mb-3">Intelijen Pasar</h3><div id="market-intel" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">Arus Asing</h3><div id="foreign-flow-card" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Memuat data asing</strong><span class="dashboard-widget-state-note">Menarik net foreign buy/sell dari IDX.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dari feed.</span></div></div></div>
     </div>
@@ -108,6 +109,8 @@ export async function renderDashboard(root) {
     } catch (e) { console.warn('Chart.js lazy load failed', e); }
   }
   initChart(market);
+  // Foreign Flow card (async, non-blocking)
+  loadForeignFlow();
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }
 
@@ -397,4 +400,47 @@ function initChart(summary) {
     btn.setAttribute('aria-pressed', 'true');
     render(btn.dataset.range);
   }));
+}
+
+// ─── Foreign Flow Card ────────────────────────────
+async function loadForeignFlow() {
+  const el = document.getElementById('foreign-flow-card');
+  if (!el) return;
+  try {
+    const res = await apiFetch('/foreign-flow?limit=5');
+    const items = res?.data || [];
+    if (!items.length) {
+      el.innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Belum ada data asing</strong><span class="dashboard-widget-state-note">Data foreign flow IDX belum tersedia untuk hari ini.</span></div>`;
+      return;
+    }
+    const netCount = items.filter(i => Number(i.net_value) >= 0).length;
+    const otherCount = items.length - netCount;
+    const html = items.map(r => {
+      const nv = Number(r.net_value || 0);
+      const isUp = nv >= 0;
+      const pct = nv > 0 ? 100 : (nv < 0 ? 0 : 50);
+      const volLabel = `${nf(r.buy_volume/1e6,0)}J/${nf(r.sell_volume/1e6,0)}J`;
+      return `<a href="#stock/${r.ticker}" class="scanner-row" style="padding:8px 12px">
+        <div class="scanner-row-main">
+          <div class="scanner-row-badge">${r.ticker.substring(0,2)}</div>
+          <div class="scanner-row-copy">
+            <div class="scanner-row-title"><span class="text-main scanner-row-ticker">${r.ticker}</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="flex-col items-end">
+            <strong class="mono ${isUp ? 'text-up' : 'text-down'}">${isUp ? '▲' : '▼'} ${nf(Math.abs(nv/1e9), 1)}M</strong>
+            <span class="text-xs text-dim">${volLabel} lot</span>
+          </div>
+          <div class="dash-movers-bar-wrap" style="width:60px;height:6px;background:var(--down-bg);border-radius:3px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:var(--up-color);border-radius:3px"></div>
+          </div>
+        </div>
+      </a>`;
+    }).join('');
+    el.innerHTML = `<div class="text-xs text-dim mb-2">${netCount} net buy · ${otherCount} net sell</div><div class="flex-col gap-1">${html}</div>`;
+  } catch (e) {
+    console.warn('loadForeignFlow failed', e);
+    el.innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat</strong><span class="dashboard-widget-state-note">Data foreign flow tidak tersedia.</span></div>`;
+  }
 }

@@ -137,6 +137,46 @@ def get_foreign_trading(limit: int = 10, db: Session = Depends(get_db)):
     return {'count': 0, 'data': [], 'source': 'no_data'}
 
 
+@router.get('/api/foreign-flow')
+def get_foreign_flow(limit: int = 10, db: Session = Depends(get_db)):
+    """Aggregate BrokerSummary per ticker — real net foreign buy/sell from IDX broker data."""
+    try:
+        from sqlalchemy import func
+        latest = db.query(func.max(BrokerSummary.date)).scalar()
+        if not latest:
+            return {'count': 0, 'data': [], 'source': 'no_data'}
+        rows = db.query(
+            BrokerSummary.ticker,
+            func.sum(BrokerSummary.buy_volume).label('total_buy_vol'),
+            func.sum(BrokerSummary.sell_volume).label('total_sell_vol'),
+            func.sum(BrokerSummary.net_volume).label('total_net_vol'),
+            func.sum(BrokerSummary.buy_value).label('total_buy_val'),
+            func.sum(BrokerSummary.sell_value).label('total_sell_val'),
+            func.sum(BrokerSummary.net_value).label('total_net_val'),
+        ).filter(
+            BrokerSummary.date == latest
+        ).group_by(BrokerSummary.ticker).order_by(
+            func.sum(BrokerSummary.net_value).desc()
+        ).limit(limit).all()
+
+        data = []
+        for r in rows:
+            data.append({
+                'ticker': r.ticker,
+                'buy_value': round(float(r.total_buy_val or 0), 2),
+                'sell_value': round(float(r.total_sell_val or 0), 2),
+                'net_value': round(float(r.total_net_val or 0), 2),
+                'buy_volume': int(r.total_buy_vol or 0),
+                'sell_volume': int(r.total_sell_vol or 0),
+                'net_volume': int(r.total_net_vol or 0),
+                'date': latest.isoformat() if hasattr(latest, 'isoformat') else str(latest),
+                'source': 'db',
+            })
+        return {'count': len(data), 'data': data, 'source': 'db'}
+    except Exception:
+        return {'count': 0, 'data': [], 'source': 'no_data'}
+
+
 @router.get('/api/broker-activity')
 def get_broker_activity(limit: int = 20, db: Session = Depends(get_db)):
     latest = db.query(BrokerSummary).order_by(BrokerSummary.date.desc()).first()
