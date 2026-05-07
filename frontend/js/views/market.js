@@ -326,8 +326,7 @@ export async function renderMarket(root) {
   // TV Stock Heatmap
   setTimeout(() => {
     loadTVWidget('tv-stock-heatmap', 'stock-heatmap', {
-      dataSource: 'All Stocks',
-      exchanges: ['IDX'],
+      dataSource: 'AllID',
       grouping: 'sector',
       blockSize: 'market_cap_basic',
       blockColor: 'change',
