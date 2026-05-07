@@ -77,6 +77,33 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
 
     fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker).first()
     if not fundamental:
+        # On-demand fetch from yfinance if DB is empty
+        try:
+            import yfinance as yf
+            tk = yf.Ticker(ticker)
+            info = tk.info or {}
+            if info and info.get('currentPrice'):
+                fundamental = Fundamental(ticker=ticker)
+                fundamental.trailing_pe = info.get('trailingPE')
+                fundamental.forward_pe = info.get('forwardPE')
+                fundamental.price_to_book = info.get('priceToBook')
+                fundamental.trailing_eps = info.get('trailingEps')
+                fundamental.dividend_yield = info.get('dividendYield')
+                fundamental.roe = info.get('returnOnEquity')
+                fundamental.roa = info.get('returnOnAssets')
+                fundamental.debt_to_equity = info.get('debtToEquity')
+                fundamental.revenue = info.get('totalRevenue')
+                fundamental.net_income = info.get('netIncomeToCommon')
+                fundamental.free_cashflow = info.get('freeCashflow')
+                fundamental.market_cap = info.get('marketCap')
+                from datetime import datetime, timezone
+                fundamental.updated_at = datetime.now(timezone.utc)
+                db.add(fundamental)
+                db.commit()
+        except Exception as e:
+            print(f"yfinance fallback failed for {ticker}: {e}")
+
+    if not fundamental:
         return {'ticker': ticker, 'message': 'Fundamental data not found'}
 
     return {

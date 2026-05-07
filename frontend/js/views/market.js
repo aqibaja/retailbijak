@@ -326,8 +326,8 @@ export async function renderMarket(root) {
   // TV Stock Heatmap
   setTimeout(() => {
     loadTVWidget('tv-stock-heatmap', 'stock-heatmap', {
-      dataSource: 'SPX500',
-      exchanges: ['IDX'],
+      dataSource: 'IDX',
+      exchanges: [],
       grouping: 'sector',
       blockSize: 'market_cap_basic',
       blockColor: 'change',

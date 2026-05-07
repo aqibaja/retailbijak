@@ -98,7 +98,7 @@ export async function renderStockDetail(root, ticker) {
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <div id="trade-plan" class="trade-plan-grid mt-4"></div>
           <div class="panel-flush mt-16"><h3 class="panel-flush-title">Market Stats</h3><div id="market-stats-v2" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
-          <div class="panel-flush mt-16"><h3 class="panel-flush-title">Katalis Terbaru</h3><div id="catalyst-strip-v2" class="catalyst-strip-v2"><div class="skeleton skeleton-text skeleton-w-60"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
+          <div class="panel-flush mt-16"><h3 class="panel-flush-title">Katalis Terbaru</h3><p class="text-xs text-dim mt-1">Berita, pengumuman, dan sentimen yang berpotensi mempengaruhi harga</p><div id="catalyst-strip-v2" class="catalyst-strip-v2"><div class="skeleton skeleton-text skeleton-w-60"></div><div class="skeleton skeleton-text short mt-1"></div></div></div>
         </div>
         <div class="stock-side compact-right-scroll flex-col gap-2">
           <div class="stock-tabs" data-stock-tabs="1">
@@ -811,13 +811,10 @@ function renderCatalystStripV2(symbol, newsPayload, announcementsPayload){
   function metaRow(icon, iconCls, title, time, href, isAvailable) {
     const safeHref = href || 'news://pending';
     return `<a href="${safeHref}" class="catalyst-row catalyst-link" target="_blank" rel="noopener noreferrer">
-      <span class="catalyst-icon ${iconCls}">${icon}</span>
+      <span class="catalyst-icon ${iconCls}" title="${icon === 'B' ? 'Berita' : icon === 'P' ? 'Pengumuman Perusahaan' : 'Pulse Pasar'}">${icon === 'B' ? '📰' : icon === 'P' ? '📋' : '📊'}</span>
       <div class="catalyst-body">
         <span class="catalyst-title">${title}</span>
-        <div class="catalyst-meta">
-          <span>${isAvailable ? (time || 'baru') : 'menunggu data'}</span>
-          <a href="${safeHref}" class="catalyst-link" onclick="event.stopPropagation()">Buka</a>
-        </div>
+        <div class="catalyst-meta"><span>${time || (icon === 'B' ? 'Berita' : icon === 'P' ? 'Pengumuman' : 'Pulse Pasar')}</span></div>
       </div>
     </a>`;
   }
