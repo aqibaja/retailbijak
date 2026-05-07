@@ -11,7 +11,7 @@
 | Fase | Status | Progress |
 |------|--------|----------|
 | **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-| **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
+| **P2: Fitur IDX Wajib** | 🟡 Progress | ▰▰▱▱▱▱▱▱▱▱ 20% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
 ---
@@ -298,6 +298,9 @@
 | 2026-05-09 | 1.7.1 | ✅ | Dynamic import per route — lazy load view modules via import() |
 | 2026-05-09 | 1.7.6 | ✅ | PWA service worker — cache-first untuk static assets, network-first API |
 | 2026-05-09 | 1.2.1 | ✅ | Light theme refactor — CSS vars `--topbar-bg`, `--sidebar-bg`, `--scrollbar-*`, hapus 6+ override redundan |
+| 2026-05-09 | 2.1.1 | ✅ | Backend: `/api/foreign-flow` — aggregate BrokerSummary per ticker, real net foreign data |
+| 2026-05-09 | 2.1.3 | ✅ | Frontend: Foreign Flow card di dashboard — top movers, progress bar, net buy/sell count |
+| 2026-05-09 | 2.1.5 | ✅ | Foreign flow signal — warna hijau/merah + progress bar visual |
 
 ---
 
