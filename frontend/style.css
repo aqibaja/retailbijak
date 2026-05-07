@@ -2251,8 +2251,15 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .market-refresh-btn { min-height: 44px; }
 .market-meta-chip { display:inline-flex; align-items:center; min-height: 32px; padding: 0 12px; border-radius:999px; border:1px solid rgba(148,163,184,.12); background: rgba(15,23,41,.55); color: var(--text-muted); font-size: 11px; font-weight: 700; }
 .market-refresh-btn { min-height: 44px; padding: 0 16px; border-radius: 999px; background: rgba(16,185,129,.16); color: var(--up-color); border: 1px solid rgba(16,185,129,.35); font-size: 11px; font-weight: 800; }
+.market-card-skeleton { display:flex; flex-direction:column; gap:12px; padding:18px 0; }
+.skeleton-shimmer { border-radius:10px; background: linear-gradient(90deg, rgba(148,163,184,.06) 25%, rgba(148,163,184,.14) 50%, rgba(148,163,184,.06) 75%); background-size: 200% 100%; animation: shimmer 1.5s ease-in-out infinite; }
+.skeleton-title { height:18px; width:45%; }
+.skeleton-text { height:14px; width:72%; }
+.skeleton-block { height:80px; width:100%; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .market-loading-wrap { min-height: 68vh; display: grid; place-items: center; padding: 28px 0 40px; }
 .market-loading-wrap[hidden] { display: none !important; }
+.market-content-wrap { display:flex; flex-direction:column; gap:28px; }
 .market-content-wrap[hidden] { display: none !important; }
 .market-loading-shell { width: min(520px, 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 28px 20px; border-radius: 24px; background: linear-gradient(180deg, rgba(15,23,41,0.92), rgba(11,18,32,0.96)); border: 1px solid var(--border-subtle); box-shadow: 0 24px 80px rgba(0,0,0,0.24); }
 .market-loading-ring { width: 52px; height: 52px; border-radius: 50%; border: 3px solid rgba(148,163,184,0.18); border-top-color: var(--up-color); animation: market-spin 1s linear infinite; }
