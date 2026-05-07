@@ -95,6 +95,18 @@ export async function renderDashboard(root) {
   </section>`;
   observeElements();
   const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
+  // Lazy load Chart.js only for dashboard (1.7.2)
+  if (typeof Chart === 'undefined' && document.getElementById('ihsgMainChart')) {
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        s.crossOrigin = 'anonymous';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    } catch (e) { console.warn('Chart.js lazy load failed', e); }
+  }
   initChart(market);
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 }

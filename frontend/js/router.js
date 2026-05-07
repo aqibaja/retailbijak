@@ -1,13 +1,18 @@
-import { renderDashboard } from './views/dashboard.js?v=20260507M';
-import { renderStockDetail } from './views/stock_detail.js?v=20260507M';
-import { renderScreener } from './views/screener.js?v=20260507M';
-import { renderPortfolio } from './views/portfolio.js?v=20260507M';
-import { renderMarket } from './views/market.js?v=20260507M';
-import { renderNews } from './views/news.js?v=20260507M';
-import { renderSettings } from './views/settings.js?v=20260507M';
-import { renderHelp } from './views/help.js?v=20260507M';
-import { renderAiPicks } from './views/ai_picks.js?v=20260507M';
 import { clearViewTimers } from './main.js?v=20260507M';
+
+// Dynamic view registry — lazy import per route (1.7.1)
+const viewModules = {
+  dashboard: () => import('./views/dashboard.js?v=20260507M'),
+  stock_detail: () => import('./views/stock_detail.js?v=20260507M'),
+  screener: () => import('./views/screener.js?v=20260507M'),
+  portfolio: () => import('./views/portfolio.js?v=20260507M'),
+  market: () => import('./views/market.js?v=20260507M'),
+  news: () => import('./views/news.js?v=20260507M'),
+  settings: () => import('./views/settings.js?v=20260507M'),
+  help: () => import('./views/help.js?v=20260507M'),
+  ai_picks: () => import('./views/ai_picks.js?v=20260507M'),
+};
+const viewCache = {};
 
 let routeToken = 0;
 
@@ -51,7 +56,7 @@ export function handleRoute(hash) {
         root.classList.remove('page-loading');
     }, 3000);
     
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
         if (currentToken !== routeToken) return;
         // Clear the safety timer since we're about to remove it ourselves
         clearTimeout(safetyTimer);
@@ -62,16 +67,32 @@ export function handleRoute(hash) {
         }
         
         try {
-            if (baseRoute === 'dashboard') renderDashboard(root);
-            else if (baseRoute === 'stock' && rest[0]) renderStockDetail(root, rest[0]);
-            else if (baseRoute === 'market') renderMarket(root);
-            else if (baseRoute === 'screener') renderScreener(root);
-            else if (baseRoute === 'portfolio' || baseRoute === 'watchlist') renderPortfolio(root, baseRoute);
-            else if (baseRoute === 'news') renderNews(root);
-            else if (baseRoute === 'ai-picks') renderAiPicks(root);
-            else if (baseRoute === 'settings') renderSettings(root);
-            else if (baseRoute === 'help') renderHelp(root);
-            else renderDashboard(root); // Fallback
+            // Dynamic import per route (1.7.1)
+            const loadAndRender = async () => {
+              // Portfolio covers both #portfolio and #watchlist
+              if (baseRoute === 'portfolio' || baseRoute === 'watchlist') {
+                const mod = viewCache.portfolio || await viewModules.portfolio();
+                viewCache.portfolio = mod;
+                return mod.renderPortfolio(root, baseRoute);
+              }
+              if (baseRoute === 'stock' && rest[0]) {
+                const mod = viewCache.stock_detail || await viewModules.stock_detail();
+                viewCache.stock_detail = mod;
+                return mod.renderStockDetail(root, rest[0]);
+              }
+              const loadView = viewModules[baseRoute];
+              if (loadView) {
+                const mod = viewCache[baseRoute] || await loadView();
+                viewCache[baseRoute] = mod;
+                const renderFn = mod[`render${baseRoute.charAt(0).toUpperCase() + baseRoute.slice(1)}`];
+                if (renderFn) return renderFn(root);
+              }
+              // Fallback to dashboard
+              const dash = viewCache.dashboard || await viewModules.dashboard();
+              viewCache.dashboard = dash;
+              return dash.renderDashboard(root);
+            };
+            await loadAndRender();
             
             // Re-initialize icons for newly injected HTML
             

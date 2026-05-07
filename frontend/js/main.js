@@ -388,9 +388,23 @@ document.addEventListener('DOMContentLoaded', () => {
       setupScrollEffects();
       setupRunningTicker();
       refreshTopbarMarket();
-      setInterval(refreshTopbarMarket, 60000);
+      // Auto-refresh topbar market data — paused when tab is hidden
+      let _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          clearInterval(_marketIntervalId);
+          _marketIntervalId = null;
+        } else if (!_marketIntervalId) {
+          refreshTopbarMarket(); // immediate refresh on return
+          _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
+        }
+      });
       setupNetworkStatus();
       setupKeyboardShortcuts();
+      // Register PWA service worker (1.7.6)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
       try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
 
       // More Drawer button
