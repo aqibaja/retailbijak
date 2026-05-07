@@ -10,7 +10,7 @@
 
 | Fase | Status | Progress |
 |------|--------|----------|
-| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 80% |
+| **P1: UI/UX Professional Redesign** | 🟡 Progress | ▰▰▰▰▰▰▰▰▰▱ 95% |
 | **P2: Fitur IDX Wajib** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 | **P3: Fitur Lanjutan** | ⚪ Planned | ▰▰▰▰▰▰▰▰▱▱ 0% |
 
@@ -293,6 +293,10 @@
 | 2026-05-08 | 1.6.6 | ✅ | Keyboard shortcut overlay interactive — `?` trigger, `g+d/s/p/m/n` navigasi, `T` tema, overlay modal |
 | 2026-05-08 | 1.7.4 | ✅ | Image optimization — site-logo.png 374KB→7KB (96×53) |
 | 2026-05-08 | 1.7.5 | ✅ | Resource hints — preload CSS + font stylesheet |
+| 2026-05-09 | 1.7.3 | ✅ | Visibility API — pause refresh interval saat tab background, refresh on return |
+| 2026-05-09 | 1.7.2 | ✅ | Chart.js lazy load — hanya dimuat saat dashboard route |
+| 2026-05-09 | 1.7.1 | ✅ | Dynamic import per route — lazy load view modules via import() |
+| 2026-05-09 | 1.7.6 | ✅ | PWA service worker — cache-first untuk static assets, network-first API |
 
 ---
 
