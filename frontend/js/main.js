@@ -1,5 +1,5 @@
 import { handleRoute } from './router.js?v=20260507C';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, loadTVWidget, getTVTheme, initTVThemeSync } from './api.js?v=20260507C';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507C';
 import { initTheme } from './theme.js?v=20260507C';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
@@ -243,36 +243,42 @@ async function refreshTopbarMarket() {
        console.warn('Gagal memperbarui topbar', e);
    }
 }
-// Running Ticker Setup — TradingView Ticker Tape
-const TICKER_SYMBOLS = [
-  'IDX:BBRI', 'IDX:BBCA', 'IDX:TLKM', 'IDX:ASII', 'IDX:BMRI',
-  'IDX:UNVR', 'IDX:ADRO', 'IDX:GOTO', 'IDX:BYAN', 'IDX:ICBP',
-  'IDX:INDF', 'IDX:ANTM', 'IDX:PGAS', 'IDX:SMCB', 'IDX:EXCL',
-  'IDX:JPFA', 'IDX:ACES', 'IDX:WIKA', 'IDX:ADHI', 'IDX:CPIN',
-  'IDX:SIDO', 'IDX:LSIP', 'IDX:MAPI', 'IDX:ERAA', 'IDX:CTRA',
-];
-function setupRunningTicker() {
+// Running Ticker Setup — data dari API (tetap di website)
+async function setupRunningTicker() {
   const tickerContainer = document.getElementById('running-ticker');
   if (!tickerContainer) return;
-  tickerContainer.innerHTML = '<div class="tv-ticker-tape-wrap" id="tv-ticker-tape"></div>';
-  const symbols = TICKER_SYMBOLS.map(s => ({ proName: s, title: s.replace('IDX:', '') }));
-  setTimeout(() => {
-    loadTVWidget('tv-ticker-tape', 'ticker-tape', {
-      symbols,
-      showSymbolLogo: false,
-      colorTheme: getTVTheme(),
-      locale: 'id_ID',
-      displayMode: 'adaptive',
-      isTransparent: false,
-    });
-  }, 100);
+  const res = await fetchTopMovers(12);
+  const seen = new Set();
+  const rows = Array.isArray(res?.data) && res.data.length
+    ? res.data.filter(r => { const ok = !seen.has(r.ticker); seen.add(r.ticker); return ok; }).slice(0, 12)
+    : [];
+  if (!rows.length) {
+    // Fallback: static list of major IDX stocks
+    const fallback = ['BBRI','BBCA','TLKM','ASII','BMRI','UNVR','ADRO','GOTO','BYAN','ICBP','ANTM','PGAS'];
+    tickerContainer.innerHTML = fallback.map(t => `
+      <a href="#stock/${t}" class="tape-card">
+        <div class="flex-col"><div class="tape-pair">${t}</div><div class="tape-price">—</div></div>
+        <div class="flex-col items-end"><div class="tape-chg">—</div></div>
+      </a>`).join('');
+    return;
+  }
+  const tickerItems = [...rows, ...rows]; // duplicate for seamless loop
+  tickerContainer.innerHTML = tickerItems.map(item => {
+    const change = Number(item.change_pct ?? item.change ?? 0);
+    const price = item.price == null ? '—' : Number(item.price).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+    return `
+      <a href="#stock/${item.ticker}" class="tape-card">
+        <div class="flex-col">
+          <div class="tape-pair">${item.ticker}</div>
+          <div class="tape-price">${price}</div>
+        </div>
+        <div class="flex-col items-end">
+          <div class="tape-chg ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
+        </div>
+      </a>`;
+  }).join('');
 }
 
-// Listen for theme changes to refresh ticker
-window.addEventListener('tv-theme-change', (e) => {
-  const tape = document.getElementById('tv-ticker-tape');
-  if (tape) setupRunningTicker();
-});
 // Network status indicator
 function setupNetworkStatus() {
   const el = document.getElementById('network-status');
