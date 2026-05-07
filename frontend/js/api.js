@@ -222,11 +222,12 @@ export function loadTVWidget(containerId, widgetType, config) {
   widgetDiv.className = 'tradingview-widget-container__widget';
   wrapper.appendChild(widgetDiv);
   
-  // Create script with JSON config as textContent
+  // Script with async=false so document.currentScript works
+  // and the widget can read the JSON config from textContent
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.src = `https://s3.tradingview.com/external-embedding/embed-widget-${widgetType}.js`;
-  script.async = true;
+  script.async = false;
   script.textContent = JSON.stringify(config);
   
   wrapper.appendChild(script);
