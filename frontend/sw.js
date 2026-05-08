@@ -1,19 +1,33 @@
-// RetailBijak Service Worker — PWA offline cache (1.7.6)
-const CACHE = 'retailbijak-v1';
+// RetailBijak Service Worker — PWA offline cache (1.8.0)
+// cache-bust: 20260508A — update version when assets change
+const CACHE = 'retailbijak-v2';
 const PRECACHE_URLS = [
   '/',
-  '/style.css?v=20260507M',
-  '/js/main.js?v=20260507M',
-  '/js/router.js?v=20260507M',
-  '/js/api.js?v=20260507M',
-  '/js/theme.js?v=20260507M',
-  '/js/utils/format.js?v=20260507M',
-  '/js/utils/storage.js?v=20260507M',
+  '/style.css?v=20260508B',
+  '/js/main.js?v=20260508B',
+  '/js/router.js?v=20260508B',
+  '/js/api.js?v=20260508B',
+  '/js/theme.js?v=20260508B',
+  '/js/utils/format.js?v=20260508B',
+  '/js/utils/storage.js?v=20260508B',
+  '/js/views/dashboard.js?v=20260508B',
+  '/js/views/stock_detail.js?v=20260508B',
+  '/js/views/screener.js?v=20260508B',
+  '/js/views/portfolio.js?v=20260508B',
+  '/js/views/market.js?v=20260508B',
+  '/js/views/news.js?v=20260508B',
+  '/js/views/settings.js?v=20260508B',
+  '/js/views/help.js?v=20260508B',
+  '/js/views/ai_picks.js?v=20260508B',
+  '/js/views/backtest.js?v=20260510',
+  '/js/views/paper_trades.js?v=20260510',
+  '/js/views/compare.js?v=20260508',
   '/assets/site-logo.png',
   '/manifest.json?v=1',
+  '/favicon.svg',
 ];
+const API_TIMEOUT_MS = 5000;
 
-// Install: cache key assets
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
@@ -21,7 +35,6 @@ self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
@@ -31,29 +44,58 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// Fetch: network-first, fallback to cache
+// Helper: fetch with timeout
+function fetchWithTimeout(req, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    fetch(req).then((res) => { clearTimeout(timer); resolve(res); }, (err) => { clearTimeout(timer); reject(err); });
+  });
+}
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
   // Only handle same-origin requests
   if (url.origin !== location.origin) return;
 
-  // API requests: network-only (no cache to avoid stale data)
+  // API requests: network-first with 5s timeout, fallback to cache
   if (url.pathname.startsWith('/api/')) {
-    e.respondWith(fetch(e.request).catch(() => new Response(null, { status: 503 })));
+    e.respondWith(
+      fetchWithTimeout(e.request, API_TIMEOUT_MS).catch(() => {
+        return caches.match(e.request).then((cached) => {
+          if (cached) return cached;
+          return new Response(JSON.stringify({ status: 'error', message: 'Koneksi terputus. Data tidak tersedia.' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        });
+      })
+    );
     return;
   }
 
-  // Static assets: cache-first for performance
+  // Sitemap & robots.txt: network-first (always fresh for SEO)
+  if (url.pathname === '/sitemap.xml' || url.pathname === '/robots.txt') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Static assets: cache-first, fallback to network
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request).then((res) => {
-      // Cache successful responses for future offline use
-      if (res.ok) {
-        const clone = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(e.request, clone));
-      }
-      return res;
-    }).catch(() => caches.match('/') // Offline: show homepage
-    ))
+    caches.match(e.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(e.request).then((res) => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => {
+        // Offline: return homepage as SPA fallback
+        return caches.match('/');
+      });
+    })
   );
 });

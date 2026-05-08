@@ -8,7 +8,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:////opt/swingaq/backend/swingaq.db")
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 30}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -104,6 +104,7 @@ class News(Base):
     summary = Column(String)
     image_url = Column(String, nullable=True)
     tickers = Column(String, nullable=True)  # JSON array of related IDX tickers
+    sentiment = Column(String, nullable=True)  # 'positive', 'negative', 'neutral'
 
 
 class UserSetting(Base):
@@ -190,6 +191,23 @@ class PaperTrade(Base):
     status = Column(String, default='open')  # open or closed
     strategy = Column(String, default='manual')  # strategy name if from backtest
     notes = Column(String, default='')
+
+
+class TransactionLog(Base):
+    """Portfolio transaction history — buy/sell records for P&L tracking."""
+    __tablename__ = "transaction_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=False)
+    transaction_type = Column(String, nullable=False)  # 'buy' or 'sell'
+    price = Column(Float, nullable=False)
+    lots = Column(Integer, nullable=False)
+    shares = Column(Integer, nullable=False)  # computed as lots * 100
+    fee = Column(Float, default=0.0)
+    total = Column(Float, nullable=False)  # (price * shares) + fee
+    transaction_date = Column(DateTime, default=datetime.utcnow, index=True)
+    notes = Column(String, default='')
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 # Dependency for FastAPI

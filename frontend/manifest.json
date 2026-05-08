@@ -31,6 +31,21 @@
       "purpose": "any"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "assets/site-logo.png",
+      "type": "image/png",
+      "sizes": "1000x550",
+      "form_factor": "wide",
+      "label": "RetailBijak Dashboard Pasar IDX"
+    },
+    {
+      "src": "assets/site-logo.png",
+      "type": "image/png",
+      "sizes": "1000x550",
+      "form_factor": "narrow",
+      "label": "RetailBijak IDX Stock Intelligence"
+    }
+  ],
   "prefer_related_applications": false
 }

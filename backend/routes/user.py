@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import UserSetting, WatchlistItem, PortfolioPosition, get_db
+    from database import UserSetting, WatchlistItem, PortfolioPosition, TransactionLog, get_db
 except ModuleNotFoundError:
-    from backend.database import UserSetting, WatchlistItem, PortfolioPosition, get_db
+    from backend.database import UserSetting, WatchlistItem, PortfolioPosition, TransactionLog, get_db
 
 try:
     from database import Stock, OHLCVDaily
@@ -282,8 +282,6 @@ def portfolio_summary(db: Session = Depends(get_db)):
             'invested': round(v['invested'], 2),
             'value': round(v['value'], 2),
             'pnl': round(v['pnl'], 2),
-            'pct': round((v['pnl'] / v['invested']) * 100, 2) if v['invested'] else 0,
-            'weight': round((v['invested'] / total_invested) * 100, 2) if total_invested else 0,
         }
 
     return {
@@ -296,4 +294,215 @@ def portfolio_summary(db: Session = Depends(get_db)):
             'pnl_pct': round(overall_pnl_pct, 2),
             'sectors': sectors,
         },
+    }
+
+
+@router.get('/api/portfolio/export-csv')
+def export_portfolio_csv(db: Session = Depends(get_db)):
+    """Export portfolio positions as CSV with current prices and P&L."""
+    from io import StringIO
+    import csv
+
+    positions = db.query(PortfolioPosition).order_by(PortfolioPosition.ticker.asc()).all()
+    rows = []
+    for pos in positions:
+        ticker = pos.ticker
+        lots = pos.lots or 0
+        avg_price = pos.avg_price or 0
+        shares = lots * 100
+        invested = avg_price * shares
+        latest = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == ticker
+        ).order_by(OHLCVDaily.date.desc()).first()
+        current_price = float(latest.close) if latest and latest.close else avg_price
+        value = current_price * shares
+        pnl = value - invested
+        pnl_pct = ((current_price - avg_price) / avg_price * 100) if avg_price else 0
+        stock = db.query(Stock).filter(Stock.ticker == ticker).first()
+        rows.append({
+            'Ticker': ticker,
+            'Nama': stock.name if stock else ticker,
+            'Sektor': stock.sector if stock and stock.sector else '-',
+            'Lot': lots,
+            'Lembar': shares,
+            'Harga_Rata': round(avg_price, 2),
+            'Harga_Saat_Ini': round(current_price, 2),
+            'Investasi': round(invested, 2),
+            'Nilai_Saat_Ini': round(value, 2),
+            'P&L': round(pnl, 2),
+            'P&L_%': round(pnl_pct, 2),
+        })
+
+    output = StringIO()
+    writer = csv.DictWriter(output, fieldnames=rows[0].keys() if rows else [])
+    writer.writeheader()
+    writer.writerows(rows)
+    csv_content = output.getvalue()
+    output.close()
+
+    from fastapi.responses import Response
+    
+    if not rows:
+        return Response(
+            content="Ticker,Nama,Sektor,Lot,Lembar,Harga_Rata,Harga_Saat_Ini,Investasi,Nilai_Saat_Ini,P&L,P&L_%\n",
+            media_type='text/csv',
+            headers={
+                'Content-Disposition': 'attachment; filename=retailbijak_portfolio.csv',
+                'Cache-Control': 'no-cache',
+            },
+        )
+
+    return Response(
+        content=csv_content,
+        media_type='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename=retailbijak_portfolio.csv',
+            'Cache-Control': 'no-cache',
+        },
+    )
+
+
+# ─── Transaction Log CRUD ─────────────────────────
+
+
+class TransactionPayload(BaseModel):
+    ticker: str = Field(min_length=1, max_length=10)
+    transaction_type: str = Field(pattern=r'^(buy|sell)$')
+    price: float = Field(gt=0)
+    lots: int = Field(gt=0, le=99999)
+    fee: float = Field(default=0, ge=0)
+    transaction_date: str = ''  # ISO date string, default = now
+    notes: str = ''
+
+
+@router.get('/api/portfolio/transactions')
+def list_transactions(ticker: str = '', limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    q = db.query(TransactionLog)
+    if ticker:
+        q = q.filter(TransactionLog.ticker == ticker.upper().strip())
+    total = q.count()
+    rows = q.order_by(TransactionLog.transaction_date.desc()).offset(offset).limit(limit).all()
+    return {
+        'count': len(rows),
+        'total': total,
+        'data': [{
+            'id': r.id,
+            'ticker': r.ticker,
+            'transaction_type': r.transaction_type,
+            'price': r.price,
+            'lots': r.lots,
+            'shares': r.shares,
+            'fee': r.fee,
+            'total': r.total,
+            'transaction_date': r.transaction_date.isoformat()[:19] if r.transaction_date else '',
+            'notes': r.notes,
+        } for r in rows],
+    }
+
+
+@router.post('/api/portfolio/transactions')
+def create_transaction(payload: TransactionPayload, db: Session = Depends(get_db)):
+    from datetime import datetime
+    ticker = payload.ticker.upper().strip()
+    shares = payload.lots * 100
+    total_cost = (payload.price * shares) + payload.fee
+    txn_date = datetime.utcnow()
+    if payload.transaction_date:
+        try:
+            txn_date = datetime.fromisoformat(payload.transaction_date)
+        except (ValueError, TypeError):
+            pass
+    txn = TransactionLog(
+        ticker=ticker,
+        transaction_type=payload.transaction_type,
+        price=payload.price,
+        lots=payload.lots,
+        shares=shares,
+        fee=payload.fee,
+        total=total_cost,
+        transaction_date=txn_date,
+        notes=payload.notes,
+    )
+    db.add(txn)
+    db.commit()
+    db.refresh(txn)
+    return {'ok': True, 'id': txn.id, 'message': f'{payload.transaction_type.upper()} {ticker} ({payload.lots} lot @ {payload.price}) dicatat.'}
+
+
+@router.delete('/api/portfolio/transactions/{txn_id}')
+def delete_transaction(txn_id: int, db: Session = Depends(get_db)):
+    txn = db.query(TransactionLog).filter(TransactionLog.id == txn_id).first()
+    if not txn:
+        raise HTTPException(404, 'Transaksi tidak ditemukan')
+    db.delete(txn)
+    db.commit()
+    return {'ok': True, 'message': f'Transaksi {txn_id} dihapus.'}
+
+
+@router.get('/api/portfolio/transactions/pnl')
+def transaction_pnl(ticker: str = '', db: Session = Depends(get_db)):
+    """Calculate realized and unrealized P&L from transaction log + current prices."""
+    from collections import defaultdict
+    q = db.query(TransactionLog).order_by(TransactionLog.transaction_date.asc())
+    if ticker:
+        q = q.filter(TransactionLog.ticker == ticker.upper().strip())
+    txns = q.all()
+
+    positions = defaultdict(lambda: {'shares': 0, 'total_cost': 0, 'realized_pnl': 0})
+    realized_total = 0
+    total_buy_cost = 0
+    current_shares_map = defaultdict(int)
+
+    for txn in txns:
+        t = txn.transaction_type
+        shares = txn.shares
+        cost = txn.total
+        tick = txn.ticker
+
+        if t == 'buy':
+            positions[tick]['shares'] += shares
+            positions[tick]['total_cost'] += cost
+            total_buy_cost += cost
+            current_shares_map[tick] += shares
+        elif t == 'sell':
+            avg_cost_per_share = positions[tick]['total_cost'] / positions[tick]['shares'] if positions[tick]['shares'] else 0
+            sold_cost = avg_cost_per_share * shares
+            realized_pnl = cost - sold_cost  # sell_total - buy_cost_of_sold_shares
+            positions[tick]['shares'] -= shares
+            positions[tick]['total_cost'] -= sold_cost
+            positions[tick]['realized_pnl'] += realized_pnl
+            realized_total += realized_pnl
+            total_buy_cost -= sold_cost
+            current_shares_map[tick] -= shares
+
+    # Unrealized P&L from current prices
+    unrealized_total = 0
+    unrealized_items = []
+    for tick, shares in current_shares_map.items():
+        if shares <= 0:
+            continue
+        latest = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == tick
+        ).order_by(OHLCVDaily.date.desc()).first()
+        current_price = float(latest.close) if latest and latest.close else 0
+        current_value = current_price * shares
+        cost_basis = positions[tick]['total_cost']
+        unrealized = current_value - cost_basis
+        unrealized_total += unrealized
+        unrealized_items.append({
+            'ticker': tick,
+            'shares': shares,
+            'cost_basis': round(cost_basis, 2),
+            'current_price': round(current_price, 2),
+            'current_value': round(current_value, 2),
+            'unrealized_pnl': round(unrealized, 2),
+            'unrealized_pnl_pct': round((unrealized / cost_basis) * 100, 2) if cost_basis else 0,
+        })
+
+    return {
+        'realized_pnl': round(realized_total, 2),
+        'unrealized_pnl': round(unrealized_total, 2),
+        'total_pnl': round(realized_total + unrealized_total, 2),
+        'realized_items': [],
+        'unrealized_items': unrealized_items,
     }

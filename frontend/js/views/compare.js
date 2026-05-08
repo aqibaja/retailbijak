@@ -1,6 +1,6 @@
 import { apiFetch, showToast } from '../api.js?v=20260508';
-import { nf, pf, money } from '../utils/format.js?v=20260507M';
-import { observeElements } from '../main.js?v=20260507M';
+import { nf, pf, money } from '../utils/format.js?v=20260508B';
+import { observeElements } from '../main.js?v=20260508B';
 
 let _compareTickers = [];
 let _chartInstance = null;

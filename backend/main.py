@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -174,6 +174,70 @@ try:
     from routes.shared_sqlite_helpers import _sqlite_datetime_literal
 except ModuleNotFoundError:
     from backend.routes.shared_sqlite_helpers import _sqlite_datetime_literal
+
+
+# --- SEO Routes ---
+
+
+@app.get('/robots.txt', include_in_schema=False)
+def robots_txt():
+    return Response(
+        content="User-agent: *\nAllow: /\nSitemap: https://retailbijak.rich27.my.id/sitemap.xml\n",
+        media_type='text/plain',
+    )
+
+
+@app.get('/sitemap.xml', include_in_schema=False)
+def sitemap_xml():
+    """Dynamic XML sitemap with all ticker detail pages + static pages."""
+    try:
+        from stocks import get_all_tickers
+    except ModuleNotFoundError:
+        from backend.stocks import get_all_tickers
+
+    from datetime import date
+
+    today = date.today().isoformat()
+    base_url = "https://retailbijak.rich27.my.id"
+
+    static_pages = [
+        ('', '1.0', 'daily'),
+        ('screener', '0.9', 'daily'),
+        ('market', '0.8', 'daily'),
+        ('portfolio', '0.6', 'weekly'),
+        ('news', '0.7', 'daily'),
+        ('settings', '0.3', 'monthly'),
+        ('help', '0.4', 'monthly'),
+    ]
+
+    urls = []
+    for path, priority, changefreq in static_pages:
+        urls.append(f'''  <url>
+    <loc>{base_url}/{path}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>''')
+
+    # Add ticker detail pages (top 200 tickers for SEO sanity)
+    try:
+        tickers = get_all_tickers()
+        display_tickers = [t.replace('.JK', '') for t in tickers if t][:200]
+        for ticker in display_tickers:
+            urls.append(f'''  <url>
+    <loc>{base_url}/stock/{ticker}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>''')
+    except Exception:
+        pass
+
+    xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{chr(10).join(urls)}
+</urlset>'''
+    return Response(content=xml, media_type='application/xml')
 
 
 # Mount the entire frontend directory at / to serve static files (js, views, style.css)

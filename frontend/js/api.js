@@ -22,9 +22,11 @@ export async function apiFetch(endpoint, options = {}) {
     }
 }
 
-export async function fetchNews(limit = 6, ticker = '', offset = 0) {
+export async function fetchNews(limit = 6, ticker = '', offset = 0, source = '', sentiment = '') {
     let q = `/news?limit=${limit}&offset=${offset}`;
     if (ticker) q += `&ticker=${encodeURIComponent(ticker)}`;
+    if (source) q += `&source=${encodeURIComponent(source)}`;
+    if (sentiment) q += `&sentiment=${encodeURIComponent(sentiment)}`;
     return apiFetch(q) || { count: 0, total: 0, data: [] };
 }
 
@@ -42,8 +44,8 @@ export async function fetchAnalysis(ticker, options = {}) {
 }
 
 
-export async function fetchChartData(ticker, limit = 100) {
-    return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}`);
+export async function fetchChartData(ticker, limit = 100, timeframe = '1D') {
+    return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}&timeframe=${timeframe}`);
 }
 
 export async function fetchMarketSummary() {
@@ -159,9 +161,21 @@ export function getScanEventSourceUrl(timeframe) {
 }
 
 // ─── Toast Notification System ─────────────────────────
+const MAX_TOASTS = 3;
+
 export function showToast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
+    
+    // Limit visible toasts: if already at max, dismiss oldest
+    while (container.children.length >= MAX_TOASTS) {
+        const oldest = container.children[0];
+        if (oldest && oldest.classList) {
+            dismissToast(oldest);
+        } else {
+            break;
+        }
+    }
     
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
@@ -205,6 +219,41 @@ function dismissToast(toast) {
 }
 
 /* cache-bust: 20260507C */
+
+// ─── Page Meta Tags (SEO: description, OG, canonical) ────
+export function setPageMeta(title, description, path) {
+  const baseUrl = 'https://retailbijak.rich27.my.id';
+  const fullPath = path ? `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}` : baseUrl;
+  const defaultDesc = 'Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker, technical & fundamental analysis real-time.';
+
+  // Title
+  document.title = title || 'RetailBijak — IDX Stock Intelligence';
+
+  // Meta description
+  let el = document.querySelector('meta[name="description"]');
+  if (!el) { el = document.createElement('meta'); el.name = 'description'; document.head.appendChild(el); }
+  el.content = description || defaultDesc;
+
+  // OG title
+  let ogTitle = document.querySelector('meta[property="og:title"]');
+  if (!ogTitle) { ogTitle = document.createElement('meta'); ogTitle.setAttribute('property', 'og:title'); document.head.appendChild(ogTitle); }
+  ogTitle.content = title || 'RetailBijak — IDX Stock Intelligence';
+
+  // OG description
+  let ogDesc = document.querySelector('meta[property="og:description"]');
+  if (!ogDesc) { ogDesc = document.createElement('meta'); ogDesc.setAttribute('property', 'og:description'); document.head.appendChild(ogDesc); }
+  ogDesc.content = description || defaultDesc;
+
+  // OG url
+  let ogUrl = document.querySelector('meta[property="og:url"]');
+  if (!ogUrl) { ogUrl = document.createElement('meta'); ogUrl.setAttribute('property', 'og:url'); document.head.appendChild(ogUrl); }
+  ogUrl.content = fullPath;
+
+  // Canonical URL
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+  canonical.href = fullPath;
+}
 
 // ─── TradingView Embed Widget Loader ────────────────────
 export function loadTVWidget(containerId, widgetType, config) {

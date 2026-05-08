@@ -1,7 +1,7 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260507M';
-import { observeElements, animateValue } from '../main.js?v=20260507M';
-import { nf, pf } from '../utils/format.js?v=20260507M';
-import { ssSet } from '../utils/storage.js?v=20260507M';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260508B';
+import { observeElements, animateValue } from '../main.js?v=20260508B';
+import { nf, pf } from '../utils/format.js?v=20260508B';
+import { ssSet } from '../utils/storage.js?v=20260508B';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -122,7 +122,21 @@ async function loadMarketSummary() {
   document.getElementById('market-fold-badge').textContent = isLive ? 'DB' : 'REF';
   const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
   const dateEl = document.getElementById('market-data-date');
-  if (dateEl) dateEl.textContent = dataDate ? `Data ${dataDate} · sync 18:00 WIB` : 'Data belum tersedia';
+  if (dateEl) {
+    // Compute staleness
+    let stalenessHtml = '';
+    if (dataDate) {
+      const today = new Date();
+      const jktOpts = { timeZone: 'Asia/Jakarta' };
+      const todayStr = today.toLocaleDateString('en-CA', jktOpts);
+      const diffDays = Math.round((new Date(todayStr) - new Date(dataDate)) / 86400000);
+      if (diffDays <= 1) stalenessHtml = ' <span class="badge badge-up badge-mini">Hari ini</span>';
+      else if (diffDays === 1) stalenessHtml = ' <span class="badge badge-neutral badge-mini">Kemarin</span>';
+      else if (diffDays <= 5) stalenessHtml = ` <span class="badge badge-warn badge-mini">${diffDays} hari lalu</span>`;
+      else stalenessHtml = ` <span class="badge badge-down badge-mini">${diffDays} hari lalu</span>`;
+    }
+    dateEl.innerHTML = dataDate ? `Data ${dataDate}${stalenessHtml} · sync 18:00 WIB` : 'Data belum tersedia';
+  }
   const freshnessEl = document.getElementById('dash-quote-freshness');
   if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi: ${dataDate}` : 'Sinkronisasi: menunggu data.';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
@@ -178,7 +192,7 @@ async function loadIntel(){
   document.getElementById('market-intel').innerHTML = [
     { kicker: 'Breadth', value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? 'Snapshot belum valid.' : `${tapeBias} untuk first glance.` },
     { kicker: 'Leader', value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin.` : 'Fallback sektoral.' },
-    { kicker: 'Sektor', value: best?.sector||best?.name||'Finance', note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
+    { kicker: 'Sektor', value: `<a href="#sector/${encodeURIComponent(best?.sector||'Finance')}" class="text-up strong">${best?.sector||best?.name||'Finance'}</a>`, note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
     { kicker: 'Plan', value: Number(summary?.change_pct ?? 0) >= 0 ? 'Selektif' : 'Defensif', note: planLine }
   ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
 }

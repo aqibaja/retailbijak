@@ -1,5 +1,5 @@
-import { fetchNews } from '../api.js?v=20260507M';
-import { observeElements } from '../main.js?v=20260507M';
+import { fetchNews } from '../api.js?v=20260508B';
+import { observeElements } from '../main.js?v=20260508B';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
 
@@ -44,12 +44,21 @@ export async function renderNews(root) {
             <div class="market-row-kicker">Intel Pasar</div>
             <h1 class="news-hero-title">Berita & Intelijen Pasar</h1>
             <p class="news-hero-sub">Ringkasan berita pasar, pengumuman emiten, dan intelijen data IDX dalam satu aliran.</p>
-            <div class="market-meta-rail mt-10">
-              <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
-              <div class="news-search-wrap">
-                <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
-                <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
-              </div>
+              <div class="market-meta-rail mt-10">
+                <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
+                <div class="news-search-wrap">
+                  <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
+                  <select id="news-source-filter" class="news-source-select" aria-label="Filter sumber">
+                    <option value="">Semua Sumber</option>
+                  </select>
+                  <select id="news-sentiment-filter" class="news-source-select" aria-label="Filter sentimen">
+                    <option value="">Semua Sentimen</option>
+                    <option value="positive">Positif</option>
+                    <option value="negative">Negatif</option>
+                    <option value="neutral">Netral</option>
+                  </select>
+                  <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
+                </div>
             </div>
           </div>
         </div>
@@ -83,6 +92,45 @@ export async function renderNews(root) {
         const items = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data.slice(0, 30) : [];
 
         document.getElementById('news-count').textContent = `${items.length} ITEM INTEL`;
+
+        // Populate source filter dropdown
+        const sourceSelect = document.getElementById('news-source-filter');
+        if (sourceSelect && Array.isArray(res.sources)) {
+          res.sources.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+            sourceSelect.appendChild(opt);
+          });
+          // Re-fetch when source changes
+          sourceSelect.addEventListener('change', async function() {
+            const src = this.value;
+            const ticker = (document.getElementById('news-search-input')?.value || '').trim();
+            const newRes = await fetchNews(30, ticker, 0, src);
+            const newItems = (newRes && Array.isArray(newRes.data)) ? newRes.data : [];
+            const label = document.getElementById('news-filter-label');
+            if (label) label.textContent = src ? `· sumber: ${src}` : '';
+            // Re-render with filtered data
+            renderNewsItems(newItems, newRes);
+            // Update load more
+            window.__newsOffset = 30;
+            window.__newsTotal = newRes.total || 0;
+          });
+          // Sentiment filter
+          const sentimentSelect = document.getElementById('news-sentiment-filter');
+          if (sentimentSelect) {
+            sentimentSelect.addEventListener('change', async function() {
+              const sent = this.value;
+              const ticker = (document.getElementById('news-search-input')?.value || '').trim();
+              const src = sourceSelect?.value || '';
+              const newRes = await fetchNews(30, ticker, 0, src, sent);
+              const newItems = (newRes && Array.isArray(newRes.data)) ? newRes.data : [];
+              renderNewsItems(newItems, newRes);
+              window.__newsOffset = 30;
+              window.__newsTotal = newRes.total || 0;
+            });
+          }
+        }
 
         if (!items.length) {
           document.querySelectorAll('[id^=news-]').forEach(el => {
@@ -224,16 +272,50 @@ export async function renderNews(root) {
     }
 }
 
+function renderNewsItems(items, res) {
+  const label = document.getElementById('news-filter-label');
+  if (!items.length) {
+    document.querySelectorAll('[id^=news-]').forEach(el => {
+      if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Belum ada berita</h3><p>Coba ubah filter atau sumber.</p></div>';
+    });
+    return;
+  }
+  document.getElementById('news-count').textContent = `${items.length} ITEM INTEL`;
+
+  // Featured
+  const hero = items[0];
+  const side = items.slice(1, 3);
+  const stream = items.slice(3);
+  const { c1, c2 } = generateFallbackGradient(hero.title, hero.source);
+  const hasHeroImage = hero.image_url && hero.image_url.length > 4;
+  document.getElementById('news-featured-main').innerHTML = `
+    <a href="${hero.link}" ${String(hero.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-hero-card" style="${hasHeroImage ? `background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.25) 50%,rgba(0,0,0,0.65) 100%),url('${hero.image_url}') center/cover` : `background:linear-gradient(135deg,${c1},${c2})`}">
+      <span class="news-hero-badge">${sourceCategory(hero.source)}</span>
+      <strong class="news-hero-title-text">${hero.title || 'Intel Pasar'}</strong>
+      <div class="news-hero-meta"><span>${hero.source || 'Market'}</span><span>•</span><span>${relativeTime(hero.published_at)}</span></div>
+    </a>`;
+  
+  document.getElementById('news-featured-side').innerHTML = side.map(n => {
+    const { c1: sc1, c2: sc2 } = generateFallbackGradient(n.title, n.source);
+    return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-side-card" style="background:linear-gradient(135deg,${sc1}22,${sc2}15)">
+      <div class="news-side-source"><span>${sourceCategory(n.source)}</span><span>${relativeTime(n.published_at)}</span></div>
+      <strong class="news-side-title">${n.title || 'Intel Pasar'}</strong>
+    </a>`;
+  }).join('');
+
+  document.getElementById('news-stream').innerHTML = stream.map((n, i) => streamCardHtml(n, i)).join('');
+}
+
 function streamCardHtml(n, i) {
   const { c1, c2, initials } = generateFallbackGradient(n.title, n.source);
   const hasImage = n.image_url && n.image_url.length > 4;
   const thumbHtml = hasImage
     ? `<span class="news-stream-thumb"><img src="${n.image_url}" alt="" loading="lazy" onerror="this.style.display='none'" /><span class="news-stream-thumb" style="display:none;background:linear-gradient(135deg,${c1},${c2})">${initials}</span></span>`
     : `<span class="news-stream-thumb" style="background:linear-gradient(135deg,${c1},${c2})">${initials}</span>`;
-  return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="border-left-color:${c1}">
+    return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="border-left-color:${c1}">
     ${thumbHtml}
     <div class="news-stream-body">
-      <div class="news-stream-head"><span class="news-stream-source">${sourceCategory(n.source)}</span><span class="news-stream-time">${relativeTime(n.published_at)}</span></div>
+      <div class="news-stream-head"><span class="news-stream-source">${sourceCategory(n.source)}</span><span class="news-stream-time">${relativeTime(n.published_at)}</span>${n.sentiment ? `<span class="sentiment-badge ${n.sentiment}">${n.sentiment}</span>` : ''}</div>
       <strong class="news-stream-title">${n.title || 'Intel Pasar'}</strong>
       ${n.summary ? `<div class="news-stream-summary">${n.summary.replace(/<[^>]*>/g,'')}</div>` : ''}
     </div>

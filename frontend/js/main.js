@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260507M';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507M';
-import { initTheme } from './theme.js?v=20260507M';
+import { handleRoute } from './router.js?v=20260508B';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260508B';
+import { initTheme } from './theme.js?v=20260508B';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -124,7 +124,7 @@ function setupKeyboardShortcuts() {
     }
     if (_goBuffer === 'g') {
       _goBuffer = '';
-      const navMap = { d: 'dashboard', s: 'screener', p: 'portfolio', m: 'market', n: 'news' };
+      const navMap = { d: 'dashboard', s: 'screener', p: 'portfolio', m: 'market', n: 'news', t: 'paper_trades', b: 'backtest', c: 'compare' };
       const route = navMap[e.key.toLowerCase()];
       if (route) { window.location.hash = `#${route}`; e.preventDefault(); }
       return;
@@ -328,6 +328,80 @@ async function refreshTopbarMarket() {
        console.warn('Gagal memperbarui topbar', e);
    }
 }
+// ─── IDX Market Countdown ─────────────────────────
+function updateMarketCountdown() {
+  const el = document.getElementById('market-countdown');
+  const statusEl = document.getElementById('market-status-text');
+  const dotEl = document.querySelector('.status-dot');
+  if (!el || !statusEl) return;
+  
+  const now = new Date();
+  // WIB = UTC+7
+  const wibH = (now.getUTCHours() + 7) % 24;
+  const wibM = now.getUTCMinutes();
+  const wibS = now.getUTCSeconds();
+  const totalSec = wibH * 3600 + wibM * 60 + wibS;
+  
+  // Session boundaries in seconds from midnight WIB
+  const S = { pre: 8*3600+45*60, open1: 9*3600, close1: 12*3600, open2: 13*3600+30*60, close: 15*3600+30*60 };
+  const DAY = 86400;
+  
+  let nextSec, label, isLive, dotColor;
+  
+  if (totalSec >= S.pre && totalSec < S.open1) {
+    // Pre-open: countdown to session 1
+    nextSec = S.open1 - totalSec;
+    label = 'PRE-OPEN';
+    isLive = true;
+    dotColor = 'var(--accent-indigo)';
+  } else if (totalSec >= S.open1 && totalSec < S.close1) {
+    // Session 1
+    nextSec = S.close1 - totalSec;
+    label = 'SESI 1';
+    isLive = true;
+    dotColor = 'var(--primary-color)';
+  } else if (totalSec >= S.close1 && totalSec < S.open2) {
+    // Break
+    nextSec = S.open2 - totalSec;
+    label = 'ISTIRAHAT';
+    isLive = false;
+    dotColor = 'var(--warning-color, #f59e0b)';
+  } else if (totalSec >= S.open2 && totalSec < S.close) {
+    // Session 2
+    nextSec = S.close - totalSec;
+    label = 'SESI 2';
+    isLive = true;
+    dotColor = 'var(--primary-color)';
+  } else {
+    // Market closed: countdown to next pre-open
+    if (totalSec >= S.close) nextSec = DAY - totalSec + S.pre;
+    else nextSec = S.pre - totalSec;
+    label = 'TUTUP';
+    isLive = false;
+    dotColor = 'var(--text-dim)';
+  }
+  
+  // Format countdown: HH:MM:SS
+  const hh = String(Math.floor(nextSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((nextSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(Math.floor(nextSec % 60)).padStart(2, '0');
+  
+  el.textContent = `${hh}:${mm}:${ss}`;
+  el.classList.remove('hidden');
+  
+  // Sync status text with session
+  if (statusEl && isLive) statusEl.textContent = label;
+  if (dotEl) dotEl.style.background = dotColor;
+  if (dotEl && isLive) dotEl.classList.add('live'); else if (dotEl) dotEl.classList.remove('live');
+  
+  // Flash effect when countdown < 60 seconds
+  el.classList.toggle('countdown-urgent', nextSec < 60);
+}
+
+function startMarketCountdown() {
+  updateMarketCountdown();
+  setInterval(updateMarketCountdown, 1000);
+}
 // Running Ticker Setup — data dari API (tetap di website)
 async function setupRunningTicker() {
   const tickerContainer = document.getElementById('running-ticker');
@@ -369,16 +443,127 @@ function setupNetworkStatus() {
   const el = document.getElementById('network-status');
   if (!el) return;
   const show = (online) => {
-    el.textContent = online ? 'Koneksi tersambung kembali.' : 'Koneksi terputus — beberapa fitur mungkin tidak berfungsi.';
+    const cachedInfo = el.dataset.cachedDate ? ` — data cache ${el.dataset.cachedDate}` : '';
+    el.textContent = online 
+      ? '✅ Koneksi tersambung kembali.' 
+      : `⚠️ Koneksi terputus — menampilkan data cache${cachedInfo}. Beberapa fitur mungkin tidak berfungsi.`;
     el.className = `network-status ${online ? 'online' : ''}`;
     el.classList.remove('hidden');
-    if (online) setTimeout(() => el.classList.add('hidden'), 3000);
+    if (online) setTimeout(() => el.classList.add('hidden'), 4000);
+    // Also update topbar
+    const topbarStatus = document.querySelector('.topbar-market-status');
+    if (topbarStatus) {
+      const dot = topbarStatus.querySelector('.status-dot');
+      const text = topbarStatus.querySelector('#market-status-text');
+      if (dot) dot.style.background = online ? 'var(--up-color)' : 'var(--danger-text)';
+      if (text) text.textContent = online ? 'IDX TUTUP' : 'OFFLINE';
+    }
   };
   window.addEventListener('online', () => show(true));
   window.addEventListener('offline', () => show(false));
   // Initial check
   if (!navigator.onLine) show(false);
 }
+// ─── Touch Gestures ──────────────────────────────
+function setupTouchGestures() {
+  const root = document.getElementById('app-root');
+  if (!root) return;
+  
+  let startX = 0, startY = 0, distX = 0, distY = 0;
+  let swiping = false;
+  
+  root.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    distX = 0;
+    distY = 0;
+    swiping = true;
+  }, { passive: true });
+  
+  root.addEventListener('touchmove', (e) => {
+    if (!swiping) return;
+    const touch = e.touches[0];
+    distX = touch.clientX - startX;
+    distY = touch.clientY - startY;
+    
+    // Pull-to-refresh: show indicator when pulled down >50px from top
+    if (distY > 50 && window.scrollY < 10) {
+      const indicator = document.getElementById('ptr-indicator');
+      if (indicator) {
+        indicator.classList.add('ptr-visible');
+        indicator.style.opacity = Math.min(1, (distY - 50) / 100);
+      }
+    }
+  }, { passive: true });
+  
+  root.addEventListener('touchend', () => {
+    if (!swiping) return;
+    swiping = false;
+    
+    const absX = Math.abs(distX);
+    const absY = Math.abs(distY);
+    
+    // Pull-to-refresh
+    if (absY > 80 && absY > absX && window.scrollY < 10) {
+      const indicator = document.getElementById('ptr-indicator');
+      if (indicator) indicator.classList.remove('ptr-visible');
+      // Reload current view
+      handleRoute(window.location.hash);
+      showToast('Menyegarkan...', 'info');
+      return;
+    }
+    
+    // Horizontal swipe: navigate between bottom nav tabs (mobile)
+    if (absX > 60 && absX > absY * 1.5) {
+      const navOrder = ['dashboard', 'screener', 'portfolio', 'settings'];
+      const currentView = document.getElementById('app-root')?.dataset?.activeView || '';
+      const idx = navOrder.indexOf(currentView);
+      if (idx !== -1) {
+        const dir = distX < 0 ? 1 : -1; // swipe left = next, right = prev
+        const next = idx + dir;
+        if (next >= 0 && next < navOrder.length) {
+          window.location.hash = `#${navOrder[next]}`;
+        }
+      }
+    }
+  }, { passive: true });
+}
+
+// ─── First-Run Onboarding ────────────────
+function showOnboarding() {
+  const key = 'retailbijak.onboarded.v1';
+  if (localStorage.getItem(key)) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'onboarding-overlay';
+  overlay.innerHTML = `
+    <div class="onboarding-modal">
+      <div class="onboarding-header">
+        <div class="onboarding-logo">retailbijak</div>
+        <span class="badge badge-up">v4</span>
+      </div>
+      <h2 class="onboarding-title">Selamat Datang di Pasar IDX</h2>
+      <p class="onboarding-sub">Pantau, analisis, dan trading saham Indonesia secara profesional.</p>
+      <div class="onboarding-steps">
+        <div class="onboarding-step"><span class="onboarding-icon">📊</span><div><strong>Dashboard</strong><span>IHSG, breadth, movers & AI Picks dalam satu layar</span></div></div>
+        <div class="onboarding-step"><span class="onboarding-icon">🔍</span><div><strong>Screener</strong><span>Scan sinyal institusional live dengan filter real-time</span></div></div>
+        <div class="onboarding-step"><span class="onboarding-icon">💼</span><div><strong>Portofolio</strong><span>Catat transaksi, pantau P&L, dan watchlist saham</span></div></div>
+        <div class="onboarding-step"><span class="onboarding-icon">🤖</span><div><strong>AI Analisis</strong><span>Analisis teknikal, fundamental, dan rekomendasi saham</span></div></div>
+      </div>
+      <button id="onboarding-start" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px">Mulai Sekarang</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 300);
+    localStorage.setItem(key, '1');
+  };
+
+  document.getElementById('onboarding-start').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
   try {
@@ -401,6 +586,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       setupNetworkStatus();
       setupKeyboardShortcuts();
+      startMarketCountdown();
+      setupTouchGestures();
+      showOnboarding();
       // Register PWA service worker (1.7.6)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -1,19 +1,38 @@
-import { clearViewTimers } from './main.js?v=20260507M';
+import { clearViewTimers } from './main.js?v=20260508B';
+import { setPageMeta } from './api.js?v=20260508B';
+
+// Route meta descriptions
+const ROUTE_META = {
+  dashboard: { title: 'RetailBijak — Dashboard Pasar IDX', desc: 'Pantau IHSG, breadth pasar, top movers, dan AI Picks dalam satu layar. Dashboard real-time untuk analisis saham IDX.' },
+  screener: { title: 'RetailBijak — Pemindai Saham IDX', desc: 'Scan saham IDX dengan filter teknikal real-time. Temukan peluang trading berdasarkan RSI, MACD, volume, dan pola harga.' },
+  market: { title: 'RetailBijak — Ikhtisar Pasar IDX', desc: 'Lihat pergerakan IHSG, sektoral, top movers, breadth, dan data pasar saham Indonesia secara lengkap.' },
+  portfolio: { title: 'RetailBijak — Portofolio & Watchlist', desc: 'Kelola portofolio saham IDX, catat transaksi, pantau P&L, dan tracking watchlist saham pilihan Anda.' },
+  watchlist: { title: 'RetailBijak — Watchlist', desc: 'Daftar pantauan saham IDX. Pantau harga dan sinyal saham favorit dalam satu tempat.' },
+  news: { title: 'RetailBijak — Berita Pasar', desc: 'Berita pasar saham Indonesia dan IDX terbaru. Update berita emiten, sektor, dan analisa pasar.' },
+  settings: { title: 'RetailBijak — Pengaturan', desc: 'Atur preferensi tampilan, API key OpenRouter, dan konfigurasi platform RetailBijak.' },
+  help: { title: 'RetailBijak — Bantuan', desc: 'Panduan penggunaan RetailBijak: cara menggunakan screener, portfolio, AI analysis, dan fitur lainnya.' },
+  ai_picks: { title: 'RetailBijak — AI Picks', desc: 'Rekomendasi saham IDX berbasis AI. Temukan kandidat saham swing trading dengan analisis otomatis.' },
+  compare: { title: 'RetailBijak — Perbandingan Saham', desc: 'Bandingkan kinerja saham IDX secara side-by-side. Lihat perbandingan teknikal dan fundamental.' },
+  backtest: { title: 'RetailBijak — Backtesting', desc: 'Uji strategi trading saham IDX dengan data historis. Backtest sinyal teknikal untuk optimasi entry dan exit.' },
+  paper_trades: { title: 'RetailBijak — Paper Trading', desc: 'Simulasi trading saham IDX tanpa risiko. Latih strategi dengan modal virtual dan pantau performa.' },
+  sector: { title: 'RetailBijak — Sektor Saham', desc: 'Lihat daftar saham IDX berdasarkan sektor. Analisis performa sektoral dan daftar emiten.' },
+};
 
 // Dynamic view registry — lazy import per route (1.7.1)
 const viewModules = {
-  dashboard: () => import('./views/dashboard.js?v=20260507M'),
-  stock_detail: () => import('./views/stock_detail.js?v=20260507M'),
-  screener: () => import('./views/screener.js?v=20260507M'),
-  portfolio: () => import('./views/portfolio.js?v=20260507M'),
-  market: () => import('./views/market.js?v=20260507M'),
+  dashboard: () => import('./views/dashboard.js?v=20260508B'),
+  stock_detail: () => import('./views/stock_detail.js?v=20260508B'),
+  screener: () => import('./views/screener.js?v=20260508B'),
+  portfolio: () => import('./views/portfolio.js?v=20260508B'),
+  market: () => import('./views/market.js?v=20260508B'),
   compare: () => import('./views/compare.js?v=20260508'),
   backtest: () => import('./views/backtest.js?v=20260510'),
   paper_trades: () => import('./views/paper_trades.js?v=20260510'),
-  news: () => import('./views/news.js?v=20260507M'),
-  settings: () => import('./views/settings.js?v=20260507M'),
-  help: () => import('./views/help.js?v=20260507M'),
-  ai_picks: () => import('./views/ai_picks.js?v=20260507M'),
+  news: () => import('./views/news.js?v=20260508B'),
+  settings: () => import('./views/settings.js?v=20260508B'),
+  help: () => import('./views/help.js?v=20260508B'),
+  ai_picks: () => import('./views/ai_picks.js?v=20260508B'),
+  sector: () => import('./views/sector.js?v=20260510'),
 };
 const viewCache = {};
 
@@ -37,6 +56,19 @@ export function handleRoute(hash) {
     const [view, ...rest] = cleanPath.split('/');
     const baseRoute = view || 'dashboard';
     const currentToken = ++routeToken;
+
+    // Set page meta tags (SEO description, OG, canonical)
+    const stockTicker = baseRoute === 'stock' ? (rest[0] || '').toUpperCase() : null;
+    if (stockTicker) {
+      setPageMeta(
+        `RetailBijak — ${stockTicker}`,
+        `Analisis saham ${stockTicker} IDX: harga real-time, technical analysis RSI/MACD, data fundamental, broker activity, dan sinyal trading terbaru.`,
+        `/stock/${stockTicker}`
+      );
+    } else {
+      const routeMeta = ROUTE_META[baseRoute] || ROUTE_META.dashboard;
+      setPageMeta(routeMeta.title, routeMeta.desc, cleanPath);
+    }
 
     // Update active state in desktop and mobile nav
     document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
@@ -82,6 +114,11 @@ export function handleRoute(hash) {
                 const mod = viewCache.paper_trades || await viewModules.paper_trades();
                 viewCache.paper_trades = mod;
                 return mod.renderPaperTrades(root);
+              }
+              if (baseRoute === 'sector' && rest[0]) {
+                const mod = viewCache.sector || await viewModules.sector();
+                viewCache.sector = mod;
+                return mod.renderSector(root, rest[0]);
               }
               if (baseRoute === 'stock' && rest[0]) {
                 const mod = viewCache.stock_detail || await viewModules.stock_detail();

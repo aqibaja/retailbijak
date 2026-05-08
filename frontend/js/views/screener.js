@@ -1,5 +1,5 @@
-import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
-import { observeElements } from '../main.js?v=20260507M';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260508B';
+import { observeElements } from '../main.js?v=20260508B';
 
 const renderEmptyState = ({
   title = 'Belum ada hasil scan',
@@ -55,6 +55,10 @@ const renderRow = (r) => `
 let currentResults = [];
 let scanEventSource = null;
 let scanErrorHandled = false;
+let autoRefreshTimer = null;
+let autoRefreshEnabled = false;
+let scanSoundEnabled = true;
+
 
 export async function renderScreener(root) {
     // Cleanup any stale EventSource from previous screener view
@@ -89,6 +93,8 @@ export async function renderScreener(root) {
                 <span class="badge" id="screener-count">BELUM SCAN</span>
               </div>
               <div id="screener-toolbar" class="flex gap-2 screener-toolbar hidden">
+                <button id="btn-sound" type="button" class="btn btn-sm scanner-control-btn btn-active" title="Bunyikan alert saat sinyal baru">🔊</button>
+                <button id="btn-auto-refresh" type="button" class="btn btn-sm scanner-control-btn" title="Aktifkan auto-refresh tiap 30 detik">⏱ Auto</button>
                 <button id="btn-export-csv" type="button" class="btn btn-sm scanner-control-btn" title="Export CSV">CSV</button>
                 <button id="btn-save-filter" type="button" class="btn btn-sm scanner-control-btn" title="Simpan Filter">Simpan</button>
                 <button id="btn-load-filter" type="button" class="btn btn-sm scanner-control-btn" title="Muat Filter">Muat</button>
@@ -122,6 +128,8 @@ export async function renderScreener(root) {
     root.querySelector('#btn-export-csv')?.addEventListener('click', exportCSV);
     root.querySelector('#btn-save-filter')?.addEventListener('click', saveFilterDialog);
     root.querySelector('#btn-load-filter')?.addEventListener('click', loadFilterDialog);
+    root.querySelector('#btn-auto-refresh')?.addEventListener('click', toggleAutoRefresh);
+    root.querySelector('#btn-sound')?.addEventListener('click', toggleScanSound);
 
     // TV Screener Widget — load after DOM ready
     setTimeout(() => {
@@ -178,6 +186,11 @@ function renderList(results) {
 }
 
 function runScreener() {
+    // Clear any pending auto-refresh when user manually starts a scan
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
     const btn = document.getElementById('btn-run-screener');
     const contentArea = document.getElementById('screener-content');
     const progBox = document.getElementById('screener-progress');
@@ -219,6 +232,7 @@ function runScreener() {
             // Dedup by ticker
             if (!currentResults.some(r => r.ticker === data.data.ticker)) {
                 currentResults.push(data.data);
+                if (scanSoundEnabled) playScanAlert();
             }
             countBadge.textContent = `${currentResults.length} TERDETEKSI`;
             renderList(currentResults);
@@ -231,6 +245,8 @@ function runScreener() {
             showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal.`, 'success');
             scanEventSource.close();
             scanEventSource = null;
+            // Auto-refresh scheduling
+            scheduleAutoRefresh();
         }
     };
     scanEventSource.onerror = () => {
@@ -253,6 +269,64 @@ function runScreener() {
             showToast('Pemindaian gagal.', 'error');
         }
     };
+}
+
+// ─── Scanner Sound Alert ────────────────
+function playScanAlert() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(880, ctx.currentTime);
+        o.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
+        g.gain.setValueAtTime(0.15, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        o.connect(g).connect(ctx.destination);
+        o.start(ctx.currentTime);
+        o.stop(ctx.currentTime + 0.2);
+    } catch (e) { /* Audio not available */ }
+}
+
+function toggleScanSound() {
+    const btn = document.getElementById('btn-sound');
+    scanSoundEnabled = !scanSoundEnabled;
+    if (btn) {
+        btn.classList.toggle('btn-active', scanSoundEnabled);
+        btn.title = scanSoundEnabled ? 'Bunyikan alert saat sinyal baru' : 'Alert suara nonaktif';
+    }
+    showToast(scanSoundEnabled ? 'Alert suara aktif' : 'Alert suara nonaktif', 'info');
+}
+
+// ─── Auto-Refresh ────────────────────────
+function scheduleAutoRefresh() {
+    if (!autoRefreshEnabled) return;
+    if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
+    autoRefreshTimer = setTimeout(() => {
+        autoRefreshTimer = null;
+        if (autoRefreshEnabled && document.getElementById('screener-content')) {
+            runScreener();
+        }
+    }, 30000);
+}
+
+function toggleAutoRefresh() {
+    const btn = document.getElementById('btn-auto-refresh');
+    autoRefreshEnabled = !autoRefreshEnabled;
+    if (btn) {
+        btn.classList.toggle('btn-active', autoRefreshEnabled);
+        btn.title = autoRefreshEnabled ? 'Nonaktifkan auto-refresh' : 'Aktifkan auto-refresh tiap 30 detik';
+    }
+    if (autoRefreshEnabled) {
+        scheduleAutoRefresh();
+        showToast('Auto-refresh diaktifkan (30 detik)', 'success');
+    } else {
+        if (autoRefreshTimer) {
+            clearTimeout(autoRefreshTimer);
+            autoRefreshTimer = null;
+        }
+        showToast('Auto-refresh dimatikan', 'info');
+    }
 }
 
 // ─── Export CSV ────────────────────────

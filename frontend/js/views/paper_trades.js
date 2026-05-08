@@ -1,6 +1,6 @@
 import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf, money } from '../utils/format.js?v=20260507M';
-import { observeElements } from '../main.js?v=20260507M';
+import { nf, pf, money } from '../utils/format.js?v=20260508B';
+import { observeElements } from '../main.js?v=20260508B';
 
 export async function renderPaperTrades(root) {
   document.title = 'RetailBijak — Paper Trading';

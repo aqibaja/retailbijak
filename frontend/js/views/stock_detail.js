@@ -1,7 +1,7 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
-import { observeElements, flashUpdate } from '../main.js?v=20260507M';
-import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260507M';
-import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260507M';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260508B';
+import { observeElements, flashUpdate } from '../main.js?v=20260508B';
+import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260508B';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260508B';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -69,12 +69,19 @@ export async function renderStockDetail(root, ticker) {
             <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">Memuat chart...</p></div>
           </div>
           <div class="chart-toolbar" id="chart-toolbar">
+            <span class="timeframe-group">
+              <label class="indicator-toggle active" data-tf="1D"><span>1D</span></label>
+              <label class="indicator-toggle" data-tf="1H"><span>1H</span></label>
+              <label class="indicator-toggle" data-tf="4H"><span>4H</span></label>
+            </span>
+            <span class="indicator-group">
             <label class="indicator-toggle active" data-indicator="sma"><span>SMA</span></label>
             <label class="indicator-toggle" data-indicator="boll"><span>Boll</span></label>
             <label class="indicator-toggle" data-indicator="sr"><span>S/R</span></label>
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
             <label class="indicator-toggle" data-indicator="st"><span>ST</span></label>
             <label class="indicator-toggle" data-indicator="vwap"><span>VWAP</span></label>
+            </span>
           </div>
           <div class="chart-top-spacing"></div>
           <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
@@ -269,12 +276,14 @@ export async function renderStockDetail(root, ticker) {
     });
   });
 
-  const [detail, fund, tech, chart, analysis, news, announcements] = await Promise.all([
-    fetchStockDetail(symbol).catch(()=>null), fetchFundamental(symbol).catch(()=>null), fetchTechnical(symbol).catch(()=>null), fetchChartData(symbol, 160).catch(()=>null), fetchAnalysis(symbol, { llm: true }).catch(()=>null),
-    fetchNews(6, symbol).catch(()=>null), apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
+  // Phase 1: Load critical data FIRST (price + chart) — show immediately
+  const [detail, chart] = await Promise.all([
+    fetchStockDetail(symbol).catch(()=>null),
+    fetchChartData(symbol, 160).catch(()=>null),
   ]);
+  const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   // Partial failure check: jika semua critical endpoint gagal, tampilkan warning
-  const allFailed = !detail && !fund && !tech;
+  const allFailed = !detail && candles.length === 0;
   if (allFailed) {
     const badge = document.getElementById('live-badge');
     if (badge) { badge.textContent = 'OFFLINE'; badge.classList.add('badge-warn'); }
@@ -287,17 +296,43 @@ export async function renderStockDetail(root, ticker) {
           <span>Data <strong>${symbol}</strong> tidak bisa dimuat dari server. Menampilkan data offline — harga dan sinyal mungkin tidak akurat.</span>
         </div>`);
     }
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
-  const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
-  hydrateHeader(symbol, detail, fund, candles);
+  // Hydrate header with price data immediately (no waiting for fundamental/technical)
+  hydrateHeader(symbol, detail, null, candles);
+
+  // Phase 2: Load remaining data in background (fundamental, technical, analysis, news)
+  const [fund, tech, analysis, news, announcements] = await Promise.all([
+    fetchFundamental(symbol).catch(()=>null),
+    fetchTechnical(symbol).catch(()=>null),
+    fetchAnalysis(symbol, { llm: true }).catch(()=>null),
+    fetchNews(6, symbol).catch(()=>null),
+    apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
+  ]);
   const technical = tech?.technical || {};
   // TradingView chart (or fallback to LightweightCharts)
   try { renderStockChart(symbol, candles, technical); } catch (e) { console.warn('chart error', e); renderFallbackSvgChart(candles.slice(-30)); }
   // Indicator toggle (only relevant for LightweightCharts fallback)
   document.querySelectorAll('.indicator-toggle').forEach(el => {
+    if (el.dataset.tf) return; // timeframe handled separately
     el.addEventListener('click', () => {
       el.classList.toggle('active');
       renderStockChart(symbol, candles, technical);
+    });
+  });
+  // Timeframe toggle
+  document.querySelectorAll('[data-tf]').forEach(el => {
+    el.addEventListener('click', () => {
+      const tf = el.dataset.tf;
+      if (tf === '1H' || tf === '4H') {
+        showToast('Data intraday akan tersedia setelah integrasi data real-time IDX', 'info');
+      }
+      document.querySelectorAll('[data-tf]').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      if (tf !== currentTimeframe) {
+        currentTimeframe = tf;
+        loadStockChart(symbol);
+      }
     });
   });
   const analysisData = analysis?.data || analysis?.analysis || {};
@@ -395,7 +430,24 @@ export async function renderStockDetail(root, ticker) {
 
 }
 
+let currentTimeframe = '1D';
+
 function normalizeCandles(rows){ return rows.map(r => ({ date: r.date || r.time, open:Number(r.open ?? r.close), high:Number(r.high ?? r.close), low:Number(r.low ?? r.close), close:Number(r.close), volume:Number(r.volume || 0), st_value: r.st_value, st_trend: r.st_trend, vwap: r.vwap })).filter(r => r.date && r.close); }
+
+async function loadStockChart(symbol) {
+  const container = document.getElementById('tvchart');
+  if (!container) return;
+  container.innerHTML = '<div class="skeleton skeleton-chart stock-chart-skeleton"></div>';
+  document.getElementById('chart-subtitle').textContent = `Memuat data ${currentTimeframe}...`;
+  try {
+    const chart = await fetchChartData(symbol, currentTimeframe === '1D' ? 160 : 400, currentTimeframe).catch(() => null);
+    const candles = normalizeCandles(chart?.data?.length ? chart.data : []);
+    if (!candles.length) throw new Error('No data');
+    renderStockChart(symbol, candles, {});
+  } catch (e) {
+    container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat chart</h3><p>Data tidak tersedia untuk timeframe ini.</p></div>';
+  }
+}
 function hydrateHeader(symbol, detail, fund, candles){
   const last = candles[candles.length-1], prev = candles[candles.length-2] || last;
   const change = last.close - prev.close, pct = prev.close ? change/prev.close*100 : 0;
@@ -405,10 +457,35 @@ function hydrateHeader(symbol, detail, fund, candles){
   const isUp = change >= 0;
   chEl.innerHTML = `${isUp ? '+' : ''}${nf(change,0)} <small>(${pf(pct)})</small>`;
   chEl.className = `stock-hero-change ${isUp ? 'up' : 'down'}`;
-  // Last update timestamp
-  const now = new Date(); const wibTime = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false });
-  const ts = document.getElementById('live-badge');
-  if (ts) { ts.textContent = `WIB ${wibTime}`; ts.className = 'badge'; }
+  // Data staleness: compare latest candle date with today
+  const lastDate = last.date ? new Date(last.date + (typeof last.date === 'string' && last.date.length === 10 ? 'T00:00:00' : '')) : null;
+  const today = new Date();
+  const jktOpts = { timeZone: 'Asia/Jakarta' };
+  const todayStr = today.toLocaleDateString('en-CA', jktOpts); // YYYY-MM-DD
+  const lastStr = lastDate ? lastDate.toLocaleDateString('en-CA', jktOpts) : null;
+  let stalenessLabel = '';
+  let stalenessClass = 'badge';
+  if (lastStr) {
+    const diffDays = Math.round((new Date(todayStr) - new Date(lastStr)) / 86400000);
+    if (diffDays <= 1) {
+      stalenessLabel = 'Hari ini';
+      stalenessClass = 'badge badge-up';
+    } else if (diffDays === 1) {
+      stalenessLabel = 'Kemarin';
+      stalenessClass = 'badge badge-neutral';
+    } else if (diffDays <= 5) {
+      stalenessLabel = `${diffDays} hari lalu`;
+      stalenessClass = 'badge badge-warn';
+    } else {
+      stalenessLabel = `${diffDays} hari lalu`;
+      stalenessClass = 'badge badge-down';
+    }
+  }
+  // Update badges row: keep IDX badge, remove old live badge, add staleness
+  const badgesEl = document.querySelector('.stock-hero-badges');
+  if (badgesEl) {
+    badgesEl.innerHTML = `<span class="badge">IDX</span><span class="${stalenessClass}">${stalenessLabel || 'Memuat...'}</span>`;
+  }
 }
 /* ─── Theme-aware chart color helpers ─── */
 function getThemeColors() {
@@ -450,11 +527,12 @@ function renderStockChart(symbol, candles, technical){
     try {
       container.innerHTML = '';
       const tvSymbol = `IDX:${(symbol || '').replace('.JK','')}`;
+      const tfMap = { '1D': 'D', '1H': '60', '4H': '240' };
       new TradingView.widget({
         container_id: 'tvchart',
         autosize: true,
         symbol: tvSymbol,
-        interval: 'D',
+        interval: tfMap[currentTimeframe] || 'D',
         timezone: 'Asia/Jakarta',
         theme: isLight ? 'Light' : 'dark',
         style: '1',

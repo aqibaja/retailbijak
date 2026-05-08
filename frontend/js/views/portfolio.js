@@ -1,6 +1,6 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260507M';
-import { money, nf, pf } from '../utils/format.js?v=20260507M';
-import { observeElements } from '../main.js?v=20260507M';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260508B';
+import { money, nf, pf } from '../utils/format.js?v=20260508B';
+import { observeElements } from '../main.js?v=20260508B';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -122,6 +122,7 @@ export async function renderPortfolio(root, activeTab) {
               <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">Portofolio</a>
               <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
             </div>
+            ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
           </div>
         </div>
         <div id="tab-content" class="col-span-12 panel flex-col portfolio-card">
@@ -253,6 +254,127 @@ async function renderPortfolioTab(el) {
             }
         });
     });
+
+    // CSV Export handler
+    const csvBtn = document.getElementById('export-csv-btn');
+    if (csvBtn) {
+        csvBtn.addEventListener('click', () => {
+            window.location.href = '/api/portfolio/export-csv';
+        });
+    }
+
+    // Load transaction history
+    loadTransactionHistory(el);
+}
+
+async function loadTransactionHistory(el) {
+  const container = document.getElementById('transaction-section') || (() => {
+    const section = document.createElement('div');
+    section.id = 'transaction-section';
+    section.className = 'p-4';
+    el.appendChild(section);
+    return section;
+  })();
+
+  try {
+    const [txnRes, pnlRes] = await Promise.all([
+      fetch('/api/portfolio/transactions').then(r => r.json()).catch(() => null),
+      fetch('/api/portfolio/transactions/pnl').then(r => r.json()).catch(() => null),
+    ]);
+    const txns = Array.isArray(txnRes?.data) ? txnRes.data : [];
+    
+    const pnlHtml = pnlRes ? `
+      <div class="flex gap-4 mb-3 flex-wrap">
+        <div class="text-xs"><span class="text-dim">Realized P&L:</span> <strong class="${pnlRes.realized_pnl >= 0 ? 'text-up' : 'text-down'}">${pnlRes.realized_pnl >= 0 ? '+' : ''}${money(pnlRes.realized_pnl)}</strong></div>
+        <div class="text-xs"><span class="text-dim">Unrealized P&L:</span> <strong class="${pnlRes.unrealized_pnl >= 0 ? 'text-up' : 'text-down'}">${pnlRes.unrealized_pnl >= 0 ? '+' : ''}${money(pnlRes.unrealized_pnl)}</strong></div>
+        <div class="text-xs"><span class="text-dim">Total P&L:</span> <strong class="${pnlRes.total_pnl >= 0 ? 'text-up' : 'text-down'}">${pnlRes.total_pnl >= 0 ? '+' : ''}${money(pnlRes.total_pnl)}</strong></div>
+      </div>` : '';
+
+    container.innerHTML = `
+      <div class="flex justify-between items-center mt-4 pt-4 border-top-subtle">
+        <h4 class="text-xs uppercase text-dim strong">Riwayat Transaksi <span class="badge ml-2">${txns.length} ENTRI</span></h4>
+        <button id="add-transaction-btn" type="button" class="btn btn-primary btn-sm"><i data-lucide="plus" class="lucide-sm"></i> Transaksi</button>
+      </div>
+      ${pnlHtml}
+      ${txns.length
+        ? `<div class="table-wrapper mt-2">
+            <table class="table table-sm">
+              <thead><tr><th>Ticker</th><th>Jenis</th><th>Lot</th><th>Harga</th><th>Fee</th><th>Total</th><th>Tanggal</th><th class="text-right">Aksi</th></tr></thead>
+              <tbody>${txns.map(t => `
+                <tr>
+                  <td><span class="mono strong">${t.ticker}</span></td>
+                  <td><span class="badge ${t.transaction_type === 'buy' ? 'badge-up' : 'badge-down'}">${t.transaction_type.toUpperCase()}</span></td>
+                  <td class="mono">${t.lots}</td>
+                  <td class="mono">${money(t.price)}</td>
+                  <td class="mono text-dim">${money(t.fee)}</td>
+                  <td class="mono">${money(t.total)}</td>
+                  <td class="text-xs text-dim">${(t.transaction_date || '').slice(0,10)}</td>
+                  <td class="text-right"><button class="btn-icon delete-txn" data-txn-id="${t.id}"><i data-lucide="trash-2" style="width:14px"></i></button></td>
+                </tr>`).join('')}</tbody>
+            </table>
+          </div>`
+        : '<div class="text-xs text-dim mt-2">Belum ada transaksi. Klik "Transaksi" untuk mencatat beli/jual.</div>'
+      }`;
+
+    // Add transaction button
+    const addBtn = document.getElementById('add-transaction-btn');
+    if (addBtn) addBtn.addEventListener('click', () => showTransactionForm(el));
+
+    // Delete transaction
+    container.querySelectorAll('.delete-txn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.txnId;
+        if (!id || !confirm('Hapus transaksi ini?')) return;
+        try {
+          await fetch(`/api/portfolio/transactions/${id}`, { method: 'DELETE' });
+          showToast('Transaksi dihapus', 'success');
+          loadTransactionHistory(el);
+        } catch (e) { showToast('Gagal menghapus', 'error'); }
+      });
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (e) { console.warn('Transaction history error:', e); }
+}
+
+async function showTransactionForm(el) {
+  const { showModal } = await import('./portfolio.js?v=20260508B');
+  showModal({
+    title: 'Catat Transaksi',
+    fields: [
+      { label: 'Kode Saham', placeholder: 'BBCA' },
+      { label: 'Jenis', type: 'select', options: [
+        { value: 'buy', label: 'Beli' },
+        { value: 'sell', label: 'Jual' },
+      ]},
+      { label: 'Harga (Rp)', type: 'number', value: '1000', step: '50' },
+      { label: 'Jumlah Lot', type: 'number', value: '1', step: '1', min: '1' },
+      { label: 'Biaya/Broker (Rp)', type: 'number', value: '0', step: '1000' },
+      { label: 'Catatan (opsional)', placeholder: '' },
+    ],
+    confirmText: 'Simpan',
+    onConfirm: async ([ticker, type, price, lots, fee, notes]) => {
+      if (!ticker || !ticker.trim()) { showToast('Kode saham wajib diisi', 'error'); return false; }
+      if (!price || isNaN(price) || price <= 0) { showToast('Harga tidak valid', 'error'); return false; }
+      try {
+        const res = await fetch('/api/portfolio/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticker: ticker.toUpperCase().trim(),
+            transaction_type: type || 'buy',
+            price: parseFloat(price),
+            lots: parseInt(lots) || 1,
+            fee: parseFloat(fee) || 0,
+            notes: notes || '',
+          }),
+        }).then(r => r.json());
+        if (res?.ok) { showToast(res.message, 'success'); loadTransactionHistory(el); }
+        else showToast('Gagal', 'error');
+      } catch (e) { showToast('Gagal menyimpan', 'error'); }
+      return true;
+    },
+  });
 }
 
 // ─── Watchlist ─────────────────────────────

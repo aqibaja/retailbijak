@@ -185,17 +185,38 @@ class IDXApiClient:
             return {}
         return resp.data
 
-    def get_stock_summary_multi_day(self, start_date: date, end_date: date, max_days: int = 35) -> dict[str, list[dict[str, Any]]]:
-        """Fetch stock summaries for a date range. Returns {date_str: [rows]}."""
+    def get_stock_summary_multi_day(self, start_date: date, end_date: date, max_days: int = 35, delay: float = 0.3, progress_cb=None) -> dict[str, list[dict[str, Any]]]:
+        """Fetch stock summaries for a date range. Returns {date_str: [rows]}.
+
+        Args:
+            start_date: Earliest date to fetch.
+            end_date: Latest date to fetch.
+            max_days: Maximum number of trading days to return.
+            delay: Seconds to wait between API calls (rate limiting).
+            progress_cb: Optional callback(days_fetched, total_days_attempted).
+        """
         from datetime import timedelta
+        import time as _time
         result: dict[str, list[dict[str, Any]]] = {}
         current = end_date
         count = 0
-        while current >= start_date and count < max_days:
+        attempts = 0
+        max_attempts = max_days * 3  # allow scanning up to 3× calendar days for 1× trading days
+        while current >= start_date and count < max_days and attempts < max_attempts:
+            # Skip weekends quickly without API call
+            if current.weekday() >= 5:
+                current -= timedelta(days=1)
+                attempts += 1
+                continue
             rows = self.get_stock_summary(current)
+            attempts += 1
             if rows:
                 result[current.isoformat()] = rows
                 count += 1
+            if progress_cb:
+                progress_cb(count, attempts)
+            if delay > 0 and count < max_days:
+                _time.sleep(delay)
             current -= timedelta(days=1)
         return result
 

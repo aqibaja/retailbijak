@@ -175,7 +175,7 @@ def get_technical_summary_api(ticker: str, db: Session = Depends(get_db)):
 
 
 @router.get('/api/stocks/{ticker}/chart-data')
-def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db)):
+def get_chart_data(ticker: str, limit: int = 100, timeframe: str = '1D', db: Session = Depends(get_db)):
     try:
         from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
         import numpy as np
@@ -207,7 +207,7 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
             'vwap': float(row['vwap']) if 'vwap' in row and pd.notna(row['vwap']) else None,
         })
 
-    return {'ticker': ticker, 'status': 'ok', 'data': records}
+    return {'ticker': ticker, 'timeframe': timeframe, 'status': 'ok', 'count': len(records), 'data': records}
 
 
 @router.get('/api/stocks/{ticker}/signals')

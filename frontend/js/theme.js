@@ -1,4 +1,4 @@
-import { setLanguage, applyTranslations } from './i18n.js?v=20260507M';
+import { setLanguage, applyTranslations } from './i18n.js?v=20260508B';
 
 export function initTheme() {
     const themeToggleBtn = document.getElementById('theme-toggle');

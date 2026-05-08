@@ -40,6 +40,20 @@ def _extract_tickers(text: str) -> list[str]:
     # Without cache, return all uppercase 2-4 letter matches (may include false positives)
     return list(dict.fromkeys(matches[:5]))  # Max 5 tickers per article
 
+_SENTIMENT_POS = {"naik","menguat","untung","dividen","tumbuh","profit","growth","gain","positif","rekomendasi","beli","rally","cuan","subur","laba","surplus","bonus","melesat","melonjak","rekor","ath","tertinggi","optimis","optimistis","berkah","stabil","meningkat","peningkatan"}
+_SENTIMENT_NEG = {"turun","melemah","rugi","gagal","krisis","loss","negatif","jual","bearish","anjlok","merosot","terpuruk","bangkrut","pailit","likuidasi","suspen","suspensi","phk","pemutusan","defisit","utang","korupsi","skandal","pecat","gagal bayar","peringatan","waspada","ancam","tunda","moratorium","menurun","penurunan"}
+
+def _analyze_sentiment(title: str, summary: str = "") -> str:
+    """Keyword-based sentiment analysis for Indonesian financial news."""
+    text = f"{title} {summary}".lower()
+    pos_score = sum(1 for w in _SENTIMENT_POS if w in text)
+    neg_score = sum(1 for w in _SENTIMENT_NEG if w in text)
+    if pos_score > neg_score:
+        return "positive"
+    elif neg_score > pos_score:
+        return "negative"
+    return "neutral"
+
 def _extract_image_url(entry) -> str | None:
     """Extract image URL from RSS entry via media:content, enclosure, or summary HTML."""
     # 1. media:content (media RSS)
@@ -123,7 +137,8 @@ def update_news():
                         "source": source_name,
                         "summary": summary,
                         "image_url": _extract_image_url(entry),
-                        "tickers": json.dumps(tickers) if tickers else None
+                        "tickers": json.dumps(tickers) if tickers else None,
+                        "sentiment": _analyze_sentiment(entry.title, summary),
                     }
                     all_news.append(news_item)
                 except Exception as e:
