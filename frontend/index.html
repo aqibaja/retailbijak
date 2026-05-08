@@ -36,7 +36,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.14.0/dist/umd/lucide.min.js" defer crossorigin="anonymous"></script>
   <title>RetailBijak — IDX Stock Intelligence</title>
-  <script type="module" src="js/main.js?v=20260508B"></script>
+  <script type="module" src="js/main.js?v=20260510A"></script>
 </head>
 <body>
 <a href="#app-root" class="skip-link" data-i18n="skip_link">Langsung ke konten</a>
@@ -89,5 +89,17 @@
 <div class="network-status hidden" id="network-status" role="status" aria-live="polite"></div>
 <div class="ptr-indicator" id="ptr-indicator"><div class="ptr-spinner"></div><span>Segarkan</span></div>
 <div id="toast-container" class="toast-container"></div>
+
+<!-- Global Search Overlay (Cmd+K) -->
+<div id="search-overlay" class="search-overlay" role="dialog" aria-label="Pencarian global">
+  <div class="search-modal" onclick="event.stopPropagation()">
+    <div class="search-input-wrap">
+      <i data-lucide="search" class="search-input-icon" style="width:18px;height:18px"></i>
+      <input type="text" id="global-search-input" class="search-input" placeholder="Cari kode saham, nama emiten, atau sektor..." autocomplete="off" spellcheck="false" />
+      <button class="btn btn-icon search-close-btn" id="search-close-btn" type="button" aria-label="Tutup pencarian"><i data-lucide="x" style="width:16px"></i></button>
+    </div>
+    <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div>
+  </div>
+</div>
 </body>
 </html>

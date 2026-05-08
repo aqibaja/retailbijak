@@ -186,15 +186,20 @@ function setupSearchOverlay() {
        }
        const groups = { ticker: [], company: [], sector: [] };
        items.forEach(item => (groups[item.bucket || 'company'] || groups.company).push(item));
-      const renderRow = (item, idx) => `
-        <a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center p-3 search-suggestion-item${idx === activeIndex ? ' search-suggestion-active' : ''}">
+      const renderRow = (item, idx) => {
+        const isUp = item.change >= 0;
+        const priceHtml = item.price != null
+          ? `<span class="search-badge-group"><span class="search-price">${Math.round(item.price).toLocaleString('id-ID')}</span><span class="search-change ${isUp ? 'text-up' : 'text-down'}">${item.change_pct > 0 ? '+' : ''}${(item.change_pct || 0).toFixed(2)}%</span></span>`
+          : '';
+        return `<a href="#stock/${item.ticker}" data-idx="${idx}" class="flex justify-between items-center px-3 py-2 search-suggestion-item${idx === activeIndex ? ' search-suggestion-active' : ''}">
           <div class="flex items-center gap-3 search-suggestion-row">
             <span class="badge sugg-badge">${item.bucket === 'sector' ? 'SC' : item.bucket === 'company' ? 'CO' : 'EQ'}</span>
             <span class="mono strong text-main search-suggestion-ticker">${highlight(item.ticker, query)}</span>
-            <span class="text-sm text-muted search-suggestion-text">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
+            <span class="text-xs text-muted search-suggestion-text">${highlight(item.name || item.sector || 'Ekuitas IDX', query)}</span>
           </div>
-          <span class="search-suggestion-label">${escapeHtml(item.bucket || item.source || '')}</span>
+          ${priceHtml ? `<span>${priceHtml}</span>` : `<span class="search-suggestion-label">${escapeHtml(item.bucket || item.source || '')}</span>`}
         </a>`;
+      };
        suggestions.innerHTML = [
         groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Kode Saham</div>${groups.ticker.map(renderRow).join('')}` : '',
         groups.company.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Emiten</div>${groups.company.map(renderRow).join('')}` : '',
@@ -210,7 +215,7 @@ function setupSearchOverlay() {
            activeIndex = -1;
            return;
        }
-       const res = await searchStocks(q, 5);
+       const res = await searchStocks(q, 12);
        const items = Array.isArray(res?.data) ? res.data : [];
        renderSuggestions(items, q);
    };
@@ -265,6 +270,55 @@ function setupSearchOverlay() {
    // Close on link click inside search
    overlay.querySelectorAll('a').forEach(a => {
        a.addEventListener('click', () => toggle(false));
+   });
+   // Close button
+   const closeBtn = document.getElementById('search-close-btn');
+   if (closeBtn) closeBtn.addEventListener('click', () => toggle(false));
+   
+   // Recent searches
+   const RECENT_KEY = 'retailbijak.recent_searches';
+   function getRecent() {
+     try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+   }
+   function saveRecent(q) {
+     let recents = getRecent().filter(r => r !== q);
+     recents.unshift(q);
+     if (recents.length > 5) recents = recents.slice(0, 5);
+     localStorage.setItem(RECENT_KEY, JSON.stringify(recents));
+   }
+   function renderRecent() {
+     const recents = getRecent();
+     if (!recents.length || input.value.trim()) return;
+     suggestions.innerHTML = `
+       <div class="search-recent-header">
+         <i data-lucide="clock" style="width:12px;height:12px"></i> Pencarian Terakhir
+         <button class="search-recent-clear" id="clear-recent-btn">Hapus</button>
+       </div>
+       ${recents.map((r, i) => `
+         <a href="#stock/${r}" data-idx="${i}" class="flex items-center px-3 py-2 search-suggestion-item" style="gap:8px">
+           <i data-lucide="history" style="width:14px;height:14px;color:var(--text-dim);flex-shrink:0"></i>
+           <span class="mono strong text-main">${r}</span>
+         </a>
+       `).join('')}`;
+     if (typeof lucide !== 'undefined') lucide.createIcons();
+     const clearBtn = document.getElementById('clear-recent-btn');
+     if (clearBtn) clearBtn.addEventListener('click', () => { localStorage.removeItem(RECENT_KEY); renderRecent(); });
+     suggestions.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)));
+   }
+   // Override refreshSuggestions to show recents when empty
+   const origRefresh = refreshSuggestions;
+   refreshSuggestions = async () => {
+     const q = input.value.trim();
+     if (!q) { renderRecent(); currentItems = []; activeIndex = -1; return; }
+     const res = await searchStocks(q, 12);
+     const items = Array.isArray(res?.data) ? res.data : [];
+     renderSuggestions(items, q);
+   };
+   // Save to recents on Enter
+   input.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter' && input.value.trim()) {
+       saveRecent(input.value.trim().toUpperCase());
+     }
    });
 }
 function setupScrollEffects() {
