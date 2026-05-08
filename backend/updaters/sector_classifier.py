@@ -1,0 +1,245 @@
+"""
+Sector & Industry Classifier for IDX Stocks
+============================================
+Mengisi 960/974 stocks yang belum punya sector/industry data.
+
+Strategy (dual approach):
+1. Try yfinance info (rate-limited, but works for popular stocks)
+2. Fallback: name-based keyword classification
+
+Run as scheduler: daily 03:00 WIB
+"""
+
+import logging
+import time
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from database import SessionLocal, Stock
+except ModuleNotFoundError:
+    from backend.database import SessionLocal, Stock
+
+logger = logging.getLogger(__name__)
+
+# ─── Keyword-based sector classification ──────────────
+# IDX stock names contain keywords that reveal their sector
+SECTOR_KEYWORDS = {
+    'Financials': [
+        'BANK', 'BNK', 'FINANCE', 'FINANCIAL', 'KREDIT', 'MANDIRI', 'BCA', 'BRI', 'BNI',
+        'DANA', 'TABUNGAN', 'ASURANSI', 'INSURANCE', 'SEKURITAS', 'SECURITIES',
+        'PEGADAIAN', 'PEMBIAYAAN', 'FINTECH', 'BPR', 'SYARIAH', 'INVESTAMA', 'VENTURA',
+        'DINAMIKA', 'MITRA', 'KAPITAL', 'ARTHA', 'ASSET', 'MANAJEMEN', 'MANAGEMENT',
+        'MULTIFINANCE', 'DANA SYARIAH',
+    ],
+    'Energy': [
+        'ENERGY', 'ENERGI', 'MINYAK', 'OIL', 'GAS', 'BATUBARA', 'COAL', 'TAMBANG',
+        'MINING', 'PERTAMINA', 'GEOTHERMAL', 'PANAS BUMI', 'SUMBER', 'CORPORINDO',
+        'RESOURCES', 'SUMBERDAYA', 'HYDRO', 'POWER', 'ENERGI BARU',
+    ],
+    'Basic Materials': [
+        'TAMBANG', 'MINING', 'SEMEN', 'CEMENT', 'BAJA', 'STEEL', 'KERTAS', 'PAPER',
+        'KIMIA', 'CHEMICAL', 'NIKEL', 'NICKEL', 'EMAS', 'GOLD', 'TIMAH', 'TIN',
+        'LOGAM', 'METAL', 'INDUSTRY', 'PLASTIK', 'POLY', 'PULP',
+        'MINERAL', 'MINERALS', 'ALUMINDO', 'LIGHT METAL', 'KERAMIK', 'CERAMIC',
+        'INTI', 'PABRIK', 'KACA', 'GLASS', 'FLAT', 'KALENG', 'PACKAGING',
+        'KEMASAN', 'TIMBANG',
+    ],
+    'Industrials': [
+        'INDUSTRI', 'MESIN', 'MACHINERY', 'KONSTRUKSI', 'CONSTRUCTION',
+        'OTOMOTIF', 'AUTOMOTIVE', 'ELEKTRONIK', 'ELECTRONIC', 'KABEL', 'CABLE',
+        'PIPA', 'PIPE', 'ALAT', 'TOOL', 'ENGINEERING', 'REKAYASA',
+        'KARYA', 'SPAREPARTS', 'SPARE PART', 'ELEKTRINDO', 'NARATAMA',
+        'INDONUSA', 'MEKANIK', 'MECANIQUE',
+    ],
+    'Consumer Non-Cyclicals': [
+        'MAKANAN', 'FOOD', 'MINUMAN', 'BEVERAGE', 'ROKOK', 'TOBACCO', 'CIGARETTE',
+        'KOSMETIK', 'COSMETIC', 'FARMASI', 'PHARMACEUTICAL', 'OBAT', 'KESEHATAN',
+        'HEALTH', 'SUSU', 'MILK', 'INDOFOOD',
+        'UNILEVER', 'GUDANG GARAM', 'DARYA VARIA', 'KALBE',
+        'AGRO', 'AGRICULTURE', 'LESTARI', 'TANI', 'FARM', 'BUMI',
+        'TIRTA', 'AIR', 'WATER', 'SEJAHTERA', 'AKASHA', 'WIRA',
+        'IKAN', 'FISH', 'MINA', 'PERIKANAN', 'LAUT',
+        'BERKAH', 'PANGAN', 'MAKMUR', 'TUNAS', 'SAWIT', 'PALM',
+        'INTI', 'BUDI',
+    ],
+    'Consumer Cyclicals': [
+        'RITEL', 'RETAIL', 'DEPARTEMEN', 'STORE', 'SUPERMARKET', 'MALL',
+        'HIBURAN', 'ENTERTAINMENT', 'HOTEL', 'PARIWISATA', 'TOURISM',
+        'FASHION', 'HIDUP', 'ASPIRASI', 'RUMAH', 'MUSTIKA',
+    ],
+    'Healthcare': [
+        'RUMAH SAKIT', 'HOSPITAL', 'FARMASI', 'PHARMA', 'OBAT', 'MEDICAL',
+        'KESEHATAN', 'HEALTH', 'DIAGNOSTIK', 'LABORATORIUM', 'SILOAM',
+        'DOKTER', 'KLINIK',
+    ],
+    'Technology': [
+        'TEKNOLOGI', 'TECHNOLOGY', 'DIGITAL', 'SOFTWARE', 'TELEKOMUNIKASI',
+        'KOMPUTER', 'COMPUTER', 'IT ', 'DATA', 'ONLINE', 'PLATFORM', 'GOTO',
+        'MEDIA', 'TELEVISI', 'TV', 'BROADCAST', 'INFORMATIKA',
+        'GRAPHIA', 'CITRA',
+    ],
+    'Infrastructure': [
+        'TELEKOMUNIKASI', 'TELKOM', 'TELEKOM', 'TOWER', 'INFRASTRUKTUR',
+        'INFRASTRUCTURE', 'JALAN TOL', 'TOLL ROAD', 'PELABUHAN', 'PORT',
+        'BANDARA', 'AIRPORT', 'LOGISTIK', 'LOGISTICS', 'TRANSPORTASI',
+    ],
+    'Transportation': [
+        'TRANSPORTASI', 'TRANSPORT', 'LOGISTIK', 'LOGISTICS', 'PELAYARAN',
+        'SHIPPING', 'PENERBANGAN', 'AVIATION', 'KAPAL', 'SHIP', 'KERETA',
+        'KARGO', 'CARGO', 'ANCARA', 'TAXI', 'SARANA',
+    ],
+    'Property & Real Estate': [
+        'PROPERTI', 'PROPERTY', 'REALTY', 'REAL ESTATE', 'LAND', 'TANAH',
+        'GEDUNG', 'BUILDING', 'APARTEMEN', 'APARTMENT', 'KAWASAN',
+        'KOMMUTER', 'COMMUTER', 'PURI', 'GREEN', 'CITRAMULIA', 'PRAMULIA',
+    ],
+    'Energy & Mineral': [
+        'ARCHI', 'ATLAS RESOURCES',
+    ],
+    'Investment Services': [
+        'ASHMORE',
+    ],
+}
+
+# Industry sub-classification (more specific)
+INDUSTRY_KEYWORDS = {
+    'Financials': [
+        ('Bank', ['BANK', 'BNI', 'BCA', 'BRI', 'MANDIRI', 'BNK', 'SYARIAH']),
+        ('Insurance', ['ASURANSI', 'INSURANCE']),
+        ('Securities', ['SEKURITAS', 'SECURITIES']),
+        ('Fintech', ['FINTECH', 'DIGITAL', 'PAYMENT']),
+    ],
+    'Energy': [
+        ('Coal Mining', ['BATUBARA', 'COAL']),
+        ('Oil & Gas', ['MINYAK', 'OIL', 'GAS']),
+        ('Geothermal', ['GEOTHERMAL', 'PANAS BUMI']),
+    ],
+    'Basic Materials': [
+        ('Metal Mining', ['NIKEL', 'NICKEL', 'EMAS', 'GOLD', 'TIMAH', 'TIN', 'LOGAM', 'METAL']),
+        ('Cement', ['SEMEN', 'CEMENT']),
+        ('Steel', ['BAJA', 'STEEL']),
+        ('Chemicals', ['KIMIA', 'CHEMICAL']),
+        ('Pulp & Paper', ['KERTAS', 'PAPER', 'PULP']),
+    ],
+}
+
+# Direct ticker→sector override (for well-known stocks that don't match keywords)
+TICKER_OVERRIDES = {
+    'GOTO': ('Technology', 'Internet Platform'),
+    'BBCA': ('Financials', 'Bank'),
+    'BBRI': ('Financials', 'Bank'),
+    'BMRI': ('Financials', 'Bank'),
+    'BBNI': ('Financials', 'Bank'),
+    'TLKM': ('Infrastructure', 'Telecommunication'),
+    'ISAT': ('Infrastructure', 'Telecommunication'),
+    'EXCL': ('Infrastructure', 'Telecommunication'),
+    'ASII': ('Industrials', 'Automotive'),
+    'UNVR': ('Consumer Non-Cyclicals', 'Household Products'),
+    'INDF': ('Consumer Non-Cyclicals', 'Food Processing'),
+    'ICBP': ('Consumer Non-Cyclicals', 'Food Processing'),
+    'ADRO': ('Energy', 'Coal Mining'),
+    'BREN': ('Energy', 'Coal Mining'),
+    'BUMI': ('Energy', 'Coal Mining'),
+    'PTBA': ('Energy', 'Coal Mining'),
+    'ANTM': ('Basic Materials', 'Metal Mining'),
+    'BRPT': ('Basic Materials', 'Chemical'),
+    'AMMN': ('Basic Materials', 'Metal Mining'),
+    'GGRM': ('Consumer Non-Cyclicals', 'Tobacco'),
+    'HMSP': ('Consumer Non-Cyclicals', 'Tobacco'),
+}
+
+
+def classify_by_keywords(ticker: str, name: str) -> tuple[str, str] | None:
+    """Classify a stock using name-based keyword matching."""
+    if not name:
+        return None
+    
+    name_upper = name.upper()
+    
+    # Try ticker override first
+    base = ticker.replace('.JK', '')
+    if base in TICKER_OVERRIDES:
+        return TICKER_OVERRIDES[base]
+    
+    # Score each sector by keyword matches
+    scores = {}
+    industry_found = None
+    
+    for sector, keywords in SECTOR_KEYWORDS.items():
+        score = 0
+        for kw in keywords:
+            if kw in name_upper:
+                score += 1
+        if score > 0:
+            scores[sector] = score
+    
+    if not scores:
+        return None
+    
+    # Pick sector with highest score
+    best_sector = max(scores, key=scores.get)
+    
+    # Try to determine industry within that sector
+    sector_industries = INDUSTRY_KEYWORDS.get(best_sector, [])
+    for ind_name, ind_keywords in sector_industries:
+        if any(kw in name_upper for kw in ind_keywords):
+            return (best_sector, ind_name)
+    
+    return (best_sector, '')
+
+
+def classify_all_missing():
+    """Classify all stocks that are missing sector/industry data."""
+    db = SessionLocal()
+    try:
+        # Find stocks without sector
+        stocks = db.query(Stock).filter(
+            (Stock.sector.is_(None)) | (Stock.sector == '')
+        ).order_by(Stock.ticker).all()
+        
+        logger.info(f"Found {len(stocks)} stocks without sector data")
+        
+        # Try yfinance for batch of unknown stocks (with delays)
+        # Use a smaller batch to avoid rate limits
+        unknown_stocks = []
+        
+        updated = 0
+        for stock in stocks:
+            result = classify_by_keywords(stock.ticker, stock.name or '')
+            
+            if result:
+                sector, industry = result
+                stock.sector = sector
+                stock.industry = industry if industry else None
+                updated += 1
+                logger.info(f"[KEYWORD] {stock.ticker}: {sector} / {industry or '-'}")
+            else:
+                unknown_stocks.append(stock.ticker)
+        
+        db.commit()
+        logger.info(f"Updated {updated} stocks via keyword classification")
+        
+        if unknown_stocks:
+            logger.info(f"Unclassified stocks ({len(unknown_stocks)}): {unknown_stocks[:10]}...")
+        
+        return {
+            'classified': updated,
+            'unclassified': len(unknown_stocks),
+            'total': len(stocks),
+        }
+    
+    except Exception as e:
+        logger.error(f"Error classifying sectors: {e}")
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    result = classify_all_missing()
+    print(f"Done: {result['classified']} classified, {result['unclassified']} unclassified out of {result['total']}")

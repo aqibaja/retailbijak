@@ -201,6 +201,16 @@ def get_backfill_progress(db: Session = Depends(get_db)):
 def health():
     return {'status': 'ok', 'version': '1.0.0'}
 
+@router.post('/api/admin/classify-sectors')
+def trigger_sector_classification(db: Session = Depends(get_db)):
+    """Manually trigger sector classification for unclassified stocks."""
+    try:
+        from updaters.sector_classifier import classify_all_missing
+        result = classify_all_missing()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
 
 @router.get('/api/system/ohclv-status')
 def get_ohlcv_status(db: Session = Depends(get_db)):
