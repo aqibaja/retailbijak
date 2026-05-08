@@ -229,3 +229,9 @@
 | 2026-05-09 | 15.3.2 | ✅ | Corporate actions via existing /api/calendar + /api/corporate-actions endpoints |
 | 2026-05-09 | 15.3.3 | ✅ | corporate.js frontend: 6 tabs, IDX live data + CalendarEvent, color-coded cards |
 | 2026-05-09 | 15.3.4 | ✅ | Scheduler job daily 05:00 + sidebar nav + CSS |
+| 2026-05-09 | 15.4.2 | ✅ | renderRebalanceTab() — fetch /api/portfolio/rebalance, cards with progress bars |
+| 2026-05-09 | 15.4.3 | ✅ | Rebalance tab button in portfolio page |
+| 2026-05-09 | 15.5.1 | ✅ | chart.js: full-screen chart view with LightweightCharts, 7 timeframes |
+| 2026-05-09 | 15.5.2 | ✅ | Drawing tools toolbar: trend line, H-line, clear |
+| 2026-05-09 | 15.5.3 | ✅ | Timeframe selector + candle data from /api/stocks/{ticker}/chart-data |
+| 2026-05-09 | 15.5.4 | ✅ | Open Chart button (maximize-2 icon) in stock_detail.js |

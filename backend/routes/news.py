@@ -88,6 +88,60 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ti
     return {"count": len(data), "total": total, "data": data, "sources": sources, "categories": categories, "source": "db" if news else "no_data"}
 
 
+@router.get('/api/news/watchlist')
+def get_watchlist_news(db: Session = Depends(get_db), limit: int = 20, since: str = ''):
+    """Get news for stocks in user's watchlist. Fallback to top movers if watchlist empty."""
+    try:
+        from database import WatchlistItem
+    except ModuleNotFoundError:
+        from backend.database import WatchlistItem
+
+    # Get watchlist tickers
+    watchlist_tickers = [row.ticker for row in db.query(WatchlistItem.ticker).all()]
+
+    if not watchlist_tickers:
+        # Fallback: latest news regardless of ticker
+        q = db.query(News)
+        if since:
+            try:
+                from datetime import datetime as dt
+                since_dt = dt.fromisoformat(since.replace('Z', '+00:00'))
+                q = q.filter(News.published_at > since_dt)
+            except Exception:
+                pass
+        items = q.order_by(News.published_at.desc()).limit(limit).all()
+        return {
+            "count": len(items),
+            "data": [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None,
+                       "source": n.source, "summary": n.summary, "sentiment": n.sentiment, "tickers": n.tickers, "category": n.category} for n in items],
+            "source": "fallback_all"
+        }
+
+    # Build filter: tickers field contains any watchlist ticker
+    filters = []
+    for t in watchlist_tickers:
+        filters.append(News.tickers.ilike(f'%{t}%'))
+        filters.append(News.title.ilike(f'%{t}%'))
+
+    q = db.query(News).filter(or_(*filters))
+    if since:
+        try:
+            from datetime import datetime as dt
+            since_dt = dt.fromisoformat(since.replace('Z', '+00:00'))
+            q = q.filter(News.published_at > since_dt)
+        except Exception:
+            pass
+
+    items = q.order_by(News.published_at.desc()).limit(limit).all()
+    return {
+        "count": len(items),
+        "watchlist_tickers": watchlist_tickers,
+        "data": [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None,
+                   "source": n.source, "summary": n.summary, "sentiment": n.sentiment, "tickers": n.tickers, "category": n.category} for n in items],
+        "source": "watchlist"
+    }
+
+
 @router.get('/api/corporate-actions')
 def get_corporate_actions(year: int | None = None, month: int | None = None, limit: int = 30):
     """Corporate actions: listings (new/warrants), dividends — live from IDX DigitalStatistic.
