@@ -266,9 +266,9 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
 
         # Multi-day backfill: loop through last 30 calendar days
         if multi_day and ok > 0:
-            start_date = data_date - timedelta(days=70)
+            start_date = data_date - timedelta(days=180)
             logger.info("Multi-day sync: fetching %s to %s", start_date, data_date)
-            multi = client.get_stock_summary_multi_day(start_date, data_date, max_days=45)
+            multi = client.get_stock_summary_multi_day(start_date, data_date, max_days=120)
             for day_str, day_rows in multi.items():
                 if day_str == data_date.isoformat():
                     continue  # already synced above
