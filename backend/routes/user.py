@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import UserSetting, WatchlistItem, PortfolioPosition, TransactionLog, get_db
+    from database import UserSetting, WatchlistItem, WatchlistGroup, PortfolioPosition, TransactionLog, get_db
 except ModuleNotFoundError:
-    from backend.database import UserSetting, WatchlistItem, PortfolioPosition, TransactionLog, get_db
+    from backend.database import UserSetting, WatchlistItem, WatchlistGroup, PortfolioPosition, TransactionLog, get_db
 
 try:
     from database import Stock, OHLCVDaily
@@ -141,6 +141,7 @@ def get_watchlist(db: Session = Depends(get_db)):
                 'id': row.id,
                 'ticker': row.ticker,
                 'notes': row.notes,
+                'group_id': row.group_id,
                 'created_at': row.created_at.isoformat() if row.created_at else None,
             }
             for row in rows
@@ -621,3 +622,53 @@ def portfolio_analytics(db: Session = Depends(get_db)):
         'total_value': round(total_portfolio_value, 2),
         'has_data': bool(equity_curve or sectors),
     }
+
+
+@router.get('/api/watchlist-groups')
+def list_watchlist_groups(db: Session = Depends(get_db)):
+    groups = db.query(WatchlistGroup).order_by(WatchlistGroup.sort_order).all()
+    return {'data': [{'id': g.id, 'name': g.name, 'icon': g.icon, 'sort_order': g.sort_order, 'count': db.query(WatchlistItem).filter(WatchlistItem.group_id == g.id).count()} for g in groups]}
+
+
+class WatchlistGroupPayload(BaseModel):
+    name: str
+    icon: str = 'folder'
+
+
+@router.post('/api/watchlist-groups')
+def create_watchlist_group(payload: WatchlistGroupPayload, db: Session = Depends(get_db)):
+    max_order = db.query(WatchlistGroup.sort_order).order_by(WatchlistGroup.sort_order.desc()).first()
+    group = WatchlistGroup(name=payload.name.strip(), icon=payload.icon.strip() or 'folder', sort_order=(max_order[0] or 0) + 1 if max_order else 1)
+    db.add(group)
+    db.commit()
+    db.refresh(group)
+    return {'ok': True, 'id': group.id}
+
+
+@router.put('/api/watchlist-groups/{group_id}')
+def update_watchlist_group(group_id: int, payload: WatchlistGroupPayload, db: Session = Depends(get_db)):
+    group = db.query(WatchlistGroup).filter(WatchlistGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail='Group not found')
+    group.name = payload.name.strip()
+    group.icon = payload.icon.strip() or 'folder'
+    db.commit()
+    return {'ok': True}
+
+
+@router.delete('/api/watchlist-groups/{group_id}')
+def delete_watchlist_group(group_id: int, db: Session = Depends(get_db)):
+    db.query(WatchlistItem).filter(WatchlistItem.group_id == group_id).update({'group_id': None})
+    db.query(WatchlistGroup).filter(WatchlistGroup.id == group_id).delete()
+    db.commit()
+    return {'ok': True}
+
+
+@router.put('/api/watchlist/{ticker}/group')
+def set_watchlist_group(ticker: str, group_id: int = 0, db: Session = Depends(get_db)):
+    item = db.query(WatchlistItem).filter(WatchlistItem.ticker == ticker.upper().strip()).first()
+    if not item:
+        raise HTTPException(status_code=404, detail='Watchlist item not seen')
+    item.group_id = group_id or None
+    db.commit()
+    return {'ok': True}

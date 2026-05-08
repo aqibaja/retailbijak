@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, create_engine
+from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:////opt/swingaq/backend/swingaq.db")
@@ -115,12 +115,23 @@ class UserSetting(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class WatchlistGroup(Base):
+    __tablename__ = "watchlist_groups"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    icon = Column(String, default="folder")
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class WatchlistItem(Base):
     __tablename__ = "watchlist_items"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     ticker = Column(String, unique=True, index=True, nullable=False)
     notes = Column(String, default="")
+    group_id = Column(Integer, ForeignKey("watchlist_groups.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

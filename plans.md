@@ -15,7 +15,7 @@
 || **P3: Fitur Lanjutan** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 || **P4: Stabilitas & Kualitas** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 || **P5: Ekspansi Fitur & Inteligensi** | 🟡 96% | ▰▰▰▰▰▰▰▰▰▱ |
-|| **P6: Engagement, Visualisasi & Personalisasi** | 🟡 Berjalan | ▰▰▰▰▱▱▱▱▱▱ |
+|| **P6: Engagement, Visualisasi & Personalisasi** | 🟡 Berjalan | ▰▰▰▰▰▰▱▱▱▱ |
 
 ---
 
@@ -385,5 +385,11 @@ Multiple watchlists dengan nama kustom.
 | 2026-05-10 | 6.1.4 | ✅ | Frontend portfolio analytics — equity curve chart (LightweightCharts area series), range selector (1B/3B/6B/1T/ALL), sector pie chart (CSS conic-gradient, zero dep), legend dengan warna + persentase |
 | 2026-05-10 | 6.2.1 | ✅ | Search endpoint `/api/stocks/search` upgrade — tambah `price`, `change`, `change_pct` per hasil, join OHLCVDaily untuk harga terbaru. Limit 10→15 results |
 | 2026-05-10 | 6.2.2 | ✅ | Search overlay HTML — `#search-overlay` dgn input + close button + suggestions container. CSS: backdrop blur, slide-in animasi, scroll, badge group |
-| 2026-05-10 | 6.2.3 | ✅ | Keyboard navigation: arrow up/down, Enter pilih, Escape tutup, `Ctrl+K`/`Cmd+K` toggle, `/` fokus. Highlight mark query. Debounce 120ms. Limit hasil 5→12 |
+| 2026-05-10 | 6.2.3 | ✅ | Keyboard navigation: arrow up/down, Enter pilih, Escape tutup, Ctrl+K/Cmd+K toggle, / fokus. Highlight mark query. Debounce 120ms. Limit hasil 5→12 |
 | 2026-05-10 | 6.2.4 | ✅ | Recent searches — simpan 5 terakhir di localStorage, tampilkan saat input kosong, tombol "Hapus" untuk clear semua |
+| 2026-05-10 | 6.3.1 | ✅ | Heatmap endpoint /api/market/heatmap — agregasi sektor: change%, market cap, stock count, strength label (very_strong to very_weak). Normalisasi typo nama sektor |
+| 2026-05-10 | 6.3.2-4 | ✅ | TV widget stock-heatmap sudah terintegrasi di market.js — grouping by sector, colormap change, ukuran market cap, hover tooltip, autosize mobile. 7 sektor live |
+| 2026-05-10 | 6.4.1 | ✅ | Model WatchlistGroup — id, name, icon, sort_order, created_at. SQLite migration + default group "Semua" |
+| 2026-05-10 | 6.4.2 | ✅ | Update WatchlistItem — tambah group_id (FK nullable). Migration ALTER TABLE + response include group_id |
+| 2026-05-10 | 6.4.3 | ✅ | CRUD endpoints: GET/POST/PUT/DELETE /api/watchlist-groups + PUT /api/watchlist/{ticker}/group |
+| 2026-05-10 | 6.4.4 | ✅ | UI: group tabs + filter by group + manage groups dialog (create/delete). CSS: grp-tab, grp-mgr, delete-group |

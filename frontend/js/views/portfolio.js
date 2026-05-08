@@ -534,15 +534,32 @@ async function showTransactionForm(el) {
 }
 
 // ─── Watchlist ─────────────────────────────
-async function renderWatchlistTab(el) {
-    let data, fetchError;
-    try { data = await fetchWatchlist(); } catch (e) { fetchError = true; data = null; }
-    const rows = Array.isArray(data?.data) ? data.data : [];
+async function renderWatchlistTab(el, activeGroupId) {
+    let data, groups, fetchError;
+    const activeGroup = activeGroupId || 0;
+    try {
+        const [wlRes, grpRes] = await Promise.all([fetchWatchlist(), apiFetch('/watchlist-groups')]);
+        data = wlRes;
+        groups = Array.isArray(grpRes?.data) ? grpRes.data : [];
+    } catch (e) { fetchError = true; data = null; groups = []; }
+    const allRows = Array.isArray(data?.data) ? data.data : [];
+    const rows = activeGroup ? allRows.filter(r => r.group_id === activeGroup) : allRows;
+
+    // Build group tabs
+    const groupTabs = `<div class="watchlist-group-tabs flex gap-1 p-2" style="border-bottom:1px solid var(--border-subtle);overflow-x:auto">
+      ${groups.map(g => `
+        <button class="btn btn-xs grp-tab ${g.id === (activeGroup || 0) ? 'active' : ''}" data-grp-id="${g.id}" style="flex-shrink:0">
+          ${g.icon !== 'folder' ? `<i data-lucide="${g.icon}" style="width:12px"></i>` : ''} ${g.name}
+        </button>
+      `).join('')}
+      <button class="btn btn-xs grp-mgr" id="btn-manage-groups" style="flex-shrink:0;margin-left:auto" title="Kelola grup"><i data-lucide="settings" style="width:12px"></i></button>
+    </div>`;
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
         <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
+        ${groupTabs}
       ${fetchError ? `
       <div class="empty-state-v2">
         <div class="empty-icon"><i data-lucide="alert-triangle" style="color:var(--warn-color);"></i></div>
@@ -568,6 +585,17 @@ async function renderWatchlistTab(el) {
         <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
         <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
       </div>`}`;
+    
+    // Group tab handlers
+    el.querySelectorAll('.grp-tab').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const gid = parseInt(btn.dataset.grpId) || 0;
+        // Re-render with this group active
+        await renderWatchlistTab(el, gid);
+      });
+    });
+    // Manage groups button
+    document.getElementById('btn-manage-groups')?.addEventListener('click', () => showManageGroupsDialog(el));
 
     const addBtn = el.querySelector('#add-watchlist') || el.querySelector('#add-watchlist-empty');
     if (addBtn) addBtn.addEventListener('click', async () => {
@@ -609,4 +637,58 @@ async function renderWatchlistTab(el) {
         }, i * 200);
       });
     }
+}
+
+// ─── Manage Watchlist Groups ──────────
+async function showManageGroupsDialog(el) {
+  try {
+    const grpRes = await apiFetch('/watchlist-groups');
+    const groups = Array.isArray(grpRes?.data) ? grpRes.data : [];
+    const list = groups.map(g => `<div class="flex items-center gap-2 p-2 border-bottom-subtle">
+      <span class="mono strong text-sm text-main" style="flex:1">${g.name}</span>
+      <span class="text-xs text-dim">${g.count} item</span>
+      <button class="btn-icon delete-group" data-gid="${g.id}" style="flex-shrink:0"><i data-lucide="trash-2" class="lucide-sm"></i></button>
+    </div>`).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'stock-modal-overlay';
+    overlay.innerHTML = `<div class="modal-backdrop"></div>
+      <div class="modal-panel" style="width:min(400px,90vw)">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm strong m-0">Kelola Grup Pantauan</h3>
+          <button class="btn-icon modal-close-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="new-group-name" class="form-input" placeholder="Nama grup baru" style="flex:1" />
+          <button class="btn btn-primary btn-sm" id="btn-create-group">Buat</button>
+        </div>
+        <div id="group-list" class="flex flex-col" style="max-height:300px;overflow-y:auto">${list || '<div class="text-xs text-dim p-3">Belum ada grup</div>'}</div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    overlay.querySelector('.modal-backdrop').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.modal-close-btn').addEventListener('click', () => overlay.remove());
+
+    // Create group
+    overlay.querySelector('#btn-create-group').addEventListener('click', async () => {
+      const name = overlay.querySelector('#new-group-name').value.trim();
+      if (!name) return;
+      await apiFetch('/watchlist-groups', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+      overlay.remove();
+      await renderWatchlistTab(el);
+    });
+
+    // Delete groups
+    overlay.querySelectorAll('.delete-group').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const gid = btn.dataset.gid;
+        if (gid === '1') { showToast('Tidak bisa hapus grup default', 'warning'); return; }
+        await apiFetch(`/watchlist-groups/${gid}`, { method: 'DELETE' });
+        overlay.remove();
+        await renderWatchlistTab(el);
+      });
+    });
+  } catch (e) {
+    showToast('Gagal memuat grup', 'error');
+  }
 }
