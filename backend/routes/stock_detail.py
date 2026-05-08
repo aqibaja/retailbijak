@@ -10,9 +10,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, get_db
+    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, get_db
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, get_db
+    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, get_db
 
 try:
     from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
@@ -733,3 +733,86 @@ def run_backtest(ticker: str = '', strategy: str = 'sma_cross', initial_capital:
         'trades': trades,
         'source': 'derived',
     }
+
+
+# ─── Paper Trading ─────────────────────
+
+
+class PaperTradePayload(BaseModel):
+    ticker: str = Field(min_length=1)
+    trade_type: str = Field(pattern=r'^(BUY|SELL)$')
+    quantity: int = Field(gt=0)
+    price: float = Field(gt=0)
+    strategy: str = 'manual'
+    notes: str = ''
+
+
+@router.get('/api/paper-trades')
+def list_paper_trades(status: str = '', db: Session = Depends(get_db)):
+    q = db.query(PaperTrade).order_by(PaperTrade.entry_date.desc())
+    if status in ('open', 'closed'):
+        q = q.filter(PaperTrade.status == status)
+    rows = q.limit(50).all()
+    return {'count': len(rows), 'data': [{
+        'id': r.id, 'ticker': r.ticker, 'trade_type': r.trade_type,
+        'entry_price': r.entry_price, 'quantity': r.quantity,
+        'entry_date': r.entry_date.isoformat()[:19] if r.entry_date else '',
+        'exit_price': r.exit_price, 'exit_date': r.exit_date.isoformat()[:19] if r.exit_date else None,
+        'pnl': r.pnl, 'pnl_pct': r.pnl_pct, 'status': r.status,
+        'strategy': r.strategy or 'manual', 'notes': r.notes or '',
+    } for r in rows]}
+
+
+@router.post('/api/paper-trades')
+def open_paper_trade(payload: PaperTradePayload, db: Session = Depends(get_db)):
+    ticker = payload.ticker.upper().strip()
+    trade = PaperTrade(ticker=ticker, trade_type=payload.trade_type,
+                       entry_price=payload.price, quantity=payload.quantity,
+                       strategy=payload.strategy or 'manual', notes=payload.notes or '')
+    db.add(trade)
+    db.commit()
+    db.refresh(trade)
+    return {'ok': True, 'id': trade.id, 'message': f'{trade.trade_type} {ticker}: {payload.quantity} saham @ {payload.price}'}
+
+
+@router.post('/api/paper-trades/{trade_id}/close')
+def close_paper_trade(trade_id: int, price: float = 0, db: Session = Depends(get_db)):
+    trade = db.query(PaperTrade).filter(PaperTrade.id == trade_id).first()
+    if not trade:
+        return {'ok': False, 'message': 'Trade not found'}
+    if trade.status != 'open':
+        return {'ok': False, 'message': 'Trade already closed'}
+    exit_price = price if price > 0 else trade.entry_price
+    if trade.trade_type == 'BUY':
+        trade.pnl = round((exit_price - trade.entry_price) * trade.quantity, 2)
+    else:
+        trade.pnl = round((trade.entry_price - exit_price) * trade.quantity, 2)
+    trade.pnl_pct = round(((exit_price / trade.entry_price) - 1) * 100, 2) if trade.entry_price else 0
+    trade.exit_price = exit_price
+    trade.exit_date = datetime.utcnow()
+    trade.status = 'closed'
+    db.commit()
+    return {'ok': True, 'message': f'Closed {trade.ticker}: PnL {trade.pnl:+,.0f}', 'pnl': trade.pnl}
+
+
+@router.delete('/api/paper-trades/{trade_id}')
+def delete_paper_trade(trade_id: int, db: Session = Depends(get_db)):
+    trade = db.query(PaperTrade).filter(PaperTrade.id == trade_id).first()
+    if not trade:
+        return {'ok': False, 'message': 'Trade not found'}
+    db.delete(trade)
+    db.commit()
+    return {'ok': True, 'message': f'Trade {trade_id} deleted'}
+
+
+@router.get('/api/paper-trades/summary')
+def paper_trade_summary(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    total = db.query(func.count(PaperTrade.id)).scalar() or 0
+    open_count = db.query(func.count(PaperTrade.id)).filter(PaperTrade.status == 'open').scalar() or 0
+    closed = db.query(PaperTrade).filter(PaperTrade.status == 'closed').all()
+    total_pnl = sum(t.pnl or 0 for t in closed)
+    wins = sum(1 for t in closed if (t.pnl or 0) > 0)
+    win_rate = round((wins / len(closed) * 100), 2) if closed else 0
+    return {'total': total, 'open': open_count, 'closed': len(closed),
+            'total_pnl': round(total_pnl, 2), 'win_rate': win_rate, 'source': 'db'}

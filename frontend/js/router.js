@@ -9,6 +9,7 @@ const viewModules = {
   market: () => import('./views/market.js?v=20260507M'),
   compare: () => import('./views/compare.js?v=20260508'),
   backtest: () => import('./views/backtest.js?v=20260510'),
+  paper_trades: () => import('./views/paper_trades.js?v=20260510'),
   news: () => import('./views/news.js?v=20260507M'),
   settings: () => import('./views/settings.js?v=20260507M'),
   help: () => import('./views/help.js?v=20260507M'),
@@ -76,6 +77,11 @@ export function handleRoute(hash) {
                 const mod = viewCache.portfolio || await viewModules.portfolio();
                 viewCache.portfolio = mod;
                 return mod.renderPortfolio(root, baseRoute);
+              }
+              if (baseRoute === 'paper_trades') {
+                const mod = viewCache.paper_trades || await viewModules.paper_trades();
+                viewCache.paper_trades = mod;
+                return mod.renderPaperTrades(root);
               }
               if (baseRoute === 'stock' && rest[0]) {
                 const mod = viewCache.stock_detail || await viewModules.stock_detail();

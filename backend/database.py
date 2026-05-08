@@ -174,6 +174,24 @@ class AlertTrigger(Base):
     seen = Column(Integer, default=0)
 
 
+class PaperTrade(Base):
+    __tablename__ = "paper_trades"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=False)
+    trade_type = Column(String, nullable=False)  # BUY or SELL
+    entry_price = Column(Float, nullable=False)
+    quantity = Column(Integer, nullable=False)  # in shares
+    entry_date = Column(DateTime, default=datetime.utcnow)
+    exit_price = Column(Float)
+    exit_date = Column(DateTime)
+    pnl = Column(Float)
+    pnl_pct = Column(Float)
+    status = Column(String, default='open')  # open or closed
+    strategy = Column(String, default='manual')  # strategy name if from backtest
+    notes = Column(String, default='')
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()
