@@ -225,3 +225,7 @@
 | 2026-05-09 | 15.7.1 | ✅ | AMOLED CSS: true black background, no box-shadows, minimal borders |
 | 2026-05-09 | 15.7.2 | ✅ | Theme.js: 3-state cycle (dark→light→amoled→dark) + moon-star icon |
 | 2026-05-09 | 15.7.3 | ✅ | Persist AMOLED preference via localStorage + data-theme attribute |
+| 2026-05-09 | 15.3.1 | ✅ | corporate_actions_updater.py: 21 seed events (IPO/rights/split/dividend) |
+| 2026-05-09 | 15.3.2 | ✅ | Corporate actions via existing /api/calendar + /api/corporate-actions endpoints |
+| 2026-05-09 | 15.3.3 | ✅ | corporate.js frontend: 6 tabs, IDX live data + CalendarEvent, color-coded cards |
+| 2026-05-09 | 15.3.4 | ✅ | Scheduler job daily 05:00 + sidebar nav + CSS |

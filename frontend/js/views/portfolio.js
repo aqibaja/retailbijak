@@ -121,6 +121,7 @@ export async function renderPortfolio(root, activeTab) {
             <div class="portfolio-tab-switch flex p-1">
               <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">Portofolio</a>
               <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
+              <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="rebalance-tab-btn" style="font-size:11px">⚖️ Rebalance</button>
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
           </div>
@@ -132,6 +133,12 @@ export async function renderPortfolio(root, activeTab) {
     observeElements();
     if (isPort) await renderPortfolioTab(root.querySelector('#tab-content'));
     else await renderWatchlistTab(root.querySelector('#tab-content'));
+    
+    // Rebalance tab handler
+    const rebalanceBtn = root.querySelector('#rebalance-tab-btn');
+    if (rebalanceBtn) {
+      rebalanceBtn.addEventListener('click', () => renderRebalanceTab(root.querySelector('#tab-content')));
+    }
 }
 
 // ─── P&L Color ─────────────────────────
@@ -561,7 +568,60 @@ async function showTransactionForm(el) {
   });
 }
 
-// ─── Watchlist ─────────────────────────────
+// ─── Rebalance (15.4) ──────────────────────────
+async function renderRebalanceTab(el) {
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton" style="height:200px;margin:1rem"></div>';
+  
+  try {
+    const res = await fetch('/api/portfolio/rebalance');
+    const data = await res.json();
+    
+    if (!data || !data.suggestions || data.suggestions.length === 0) {
+      el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">⚖️</div><h3>${data?.message || 'Belum ada data portofolio'}</h3><p>Tambahkan posisi portofolio terlebih dahulu.</p></div>`;
+      return;
+    }
+    
+    const total = data.total_value || 0;
+    
+    el.innerHTML = `
+      <div class="rebalance-wrap" style="padding:16px">
+        <div class="flex justify-between items-center mb-3">
+          <h3 style="margin:0;font-size:1rem;font-weight:800">⚖️ Rebalancing Portofolio</h3>
+          <span class="text-xs text-dim">Total: Rp ${total.toLocaleString('id-ID')}</span>
+        </div>
+        <div class="rebalance-method mb-3" style="font-size:12px;color:var(--text-muted);background:var(--bg-panel);padding:10px 14px;border-radius:10px;border:1px solid var(--border-subtle)">
+          Target: <strong>equal-weight antar sektor</strong>. Rekomendasi aksi jika alokasi menyimpang &gt;2% dari target.
+        </div>
+        <div class="rebalance-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+          ${data.suggestions.map(s => {
+            const actionColor = s.action === 'overweight' ? 'var(--up-color)' : s.action === 'underweight' ? 'var(--down-color)' : 'var(--text-dim)';
+            const actionIcon = s.action === 'overweight' ? '⬇️ Jual' : s.action === 'underweight' ? '⬆️ Beli' : '✅ Biarkan';
+            return `
+              <div class="rebalance-card" style="padding:14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-left:3px solid ${actionColor}">
+                <div class="flex justify-between items-center mb-2">
+                  <strong style="font-size:13px">${s.sector}</strong>
+                  <span style="font-size:10px;font-weight:700;color:${actionColor}">${actionIcon}</span>
+                </div>
+                <div class="rebalance-bar" style="height:6px;background:var(--border-subtle);border-radius:3px;overflow:hidden;margin-bottom:8px">
+                  <div style="height:100%;width:${Math.min(s.current_pct * 3, 100)}%;background:${actionColor};border-radius:3px"></div>
+                </div>
+                <div class="flex justify-between text-xs" style="color:var(--text-muted)">
+                  <span>Saat ini: <strong style="color:var(--text-main)">${s.current_pct}%</strong></span>
+                  <span>Target: <strong style="color:var(--text-main)">${s.target_pct}%</strong></span>
+                </div>
+                ${s.diff ? `<div class="text-xs mt-1" style="color:${actionColor}">${s.diff > 0 ? '+' : ''}${s.diff.toFixed(1)}% dari target</div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="text-xs text-dim mt-3" style="text-align:center">Data berdasarkan harga terakhir. Update posisi untuk rekomendasi akurat.</div>
+      </div>
+    `;
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">⚠️</div><h3>Gagal memuat data</h3><p>${e.message || 'Coba refresh halaman.'}</p><button class="btn btn-primary" onclick="location.reload()">Refresh</button></div>`;
+  }
+}
 async function renderWatchlistTab(el, activeGroupId) {
     let data, groups, fetchError;
     const activeGroup = activeGroupId || 0;
