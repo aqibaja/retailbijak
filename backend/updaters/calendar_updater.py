@@ -269,6 +269,125 @@ def update_calendar_events():
         db.close()
 
 
+# ─── 17.1.1 — Synthetic Calendar Seeder ──────────────
+# Generates calendar events from fundamentals + OHLCV data.
+# Does NOT depend on yfinance.
+
+def seed_calendar_from_ohlcv(top_n: int = 100):
+    """Generate synthetic calendar events from existing data.
+    
+    Creates: dividend events (from fundamentals.dividend_yield),
+             earnings events (quarterly, derived from revenue),
+             synthetic IPO events for recent years.
+    """
+    import random
+    from datetime import timedelta
+    from sqlalchemy import text as _text
+
+    db = SessionLocal()
+    try:
+        # Clear existing
+        db.query(CalendarEvent).delete()
+        db.commit()
+
+        # Get fundamentals with dividend yield
+        funds = db.execute(_text("""
+            SELECT f.ticker, f.dividend_yield, f.revenue, f.net_income,
+                   s.name, COALESCE(s.sector, 'N/A') as sector
+            FROM fundamentals f
+            JOIN stocks s ON s.ticker = f.ticker
+            WHERE f.dividend_yield > 0 OR f.revenue > 0
+            ORDER BY f.revenue DESC
+            LIMIT :n
+        """), {"n": top_n}).fetchall()
+
+        records = 0
+        rng = random.Random(42)  # deterministic seed for synthetic events outside loop
+
+        # Generate dividend events
+        for fund in funds:
+            ticker = fund.ticker
+            div_yield = float(fund.dividend_yield) if fund.dividend_yield else 0
+            revenue = float(fund.revenue) if fund.revenue else 0
+            name = fund.name or ticker
+
+            seed = hash(ticker) % 10000
+            rng = random.Random(seed)
+
+            # Dividend events (if yield > 0)
+            if div_yield > 0.005:  # >0.5% yield
+                for yr_offset in range(3):
+                    for half in [1, 2]:  # Semi-annual dividends
+                        m = 6 if half == 1 else 12  # Jun or Dec
+                        event_date = date(2024 + yr_offset, m, rng.randint(1, 28))
+                        if event_date > date(2026, 12, 31): event_date = date(2026, 12, 31)
+                        _store_event(
+                            db, ticker,
+                            f"{name} — Dividen {'Pertama' if half == 1 else 'Kedua'} FY{2024+yr_offset}",
+                            "dividend", event_date,
+                            f"Dividen {div_yield*100:.1f}% yield per tahun",
+                            source="synthetic"
+                        )
+                        records += 1
+
+            # Earnings events (quarterly)
+            if revenue > 0:
+                for yr_offset in range(3):
+                    for q in [1, 2, 3, 4]:
+                        event_date = date(2024 + yr_offset, q * 3, rng.randint(1, 28))
+                        if event_date > date(2026, 12, 31): event_date = date(2026, 12, 31)
+                        _store_event(
+                            db, ticker,
+                            f"{name} — Laporan Keuangan Q{q} FY{2024+yr_offset}",
+                            "earnings", event_date,
+                            f"Estimasi revenue: Rp {revenue:,.0f}",
+                            source="synthetic"
+                        )
+                        records += 1
+
+        # Generate IPO events (synthetic for top 15 stocks)
+        ipo_candidates = [r for r in funds if r.sector in ("Technology", "Consumer Cyclicals", "Healthcare")][:15]
+        for fund in ipo_candidates:
+            year = rng.randint(2019, 2024)
+            month = rng.randint(1, 12)
+            day = rng.randint(1, 28)
+            _store_event(
+                db, fund.ticker,
+                f"{fund.name or fund.ticker} — IPO Pencatatan Perdana",
+                "ipo", date(year, month, day),
+                f"Sektor: {fund.sector}",
+                source="synthetic"
+            )
+            records += 1
+
+        # Generate rights issue / stock split events
+        for fund in funds[:30]:
+            if rng.random() < 0.15:  # 15% chance
+                year = 2024 + rng.randint(0, 2)
+                month = rng.randint(1, 12)
+                day = rng.randint(1, 28)
+                etype = rng.choice(["rights", "split"])
+                elabel = "Rights Issue" if etype == "rights" else "Stock Split"
+                _store_event(
+                    db, fund.ticker,
+                    f"{fund.name or fund.ticker} — {elabel}",
+                    etype, date(year, month, day),
+                    source="synthetic"
+                )
+                records += 1
+
+        db.commit()
+        total = db.query(CalendarEvent).count()
+        logger.info(f"Seeded {records} calendar events (total: {total})")
+        return {"status": "ok", "records": records, "total": total}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Calendar seed failed: {e}")
+        return {"status": "error", "error": str(e)}
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     update_calendar_events()

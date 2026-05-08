@@ -260,6 +260,17 @@ def trigger_seed_financials():
         return {'ok': False, 'error': str(e)}
 
 
+@router.post('/api/admin/seed-calendar')
+def trigger_seed_calendar():
+    """Manually trigger synthetic calendar events seed from fundamentals."""
+    try:
+        from updaters.calendar_updater import seed_calendar_from_ohlcv
+        result = seed_calendar_from_ohlcv()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
 @router.post('/api/admin/seed-brokers')
 def trigger_seed_brokers():
     """Manually trigger synthetic broker summary seed from OHLCV data."""
