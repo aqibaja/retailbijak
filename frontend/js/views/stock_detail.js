@@ -64,6 +64,9 @@ export async function renderStockDetail(root, ticker) {
           <div id="pattern-tags" class="stock-pattern-tags mt-2 flex gap-1 flex-wrap"></div>
           <div id="perf-chips" class="stock-perf-chips mt-1 flex gap-1 flex-wrap"></div>
         </div>
+        <button id="chat-toggle" class="btn btn-icon chat-toggle-btn" title="Tanya AI">
+          <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+        </button>
       </div>
       <div id="tv-symbol-profile" class="stock-side-panel hidden"></div>
       <div class="stock-layout">
@@ -126,12 +129,26 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Ringkasan Sesi</h3><div id="snapshot-panel" class="stock-stats-v2"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Analisis Teknikal TradingView</h3><div id="tv-technical-analysis"></div></div>
             <div class="stock-side-panel ai-thread-mock"><h3 class="stock-side-panel-title">Pembacaan Cepat AI</h3><div class="ai-thread-mock-inner"></div></div>
+            <div id="ai-summary-container" class="stock-side-panel" style="display:none">
+              <div class="ai-summary-card">
+                <div class="ai-summary-header">
+                  <span><i data-lucide="sparkles" style="width:16px;height:16px"></i> Analisis AI</span>
+                  <span id="ai-summary-sentiment" class="badge"></span>
+                </div>
+                <div id="ai-summary-body" class="ai-summary-body">
+                  <!-- AI content here -->
+                </div>
+                <div class="ai-summary-footer">
+                  <small>Analisis oleh AI berdasarkan data teknikal + fundamental. Selalu lakukan riset sendiri.</small>
+                </div>
+              </div>
+            </div>
             <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal (Custom)</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
             <div class="stock-side-panel hidden" id="depth-panel"></div>
             <div class="stock-side-panel hidden" id="foreign-flow-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
-            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a></div></div>
+            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
@@ -142,7 +159,27 @@ export async function renderStockDetail(root, ticker) {
           </div>
         </div>
       </div>
-    </section>`;
+    </section>
+    <!-- Floating AI Chat Panel -->
+    <div id="stock-chat-panel" class="stock-chat-panel" style="display:none">
+      <div class="stock-chat-header">
+        <span>Tanya AI tentang <strong id="chat-stock-name">BBCA</strong></span>
+        <button id="chat-close" class="btn btn-icon btn-sm chat-close-btn">&times;</button>
+      </div>
+      <div id="chat-messages-floating" class="chat-messages-floating">
+        <div class="chat-message chat-ai">
+          <div class="chat-avatar">🤖</div>
+          <div class="chat-bubble">Halo! Tanya saya tentang saham ini. Contoh: "Apa outlook BBCA?" atau "Analisis teknikal BBCA"</div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chat-input-floating" class="chat-input" placeholder="Tanya tentang saham ini..." maxlength="500" />
+        <button id="chat-send-floating" class="btn btn-primary btn-sm chat-send-floating-btn" disabled>
+          <i data-lucide="send" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+    </div>
+    <!-- End Floating AI Chat Panel -->`;
   observeElements();
   // Check watchlist state
   let isWatched = false;
@@ -179,6 +216,59 @@ export async function renderStockDetail(root, ticker) {
       m.addToCompare(symbol);
     });
   });
+
+  // ── AI Analysis Summary ──
+  const aiSummaryBtn = document.getElementById('ai-summary-btn');
+  const aiSummaryContainer = document.getElementById('ai-summary-container');
+  const aiSummaryBody = document.getElementById('ai-summary-body');
+  const aiSummarySentiment = document.getElementById('ai-summary-sentiment');
+
+  async function loadAiSummary() {
+    if (!aiSummaryContainer || !aiSummaryBody) return;
+    // Show loading skeleton
+    aiSummaryContainer.style.display = 'block';
+    aiSummaryBody.innerHTML = '<div class="ai-summary-loading"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div><div class="skeleton skeleton-text short"></div></div>';
+    aiSummarySentiment.textContent = '';
+    aiSummarySentiment.className = 'badge';
+    // Re-lucide
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    try {
+      const res = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/analysis?llm=true`, { timeout: 30000 });
+      // Parse LLM response
+      const llmContent = res?.llm?.content || res?.llm || res?.data?.llm?.content || res?.data?.llm || null;
+      const sentiment = res?.llm?.sentiment || res?.sentiment || 'neutral';
+      if (llmContent) {
+        aiSummaryBody.innerHTML = renderMarkdown(String(llmContent));
+        // Sentiment badge
+        const sentLower = String(sentiment).toLowerCase();
+        let badgeClass = 'badge';
+        let badgeText = 'Netral';
+        if (sentLower.includes('bullish')) {
+          badgeClass = 'badge ai-summary-sentiment-bullish';
+          badgeText = 'Bullish';
+        } else if (sentLower.includes('bearish')) {
+          badgeClass = 'badge ai-summary-sentiment-bearish';
+          badgeText = 'Bearish';
+        } else {
+          badgeClass = 'badge ai-summary-sentiment-neutral';
+          badgeText = 'Netral';
+        }
+        aiSummarySentiment.textContent = badgeText;
+        aiSummarySentiment.className = badgeClass;
+      } else {
+        aiSummaryBody.innerHTML = '<div class="ai-summary-error"><p>AI analysis tidak tersedia saat ini</p><button class="btn btn-sm" onclick="document.getElementById(\'ai-summary-btn\')?.click()">Coba lagi</button></div>';
+      }
+    } catch (e) {
+      console.warn('AI summary fetch failed', e);
+      aiSummaryBody.innerHTML = '<div class="ai-summary-error"><p>Gagal memuat analisis AI. Periksa koneksi atau coba lagi.</p><button class="btn btn-sm" onclick="document.getElementById(\'ai-summary-btn\')?.click()">Coba lagi</button></div>';
+    } finally {
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+  }
+
+  if (aiSummaryBtn) {
+    aiSummaryBtn.addEventListener('click', loadAiSummary);
+  }
 
   // Tab switching
   document.querySelectorAll('[data-stock-tabs] .stock-tab').forEach(btn => {
@@ -282,6 +372,164 @@ export async function renderStockDetail(root, ticker) {
       if (prompt && chatInput) sendChatMessage(prompt);
     });
   });
+
+  // ── Floating Chat Panel (toggle + history + send) ──
+  const chatToggle = document.getElementById('chat-toggle');
+  const chatPanel = document.getElementById('stock-chat-panel');
+  const chatClose = document.getElementById('chat-close');
+  const chatInputFloating = document.getElementById('chat-input-floating');
+  const chatSendFloating = document.getElementById('chat-send-floating');
+  const chatMessagesFloating = document.getElementById('chat-messages-floating');
+  const chatStockName = document.getElementById('chat-stock-name');
+
+  // Update stock name in panel header
+  if (chatStockName) chatStockName.textContent = symbol;
+
+  // Enable/disable send button based on input
+  if (chatInputFloating && chatSendFloating) {
+    chatInputFloating.addEventListener('input', () => {
+      chatSendFloating.disabled = !chatInputFloating.value.trim();
+    });
+  }
+
+  // Load chat history
+  async function loadChatHistory() {
+    if (!chatMessagesFloating) return;
+    // Don't reload if history was already loaded (messages > 1 means greeting + history)
+    const existing = chatMessagesFloating.querySelectorAll('.chat-message:not(.chat-history-loading)');
+    if (existing.length > 1) return;
+    try {
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'chat-message chat-ai chat-history-loading';
+      loadingEl.innerHTML = '<div class="chat-avatar">🤖</div><div class="chat-bubble">Memuat riwayat chat...</div>';
+      chatMessagesFloating.appendChild(loadingEl);
+      chatMessagesFloating.scrollTop = chatMessagesFloating.scrollHeight;
+
+      const res = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/chat`, { method: 'GET' });
+      loadingEl.remove();
+      if (res?.data && Array.isArray(res.data)) {
+        // Show last 10 messages
+        const messages = res.data.slice(-10);
+        // Remove greeting if we have history
+        const greeting = chatMessagesFloating.querySelector('.chat-message.chat-ai .chat-bubble');
+        if (greeting && messages.length > 0) {
+          const greetingContainer = greeting.closest('.chat-message');
+          if (greetingContainer) greetingContainer.remove();
+        }
+        messages.forEach(msg => {
+          const isUser = msg.role === 'user';
+          const bubble = document.createElement('div');
+          bubble.className = `chat-message ${isUser ? 'user' : 'chat-ai'}`;
+          if (isUser) {
+            bubble.innerHTML = `<div class="chat-bubble">${escapeHtml(msg.message || msg.content || '')}</div>`;
+          } else {
+            bubble.innerHTML = `<div class="chat-avatar">🤖</div><div class="chat-bubble">${escapeHtml(msg.message || msg.content || '')}</div>`;
+          }
+          chatMessagesFloating.appendChild(bubble);
+        });
+        if (messages.length > 0) {
+          chatMessagesFloating.scrollTop = chatMessagesFloating.scrollHeight;
+        }
+      }
+    } catch {
+      const loadingEl = chatMessagesFloating.querySelector('.chat-history-loading');
+      if (loadingEl) loadingEl.remove();
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Toggle chat panel
+  if (chatToggle && chatPanel) {
+    chatToggle.addEventListener('click', () => {
+      const isOpen = chatPanel.style.display !== 'none';
+      if (isOpen) {
+        chatPanel.style.display = 'none';
+      } else {
+        chatPanel.style.display = 'flex';
+        chatPanel.classList.add('chat-panel-open');
+        loadChatHistory();
+        // Focus input
+        if (chatInputFloating) setTimeout(() => chatInputFloating.focus(), 100);
+      }
+    });
+  }
+
+  // Close button
+  if (chatClose && chatPanel) {
+    chatClose.addEventListener('click', () => {
+      chatPanel.style.display = 'none';
+      chatPanel.classList.remove('chat-panel-open');
+    });
+  }
+
+  // Send message from floating panel
+  async function sendFloatingChatMessage(msg) {
+    if (!msg || !msg.trim() || !chatMessagesFloating) return;
+    if (chatInputFloating) chatInputFloating.disabled = true;
+    if (chatSendFloating) { chatSendFloating.disabled = true; }
+
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-message user';
+    userMsg.innerHTML = `<div class="chat-bubble">${escapeHtml(msg)}</div>`;
+    chatMessagesFloating.appendChild(userMsg);
+    chatMessagesFloating.scrollTop = chatMessagesFloating.scrollHeight;
+
+    // Show typing indicator
+    const typing = document.createElement('div');
+    typing.className = 'chat-message chat-ai chat-typing';
+    typing.innerHTML = '<div class="chat-avatar">🤖</div><div class="chat-bubble chat-bubble-typing"><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span></div>';
+    chatMessagesFloating.appendChild(typing);
+    chatMessagesFloating.scrollTop = chatMessagesFloating.scrollHeight;
+
+    try {
+      const res = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg }),
+        timeout: 30000,
+      });
+      typing.remove();
+      const reply = res?.reply || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
+      const aiMsg = document.createElement('div');
+      aiMsg.className = 'chat-message chat-ai';
+      aiMsg.innerHTML = `<div class="chat-avatar">🤖</div><div class="chat-bubble">${renderMarkdown(reply)}</div>`;
+      chatMessagesFloating.appendChild(aiMsg);
+      if (res?.status === 'error' || res?.status === 'disabled') {
+        aiMsg.classList.add('chat-error');
+      }
+    } catch {
+      typing.remove();
+      const errMsg = document.createElement('div');
+      errMsg.className = 'chat-message chat-ai';
+      errMsg.innerHTML = `<div class="chat-avatar">🤖</div><div class="chat-bubble chat-error-bubble">Gagal terhubung ke asisten AI. <button class="btn btn-mini chat-retry-btn" onclick="this.closest('.chat-message').remove(); document.getElementById('chat-send-floating')?.click();">Coba lagi</button></div>`;
+      chatMessagesFloating.appendChild(errMsg);
+    } finally {
+      if (chatInputFloating) { chatInputFloating.disabled = false; chatInputFloating.value = ''; chatInputFloating.focus(); }
+      if (chatSendFloating) { chatSendFloating.disabled = true; }
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+    chatMessagesFloating.scrollTop = chatMessagesFloating.scrollHeight;
+  }
+
+  if (chatInputFloating && chatSendFloating) {
+    chatSendFloating.addEventListener('click', () => {
+      const msg = chatInputFloating.value.trim();
+      if (msg) sendFloatingChatMessage(msg);
+    });
+    chatInputFloating.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const msg = chatInputFloating.value.trim();
+        if (msg) sendFloatingChatMessage(msg);
+      }
+    });
+  }
 
   // Phase 1: Load critical data FIRST (price + chart) — show immediately
   const [detail, chart] = await Promise.all([

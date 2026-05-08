@@ -420,7 +420,7 @@
 
 # 🇮🇩 Fase 13: Data Completeness, Stock Detail Mastery & PWA
 
-> **Status:** 🆑 Baru dimulai
+> **Status:** 🟢 Fase 13 SELESAI — 100% (all tasks done)
 > **Tujuan:** Fix financial data pipeline, enhance stock detail with financial viewer + dividend chart, polish PWA.
 > **Prinsip:** Data yang tidak tampil = tidak berguna. Fix pipeline dulu, baru UI.
 
@@ -500,14 +500,111 @@
 
 ## Prioritas Eksekusi — Fase 13
 
-### 🔴 NOW (Day 1)
+### 🔴 NOW (Day 1) ✅ COMPLETE
 13.1.1 → 13.1.2 → 13.1.3 → 13.1.4
 
-### 🟠 Next (Day 2)
+### 🟠 Next (Day 2) ✅ COMPLETE
 13.2.1 → 13.2.2 → 13.2.3 → 13.2.4
 
-### 🟡 Later (Day 3)
+### 🟡 Later (Day 3) ✅ COMPLETE
 13.3.1 → 13.3.2 → 13.3.3 → 13.4.1 → 13.4.2 → 13.4.3
+
+---
+
+## 📊 Fase 13: Data Completeness, Stock Detail & PWA ✅ 100% COMPLETE
+
+---
+
+# 🇮🇩 Fase 14: Intelligence & Integration
+
+> **Status:** 🆑 Baru dimulai
+> **Tujuan:** Build AI stock chat frontend, AI analysis summaries, complete light theme, push notifications.
+> **Prinsip:** Fitur yang sudah ada backend-nya harus punya frontend. AI harus bisa diakses dari stock detail.
+
+---
+
+## Masalah Teridentifikasi (Pre-Fase 14 Audit)
+
+| # | Masalah | Prioritas | Dampak |
+|---|---------|-----------|--------|
+| P1 | **AI Stock Chat — backend siap, frontend belum ada** | 🔴 High | Chat API ada tapi user gak bisa akses |
+| P2 | **Tidak ada AI analysis summary di stock detail** | 🔴 High | "What does AI think?" — missing |
+| P3 | **Light theme incomplete** — warna kontras buruk | 🟠 Medium | Light mode gak usable |
+| P4 | **Notifications hanya in-app** — no browser push | 🟠 Medium | User ketinggalan alert saat tab tertutup |
+| P5 | **CSV export terbatas** — hanya di screener+portfolio | 🟡 Low | Data tidak bisa diexport dari view lain |
+| P6 | **Saved screener scans** — nama + deskripsi untuk preset | 🟡 Low | UX enhancement |
+
+---
+
+## 🔴 14.1 AI Stock Chat Frontend (HIGH IMPACT)
+
+> **Goal:** User bisa chat dengan AI tentang saham tertentu langsung dari stock detail page.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 14.1.1 | **Chat UI component** — Floating chat panel di stock detail page | `stock_detail.js`, `style.css` | 30m | Chat bubble UI: input box, send button, message list (user + AI). Minimalis, jangan blocking. |
+| 14.1.2 | **Chat API integration** — POST /api/stocks/{ticker}/chat + streaming response | `stock_detail.js` | 20m | Send message, parse response. Loading state with typing indicator. Error handling. |
+| 14.1.3 | **Chat history** — Load previous messages from ChatHistory table | `stock_detail.js` | 15m | GET chat history on open. Show last N messages. |
+| 14.1.4 | **Chat toggle button** — Button to show/hide chat panel in stock hero | `stock_detail.js` | 10m | Message-circle icon in hero area. Toggle visibility. |
+
+**Value:** ★★★★★ — Most-wanted AI feature
+**Backend:** Already complete (routes, ChatHistory model, LLM payload)
+
+---
+
+## 🔴 14.2 AI Analysis Summary (HIGH IMPACT)
+
+> **Goal:** One-click AI insight tentang saham. "What does AI think?"
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 14.2.1 | **AI Summary button** — "AI Analisis" button di stock hero area | `stock_detail.js` | 10m | Button with sparkles icon. Klik → fetch + tampilkan summary |
+| 14.2.2 | **Summary card** — AI-generated analysis card di Overview tab | `stock_detail.js` | 20m | Card with: sentimen (bullish/bearish/neutral), key points, risks, catalysts. Parsing dari LLM response. |
+| 14.2.3 | **LLM integration** — Panggil endpoint /api/stocks/{ticker}/analysis?llm=true | `stock_detail.js` | 15m | Existing endpoint with LLM param. Parse response, handle loading/error/empty states. |
+
+**Value:** ★★★★★ — Makes AI accessible from any stock
+**Backend:** `/api/stocks/{ticker}/analysis?llm=true` already exists
+
+---
+
+## 🟠 14.3 Light Theme Completion (MEDIUM IMPACT)
+
+> **Goal:** Light theme fully usable di semua view.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 14.3.1 | **Audit light theme** — Cari semua komponen yang broken di light mode | Browser test, `style.css` | 20m | Test setiap view. Catat CSS vars yang missing. |
+| 14.3.2 | **CSS var fixes** — Tambah `--bg-primary`, `--text-main`, `--border-color` untuk light theme | `style.css` | 30m | Perbaiki semua :root[data-theme="light"] vars. Tambah color scheme yang hilang. |
+| 14.3.3 | **View-specific fixes** — Perbaiki chart background, card shadow, badge colors di light mode | `style.css` | 20m | Test dashboard, screener, stock detail, portfolio. |
+
+**Value:** ★★★★☆ — User choice matters
+
+---
+
+## 🟡 14.4 Push Notification & Export (LOW IMPACT)
+
+> **Goal:** Alert tidak hanya in-app — push notification via browser + export data dari mana saja.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 14.4.1 | **Push notification API** — Service worker push untuk harga alert | `sw.js`, `main.js` | 25m | Notification API + permission request. Trigger dari alert_checker. |
+| 14.4.2 | **Universal CSV export** — Tambah export button di movers, breadth, news | `movers.js`, `breadth.js`, `news.js` | 20m | Reusable `exportTableToCSV(tableId, filename)` function |
+| 14.4.3 | **Saved screener scan naming** — Name + describe saved presets | `screener.js` | 15m | Save dialog with name input. Manage saved scans list. |
+
+**Value:** ★★★☆☆ — Quality of life features
+
+---
+
+## Prioritas Eksekusi — Fase 14
+
+### 🔴 NOW (Day 1) ✅ COMPLETE
+14.1.1 → 14.1.2 → 14.1.3 → 14.1.4 → 14.2.1 → 14.2.2 → 14.2.3
+
+### 🟠 Next (Day 2)
+14.3.1 → 14.3.2 → 14.3.3
+
+### 🟡 Later (Day 3)
+14.4.1 → 14.4.2 → 14.4.3
 
 ---
 
@@ -542,3 +639,17 @@
 | 2026-05-09 | 13.1.2 | ✅ | Fix stock detail None — sector/industry already correct, fundamental query fixed |
 | 2026-05-09 | 13.1.3 | ✅ | Backfill-financials endpoint — already exists POST /api/admin/backfill-financials |
 | 2026-05-09 | 13.2.2 | ✅ | Dividend endpoint /api/stocks/{ticker}/dividends — from CalendarEvent |
+| 2026-05-09 | 13.2.3 | ✅ | Fundamental metrics card grid — PE/PBV/ROE/ROA/DER/EPS/DY visual |
+| 2026-05-09 | 13.3.1 | ✅ | PWA manifest update — icons 192+512, theme_color, categories |
+| 2026-05-09 | 13.3.2 | ✅ | Service worker — Cache First static, Network First API, offline fallback |
+| 2026-05-09 | 13.3.3 | ✅ | PWA install prompt — beforeinstallprompt + banner |
+| 2026-05-09 | 13.4.1 | ✅ | Global error handler — window.onerror + unhandledrejection |
+| 2026-05-09 | 13.4.2 | ✅ | View-level try/catch — router.js error fallback |
+| 2026-05-09 | 13.4.3 | ✅ | Cache-bust cleanup — all files v=20260510 |
+| 2026-05-09 | 14.1.1 | ✅ | Chat UI panel — floating chat with input, bubbles, typing indicator |
+| 2026-05-09 | 14.1.2 | ✅ | Chat API integration — POST /api/stocks/{ticker}/chat + send/receive |
+| 2026-05-09 | 14.1.3 | ✅ | Chat history — GET /api/stocks/{ticker}/chat, last 10 messages |
+| 2026-05-09 | 14.1.4 | ✅ | Chat toggle button — message-circle icon in hero |
+| 2026-05-09 | 14.2.1 | ✅ | AI Analisis button — sparkles icon in hero actions |
+| 2026-05-09 | 14.2.2 | ✅ | AI Summary card — sentiment badge, analysis text, loading/error states |
+| 2026-05-09 | 14.2.3 | ✅ | LLM integration — fetch /analysis?llm=true, parse response |
