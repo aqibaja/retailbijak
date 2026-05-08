@@ -765,77 +765,122 @@ window.loadFreshness = async function loadFreshness() {
 };
 
 // ─── Push Notification Polling (14.4.1) ─────────────────
+// Upgraded to SSE streaming in 16.3.2 — falls back to polling if SSE fails
+
+let alertEventSource = null;
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(660, ctx.currentTime);
+    o.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+    o.frequency.setValueAtTime(1100, ctx.currentTime + 0.2);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.35);
+  } catch (e) { /* Audio not available */ }
+}
+
 function setupPushNotifications() {
-  // Check if Notification API is available
   if (!('Notification' in window)) {
     console.log('[PushNotify] Notification API not supported');
     return;
   }
-
-  // Check if we already have permission (or request it)
-  if (Notification.permission === 'denied') {
-    console.log('[PushNotify] Permission denied by user');
-    return;
-  }
+  if (Notification.permission === 'denied') return;
 
   if (Notification.permission === 'default') {
     Notification.requestPermission().then(perm => {
-      if (perm === 'granted') {
-        console.log('[PushNotify] Permission granted, starting poll');
-        startAlertPolling();
-      }
+      if (perm === 'granted') startAlertStream();
     });
     return;
   }
 
-  // Permission already granted, start polling
-  startAlertPolling();
+  // Permission granted — try SSE first, fall back to polling
+  startAlertStream();
+
+  function startAlertStream() {
+    if (alertEventSource) { alertEventSource.close(); alertEventSource = null; }
+    try {
+      alertEventSource = new EventSource('/api/alerts/stream');
+      alertEventSource.onmessage = (event) => {
+        try {
+          if (event.data && event.data.startsWith('{')) {
+            const a = JSON.parse(event.data);
+            if (a.type !== 'alert') return;
+
+            const label = (a.alert_type || '').replace(/_/g, ' ');
+            const title = `🔔 ${a.ticker || 'Alert'}`;
+            const body = `${label}: ${a.trigger_value || ''} → ${a.current_value || ''}`;
+
+            // Browser notification
+            try {
+              new Notification(title, {
+                body: body,
+                icon: '/icons/icon-192.png',
+                tag: 'rb-alert-' + a.id,
+              });
+            } catch (e) { /* ignore */ }
+
+            // Sound
+            playAlertSound();
+
+            // Auto-acknowledge so it doesn't queue up
+            fetch('/api/alerts/triggered/ack', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: [a.id] }),
+            }).catch(() => {});
+          }
+        } catch (e) { /* parse error */ }
+      };
+      alertEventSource.onerror = () => {
+        // SSE failed — close and revert to polling
+        if (alertEventSource) { alertEventSource.close(); alertEventSource = null; }
+        console.warn('[PushNotify] SSE failed, falling back to polling');
+        startAlertPolling();
+      };
+      // Set 10s timeout — if no data in 10s, fall back to polling
+      setTimeout(() => {
+        if (!alertEventSource) return;
+        // If we got at least one message, keep SSE. Otherwise fallback.
+      }, 10000);
+    } catch (e) {
+      console.warn('[PushNotify] SSE setup failed, using polling');
+      startAlertPolling();
+    }
+  }
 
   function startAlertPolling() {
-    // Use the same alert checking pattern but with browser notifications
-    // Poll every 60 seconds for triggered alerts that haven't been notified
     let _lastNotifiedId = 0;
 
     async function pollAlerts() {
       try {
         const res = await apiFetch('/alerts/triggered?limit=10');
         if (!res?.data?.length) return;
-
-        // Find alerts newer than our last notification
         const newAlerts = res.data.filter(a => a.id > _lastNotifiedId);
         if (!newAlerts.length) {
-          // Still update lastNotifiedId if we have data
           _lastNotifiedId = Math.max(_lastNotifiedId, res.data[0].id || 0);
           return;
         }
-
-        // Update last notified ID
         _lastNotifiedId = Math.max(...newAlerts.map(a => a.id), _lastNotifiedId);
-
-        // Show browser notification for new alerts (max 3 at a time)
         const toShow = newAlerts.slice(0, 3);
         toShow.forEach(a => {
           const label = (a.alert_type || '').replace(/_/g, ' ');
           const title = `RetailBijak: ${a.ticker || 'Alert'}`;
           const body = `${label}: ${a.trigger_value || ''} → ${a.current_value || ''}`;
           try {
-            new Notification(title, {
-              body: body,
-              icon: '/icons/icon-192.png',
-              badge: '/icons/icon-192.png',
-              tag: 'retailbijak-alert-' + a.id,
-            });
-          } catch (e) {
-            // Fallback for older browsers
-            console.warn('[PushNotify] Failed to show notification', e);
-          }
+            new Notification(title, { body, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: 'retailbijak-alert-' + a.id });
+          } catch (e) { /* fallback */ }
         });
-      } catch (e) {
-        // Silent fail — polling shouldn't be noisy
-      }
+        // Sound
+        playAlertSound();
+      } catch (e) { /* silent */ }
     }
-
-    // Immediate check after delay, then every 60s
     setTimeout(pollAlerts, 15000);
     setInterval(pollAlerts, 60000);
   }

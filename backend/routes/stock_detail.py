@@ -649,6 +649,59 @@ def ack_triggered_alerts(ids: list[int] = [], db: Session = Depends(get_db)):
     return {'ok': True}
 
 
+# ─── 16.3.1 — Alert SSE Stream ────────────────────
+
+import asyncio
+from datetime import datetime as _dt
+
+async def _alert_stream_generator(poll_interval: float = 5.0):
+    """SSE generator: streams new (unseen) triggered alerts every N seconds."""
+    from database import SessionLocal as _SL
+    import json as _json
+
+    last_check = _dt.utcnow()
+    while True:
+        db = _SL()
+        try:
+            new_triggers = db.query(AlertTrigger).filter(
+                AlertTrigger.seen == 0,
+                AlertTrigger.triggered_at >= last_check,
+            ).order_by(AlertTrigger.triggered_at.desc()).limit(10).all()
+
+            if new_triggers:
+                for t in new_triggers:
+                    event = {
+                        'type': 'alert',
+                        'id': t.id,
+                        'alert_id': t.alert_id,
+                        'ticker': t.ticker,
+                        'alert_type': t.alert_type,
+                        'trigger_value': t.trigger_value,
+                        'current_value': t.current_value,
+                        'triggered_at': t.triggered_at.isoformat()[:19] if t.triggered_at else '',
+                    }
+                    yield f"data: {_json.dumps(event)}\n\n"
+
+            yield f": heartbeat {_dt.utcnow().isoformat()}\n\n"
+            last_check = _dt.utcnow()
+        except Exception as exc:
+            yield f"data: {_json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+        finally:
+            db.close()
+
+        await asyncio.sleep(poll_interval)
+
+
+@router.get('/api/alerts/stream')
+async def stream_alerts(poll_interval: float = 5.0):
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        _alert_stream_generator(poll_interval=max(poll_interval, 2.0)),
+        media_type='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+    )
+
+
 # ─── Peer Comparison ────────────────────
 
 

@@ -1,6 +1,6 @@
 # 🇮🇩 RetailBijak — Fase 16: Real-Time, Notifications & Platform Reliability
 
-> **Status:** 🟢 Fase 16 — 60% Complete (16.1 ✅ | 16.2 ✅ | 16.3-16.6 🆕)
+> **Status:** 🟢 Fase 16 — 80% Complete (16.1 ✅ | 16.2 ✅ | 16.3 ✅ | 16.4-16.6 🆕)
 > **Tujuan:** Fix pipeline data yang masih kosong, tambah real-time price updates, push notifications, dan polish UI/UX.
 > **Prinsip:** Prioritas pada pipeline reliability (data = segalanya), lalu engagement (notifikasi), lalu polish.
 > **Constraint:** yfinance broken untuk financials — gunakan synthetic/computed data.
@@ -149,3 +149,7 @@
 | 2026-05-10 | 16.2.2 | ✅ | Frontend live ticker — `setupLivePriceStream()` via EventSource |
 | 2026-05-10 | 16.2.3 | ✅ | 🔴 LIVE badge di topbar market-status, animasi pulse |
 | 2026-05-10 | 16.2.4 | ✅ | Stock detail refresh placeholder — `setupStockDetailLiveRefresh()` |
+| 2026-05-10 | 16.3.1 | ✅ | Alert SSE endpoint — `GET /api/alerts/stream` with heartbeat |
+| 2026-05-10 | 16.3.2 | ✅ | Frontend alert stream — real-time browser notification via SSE |
+| 2026-05-10 | 16.3.3 | ✅ | Alert sound — `playAlertSound()` three-tone chime |
+| 2026-05-10 | 16.3.4 | ✅ | SW push handler already exists — SSE + polling fallback |
