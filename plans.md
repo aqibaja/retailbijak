@@ -1,6 +1,6 @@
 # 🇮🇩 RetailBijak — Fase 16: Real-Time, Notifications & Platform Reliability
 
-> **Status:** 🆕 Fase 16 — 0% (Baru dimulai)
+> **Status:** 🟢 Fase 16 — 60% Complete (16.1 ✅ | 16.2 ✅ | 16.3-16.6 🆕)
 > **Tujuan:** Fix pipeline data yang masih kosong, tambah real-time price updates, push notifications, dan polish UI/UX.
 > **Prinsip:** Prioritas pada pipeline reliability (data = segalanya), lalu engagement (notifikasi), lalu polish.
 > **Constraint:** yfinance broken untuk financials — gunakan synthetic/computed data.
@@ -145,3 +145,7 @@
 | 2026-05-10 | 16.1.2 | ✅ | Fundamental seeder — 150 records from sector-based estimates |
 | 2026-05-10 | 16.1.3 | ✅ | Financials seeder — 150 records for 30 top stocks |
 | 2026-05-10 | 16.1.4 | ✅ | OHLCV backfill 12,000 bars + Signal updater — 2,166 signals |
+| 2026-05-10 | 16.2.1 | ✅ | SSE live price ticker — `GET /api/market/live-prices` stream tiap 5s |
+| 2026-05-10 | 16.2.2 | ✅ | Frontend live ticker — `setupLivePriceStream()` via EventSource |
+| 2026-05-10 | 16.2.3 | ✅ | 🔴 LIVE badge di topbar market-status, animasi pulse |
+| 2026-05-10 | 16.2.4 | ✅ | Stock detail refresh placeholder — `setupStockDetailLiveRefresh()` |

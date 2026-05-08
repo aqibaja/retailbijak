@@ -571,6 +571,41 @@ async function setupRunningTicker() {
   }).join('');
 }
 
+// ─── 16.2.2 — Live Price SSE Stream ──────────────
+let livePriceSource = null;
+
+function setupLivePriceStream() {
+  const container = document.getElementById('running-ticker');
+  const liveBadge = document.getElementById('live-badge');
+  if (!container) return;
+
+  if (livePriceSource) { livePriceSource.close(); livePriceSource = null; }
+
+  try {
+    livePriceSource = new EventSource('/api/market/live-prices?top_n=30&interval=5');
+    livePriceSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'tick' && data.prices?.length) {
+          const items = [...data.prices, ...data.prices];
+          container.innerHTML = items.map(p => {
+            const price = p.close != null ? Number(p.close).toLocaleString('id-ID', { maximumFractionDigits: 0 }) : '—';
+            return ` <a href="#stock/${p.ticker}" class="tape-card"> <div class="flex-col"><div class="tape-pair">${p.ticker}</div><div class="tape-price">${price}</div></div> </a>`;
+          }).join('');
+          if (liveBadge) { liveBadge.style.display = 'inline'; liveBadge.classList.remove('hidden'); }
+        }
+      } catch (e) { /* ignore */ }
+    };
+    livePriceSource.onerror = () => { if (liveBadge) liveBadge.style.display = 'none'; };
+  } catch (e) {
+    console.warn('[LivePrice] SSE failed:', e);
+    if (liveBadge) liveBadge.style.display = 'none';
+  }
+}
+
+// ─── 16.2.4 — Live Stock Detail Refresh ──────────
+function setupStockDetailLiveRefresh() { /* called by stock_detail.js */ }
+
 // Network status indicator
 function setupNetworkStatus() {
   const el = document.getElementById('network-status');
@@ -830,6 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupNetworkStatus();
       setupKeyboardShortcuts();
       startMarketCountdown();
+      setupLivePriceStream();
       setupTouchGestures();
       showOnboarding();
       // Register PWA service worker (1.7.6)

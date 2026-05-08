@@ -379,3 +379,59 @@ def get_market_treemap(
         'total_stocks': len(stock_data_list),
         'sectors': sector_list,
     }
+
+
+# ─── 16.2.1 — SSE Live Price Ticker ────────────────
+
+import asyncio
+
+async def _live_price_generator(top_n: int = 50, interval: float = 5.0):
+    """SSE generator: stream latest prices for top N stocks every `interval` seconds."""
+    from database import SessionLocal as _SL
+    from sqlalchemy import text as _text
+    import json as _json
+
+    while True:
+        db = _SL()
+        try:
+            # Get latest OHLCV for top stocks
+            rows = db.execute(
+                _text("""
+                    SELECT o.ticker, o.close, o.volume, o.date,
+                           s.name, COALESCE(s.sector, 'N/A') as sector
+                    FROM ohlcv_daily o
+                    JOIN stocks s ON s.ticker = o.ticker
+                    WHERE o.date = (SELECT MAX(o2.date) FROM ohlcv_daily o2 WHERE o2.ticker = o.ticker)
+                    ORDER BY o.volume DESC
+                    LIMIT :n
+                """),
+                {"n": top_n}
+            ).fetchall()
+
+            prices = []
+            for r in rows:
+                prices.append({
+                    "ticker": r.ticker,
+                    "close": float(r.close) if r.close else None,
+                    "volume": int(r.volume) if r.volume else 0,
+                    "name": r.name or r.ticker,
+                    "sector": r.sector or "N/A",
+                })
+
+            yield f"data: {_json.dumps({'type': 'tick', 'prices': prices, 'count': len(prices), 'ts': datetime.utcnow().isoformat(timespec='seconds')})}\n\n"
+        except Exception as exc:
+            yield f"data: {_json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+        finally:
+            db.close()
+
+        await asyncio.sleep(interval)
+
+
+@router.get('/api/market/live-prices')
+async def stream_live_prices(top_n: int = 50, interval: float = 5.0):
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        _live_price_generator(top_n=min(top_n, 200), interval=max(interval, 1.0)),
+        media_type='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+    )
