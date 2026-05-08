@@ -23,6 +23,7 @@ const ROUTE_META = {
   movers: { title: 'RetailBijak — Market Movers', desc: 'Lihat saham IDX dengan pergerakan terbesar: gainers, losers, dan most active dengan multi-timeframe performance.' },
   calendar: { title: 'RetailBijak — Kalender Pasar', desc: 'Kalender dividen, laba, dan aksi korporasi saham IDX.' },
   corporate: { title: 'RetailBijak — Aksi Korporasi', desc: 'IPO, rights issue, stock split, dividen, dan aksi korporasi saham IDX.' },
+  chart: { title: 'RetailBijak — Chart', desc: 'Full-screen chart saham IDX dengan drawing tools dan multiple timeframe.' },
   indices: { title: 'RetailBijak — Indeks IDX', desc: 'Pantau konstituen dan performa indeks saham IDX: LQ45, IDX30, KOMPAS100, IDX80, IDXESGL.' },
 };
 
@@ -48,6 +49,7 @@ const viewModules = {
   movers: () => import('./views/movers.js?v=20260510'),
   calendar: () => import('./views/calendar.js?v=20260510'),
   corporate: () => import('./views/corporate.js?v=20260510'),
+  chart: () => import('./views/chart.js?v=20260510'),
   indices: () => import('./views/indices.js?v=20260510'),
 };
 const viewCache = {};
@@ -151,6 +153,11 @@ export function handleRoute(hash) {
                 const mod = viewCache.stock_detail || await viewModules.stock_detail();
                 viewCache.stock_detail = mod;
                 return mod.renderStockDetail(root, rest[0]);
+              }
+              if (viewKey === 'chart' && rest[0]) {
+                const mod = viewCache.chart || await viewModules.chart();
+                viewCache.chart = mod;
+                return mod.renderChart(root, rest[0]);
               }
               if (viewKey === 'screener') {
                 const mod = viewCache.screener || await viewModules.screener();

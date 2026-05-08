@@ -73,6 +73,7 @@ export async function renderStockDetail(root, ticker) {
         <div class="panel chart-card-v2">
           <div class="flex justify-between items-center mb-3">
             <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">Memuat chart...</p></div>
+            <a href="#chart/${symbol}" class="btn btn-ghost btn-sm" title="Buka Chart Penuh" target="_blank" style="font-size:10px"><i data-lucide="maximize-2" style="width:14px"></i> Full</a>
           </div>
           <div class="chart-toolbar" id="chart-toolbar">
             <span class="timeframe-group">
