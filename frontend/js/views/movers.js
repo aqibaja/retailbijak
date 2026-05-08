@@ -1,7 +1,7 @@
 // ─── Market Movers Page — Gainers / Losers / Most Active ────
 // Dedicated page with multi-timeframe performance columns (1W, 1M, 3M, 6M)
 
-import { apiFetch } from '../api.js?v=20260510';
+import { apiFetch, showToast } from '../api.js?v=20260510';
 import { nf, pf } from '../utils/format.js?v=20260510';
 
 // ─── Module State ─────────────────────────────────────────────
@@ -240,7 +240,10 @@ export async function renderMovers(root) {
           <h1 style="font-size:22px;font-weight:700;color:var(--text-main);margin:0">Market Movers</h1>
           <p class="page-subtitle" style="font-size:13px;color:var(--text-muted);margin-top:4px">Saham IDX dengan pergerakan terbesar — gainers, losers, dan most active dengan multi-timeframe performance.</p>
         </div>
-        <button class="btn btn-primary" id="movers-refresh" type="button" style="font-size:12px;padding:8px 16px">⟳ Refresh</button>
+        <div class="flex gap-2" style="align-items:center">
+          <button class="btn" id="movers-export-csv" type="button" style="font-size:12px;padding:8px 16px">📥 CSV</button>
+          <button class="btn btn-primary" id="movers-refresh" type="button" style="font-size:12px;padding:8px 16px">⟳ Refresh</button>
+        </div>
       </div>
 
       <div id="movers-tabs">${renderTabs('gainers')}</div>
@@ -250,6 +253,49 @@ export async function renderMovers(root) {
 
   const contentEl = document.getElementById('movers-content');
   const refreshBtn = document.getElementById('movers-refresh');
+  const exportBtn = document.getElementById('movers-export-csv');
+
+  // Export CSV handler
+  exportBtn.addEventListener('click', () => {
+    const data = getVisibleData();
+    if (!data.length) {
+      showToast('Tidak ada data untuk diexport', 'warning');
+      return;
+    }
+    const cols = getColumns();
+    const headers = cols.map(c => c.label);
+    const csvRows = data.map((item, idx) => {
+      return cols.map(col => {
+        let val;
+        switch (col.key) {
+          case 'rank': val = idx + 1; break;
+          case 'ticker': val = item.ticker || ''; break;
+          case 'name': val = item.name || ''; break;
+          case 'price': val = item.price ?? ''; break;
+          case 'change_pct': val = item.change_pct != null ? item.change_pct + '%' : ''; break;
+          case 'volume': val = item.volume ?? ''; break;
+          case 'perf_1w': val = item.perf_1w != null ? item.perf_1w + '%' : ''; break;
+          case 'perf_1m': val = item.perf_1m != null ? item.perf_1m + '%' : ''; break;
+          case 'perf_3m': val = item.perf_3m != null ? item.perf_3m + '%' : ''; break;
+          case 'perf_6m': val = item.perf_6m != null ? item.perf_6m + '%' : ''; break;
+          default: val = '';
+        }
+        return '"' + String(val).replace(/"/g, '""') + '"';
+      }).join(',');
+    });
+    const csv = '\uFEFF' + headers.join(',') + '\n' + csvRows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const tabLabel = activeTab === 'gainers' ? 'gainers' : activeTab === 'losers' ? 'losers' : 'most-active';
+    a.download = `retailbijak-movers-${tabLabel}-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`CSV diunduh (${data.length} saham)`, 'success');
+  });
 
   // Refresh handler
   const doRefresh = async () => {

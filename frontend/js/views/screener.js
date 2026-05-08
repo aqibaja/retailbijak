@@ -237,8 +237,10 @@ export async function renderScreener(root) {
                 <button id="btn-sound" type="button" class="btn btn-sm scanner-control-btn btn-active" title="Bunyikan alert saat sinyal baru">🔊</button>
                 <button id="btn-auto-refresh" type="button" class="btn btn-sm scanner-control-btn" title="Aktifkan auto-refresh tiap 30 detik">⏱ Auto</button>
                 <button id="btn-export-csv" type="button" class="btn btn-sm scanner-control-btn" title="Export CSV">CSV</button>
-                <button id="btn-save-filter" type="button" class="btn btn-sm scanner-control-btn" title="Simpan Filter">Simpan</button>
-                <button id="btn-load-filter" type="button" class="btn btn-sm scanner-control-btn" title="Muat Filter">Muat</button>
+                <button id="btn-save-filter" type="button" class="btn btn-sm scanner-control-btn" title="Simpan Filter Cepat">Simpan</button>
+                <button id="btn-save-filter-as" type="button" class="btn btn-sm scanner-control-btn" title="Simpan Sebagai...">Simpan Sebagai...</button>
+                <button id="btn-load-filter" type="button" class="btn btn-sm scanner-control-btn" title="Muat & Kelola Scan">Muat</button>
+                <button id="btn-manage-scans" type="button" class="btn btn-sm scanner-control-btn" title="Kelola Scan Tersimpan">Kelola</button>
                 <button id="btn-perf-toggle" type="button" class="btn btn-sm scanner-control-btn" title="Tampilkan/sembunyikan kolom performa">📊 Perf</button>
                 <button id="btn-columns" type="button" class="btn btn-sm scanner-control-btn" title="Pilih kolom tampilan">☰ Kolom</button>
                 <div class="scanner-control-stack">
@@ -280,7 +282,9 @@ export async function renderScreener(root) {
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
     root.querySelector('#btn-export-csv')?.addEventListener('click', exportCSV);
     root.querySelector('#btn-save-filter')?.addEventListener('click', saveFilterDialog);
+    root.querySelector('#btn-save-filter-as')?.addEventListener('click', saveFilterAsDialog);
     root.querySelector('#btn-load-filter')?.addEventListener('click', loadFilterDialog);
+    root.querySelector('#btn-manage-scans')?.addEventListener('click', manageScansDialog);
     root.querySelector('#btn-auto-refresh')?.addEventListener('click', toggleAutoRefresh);
     root.querySelector('#btn-sound')?.addEventListener('click', toggleScanSound);
 
@@ -697,6 +701,48 @@ function exportCSV() {
     showToast(`${data.length} sinyal diekspor ke CSV`, 'success');
 }
 
+// ─── Modal Helper ─────────────────────────────
+function showModal(title, bodyHtml, footerHtml) {
+  // Remove any existing modal
+  const existing = document.getElementById('screener-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'screener-modal-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);
+    display:flex;align-items:center;justify-content:center;
+    animation:fadeIn 0.15s ease;
+  `;
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background:var(--card-bg);border-radius:16px;padding:24px;min-width:340px;
+    max-width:520px;width:90%;max-height:80vh;overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  `;
+
+  modal.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-main)">${title}</h3>
+      <button type="button" id="screener-modal-close" style="background:none;border:none;font-size:22px;color:var(--text-dim);cursor:pointer;padding:0;line-height:1">&times;</button>
+    </div>
+    <div id="screener-modal-body">${bodyHtml}</div>
+    ${footerHtml ? `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px" id="screener-modal-footer">${footerHtml}</div>` : ''}
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Close handlers
+  document.getElementById('screener-modal-close')?.addEventListener('click', () => overlay.remove());
+
+  return overlay;
+}
+
 // ─── Saved Filters (Backend Persistent) ──
 async function getSavedFilters() {
     try {
@@ -717,6 +763,7 @@ async function saveFilters(filters) {
     }
 }
 
+// ─── Quick Save (existing prompt-based) ────────
 async function saveFilterDialog() {
     const data = currentResults;
     if (!data.length) {
@@ -726,18 +773,17 @@ async function saveFilterDialog() {
     const name = prompt('Nama filter:');
     if (!name || !name.trim()) return;
     const filters = await getSavedFilters();
-    // Build filter config from current sort + search
     const sortEl = document.getElementById('screener-sort');
     const searchEl = document.getElementById('screener-search');
     const config = {
         id: Date.now(),
         name: name.trim(),
+        description: '',
         sort: sortEl?.value || 'cci',
         search: searchEl?.value || '',
         count: data.length,
         savedAt: new Date().toISOString(),
     };
-    // Check duplicate name
     const existing = filters.findIndex(f => f.name.toLowerCase() === config.name.toLowerCase());
     if (existing >= 0) {
         if (!confirm(`Filter "${config.name}" sudah ada. Timpa?`)) return;
@@ -749,25 +795,186 @@ async function saveFilterDialog() {
     showToast(`Filter "${config.name}" disimpan (${data.length} hasil)`, 'success');
 }
 
+// ─── Save As Dialog (Modal with name + description) ──
+async function saveFilterAsDialog() {
+    const data = currentResults;
+    if (!data.length) {
+        showToast('Tidak ada hasil scan untuk disimpan', 'warning');
+        return;
+    }
+    const sortEl = document.getElementById('screener-sort');
+    const searchEl = document.getElementById('screener-search');
+    const currentName = searchEl?.value?.trim() || `Scan ${new Date().toLocaleDateString('id-ID')}`;
+
+    const bodyHtml = `
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:4px">Nama Scan <span style="color:var(--down-color)">*</span></label>
+        <input type="text" id="smodal-name" value="${currentName.replace(/"/g, '&quot;')}" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color);color:var(--text-main);font-size:14px;box-sizing:border-box" placeholder="Nama untuk scan ini" required />
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:4px">Deskripsi</label>
+        <textarea id="smodal-desc" rows="2" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color);color:var(--text-main);font-size:13px;box-sizing:border-box;resize:vertical;font-family:inherit" placeholder="Deskripsi opsional">${sortEl ? `Diurutkan: ${sortEl.options[sortEl.selectedIndex]?.text || sortEl.value}` : ''}</textarea>
+      </div>
+    `;
+    const footerHtml = `
+      <button type="button" class="btn" id="smodal-cancel" style="font-size:13px">Batal</button>
+      <button type="button" class="btn btn-primary" id="smodal-save" style="font-size:13px">Simpan Scan</button>
+    `;
+
+    const overlay = showModal('Simpan Sebagai...', bodyHtml, footerHtml);
+
+    document.getElementById('smodal-cancel')?.addEventListener('click', () => overlay.remove());
+    document.getElementById('smodal-save')?.addEventListener('click', async () => {
+      const nameInput = document.getElementById('smodal-name');
+      const descInput = document.getElementById('smodal-desc');
+      const name = nameInput?.value?.trim();
+      if (!name) {
+        showToast('Nama scan harus diisi', 'warning');
+        nameInput?.focus();
+        return;
+      }
+      const filters = await getSavedFilters();
+      const config = {
+        id: Date.now(),
+        name: name,
+        description: descInput?.value?.trim() || '',
+        sort: sortEl?.value || 'cci',
+        search: searchEl?.value || '',
+        count: data.length,
+        savedAt: new Date().toISOString(),
+      };
+      const existing = filters.findIndex(f => f.name.toLowerCase() === config.name.toLowerCase());
+      if (existing >= 0) {
+        if (!confirm(`Scan "${config.name}" sudah ada. Timpa?`)) return;
+        filters[existing] = config;
+      } else {
+        filters.push(config);
+      }
+      await saveFilters(filters);
+      overlay.remove();
+      showToast(`Scan "${config.name}" disimpan (${data.length} hasil)`, 'success');
+    });
+
+    // Enter key to save
+    document.getElementById('smodal-name')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('smodal-save')?.click();
+    });
+    // Focus name input
+    setTimeout(() => document.getElementById('smodal-name')?.focus(), 100);
+}
+
+// ─── Load Filter Dialog (Modal with table) ──────
 async function loadFilterDialog() {
     const filters = await getSavedFilters();
     if (!filters.length) {
-        showToast('Belum ada filter tersimpan', 'info');
+        showToast('Belum ada scan tersimpan', 'info');
         return;
     }
-    // Simple modal-like selection
-    const list = filters.map((f, i) =>
-        `${i + 1}. ${f.name} (${f.count} hasil — ${(f.savedAt || '').slice(0,10)})`
-    ).join('\n');
-    const choice = prompt(`Pilih filter (1-${filters.length}):\n\n${list}`);
-    if (!choice) return;
-    const idx = parseInt(choice) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= filters.length) {
-        showToast('Pilihan tidak valid', 'error');
+    renderFilterListModal(filters, 'Pilih Scan untuk Dimuat');
+}
+
+// ─── Manage Scans Dialog ─────────────────────────
+async function manageScansDialog() {
+    const filters = await getSavedFilters();
+    if (!filters.length) {
+        showToast('Belum ada scan tersimpan', 'info');
         return;
     }
-    const filter = filters[idx];
-    // Apply filter config
+    renderFilterListModal(filters, 'Kelola Scan Tersimpan', true);
+}
+
+// ─── Common: Render filter list modal ────────────
+function renderFilterListModal(filters, title, showDelete = false) {
+    if (!filters.length) {
+      showToast('Belum ada scan tersimpan', 'info');
+      return;
+    }
+
+    let bodyHtml = `
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">${filters.length} scan tersimpan. Klik untuk memuat.</div>
+      <div style="max-height:360px;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-subtle)">
+              <th style="text-align:left;padding:8px 6px;font-weight:600;color:var(--text-main)">Nama</th>
+              <th style="text-align:left;padding:8px 6px;font-weight:600;color:var(--text-main)">Deskripsi</th>
+              <th style="text-align:left;padding:8px 6px;font-weight:600;color:var(--text-main)">Hasil</th>
+              <th style="text-align:left;padding:8px 6px;font-weight:600;color:var(--text-main)">Tanggal</th>
+              ${showDelete ? '<th style="text-align:center;padding:8px 6px;font-weight:600;color:var(--text-main)">Aksi</th>' : ''}
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    filters.forEach((f, idx) => {
+      const dateStr = f.savedAt ? f.savedAt.slice(0, 10) : '—';
+      const desc = f.description || '';
+      const resultCount = f.count != null ? `${f.count} hasil` : '—';
+      bodyHtml += `
+        <tr data-idx="${idx}" style="border-bottom:1px solid var(--border-subtle);cursor:pointer;transition:background 0.15s"
+            onmouseover="this.style.background='var(--hover-bg, rgba(255,255,255,0.04))'"
+            onmouseout="this.style.background='transparent'">
+          <td style="padding:10px 6px;font-weight:600;color:var(--text-main)">${f.name || 'Tanpa Nama'}</td>
+          <td style="padding:10px 6px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${desc || '—'}</td>
+          <td style="padding:10px 6px;color:var(--text-dim)">${resultCount}</td>
+          <td style="padding:10px 6px;color:var(--text-dim);white-space:nowrap">${dateStr}</td>
+          ${showDelete ? `<td style="padding:10px 6px;text-align:center">
+            <button type="button" class="btn btn-sm" data-del-idx="${idx}" style="font-size:11px;padding:4px 8px;color:var(--down-color);border-color:var(--down-color)">Hapus</button>
+          </td>` : ''}
+        </tr>
+      `;
+    });
+
+    bodyHtml += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const footerHtml = `
+      <button type="button" class="btn" id="smodal-close-btn" style="font-size:13px">Tutup</button>
+    `;
+
+    const overlay = showModal(title, bodyHtml, showDelete ? '' : footerHtml);
+    if (!showDelete) {
+      document.getElementById('smodal-close-btn')?.addEventListener('click', () => overlay.remove());
+    } else {
+      // For manage mode, use the close button in header
+    }
+
+    // Click on row to load filter
+    overlay.querySelectorAll('tr[data-idx]').forEach(row => {
+      row.addEventListener('click', async (e) => {
+        // Don't load if clicking delete button
+        if (e.target.closest('[data-del-idx]')) return;
+        const idx = parseInt(row.dataset.idx);
+        const filter = filters[idx];
+        if (!filter) return;
+        overlay.remove();
+        await applyFilter(filter);
+      });
+    });
+
+    // Delete buttons
+    overlay.querySelectorAll('[data-del-idx]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.delIdx);
+        const filter = filters[idx];
+        if (!filter) return;
+        if (!confirm(`Hapus scan "${filter.name}"?`)) return;
+        filters.splice(idx, 1);
+        await saveFilters(filters);
+        overlay.remove();
+        showToast(`Scan "${filter.name}" dihapus`, 'success');
+        // Re-open manage if still relevant
+        if (filters.length) manageScansDialog();
+      });
+    });
+}
+
+// ─── Apply a saved filter ────────────────────────
+async function applyFilter(filter) {
     const sortEl = document.getElementById('screener-sort');
     if (sortEl && filter.sort) sortEl.value = filter.sort;
     const searchEl = document.getElementById('screener-search');
@@ -777,7 +984,7 @@ async function loadFilterDialog() {
     } else {
         sortResults();
     }
-    showToast(`Filter "${filter.name}" diterapkan`, 'success');
+    showToast(`Scan "${filter.name}" diterapkan`, 'success');
 }
 
 // ─── Pattern Scanner (SSE) ──────────────────────

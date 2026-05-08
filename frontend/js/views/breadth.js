@@ -17,6 +17,9 @@ export async function renderBreadth(root) {
                     <p class="page-subtitle">Advance-Decline analysis — daily gainers vs decliners</p>
                 </div>
                 <div class="page-actions">
+                    <button class="btn btn-sm btn-icon" id="exportBreadthCSV" title="Export CSV">
+                        <i data-lucide="download" class="icon-14"></i>
+                    </button>
                     <button class="btn btn-sm btn-icon" id="refreshBreadth" title="Refresh">
                         <i data-lucide="refresh-cw" class="icon-14"></i>
                     </button>
@@ -39,6 +42,10 @@ export async function renderBreadth(root) {
 
     lucide.createIcons();
     document.getElementById('refreshBreadth')?.addEventListener('click', loadBreadth);
+    
+    // Export CSV handler
+    document.getElementById('exportBreadthCSV')?.addEventListener('click', exportBreadthCSV);
+    
     await loadBreadth();
 }
 
@@ -203,4 +210,40 @@ function renderTable(data) {
         </div>
         ${rows}
     `;
+}
+
+// ─── Export Breadth CSV (14.4.2) ─────────────────────────────
+function exportBreadthCSV() {
+    const container = document.getElementById('breadthTable');
+    if (!container) {
+        showToast('Tidak ada data untuk diexport', 'warning');
+        return;
+    }
+    // Extract data from rendered table rows
+    const rows = container.querySelectorAll('.breadth-row');
+    if (!rows.length) {
+        showToast('Tidak ada data untuk diexport', 'warning');
+        return;
+    }
+    const headers = ['Tanggal', 'Gainers', 'Decliners', 'Ratio', 'Cumulative Breadth'];
+    const csvRows = [];
+    rows.forEach(row => {
+        const date = row.querySelector('.breadth-date')?.textContent?.trim() || '';
+        const gainers = row.querySelector('.breadth-gainers')?.textContent?.trim() || '';
+        const decliners = row.querySelector('.breadth-decliners')?.textContent?.trim() || '';
+        const ratio = row.querySelector('.breadth-ratio')?.textContent?.trim() || '';
+        const cum = row.querySelector('.breadth-cum')?.textContent?.trim() || '';
+        csvRows.push([date, gainers, decliners, ratio, cum].map(v => '"' + v.replace(/"/g, '""') + '"').join(','));
+    });
+    const csv = '\uFEFF' + headers.join(',') + '\n' + csvRows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `retailbijak-breadth-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`CSV breadth diunduh (${rows.length} hari)`, 'success');
 }

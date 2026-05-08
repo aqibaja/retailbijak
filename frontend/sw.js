@@ -149,3 +149,36 @@ self.addEventListener('fetch', (e) => {
     }).catch(() => caches.match(e.request))
   );
 });
+
+// ─── Push Notifications (14.4.1) ───────────────────────────────
+self.addEventListener('push', function(event) {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'RetailBijak Alert';
+  const options = {
+    body: data.body || 'Ada update dari RetailBijak',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    vibrate: [200, 100, 200],
+    tag: data.tag || 'retailbijak-alert',
+    requireInteraction: true,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // Focus on an existing window if available
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});

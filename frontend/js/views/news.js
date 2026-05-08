@@ -1,4 +1,4 @@
-import { fetchNews } from '../api.js?v=20260510';
+import { fetchNews, showToast } from '../api.js?v=20260510';
 import { observeElements } from '../main.js?v=20260510';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
@@ -67,6 +67,7 @@ export async function renderNews(root) {
                     <option value="neutral">Netral</option>
                   </select>
                   <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
+                  <button id="news-export-csv" type="button" class="btn btn-sm" style="padding:6px 12px;font-size:12px" title="Export CSV">📥 CSV</button>
                 </div>
                 <div id="news-category-pills" class="news-category-bar flex gap-2 flex-wrap mt-2"></div>
             </div>
@@ -315,6 +316,76 @@ export async function renderNews(root) {
         }
 
         observeElements();
+
+        // ─── News CSV Export (14.4.2) ─────────────────────
+        const exportCsvBtn = document.getElementById('news-export-csv');
+        if (exportCsvBtn) {
+          exportCsvBtn.addEventListener('click', function() {
+            // Collect visible news items from the stream & featured
+            const streamItems = document.querySelectorAll('.news-card-stream');
+            const featuredMain = document.getElementById('news-featured-main');
+            const featuredSide = document.getElementById('news-featured-side');
+            const items = [];
+
+            // Get featured main
+            if (featuredMain) {
+              const heroLink = featuredMain.querySelector('.news-hero-card');
+              if (heroLink) {
+                items.push({
+                  title: heroLink.querySelector('.news-hero-title-text')?.textContent?.trim() || '',
+                  source: heroLink.querySelector('.news-hero-meta span:first-child')?.textContent?.trim() || '',
+                  time: heroLink.querySelector('.news-hero-meta span:last-child')?.textContent?.trim() || '',
+                  link: heroLink.href || '',
+                  type: 'Featured',
+                });
+              }
+            }
+            // Get featured side
+            if (featuredSide) {
+              featuredSide.querySelectorAll('.news-side-card').forEach(card => {
+                items.push({
+                  title: card.querySelector('.news-side-title')?.textContent?.trim() || '',
+                  source: card.querySelector('.news-side-source span:first-child')?.textContent?.trim() || '',
+                  time: card.querySelector('.news-side-source span:last-child')?.textContent?.trim() || '',
+                  link: card.href || '',
+                  type: 'Featured',
+                });
+              });
+            }
+            // Get stream items
+            streamItems.forEach(card => {
+              items.push({
+                title: card.querySelector('.news-stream-title')?.textContent?.trim() || '',
+                source: card.querySelector('.news-stream-source')?.textContent?.trim() || '',
+                time: card.querySelector('.news-stream-time')?.textContent?.trim() || '',
+                link: card.href || '',
+                type: 'Stream',
+              });
+            });
+
+            if (!items.length) {
+              showToast('Tidak ada berita untuk diexport', 'warning');
+              return;
+            }
+
+            const headers = ['Tipe', 'Judul', 'Sumber', 'Waktu', 'Link'];
+            const csvRows = items.map(item =>
+              [item.type, item.title, item.source, item.time, item.link]
+                .map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')
+            );
+            const csv = '\uFEFF' + headers.join(',') + '\n' + csvRows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `retailbijak-news-${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`CSV berita diunduh (${items.length} item)`, 'success');
+          });
+        }
 
     } catch (err) {
         document.getElementById('news-count').textContent = 'GAGAL';

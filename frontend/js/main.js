@@ -729,6 +729,84 @@ window.loadFreshness = async function loadFreshness() {
   }
 };
 
+// ─── Push Notification Polling (14.4.1) ─────────────────
+function setupPushNotifications() {
+  // Check if Notification API is available
+  if (!('Notification' in window)) {
+    console.log('[PushNotify] Notification API not supported');
+    return;
+  }
+
+  // Check if we already have permission (or request it)
+  if (Notification.permission === 'denied') {
+    console.log('[PushNotify] Permission denied by user');
+    return;
+  }
+
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        console.log('[PushNotify] Permission granted, starting poll');
+        startAlertPolling();
+      }
+    });
+    return;
+  }
+
+  // Permission already granted, start polling
+  startAlertPolling();
+
+  function startAlertPolling() {
+    // Use the same alert checking pattern but with browser notifications
+    // Poll every 60 seconds for triggered alerts that haven't been notified
+    let _lastNotifiedId = 0;
+
+    async function pollAlerts() {
+      try {
+        const res = await apiFetch('/alerts/triggered?limit=10');
+        if (!res?.data?.length) return;
+
+        // Find alerts newer than our last notification
+        const newAlerts = res.data.filter(a => a.id > _lastNotifiedId);
+        if (!newAlerts.length) {
+          // Still update lastNotifiedId if we have data
+          _lastNotifiedId = Math.max(_lastNotifiedId, res.data[0].id || 0);
+          return;
+        }
+
+        // Update last notified ID
+        _lastNotifiedId = Math.max(...newAlerts.map(a => a.id), _lastNotifiedId);
+
+        // Show browser notification for new alerts (max 3 at a time)
+        const toShow = newAlerts.slice(0, 3);
+        toShow.forEach(a => {
+          const label = (a.alert_type || '').replace(/_/g, ' ');
+          const title = `RetailBijak: ${a.ticker || 'Alert'}`;
+          const body = `${label}: ${a.trigger_value || ''} → ${a.current_value || ''}`;
+          try {
+            new Notification(title, {
+              body: body,
+              icon: '/icons/icon-192.png',
+              badge: '/icons/icon-192.png',
+              tag: 'retailbijak-alert-' + a.id,
+            });
+          } catch (e) {
+            // Fallback for older browsers
+            console.warn('[PushNotify] Failed to show notification', e);
+          }
+        });
+      } catch (e) {
+        // Silent fail — polling shouldn't be noisy
+      }
+    }
+
+    // Immediate check after delay, then every 60s
+    setTimeout(pollAlerts, 15000);
+    setInterval(pollAlerts, 60000);
+  }
+}
+// ─── End Push Notification Polling ─────────────────
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
   try {
@@ -866,6 +944,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Data freshness polling — refresh every 5 min
       loadFreshness();
       setInterval(loadFreshness, 300000);
+
+      // ─── Push Notification Polling (14.4.1) ────────────────
+      setupPushNotifications();
   } catch (e) {
       console.error('Init error:', e);
   }
