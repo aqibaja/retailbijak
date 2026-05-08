@@ -798,9 +798,36 @@ function hydrateHeader(symbol, detail, fund, candles){
   const badgesEl = document.querySelector('.stock-hero-badges');
   if (badgesEl) {
     badgesEl.innerHTML = `<span class="badge">IDX</span><span class="${stalenessClass}">${stalenessLabel || 'Memuat...'}</span>`;
+    // Load index constituent badges (15.1.5)
+    loadIndexBadges(badgesEl, symbol);
   }
 }
 /* ─── Theme-aware chart color helpers ─── */
+/* ─── Load index constituent badges (15.1.5) ─── */
+const INDEX_BADGE_CONFIG = {
+  LQ45:     { bg: '#3b82f6', label: 'LQ45' },
+  IDX30:    { bg: '#10b981', label: 'IDX30' },
+  KOMPAS100:{ bg: '#f59e0b', label: 'K100' },
+  IDX80:    { bg: '#8b5cf6', label: 'IDX80' },
+  IDXESGL:  { bg: '#22c55e', label: 'ESGL' },
+};
+async function loadIndexBadges(container, ticker) {
+  if (!container || !ticker) return;
+  try {
+    const res = await fetch(`/api/stocks/${ticker}/indices`);
+    const data = await res.json();
+    if (data && data.indices && data.indices.length > 0) {
+      const badges = data.indices.map(idx => {
+        const cfg = INDEX_BADGE_CONFIG[idx.index_name] || { bg: '#666', label: idx.index_name };
+        return `<span class="badge index-badge" style="background:${cfg.bg};color:#fff;font-size:10px;margin-left:4px">${cfg.label}</span>`;
+      }).join('');
+      container.insertAdjacentHTML('beforeend', badges);
+    }
+  } catch (e) {
+    // Silently fail — badges are non-critical
+    console.debug('Index badges not available for', ticker);
+  }
+}
 function getThemeColors() {
   const style = getComputedStyle(document.documentElement);
   return {

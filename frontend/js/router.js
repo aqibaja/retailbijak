@@ -22,6 +22,7 @@ const ROUTE_META = {
   alerts: { title: 'RetailBijak — Alert Harga', desc: 'Buat dan kelola alert harga saham IDX. Dapatkan notifikasi otomatis saat harga atau RSI mencapai level tertentu.' },
   movers: { title: 'RetailBijak — Market Movers', desc: 'Lihat saham IDX dengan pergerakan terbesar: gainers, losers, dan most active dengan multi-timeframe performance.' },
   calendar: { title: 'RetailBijak — Kalender Pasar', desc: 'Kalender dividen, laba, dan aksi korporasi saham IDX.' },
+  indices: { title: 'RetailBijak — Indeks IDX', desc: 'Pantau konstituen dan performa indeks saham IDX: LQ45, IDX30, KOMPAS100, IDX80, IDXESGL.' },
 };
 
 // Dynamic view registry — lazy import per route (1.7.1)
@@ -45,6 +46,7 @@ const viewModules = {
   alerts: () => import('./views/alerts.js?v=20260510'),
   movers: () => import('./views/movers.js?v=20260510'),
   calendar: () => import('./views/calendar.js?v=20260510'),
+  indices: () => import('./views/indices.js?v=20260510'),
 };
 const viewCache = {};
 

@@ -22,6 +22,12 @@ except Exception:
         logging.getLogger(__name__).info("fundamental updater unavailable; skipped")
 
 try:
+    from updaters.financials_updater import update_financials
+except Exception:
+    def update_financials():
+        logging.getLogger(__name__).info("financials updater unavailable; skipped")
+
+try:
     from jobs.idx_daily_sync import run_idx_daily_sync
 except Exception:
     try:
@@ -76,6 +82,7 @@ def init_scheduler():
     scheduler.add_job(update_signals, trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz), id="intraday_signal_update", replace_existing=True)
     scheduler.add_job(update_news, trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz), id="news_update", replace_existing=True)
     scheduler.add_job(update_fundamentals, trigger=CronTrigger(hour=2, minute=0, timezone=jkt_tz), id="fundamental_update", replace_existing=True)
+    scheduler.add_job(update_financials, trigger=CronTrigger(hour=2, minute=30, timezone=jkt_tz), id="financials_update", replace_existing=True)
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_swing", replace_existing=True, kwargs={'mode': 'swing'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_defensive", replace_existing=True, kwargs={'mode': 'defensive'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_catalyst", replace_existing=True, kwargs={'mode': 'catalyst'})
@@ -89,6 +96,13 @@ def init_scheduler():
     except Exception as e:
         logger.warning(f"Could not register sector_classifier: {e}")
     scheduler.add_job(update_calendar_events, trigger=CronTrigger(hour=4, minute=0, timezone=jkt_tz), id="calendar_update", replace_existing=True)
+    # Index constituent seed — weekly refresh (Sunday 04:30)
+    try:
+        from updaters.idx_index_updater import seed_index_constituents
+        scheduler.add_job(seed_index_constituents, trigger=CronTrigger(day_of_week='sun', hour=4, minute=30, timezone=jkt_tz), id='index_constituent_seed', replace_existing=True)
+        logger.info("Registered index_constituent_seed job (Sun 04:30 WIB)")
+    except Exception as e:
+        logger.warning(f"Could not register index_constituent_seed: {e}")
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id="yfinance_daily_sync", replace_existing=True)
     if not scheduler.running:

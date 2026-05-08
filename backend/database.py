@@ -234,6 +234,17 @@ class ChatHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
+class StockIndex(Base):
+    """Index constituents mapping — which tickers belong to which indices."""
+    __tablename__ = "stock_indices"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    index_name = Column(String, index=True, nullable=False)
+    ticker = Column(String, nullable=False, index=True)
+    period = Column(String, nullable=False, default="H1-2026")  # e.g. "H1-2026", "Feb-Jul 2026"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class CalendarEvent(Base):
     """Calendar events — dividend dates, earnings dates, corporate actions."""
     __tablename__ = "calendar_events"

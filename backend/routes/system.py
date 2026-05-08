@@ -228,21 +228,35 @@ def trigger_backfill_financials():
     """Manually trigger financial statements backfill (income, balance, cash flow) from yfinance."""
     try:
         try:
-            from updaters.financial_updater import fetch_and_store_financials
+            from updaters.financials_updater import backfill_financials
         except ModuleNotFoundError:
-            from backend.updaters.financial_updater import fetch_and_store_financials
-        try:
-            from database import SessionLocal
-        except ModuleNotFoundError:
-            from backend.database import SessionLocal
-        db = SessionLocal()
-        try:
-            count = fetch_and_store_financials(db)
-            return {'ok': True, 'message': f'Financial backfill complete.', 'records_upserted': count}
-        finally:
-            db.close()
+            from backend.updaters.financials_updater import backfill_financials
+        result = backfill_financials()
+        return {'ok': True, 'message': 'Financial backfill complete.', 'result': result}
     except Exception as e:
         logger.exception("Financial backfill failed")
+        return {'ok': False, 'error': str(e)}
+
+
+@router.post('/api/admin/seed-indices')
+def trigger_seed_indices():
+    """Manually trigger index constituents seed from hardcoded data."""
+    try:
+        from updaters.idx_index_updater import seed_index_constituents
+        result = seed_index_constituents()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@router.post('/api/admin/seed-financials')
+def trigger_seed_financials():
+    """Manually trigger synthetic financials seed from fundamental data."""
+    try:
+        from updaters.financials_seeder import seed_financials
+        result = seed_financials()
+        return {'ok': True, 'result': result}
+    except Exception as e:
         return {'ok': False, 'error': str(e)}
 
 
