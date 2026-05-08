@@ -16,6 +16,7 @@ const ROUTE_META = {
   backtest: { title: 'RetailBijak — Backtesting', desc: 'Uji strategi trading saham IDX dengan data historis. Backtest sinyal teknikal untuk optimasi entry dan exit.' },
   paper_trades: { title: 'RetailBijak — Paper Trading', desc: 'Simulasi trading saham IDX tanpa risiko. Latih strategi dengan modal virtual dan pantau performa.' },
   sector: { title: 'RetailBijak — Sektor Saham', desc: 'Lihat daftar saham IDX berdasarkan sektor. Analisis performa sektoral dan daftar emiten.' },
+  breadth: { title: 'RetailBijak — Market Breadth', desc: 'Analisis market breadth IDX: advance-decline line, cumulative breadth, gainers/decliners ratio.' },
   signal_overview: { title: 'RetailBijak — Signal Overview', desc: 'Pantau semua sinyal trading terkini dari seluruh saham IDX. Filter BUY/SELL berdasarkan data teknikal.' },
 };
 
@@ -34,6 +35,7 @@ const viewModules = {
   help: () => import('./views/help.js?v=20260508B'),
   ai_picks: () => import('./views/ai_picks.js?v=20260508B'),
   sector: () => import('./views/sector.js?v=20260510'),
+  breadth: () => import('./views/breadth.js?v=20260508F'),
   signal_overview: () => import('./views/signal_overview.js?v=20260510'),
 };
 const viewCache = {};

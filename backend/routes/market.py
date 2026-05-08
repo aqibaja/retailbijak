@@ -5,12 +5,13 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 try:
-    from database import BrokerSummary, UserSetting, get_db
+    from database import BrokerSummary, UserSetting, OHLCVDaily, get_db
 except ModuleNotFoundError:
-    from backend.database import BrokerSummary, UserSetting, get_db
+    from backend.database import BrokerSummary, UserSetting, OHLCVDaily, get_db
 
 try:
     from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
@@ -201,3 +202,36 @@ def get_broker_activity(limit: int = 20, db: Session = Depends(get_db)):
 
     _, derived_rows = _derived_broker_activity_rows(db)
     return {'count': len(derived_rows[:limit]), 'data': derived_rows[:limit], 'source': 'derived' if derived_rows else 'no_data'}
+
+
+@router.get('/api/market/breadth')
+def market_breadth(days: int = 50, db: Session = Depends(get_db)):
+    """Return daily market breadth (gainers/decliners/unchanged)."""
+    rows = db.query(
+        OHLCVDaily.date,
+        func.count().label('total'),
+        func.sum(case((OHLCVDaily.close > OHLCVDaily.open, 1), else_=0)).label('gainers'),
+        func.sum(case((OHLCVDaily.close < OHLCVDaily.open, 1), else_=0)).label('decliners'),
+    ).filter(
+        OHLCVDaily.close.isnot(None),
+        OHLCVDaily.open.isnot(None),
+    ).group_by(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).limit(days).all()
+    
+    data = []
+    cum_breadth = 0
+    for r in reversed(rows):
+        gainers = int(r.gainers or 0)
+        decliners = int(r.decliners or 0)
+        unchanged = int(r.total) - gainers - decliners
+        cum_breadth += gainers - decliners
+        data.append({
+            'date': str(r.date)[:10],
+            'total': int(r.total),
+            'gainers': gainers,
+            'decliners': decliners,
+            'unchanged': max(0, unchanged),
+            'breadth_ratio': round(gainers / max(decliners, 1), 2),
+            'cumulative_breadth': cum_breadth,
+        })
+    
+    return {'count': len(data), 'data': data}

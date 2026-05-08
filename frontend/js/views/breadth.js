@@ -1,0 +1,206 @@
+// ─── Market Breadth View — Advance/Decline Chart ────
+// Fase 9.2: Market breadth visualization
+
+import { apiFetch, showToast } from '../api.js';
+
+let breadthChart = null;
+
+export async function renderBreadth(root) {
+    if (!root) root = document.getElementById('app');
+    if (!root) return;
+
+    root.innerHTML = `
+        <div class="view-content breadth-page">
+            <div class="page-header">
+                <div>
+                    <h1>Market Breadth</h1>
+                    <p class="page-subtitle">Advance-Decline analysis — daily gainers vs decliners</p>
+                </div>
+                <div class="page-actions">
+                    <button class="btn btn-sm btn-icon" id="refreshBreadth" title="Refresh">
+                        <i data-lucide="refresh-cw" class="icon-14"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="breadth-summary-cards" id="breadthSummary">
+                <div class="loading-spinner"></div>
+            </div>
+
+            <div class="card" style="padding:16px">
+                <canvas id="breadthChart" height="320"></canvas>
+            </div>
+
+            <div class="breadth-table-wrap card" style="padding:0;margin-top:16px">
+                <div id="breadthTable"></div>
+            </div>
+        </div>
+    `;
+
+    lucide.createIcons();
+    document.getElementById('refreshBreadth')?.addEventListener('click', loadBreadth);
+    await loadBreadth();
+}
+
+async function loadBreadth() {
+    try {
+        const res = await apiFetch('/api/market/breadth?days=50');
+        const data = await res.json();
+        if (!data.data || !data.data.length) throw new Error('No data');
+
+        renderSummary(data.data);
+        renderChart(data.data);
+        renderTable(data.data);
+    } catch (e) {
+        document.getElementById('breadthSummary').innerHTML = `<div class="breadth-error">⚠️ Gagal memuat data breadth</div>`;
+        showToast('Gagal memuat breadth', 'error');
+    }
+}
+
+function renderSummary(data) {
+    const latest = data[data.length - 1];
+    const first = data[0];
+    const avgGainers = Math.round(data.reduce((s, d) => s + d.gainers, 0) / data.length);
+    const avgDecliners = Math.round(data.reduce((s, d) => s + d.decliners, 0) / data.length);
+    const totalCum = latest.cumulative_breadth;
+
+    document.getElementById('breadthSummary').innerHTML = `
+        <div class="breadth-stat"><span class="breadth-stat-label">Hari Ini</span><span class="breadth-stat-val up">${latest.gainers}↑</span><span class="breadth-stat-val down">${latest.decliners}↓</span></div>
+        <div class="breadth-stat"><span class="breadth-stat-label">Rata-rata</span><span class="breadth-stat-val up">${avgGainers}↑</span><span class="breadth-stat-val down">${avgDecliners}↓</span></div>
+        <div class="breadth-stat"><span class="breadth-stat-label">Ratio (hari ini)</span><span class="breadth-stat-val ${latest.breadth_ratio >= 1 ? 'up' : 'down'}">${latest.breadth_ratio.toFixed(2)}</span></div>
+        <div class="breadth-stat"><span class="breadth-stat-label">Cumulative Breadth</span><span class="breadth-stat-val ${totalCum >= 0 ? 'up' : 'down'}">${totalCum >= 0 ? '+' : ''}${totalCum.toLocaleString('id-ID')}</span></div>
+        <div class="breadth-stat"><span class="breadth-stat-label">Hari Hijau</span><span class="breadth-stat-val up">${data.filter(d => d.gainers > d.decliners).length}/${data.length}</span></div>
+    `;
+}
+
+function renderChart(data) {
+    const canvas = document.getElementById('breadthChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Destroy previous chart
+    if (breadthChart) { breadthChart.destroy(); breadthChart = null; }
+
+    const labels = data.map(d => {
+        const parts = d.date.split('-');
+        return parts[2] + '/' + parts[1];
+    });
+    const gainers = data.map(d => d.gainers);
+    const decliners = data.map(d => d.decliners * -1); // negative for visual
+    const cumBreadth = data.map(d => d.cumulative_breadth);
+
+    // Check if Chart is available
+    if (typeof Chart === 'undefined') {
+        canvas.parentElement.innerHTML = '<div class="text-muted p-4">Chart library not loaded</div>';
+        return;
+    }
+
+    // Calculate gradient for cum line
+    const cumGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    cumGradient.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+    cumGradient.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+
+    breadthChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Gainers',
+                    data: gainers,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    order: 2,
+                },
+                {
+                    label: 'Decliners',
+                    data: decliners,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    order: 2,
+                },
+                {
+                    label: 'Cumulative Breadth',
+                    data: cumBreadth,
+                    type: 'line',
+                    borderColor: '#10b981',
+                    backgroundColor: cumGradient,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointBackgroundColor: '#10b981',
+                    borderWidth: 2,
+                    order: 1,
+                    yAxisID: 'y1',
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 12 },
+                },
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 20 },
+                    grid: { display: false },
+                },
+                y: {
+                    position: 'left',
+                    ticks: { color: '#64748b', font: { size: 9 } },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    title: { display: true, text: 'Jumlah Saham', color: '#64748b', font: { size: 10 } },
+                },
+                y1: {
+                    position: 'right',
+                    ticks: { color: '#10b981', font: { size: 9 } },
+                    grid: { display: false },
+                    title: { display: true, text: 'Cumulative', color: '#10b981', font: { size: 10 } },
+                },
+            },
+        },
+    });
+}
+
+function renderTable(data) {
+    const container = document.getElementById('breadthTable');
+    if (!container) return;
+
+    const rows = [...data].reverse().slice(-20).reverse().map(d => {
+        const isGreen = d.gainers > d.decliners;
+        const cls = isGreen ? 'up' : 'down';
+        return `<div class="breadth-row">
+            <span class="breadth-date">${d.date}</span>
+            <span class="breadth-bar-wrap">
+                <span class="breadth-bar" style="flex:${d.gainers};background:var(--up-color);border-radius:3px 0 0 3px"></span>
+                <span class="breadth-bar" style="flex:${d.decliners};background:var(--down-color);border-radius:0 3px 3px 0"></span>
+            </span>
+            <span class="breadth-gainers up">${d.gainers}</span>
+            <span class="breadth-decliners down">${d.decliners}</span>
+            <span class="breadth-ratio ${cls}">${d.breadth_ratio.toFixed(2)}</span>
+            <span class="breadth-cum ${cls}">${d.cumulative_breadth >= 0 ? '+' : ''}${d.cumulative_breadth.toLocaleString('id-ID')}</span>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="breadth-table-header">
+            <span>Tanggal</span>
+            <span style="flex:1">Distribusi</span>
+            <span>↑</span>
+            <span>↓</span>
+            <span>Ratio</span>
+            <span>Cumulative</span>
+        </div>
+        ${rows}
+    `;
+}
