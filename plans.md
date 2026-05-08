@@ -18,7 +18,7 @@
 | **P5: Ekspansi Fitur & Inteligensi** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P6: Engagement, Visualisasi & Personalisasi** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P7: AI Intelligence, Engagement & Production Polish** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-| **P8: Platform Maturity & Advanced Analytics** | 🆕 0% | ▰▰▰▰▰▰▰▰▰▰ 0% |
+| **P8: Platform Maturity & Advanced Analytics** | 🟡 35% | ▰▰▰▱▰▰▰▰▰▰ 15% |
 
 ---
 
@@ -151,7 +151,16 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| 2026-05-08 | — | 🆕 | Mulai Fase 8: Platform Maturity & Advanced Analytics |
+| 2026-05-08 | 8.1.1 | ✅ | Sector performance endpoint — `GET /api/sectors/performance` aggregate return % per sector (1d, 5d, 1m, 3m) from OHLCV |
+| 2026-05-08 | 8.1.2 | ✅ | Sector view — `#sector` page: carousel chips, card grid with top/bottom stocks, stock rows, returns per period |
+| 2026-05-08 | 8.1.3 | ✅ | Sector sidebar nav — nav-item in index.html `pie-chart` icon linking to `#sector` |
+| 2026-05-08 | 8.1.4 | ✅ | Sector rotation viz — horizontal return bar per card (card-bar), color-coded up/down |
+| 2026-05-08 | 8.2 | ✅ | **Already existed** — `GET /api/compare`, `compare.js`, router, stock detail "Bandingkan" button, session storage |
+| 2026-05-08 | 8.3 | ✅ | **Already existed** — `POST/GET/DELETE /api/alerts`, `GET /api/alerts/triggered`, alert modal in stock_detail.js |
+| 2026-05-08 | 8.4 | ✅ | **Already existed** — `ai_picks.js` (393 lines), router, sidebar nav, backend integration |
+| 2026-05-08 | 8.5 | ✅ | **Already existed** — `paper_trades.js` (182 lines), P&L summary, win rate, trade list |
+| 2026-05-08 | 8.6 | 🟡 | Search enhancement — Ctrl+K modal exists, bisa tambah filter sector/industry/mcap |
+| 2026-05-08 | 8.7 | 🟡 | Polish — sebagian besar sudah oke. Audit final untuk runtime errors. |
 
 ---
 
