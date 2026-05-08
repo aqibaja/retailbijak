@@ -142,7 +142,7 @@ export function handleRoute(hash) {
                 const mod = viewCache.screener || await viewModules.screener();
                 return mod.renderScreener(root);
               }
-              if (viewKey === 'signal_overview') {
+              // Generic handler for any registered view module
               const loadView = viewModules[viewKey];
               if (loadView) {
                 const mod = viewCache[viewKey] || await loadView();
