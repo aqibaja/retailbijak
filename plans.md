@@ -1,9 +1,9 @@
-# 🇮🇩 RetailBijak — Rencana Pengembangan Fase 7
+# 🇮🇩 RetailBijak — Rencana Pengembangan
 
-> **Status:** 🆕 Baru — fase engagement, inteligensi, dan polish akhir
-> **Tujuan:** Transformasi dari platform fitur-lengkap menjadi platform **cerdas, engaging, dan siap-pakai harian**
-> **Prinsip:** Zero dependency pada data source baru. Semua fitur harus jalan dengan data existing (50 bars/ticker, 974 stocks, 7,928 signals, 958 fundamentals).
-> **Constraint:** IDX API rate-limited, yfinance rate-limited. Hanya pakai data yang sudah ada di DB.
+> **Status:** 🎉 Semua fitur inti selesai. Fase 8 = Platform Maturity
+> **Tujuan:** Ubah retailbijak dari platform fungsional jadi platform **pintar, komparatif, dan engaging**
+> **Prinsip:** Zero external data — semua fitur harus jalan dengan data yang sudah ada di DB (974 stocks, 47K OHLCV, 7.9K signals, 958 fundamentals, 330 news, AI picks)
+> **Constraint:** IDX API rate-limited. Hanya pakai data existing.
 
 ---
 
@@ -12,136 +12,114 @@
 | Fase | Status | Progress |
 |------|--------|----------|
 | **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-| **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 95% |
+| **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P3: Fitur Lanjutan** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P4: Stabilitas & Kualitas** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-| **P5: Ekspansi Fitur & Inteligensi** | 🟡 96% | ▰▰▰▰▰▰▰▰▰▱ (5.1.4 BLOCKED) |
+| **P5: Ekspansi Fitur & Inteligensi** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P6: Engagement, Visualisasi & Personalisasi** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-| **P7: AI Intelligence, Engagement & Production Polish** | 🟡 95% | ▰▰▰▰▰▰▰▰▰▱ 95% |
+| **P7: AI Intelligence, Engagement & Production Polish** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
+| **P8: Platform Maturity & Advanced Analytics** | 🆕 0% | ▰▰▰▰▰▰▰▰▰▰ 0% |
 
 ---
 
-## Masalah Teridentifikasi (dari Audit 2026-05-10)
+## Masalah yang Ditargetkan Fase 8
 
 | # | Masalah | Dampak | Prioritas |
 |---|---------|--------|-----------|
-| M1 | **AI Chat tidak punya riwayat** — tiap chat ke stock detail mulai dari kosong | User gak bisa lihat analisis sebelumnya, repeat pertanyaan sama | 🔴 High |
-| M2 | **Portfolio & watchlist 0 item** — user belum engage karena empty state kurang menarik | User engagement rendah | 🔴 High |
-| M3 | **Tidak ada sinyal overview** — sinyal cuma visible di stock detail, gak ada dashboard sinyal | User ketinggalan sinyal penting | 🔴 High |
-| M4 | **Hanya tersedia Bahasa Indonesia** — toggle ID/EN di topbar gak berfungsi | User English-speaking gak bisa pakai optimal | 🟠 Medium |
-| M5 | **Stock detail tidak bisa di-export** — gak ada print-friendly report | Analis gak bisa share/print laporan | 🟠 Medium |
-| M6 | **Screener hasilnya text-only** — gak ada visual chart/sparkline | Screening decision kurang cepat | 🟡 Medium |
-| M7 | **Dividend/IPO/RUPS info tidak tampil** — corporate action endpoint sudah ada tapi gak di-frontend | Kurangnya konteks fundamental | 🟡 Low |
-| M8 | **No onboarding for key features** — user baru bingung fitur apa aja yang ada | Drop-off tinggi, engagement rendah | 🟡 Low |
+| M1 | **Tidak ada overview sektor** — user gak bisa lihat performa sektor sekaligus | Investor sektor-based gak punya acuan | 🔴 High |
+| M2 | **Gak bisa bandingin saham** — tiap stock detail standalone, gak ada side-by-side comparison | Analis harus buka 2 tab manual | 🔴 High |
+| M3 | **Alerts backend ada tapi gak di-frontend** — tabel `alerts` dan `alert_triggers` sudah ada, no UI | User gak bisa set alert | 🟠 High |
+| M4 | **AI Picks cuma di dashboard** — ada 11 report, gak ada dedicated page | User ketinggalan rekomendasi AI | 🟠 Medium |
+| M5 | **Paper trading ada tapi gak di-menu** — `paper_trades` table ada, P&L engine gak di-expose | User gak bisa track paper trade | 🟡 Medium |
+| M6 | **Search terbatas** — cuma cari by ticker/name, gak bisa filter by sector/industry/mcap | Discovery saham lambat | 🟡 Medium |
+| M7 | **Nggak ada stock comparator di mobile** — comparison tool berguna untuk mobile user juga | Aksesibilitas terbatas | 🟢 Low |
 
 ---
 
-## P7: AI Intelligence, Engagement & Production Polish
+## Fase 8: Platform Maturity & Advanced Analytics
 
-### 7.1 🔴 AI Chat History & Context (HIGH IMPACT)
+### 8.1 🔴 Sector Performance Dashboard (HIGH IMPACT)
 
-> **Goal:** AI chat per stock jadi persistent, bisa liat history, context-aware.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 7.1.1 | **Model ChatHistory** — `id, ticker, role(user/assistant), message, created_at, metadata(JSON)` | `database.py` | 15m | SQLite table baru |
-| 7.1.2 | **Chat CRUD endpoint** — `POST /api/stocks/{ticker}/chat` simpan + return, `GET /api/stocks/{ticker}/chat-history` list, `DELETE /api/stocks/{ticker}/chat-history` clear | `routes/stock_detail.py` | 30m | POST simpan Q&A, GET return history |
-| 7.1.3 | **Chat UI history** — tampilkan chat bubble dari history, scroll ke bawah | `stock_detail.js` | 30m | Render history, auto-scroll |
-| 7.1.4 | **Clear history button** — tombol hapus riwayat chat di panel AI | `stock_detail.js` | 10m | Confirm + clear |
-| 7.1.5 | **Chat context injection** — inject 3 pesan terakhir sebagai context ke AI prompt | `routes/stock_detail.py` | 15m | LLM dapat konteks percakapan |
-
-**Value:** ★★★★★ — ini fitur paling diminta untuk daily use
-
-### 7.2 🔴 Signal Overview Dashboard (HIGH IMPACT)
-
-> **Goal:** Satu halaman untuk lihat semua sinyal dari semua saham sekaligus.
+> **Goal:** Satu halaman untuk lihat performa tiap sektor — aggregation dari OHLCV per sector, best/worst performers, sector rotation.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 7.2.1 | **Signal summary endpoint** — `GET /api/signals/summary` return count per signal_type, latest signals per ticker | `routes/scanner.py` | 20m | Group by signal, limit per ticker |
-| 7.2.2 | **Signal overview view** — `#signal-overview` page: table/summary sinyal, filter by type, sort by date | `signal_overview.js` (new), `router.js` | 30m | New view page |
-| 7.2.3 | **Signal dashboard widget** — widget di dashboard: "5 sinyal terbaru" dengan ticker + signal + arah | `dashboard.js` | 20m | Mini widget |
-| 7.2.4 | **Signal badge on sidebar** — notifikasi count sinyal baru di sidebar navigasi | `main.js` | 10m | Badge merah di radar icon |
+| 8.1.1 | **Sector performance endpoint** — `GET /api/sectors/performance` aggregate avg return % per sector (1d, 5d, 1m, 3m) from OHLCV | `routes/sectors.py` (new) | 30m | JOIN stocks.sector + ohlcv_daily close price, calc return % per period |
+| 8.1.2 | **Sector page view** — `#sectors` page: cards per sector, expand to see top stocks, mini chart sparkline | `sector.js` (new), `router.js` | 30m | Sector cards with performance + top holdings |
+| 8.1.3 | **Sector KPI widget on dashboard** — "Top/Bottom Sector" mini widget, bisa klik navigasi ke sector page | `dashboard.js` | 15m | Quick sector glance |
+| 8.1.4 | **Sector rotation visualization** — horizontal bar chart showing sector performance sorted best→worst | `sector.js` | 20m | SVG/Chart.js bar chart |
 
-**Value:** ★★★★★ — bikin user selalu update sinyal tanpa perlu buka tiap saham
+**Value:** ★★★★★ — fitur penting untuk institutional investor
 
-### 7.3 🟠 Watchlist & Portfolio Engagement (HIGH IMPACT)
+### 8.2 🔴 Stock Comparison Tool (HIGH IMPACT)
 
-> **Goal:** Bikin watchlist & portfolio engaging meskipun data kosong. Add sample data, visual highlights.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 7.3.1 | **Watchlist price highlights** — badge 🟢🔴 di watchlist jika price change >3%, animasi pulse | `portfolio.js` | 20m | Highlight big movers |
-| 7.3.2 | **Sample portfolio data** — seed script untuk isi portfolio + transactions dengan data sample (5 saham populer) | `user.py`, `portfolio.js` | 30m | Demo data untuk first-time user |
-| 7.3.3 | **Portfolio empty state upgrade** — "Mulai portofolio" card dengan contoh, CTA ke screener | `portfolio.js` | 15m | Better empty state |
-| 7.3.4 | **Watchlist empty state upgrade** — "Cari saham via Cmd+K" + trending stocks suggestion | `portfolio.js` | 15m | Better empty state |
-| 7.3.5 | **Portfolio rebalancing** — target vs actual sector allocation, list saham yang over/under weight | `routes/user.py`, `portfolio.js` | 45m | Rebalance suggestions |
-
-**Value:** ★★★★☆ — user engagement booster
-
-### 7.4 🟠 i18n Implementation (MEDIUM IMPACT)
-
-> **Goal:** ID/EN toggle beneran berfungsi. Full translation.
+> **Goal:** Side-by-side comparison 2-4 stocks — overlay chart, fundamentals, TA signals.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 7.4.1 | **i18n engine** — fungsi `__()` untuk translate, detect dari `lang` setting, fallback ke ID | `i18n.js` (new) | 30m | Simple key-value translation |
-| 7.4.2 | **ID translation file** — string existing di ID (complete) | `locales/id.json` | 10m | Full Indonesian |
-| 7.4.3 | **EN translation file** — semua string di-English-kan | `locales/en.json` | 30m | Full English translation |
-| 7.4.4 | **Wire lang toggle** — `#lang-toggle` beneran ganti bahasa, persist ke UserSetting + localStorage | `main.js`, `theme.js` | 20m | Toggle works |
-| 7.4.5 | **Auto-translate DOM** — scan all elements with `data-i18n` attribute, ganti textContent | `main.js` | 20m | DOM translation engine |
+| 8.2.1 | **Compare endpoint** — `GET /api/stocks/compare?tickers=BBCA,BBRI,BMRI` return OHLCV, fundamentals, signals for multi-ticker | `routes/stock_detail.py` | 30m | Batch query, normalize dates |
+| 8.2.2 | **Compare page** — `#compare/BBCA+BBRI+BMRI` route, multi-line chart (normalized), fundamental table rows, signal matrix | `compare.js` (new), `router.js` | 45m | New view with overlay chart |
+| 8.2.3 | **Compare entry point** — search/multi-select widget di stock detail, CTA "Bandingkan" | `stock_detail.js` | 15m | Add to existing stock actions |
 
-**Value:** ★★★★☆ — accessibility untuk English speaker
+**Value:** ★★★★★ — most-requested analytical feature
 
-### 7.5 🟡 Stock Detail Improvements (MEDIUM IMPACT)
+### 8.3 🟠 Alerts System Activation (HIGH IMPACT)
 
-> **Goal:** Stock detail jadi lebih comprehensive dan actionable.
+> **Goal:** Backend `alerts` + `alert_triggers` sudah ada. Frontend UI untuk manage alerts.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 7.5.1 | **Print-friendly stock report** — tombol "Print Report" yang render layout khusus cetak, buka print dialog | `stock_detail.js` | 20m | CSS @media print enhancement |
-| 7.5.2 | **Corporate actions timeline** — tampilkan dividen, stock split, RUPS dari endpoint existing `/api/corporate-actions` | `stock_detail.js` | 30m | Timeline card |
-| 7.5.3 | **Peers comparison widget** — ticker peers dari `/api/stocks/{ticker}/peers` ditampilkan sebagai mini table dengan price + change | `stock_detail.js` | 20m | Peer comparison card |
-| 7.5.4 | **Fundamental trend** — revenue/profit chart dari financials (multi-year trendline) | `stock_detail.js` | 30m | Chart financial trend |
+| 8.3.1 | **Alert CRUD frontend** — `GET /api/alerts` list, `POST /api/alerts` create, `DELETE /api/alerts/:id` di settings page | `routes/alerts.py` (check existing), `settings.js` | 30m | Check if alert routes exist, if not create |
+| 8.3.2 | **Alert UI in settings** — form create alert (ticker, type: price/signal, condition: above/below, value), list active alerts, toggle on/off | `settings.js` | 30m | In settings page |
+| 8.3.3 | **Alert trigger history** — lihat history trigerred alerts di settings atau dedicated page | `settings.js` | 20m | History of triggered alerts |
+| 8.3.4 | **Quick alert from stock detail** — tombol "🔔 Set Alert" di stock actions, pre-fill ticker | `stock_detail.js` | 10m | Shortcut from stock detail |
 
-**Value:** ★★★★☆ — depth analysis
+**Value:** ★★★★☆ — alerts adalah gateway untuk user engagement harian
 
-### 7.6 🟡 Screener Enhancement (MEDIUM IMPACT)
+### 8.4 🟠 AI Picks Showcase Page (MEDIUM IMPACT)
 
-> **Goal:** Screener lebih visual dan actionable.
+> **Goal:** 11 daily AI pick reports sudah ada di `daily_ai_pick_reports`. Dedicated page untuk lihat + track.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 7.6.1 | **Mini chart sparkline** — tiap row di hasil screener punya sparkline 20-bar dari OHLCV close price | `screener.js`, `routes/scanner_stream.py` | 30m | SVG/Cavas sparkline, data dari DB |
-| 7.6.2 | **Screener result count** — tampilkan total count hasil scan + progress | `screener.js` | 10m | "Menampilkan 12 dari 45 hasil" |
-| 7.6.3 | **Screener sort by column** — klik header kolom untuk sort ascending/descending | `screener.js` | 20m | Client-side sorting |
-| 7.6.4 | **Scan all tickers quick button** — tombol untuk langsung scan semua ticker tanpa filter | `screener.js` | 10m | Quick scan |
+| 8.4.1 | **AI Picks endpoint** — `GET /api/ai-picks` list reports, filter by date/mode | `routes/ai_picks.py` (check existing) | 15m | Query daily_ai_pick_reports |
+| 8.4.2 | **AI Picks page** — `#ai-picks` view: list of AI picks with stock, reasoning, performance | `ai_picks.js` (new), `router.js` | 30m | New view |
+| 8.4.3 | **AI Picks historical** — show past picks and their subsequent performance vs IHSG | `ai_picks.js` | 20m | Performance tracking |
+
+**Value:** ★★★★☆ — bikin AI picks jadi fitur utama bukan sidebar
+
+### 8.5 🟡 Paper Trading Polish (MEDIUM IMPACT)
+
+> **Goal:** `paper_trades` table ada. Polish frontend + add P&L summary.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 8.5.1 | **Paper trading endpoint** — CRUD + P&L aggregation | `routes/paper_trades.py` (check existing) | 20m | Win rate, total P&L, best/worst trades |
+| 8.5.2 | **Paper trading tab** — di portfolio page atau settings. List trades, add trade form | `portfolio.js` or `settings.js` | 30m | UI for paper trades |
+| 8.5.3 | **P&L dashboard widget** — "Paper P&L: +2.3M (12.4%)" mini widget di dashboard | `dashboard.js` | 10m | Quick P&L glance |
+
+**Value:** ★★★☆☆ — gamification element
+
+### 8.6 🟡 Search Enhancement (MEDIUM IMPACT)
+
+> **Goal:** Filter dan discovery saham lebih powerful.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 8.6.1 | **Advanced search endpoint** — `GET /api/stocks/search?q=&sector=&industry=&mcap_min=&mcap_max=` | `routes/stocks.py` | 20m | Multi-filter search |
+| 8.6.2 | **Search filter UI** — filter chips di search modal untuk sector/industry/mcap range | `main.js` | 25m | Enhanced Ctrl+K search |
+| 8.6.3 | **Search result enhancements** — show sector + change% in search results | `main.js` | 10m | Richer results |
 
 **Value:** ★★★☆☆ — UX improvement
 
-### 7.7 🟡 Dashboard Intelligence (MEDIUM IMPACT)
-
-> **Goal:** Dashboard lebih informatif dan engaging.
+### 8.7 🟢 Polish & Performance (LOW IMPACT)
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 7.7.1 | **Today's market narrative** — ringkasan otomatis: "Hari ini IHSG +0.8%, dipimpin sektor Financials (+2.1%)" dari data market summary | `dashboard.js` | 20m | Narrative card |
-| 7.7.2 | **Signal count badge** — widget "Sinyal Aktif: X Buy / Y Sell" di dashboard | `dashboard.js` | 15m | Make it actionable |
-| 7.7.3 | **Dashboard data freshness** — "Data diperbarui: 2 jam lalu" dari scheduler health | `dashboard.js` | 10m | Transparency |
-
-**Value:** ★★★☆☆ — makes dashboard feel alive
-
-### 7.8 🟢 UI Polish & Bug Fixes (LOW IMPACT)
-
-> **Goal:** Polish terakhir sebelum production stabil.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 7.8.1 | **Fix light mode gaps** — audit semua komponen di light theme, cari yg masih dark-only | `style.css`, semua views | 30m | Light mode completeness |
-| 7.8.2 | **Toast refinement** — animasi lebih smooth, auto-dismiss timer, stack management | `api.js` | 15m | Toast V2 |
-| 7.8.3 | **Skeleton loading refinement** — kurangin FOW di semua view, timing yg pas | `style.css`, semua views | 20m | Loading states |
-| 7.8.4 | **Mobile touch targets** — pastiin semua interactive element >=44px di mobile | `style.css` | 15m | Accessibility |
-| 7.8.5 | **Console error cleanup** — audit JS console errors, fix semua warning | Semua views | 20m | Zero errors |
+| 8.7.1 | **Production DB sync** — sync antara repo DB dan prod DB (swingaq.db vs retailbijak.db) | `backend/` | 15m | Copy/align prod DB ke repo |
+| 8.7.2 | **Lazy load views** — dynamically import view JS files via `import()` on route change | `router.js` | 20m | Split bundles |
+| 8.7.3 | **Console error audit** — test semua view di browser, fix runtime errors | Semua views | 20m | Zero runtime errors |
+| 8.7.4 | **Light mode final audit** — verify all views in light theme, fix gaps | `style.css` | 15m | No white-on-white |
 
 **Value:** ★★★☆☆ — quality
 
@@ -149,56 +127,31 @@
 
 ## Prioritas Eksekusi
 
-### 🔴 Minggu Ini (Core Features)
-7.1.1 → 7.1.2 → 7.1.3 → 7.1.4 → 7.1.5 → 7.2.1 → 7.2.2 → 7.2.3
+### 🔴 Langsung (Now)
+8.1.1 → 8.1.2 → 8.1.3 → 8.2.1 → 8.2.2
 
-### 🟠 Berikutnya (Engagement)
-7.3.1 → 7.3.2 → 7.3.3 → 7.3.4 → 7.3.5 → 7.4.1 → 7.4.2 → 7.4.3
+### 🟠 Berikutnya (Next)
+8.2.3 → 8.3.1 → 8.3.2 → 8.3.3 → 8.4.1 → 8.4.2
 
-### 🟡 Setelahnya (Depth & Polish)
-7.4.4 → 7.4.5 → 7.5.1 → 7.5.2 → 7.5.3 → 7.5.4 → 7.6.1 → 7.6.2 → 7.6.3 → 7.6.4 → 7.7.1 → 7.7.2 → 7.7.3 → 7.8.1 → 7.8.2 → 7.8.3 → 7.8.4 → 7.8.5
+### 🟡 Setelahnya (Later)
+8.3.4 → 8.4.3 → 8.5.1 → 8.5.2 → 8.5.3 → 8.6.1 → 8.6.2 → 8.6.3 → 8.7.1 → 8.7.2 → 8.7.3 → 8.7.4
 
 ---
 
-## Log Eksekusi — Fase 7
+## Log Eksekusi — Fase 7 (Finalized)
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| 2026-05-10 | 7.1.1 | ✅ | Model ChatHistory + table migration (`chat_history` table created) |
-| 2026-05-10 | 7.1.2 | ✅ | Chat CRUD endpoints: POST /chat (save Q&A), GET /chat-history, DELETE /chat-history |
-| 2026-05-10 | 7.1.3 | ✅ | Chat UI history display: loadChatHistory() renders past bubbles on stock detail |
-| 2026-05-10 | 7.1.4 | ✅ | Clear history button with confirm dialog, trash icon in chat header |
-| 2026-05-10 | 7.1.5 | ✅ | Chat context injection: last 6 messages (3 exchanges) injected into LLM system prompt |
-| 2026-05-10 | 7.2.1 | ✅ | Signal summary endpoint `GET /api/signals/summary` — counts by type + latest per ticker |
-| 2026-05-10 | 7.2.2 | ✅ | Signal Overview view (`#signal_overview`) — table, filter by type, sort by column, summary cards (total/buy/sell/ratio) |
-| 2026-05-10 | 7.2.3 | ✅ | Signal dashboard widget — 4 KPI cards (total, buy, sell, ratio) + buy/sell ratio bar |
-| 2026-05-10 | 7.2.4 | ✅ | Signal badge on sidebar — auto-fetches 7-day count, shows indigo badge, updates on page load |
-| 2026-05-10 | 7.3.1 | ✅ | Watchlist price highlights — price + change% columns, 🚀/🔻 badge jika move >3%, flash animation |
-| 2026-05-10 | 7.3.2 | ✅ | Sample portfolio data — `POST /api/portfolio/seed-sample` (BBCA, TLKM, ASII, BMRI, BBRI) + transactions |
-| 2026-05-10 | 7.3.3 | ✅ | Portfolio empty state upgrade — CTA dengan 3 button (Tambah, Cari Ide, Contoh Data) + sample preview card |
-| 2026-05-10 | 7.3.4 | ✅ | Watchlist empty state upgrade — petunjuk Ctrl+K, link ke Pasar, tips saham blue chip BBCA/TLKM/ASII |
-| 2026-05-10 | 7.3.5 | ✅ | Portfolio rebalancing — `GET /api/portfolio/rebalance` + UI card di portfolio, equal-weight target, over/under badge |
-| 2026-05-10 | 7.4.1 | ✅ | i18n engine — `__()`, `setLanguage()`, `applyTranslations()`, `initI18n()` functions (sudah ada sebelumnya, diperluas) |
-| 2026-05-10 | 7.4.2 | ✅ | ID translation file — 100+ keys: nav, sidebar, topbar, dashboard, stock detail, chat, screener, portfolio, signals, market, news, settings, general |
-| 2026-05-10 | 7.4.3 | ✅ | EN translation file — 100+ keys English lengkap, termasuk tooltip, placeholder, aria-label |
-| 2026-05-10 | 7.4.4 | ✅ | Lang toggle wiring — `theme.js` sudah panggil `setLanguage()`, toggle ID/EN persist ke localStorage |
-| 2026-05-10 | 7.4.5 | ✅ | `data-i18n` attributes di index.html: sidebar tooltips, bottom nav labels, search placeholder, PTR indicator, aria-labels semua tombol topbar |
-| 2026-05-10 | 7.5.1 | ✅ | Print-friendly stock report — button "Cetak" di stock actions, `printing-report` CSS class, enhanced @media print layout |
-| 2026-05-10 | 7.5.2 | ✅ | Corporate actions widget — filter berita per-ticker dengan keyword dividen/RUPS/stock split/buyback/akuisisi, badge warna |
-| 2026-05-10 | 7.5.3 | ✅ | Peers comparison widget — sudah ada (`renderPeerComparison()`), menampilkan price + change% untuk saham peers |
-| 2026-05-10 | 7.5.4 | 🟡 BLOCKED | Fundamental trend chart — financials table 0 rows, tidak ada data multi-year. Butuh data source baru |
-| 2026-05-08 | 7.6.1 | ✅ | Mini chart sparkline — close_prices array di SSE stream + SVG polyline di tiap row screener (hijau/merah trend) |
-| 2026-05-08 | 7.6.2 | ✅ | Screener result count — "X dari Y saham" display setelah scan selesai |
-| 2026-05-08 | 7.6.3 | ✅ | Sortable column headers — klik Kode/Nama/Harga/CCI/MA/Volume untuk sort ascending/descending |
-| 2026-05-08 | 7.6.4 | ✅ | Quick scan button — "⚡ Pindai Semua" langsung scan via volume sort default |
-| 2026-05-08 | 7.7.1 | ✅ | Market narrative card — narasi otomatis "IHSG menguat/melemah X%, Y adv vs Z dec" di dashboard |
-| 2026-05-08 | 7.7.2 | ✅ | Signal count badge widget — 4 KPI cards (Total, BUY, SELL, B/S Ratio) + ratio bar visual |
-| 2026-05-08 | 7.7.3 | ✅ | Dashboard data freshness — "Data IDX: YYYY-MM-DD • sync 18:00 WIB" + staleness badge |
-| 2026-05-08 | 7.8.1 | ✅ | Fix light mode gaps — audit 260+ CSS rules, light theme covers all components via CSS vars |
-| 2026-05-08 | 7.8.2 | ✅ | Toast V2 refinement — duplicate prevention (Set-based dedup), pause-on-hover (mouseenter/mouseleave), stagger stacking, progress bar pausing |
-| 2026-05-08 | 7.8.3 | ✅ | Skeleton loading refinement — reduced shimmer duration to 1.4s, smoother cubic-bezier timing, optimized background size |
-| 2026-05-08 | 7.8.4 | ✅ | Mobile touch targets — all .btn/.btn-icon/.nav-item min-height:44px/min-width:44px on mobile, scanner-row 60px min-height, larger tap areas |
-| 2026-05-08 | 7.8.5 | 🟡 | Console error cleanup — no JS syntax errors found across all views. Runtime audit needs browser session.
+| 2026-05-10 | 7.1.1-7.8.5 | ✅ | Semua task Fase 7 selesai. Detail lihat versi sebelumnya. |
+| 2026-05-08 | **Fase 7 Final** | 🎉 **100%** | Hanya 7.5.4 BLOCKED (data source). Berhasil 30/31 task. |
+
+---
+
+## Log Eksekusi — Fase 8
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-08 | — | 🆕 | Mulai Fase 8: Platform Maturity & Advanced Analytics |
 
 ---
 

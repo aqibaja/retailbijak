@@ -16,6 +16,7 @@ const ROUTE_META = {
   backtest: { title: 'RetailBijak — Backtesting', desc: 'Uji strategi trading saham IDX dengan data historis. Backtest sinyal teknikal untuk optimasi entry dan exit.' },
   paper_trades: { title: 'RetailBijak — Paper Trading', desc: 'Simulasi trading saham IDX tanpa risiko. Latih strategi dengan modal virtual dan pantau performa.' },
   sector: { title: 'RetailBijak — Sektor Saham', desc: 'Lihat daftar saham IDX berdasarkan sektor. Analisis performa sektoral dan daftar emiten.' },
+  signal_overview: { title: 'RetailBijak — Signal Overview', desc: 'Pantau semua sinyal trading terkini dari seluruh saham IDX. Filter BUY/SELL berdasarkan data teknikal.' },
 };
 
 // Dynamic view registry — lazy import per route (1.7.1)
@@ -33,6 +34,7 @@ const viewModules = {
   help: () => import('./views/help.js?v=20260508B'),
   ai_picks: () => import('./views/ai_picks.js?v=20260508B'),
   sector: () => import('./views/sector.js?v=20260510'),
+  signal_overview: () => import('./views/signal_overview.js?v=20260510'),
 };
 const viewCache = {};
 
@@ -45,20 +47,26 @@ function normalizeRoute(hash) {
     return cleanPath;
 }
 
+// Map route name with dashes to underscore keys in viewModules/ROUTE_META
+function routeToViewKey(route) {
+    return route.replace(/-/g, '_');
+}
+
 export function handleRoute(hash) {
     const root = document.getElementById('app-root');
     if (!root) return;
-    
+
     // Clear any view-specific timers/intervals from previous view
     clearViewTimers();
 
     const cleanPath = normalizeRoute(hash);
     const [view, ...rest] = cleanPath.split('/');
-    const baseRoute = view || 'dashboard';
+    let baseRoute = view || 'dashboard';
+    const viewKey = routeToViewKey(baseRoute);
     const currentToken = ++routeToken;
 
     // Set page meta tags (SEO description, OG, canonical)
-    const stockTicker = baseRoute === 'stock' ? (rest[0] || '').toUpperCase() : null;
+    const stockTicker = viewKey === 'stock' ? (rest[0] || '').toUpperCase() : null;
     if (stockTicker) {
       setPageMeta(
         `RetailBijak — ${stockTicker}`,
@@ -66,7 +74,7 @@ export function handleRoute(hash) {
         `/stock/${stockTicker}`
       );
     } else {
-      const routeMeta = ROUTE_META[baseRoute] || ROUTE_META.dashboard;
+      const routeMeta = ROUTE_META[viewKey] || ROUTE_META.dashboard;
       setPageMeta(routeMeta.title, routeMeta.desc, cleanPath);
     }
 
@@ -74,7 +82,7 @@ export function handleRoute(hash) {
     document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
         const targetView = el.getAttribute('data-view');
         if (targetView) {
-            const isActive = targetView === baseRoute;
+            const isActive = targetView === viewKey;
             el.classList.toggle('active', isActive);
             if (isActive) el.setAttribute('aria-current', 'page');
             else el.removeAttribute('aria-current');
@@ -84,13 +92,13 @@ export function handleRoute(hash) {
     // Fade out transition
     root.classList.add('page-loading');
     root.dataset.routePath = cleanPath;
-    root.dataset.activeView = baseRoute;
-    
+    root.dataset.activeView = viewKey;
+
     // Safety: force-remove page-loading after 3s to prevent stuck blank
     const safetyTimer = setTimeout(() => {
         root.classList.remove('page-loading');
     }, 3000);
-    
+
     window.setTimeout(async () => {
         if (currentToken !== routeToken) return;
         // Clear the safety timer since we're about to remove it ourselves
@@ -100,36 +108,47 @@ export function handleRoute(hash) {
         } catch {
             window.scrollTo(0, 0);
         }
-        
+
         try {
             // Dynamic import per route (1.7.1)
             const loadAndRender = async () => {
               // Portfolio covers both #portfolio and #watchlist
-              if (baseRoute === 'portfolio' || baseRoute === 'watchlist') {
+              if (viewKey === 'portfolio' || viewKey === 'watchlist') {
                 const mod = viewCache.portfolio || await viewModules.portfolio();
                 viewCache.portfolio = mod;
-                return mod.renderPortfolio(root, baseRoute);
+                return mod.renderPortfolio(root, viewKey);
               }
-              if (baseRoute === 'paper_trades') {
+              if (viewKey === 'paper_trades') {
                 const mod = viewCache.paper_trades || await viewModules.paper_trades();
                 viewCache.paper_trades = mod;
                 return mod.renderPaperTrades(root);
               }
-              if (baseRoute === 'sector' && rest[0]) {
+              if (viewKey === 'sector' && rest[0]) {
                 const mod = viewCache.sector || await viewModules.sector();
                 viewCache.sector = mod;
                 return mod.renderSector(root, rest[0]);
               }
-              if (baseRoute === 'stock' && rest[0]) {
+              if (viewKey === 'sector') {
+                const mod = viewCache.sector || await viewModules.sector();
+                viewCache.sector = mod;
+                return mod.renderSectors(root);
+              }
+              if (viewKey === 'stock' && rest[0]) {
                 const mod = viewCache.stock_detail || await viewModules.stock_detail();
                 viewCache.stock_detail = mod;
                 return mod.renderStockDetail(root, rest[0]);
               }
-              const loadView = viewModules[baseRoute];
+              if (viewKey === 'screener') {
+                const mod = viewCache.screener || await viewModules.screener();
+                return mod.renderScreener(root);
+              }
+              if (viewKey === 'signal_overview') {
+              const loadView = viewModules[viewKey];
               if (loadView) {
-                const mod = viewCache[baseRoute] || await loadView();
-                viewCache[baseRoute] = mod;
-                const renderFn = mod[`render${baseRoute.charAt(0).toUpperCase() + baseRoute.slice(1)}`];
+                const mod = viewCache[viewKey] || await loadView();
+                viewCache[viewKey] = mod;
+                const renderFnName = `render${viewKey.charAt(0).toUpperCase() + viewKey.slice(1).replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`;
+                const renderFn = mod[renderFnName];
                 if (renderFn) return renderFn(root);
               }
               // Fallback to dashboard
@@ -138,12 +157,12 @@ export function handleRoute(hash) {
               return dash.renderDashboard(root);
             };
             await loadAndRender();
-            
+
             // Re-initialize icons for newly injected HTML
-            
+
             // View content entrance animation
             if (currentToken === routeToken) root.classList.add('view-content');
-            
+
         } catch (e) {
             console.error("Routing error:", e);
             root.innerHTML = `<div class="p-4 text-down">Gagal memuat tampilan.</div>`;
@@ -153,6 +172,6 @@ export function handleRoute(hash) {
         requestAnimationFrame(() => {
             if (currentToken === routeToken) root.classList.remove('page-loading');
         });
-        
+
     }, 60); // Minimal wait — views render instantly with skeletons
 }
