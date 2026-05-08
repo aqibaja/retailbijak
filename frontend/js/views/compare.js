@@ -1,6 +1,6 @@
-import { apiFetch, showToast } from '../api.js?v=20260508';
-import { nf, pf, money } from '../utils/format.js?v=20260508B';
-import { observeElements } from '../main.js?v=20260508B';
+import { apiFetch, showToast } from '../api.js?v=20260509';
+import { nf, pf, money } from '../utils/format.js?v=20260509B';
+import { observeElements } from '../main.js?v=20260509B';
 
 let _compareTickers = [];
 let _chartInstance = null;
@@ -66,7 +66,7 @@ export async function renderCompare(root) {
         </div>
       </div>
       <div id="compare-results" class="market-section-group">
-        ${stored.length >= 2 ? '<div class="skeleton skeleton-card skeleton-h-400"></div>' : '<div class="empty-state-v2"><h3>Tambahkan Minimal 2 Saham</h3><p>Masukkan kode saham di kolom di atas, lalu klik Tambah untuk memulai perbandingan.</p></div>'}
+        ${stored.length >= 2 ? '<div class="skeleton skeleton-card skeleton-h-400"></div>' : '<div class="empty-state-card"><div class="empty-state-icon">📊</div><strong class="empty-state-title">Tambahkan Minimal 2 Saham</strong><span class="empty-state-desc">Masukkan kode saham di kolom di atas, lalu klik Tambah untuk memulai perbandingan.</span></div>'}
       </div>
     </section>`;
 
@@ -106,7 +106,7 @@ async function loadComparison(tickers) {
   try {
     const res = await apiFetch(`/compare?tickers=${tickers.join(',')}`);
     if (!res?.data?.tickers?.length) {
-      container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat data</h3><p>Data perbandingan tidak tersedia untuk saham yang dipilih.</p></div>';
+      container.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">📊</div><strong class="empty-state-title">Gagal memuat data</strong><span class="empty-state-desc">Data perbandingan tidak tersedia untuk saham yang dipilih.</span></div>';
       return;
     }
     const d = res.data;
@@ -167,7 +167,7 @@ async function loadComparison(tickers) {
       document.head.appendChild(script);
     }
   } catch (e) {
-    container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat</h3><p>Terjadi kesalahan saat mengambil data perbandingan.</p></div>';
+    container.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal memuat</strong><span class="empty-state-desc">Terjadi kesalahan saat mengambil data perbandingan.</span></div>';
   }
 }
 
@@ -228,6 +228,6 @@ function renderCompareChart(tickers, data, colors) {
       }
     }).observe(container);
   } catch (e) {
-    container.innerHTML = '<div class="empty-state-v2"><h3>Gagal render chart</h3></div>';
+    container.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">📊</div><strong class="empty-state-title">Gagal render chart</strong></div>';
   }
 }

@@ -1,6 +1,6 @@
 import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf, money } from '../utils/format.js?v=20260508B';
-import { observeElements } from '../main.js?v=20260508B';
+import { nf, pf, money } from '../utils/format.js?v=20260509B';
+import { observeElements } from '../main.js?v=20260509B';
 
 export async function renderBacktest(root) {
   document.title = 'RetailBijak — Backtesting';
@@ -39,7 +39,7 @@ export async function renderBacktest(root) {
         </div>
       </div>
       <div id="bt-results" class="market-section-group">
-        <div class="empty-state-v2"><h3>Jalankan Backtest</h3><p>Pilih saham dan strategi, lalu klik Jalankan untuk melihat hasil simulasi.</p></div>
+        <div class="empty-state-card"><div class="empty-state-icon">📊</div><strong class="empty-state-title">Jalankan Backtest</strong><span class="empty-state-desc">Pilih saham dan strategi, lalu klik Jalankan untuk melihat hasil simulasi.</span></div>
       </div>
     </section>`;
 
@@ -60,11 +60,11 @@ async function runBacktest() {
   try {
     const res = await apiFetch(`/backtest?ticker=${ticker}&strategy=${strategy}&initial_capital=${capital}`);
     if (res?.status === 'error') {
-      container.innerHTML = `<div class="empty-state-v2"><h3>Gagal</h3><p>${res.message || 'Error tidak diketahui'}</p></div>`;
+      container.innerHTML = `<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal</strong><span class="empty-state-desc">${res.message || 'Error tidak diketahui'}</span></div>`;
       return;
     }
     if (!res || res.total_trades === undefined) {
-      container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat</h3><p>Backtest engine tidak merespon.</p></div>';
+      container.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal memuat</strong><span class="empty-state-desc">Backtest engine tidak merespon.</span></div>';
       return;
     }
 
@@ -126,7 +126,7 @@ async function runBacktest() {
     }
 
     if (data.total_trades === 0) {
-      html += `<div class="market-card mt-3 p-4"><div class="empty-state-v2"><h3>Tidak Ada Trade</h3><p>Strategi ${stratLabels[strategy] || strategy} tidak menghasilkan sinyal beli untuk ${data.ticker} pada rentang data yang tersedia. Coba ticker lain atau strategi berbeda.</p></div></div>`;
+      html += `<div class="market-card mt-3 p-4"><div class="empty-state-card"><div class="empty-state-icon">📊</div><strong class="empty-state-title">Tidak Ada Trade</strong><span class="empty-state-desc">Strategi ${stratLabels[strategy] || strategy} tidak menghasilkan sinyal beli untuk ${data.ticker} pada rentang data yang tersedia. Coba ticker lain atau strategi berbeda.</span></div></div>`;
     }
 
     container.innerHTML = html;
@@ -137,7 +137,7 @@ async function runBacktest() {
     }
 
   } catch (e) {
-    container.innerHTML = `<div class="empty-state-v2"><h3>Error</h3><p>${e.message || 'Gagal menjalankan backtest'}</p></div>`;
+    container.innerHTML = `<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Error</strong><span class="empty-state-desc">${e.message || 'Gagal menjalankan backtest'}</span></div>`;
   }
 }
 

@@ -1,6 +1,6 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260508B';
-import { money, nf, pf } from '../utils/format.js?v=20260508B';
-import { observeElements } from '../main.js?v=20260508B';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260509B';
+import { money, nf, pf } from '../utils/format.js?v=20260509B';
+import { observeElements } from '../main.js?v=20260509B';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -209,11 +209,11 @@ async function renderPortfolioTab(el) {
       ${analyticsHtml}
       ${sectorHtml}
       ${fetchError ? `
-      <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="alert-triangle" style="color:var(--warn-color);"></i></div>
-        <h3>Gagal Memuat</h3>
-        <p>Data portofolio tidak dapat dimuat. Coba refresh halaman.</p>
-        <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
+      <div class="empty-state-card">
+        <div class="empty-state-icon">⚠️</div>
+        <strong class="empty-state-title">Gagal Memuat</strong>
+        <span class="empty-state-desc">Data portofolio tidak dapat dimuat. Coba refresh halaman.</span>
+        <button type="button" class="empty-state-action" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
       </div>` : rows.length ? `
       <div class="table-wrapper">
         <table class="table">
@@ -237,10 +237,10 @@ async function renderPortfolioTab(el) {
           }).join('')}</tbody>
         </table>
       </div>` : `
-      <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="briefcase"></i></div>
-        <h3>Mulai Portofolio Anda</h3>
-        <p style="max-width:340px">Catat posisi saham yang Anda miliki dan pantau P&amp;L secara real-time. Data tersimpan di akun Anda.</p>
+      <div class="empty-state-card">
+        <div class="empty-state-icon">📊</div>
+        <strong class="empty-state-title">Mulai Portofolio Anda</strong>
+        <span class="empty-state-desc">Catat posisi saham yang Anda miliki dan pantau P&amp;L secara real-time. Data tersimpan di akun Anda.</span>
         <div class="mt-8 flex gap-2" style="justify-content:center;flex-wrap:wrap">
           <button id="add-portfolio-empty" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
           <a href="#screener" class="btn portfolio-action-btn" style="padding:8px 16px;font-size:12px"><i data-lucide="radar" class="lucide-md"></i> Cari Ide Saham</a>
@@ -522,7 +522,7 @@ async function loadTransactionHistory(el) {
 }
 
 async function showTransactionForm(el) {
-  const { showModal } = await import('./portfolio.js?v=20260508B');
+  const { showModal } = await import('./portfolio.js?v=20260509B');
   showModal({
     title: 'Catat Transaksi',
     fields: [
@@ -592,11 +592,11 @@ async function renderWatchlistTab(el, activeGroupId) {
       </div>
         ${groupTabs}
       ${fetchError ? `
-      <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="alert-triangle" style="color:var(--warn-color);"></i></div>
-        <h3>Gagal Memuat</h3>
-        <p>Data tidak dapat dimuat. Coba refresh halaman.</p>
-        <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
+      <div class="empty-state-card">
+        <div class="empty-state-icon">⚠️</div>
+        <strong class="empty-state-title">Gagal Memuat</strong>
+        <span class="empty-state-desc">Data tidak dapat dimuat. Coba refresh halaman.</span>
+        <button type="button" class="empty-state-action" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
       </div>` : rows.length ? `
       <div class="table-wrapper">
         <table class="table">
@@ -610,11 +610,11 @@ async function renderWatchlistTab(el, activeGroupId) {
         </table>
       </div>
       <div id="watchlist-mini-charts" class="portfolio-mini-grid mt-3"></div>` : `
-      <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="eye"></i></div>
-        <h3>Daftar Pantau Kosong</h3>
-        <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
-        <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
+      <div class="empty-state-card">
+        <div class="empty-state-icon">👁️</div>
+        <strong class="empty-state-title">Daftar Pantau Kosong</strong>
+        <span class="empty-state-desc">Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</span>
+        <button id="add-watchlist-empty" type="button" class="empty-state-action"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
       </div>`}`;
     
     // Group tab handlers

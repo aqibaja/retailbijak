@@ -2,7 +2,7 @@
 // Route: #signal-overview
 // Shows all latest signals across the market with filtering
 
-import { nf, pct } from '../utils/format.js?v=20260508B';
+import { nf, pct } from '../utils/format.js?v=20260509B';
 
 let currentSignalType = '';
 let currentPage = 1;

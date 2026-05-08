@@ -1,5 +1,5 @@
-import { clearViewTimers } from './main.js?v=20260508B';
-import { setPageMeta } from './api.js?v=20260508B';
+import { clearViewTimers } from './main.js?v=20260509B';
+import { setPageMeta } from './api.js?v=20260509B';
 
 // Route meta descriptions
 const ROUTE_META = {
@@ -26,25 +26,25 @@ const ROUTE_META = {
 
 // Dynamic view registry — lazy import per route (1.7.1)
 const viewModules = {
-  dashboard: () => import('./views/dashboard.js?v=20260508B'),
-  stock_detail: () => import('./views/stock_detail.js?v=20260508B'),
-  screener: () => import('./views/screener.js?v=20260508B'),
-  portfolio: () => import('./views/portfolio.js?v=20260508B'),
-  market: () => import('./views/market.js?v=20260508B'),
-  treemap: () => import('./views/treemap.js?v=20260508B'),
-  compare: () => import('./views/compare.js?v=20260508'),
+  dashboard: () => import('./views/dashboard.js?v=20260509B'),
+  stock_detail: () => import('./views/stock_detail.js?v=20260509B'),
+  screener: () => import('./views/screener.js?v=20260509B'),
+  portfolio: () => import('./views/portfolio.js?v=20260509B'),
+  market: () => import('./views/market.js?v=20260509B'),
+  treemap: () => import('./views/treemap.js?v=20260509B'),
+  compare: () => import('./views/compare.js?v=20260509'),
   backtest: () => import('./views/backtest.js?v=20260510'),
   paper_trades: () => import('./views/paper_trades.js?v=20260510'),
-  news: () => import('./views/news.js?v=20260508B'),
-  settings: () => import('./views/settings.js?v=20260508B'),
-  help: () => import('./views/help.js?v=20260508B'),
-  ai_picks: () => import('./views/ai_picks.js?v=20260508B'),
+  news: () => import('./views/news.js?v=20260509B'),
+  settings: () => import('./views/settings.js?v=20260509B'),
+  help: () => import('./views/help.js?v=20260509B'),
+  ai_picks: () => import('./views/ai_picks.js?v=20260509B'),
   sector: () => import('./views/sector.js?v=20260510'),
-  breadth: () => import('./views/breadth.js?v=20260508F'),
+  breadth: () => import('./views/breadth.js?v=20260509F'),
   signal_overview: () => import('./views/signal_overview.js?v=20260510'),
-  alerts: () => import('./views/alerts.js?v=20260508C'),
-  movers: () => import('./views/movers.js?v=20260508C'),
-  calendar: () => import('./views/calendar.js?v=20260508A'),
+  alerts: () => import('./views/alerts.js?v=20260509C'),
+  movers: () => import('./views/movers.js?v=20260509C'),
+  calendar: () => import('./views/calendar.js?v=20260509A'),
 };
 const viewCache = {};
 

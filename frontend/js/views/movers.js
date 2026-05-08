@@ -1,8 +1,8 @@
 // ─── Market Movers Page — Gainers / Losers / Most Active ────
 // Dedicated page with multi-timeframe performance columns (1W, 1M, 3M, 6M)
 
-import { apiFetch } from '../api.js?v=20260508B';
-import { nf, pf } from '../utils/format.js?v=20260508B';
+import { apiFetch } from '../api.js?v=20260509B';
+import { nf, pf } from '../utils/format.js?v=20260509B';
 
 // ─── Module State ─────────────────────────────────────────────
 let cache = {};        // { gainers: [], losers: [] }
@@ -50,18 +50,18 @@ function skeletonRows(n = 10) {
 }
 
 function emptyBlock(msg) {
-  return `<div class="empty-state-v2" style="padding:60px 20px">
-    <div class="empty-icon" style="font-size:28px;opacity:.35">📊</div>
-    <strong style="font-size:14px;color:var(--text-main)">Belum Ada Data</strong>
-    <span style="font-size:12px;color:var(--text-muted);max-width:280px;line-height:1.5">${msg || 'Data market movers belum tersedia untuk sesi ini.'}</span>
+  return `<div class="empty-state-card">
+    <div class="empty-state-icon">📊</div>
+    <strong class="empty-state-title">Belum Ada Data</strong>
+    <span class="empty-state-desc">${msg || 'Data market movers belum tersedia untuk sesi ini.'}</span>
   </div>`;
 }
 
 function errorBlock(msg) {
-  return `<div class="empty-state-v2" style="padding:60px 20px">
-    <div class="empty-icon" style="font-size:28px;opacity:.4">⚠️</div>
-    <strong style="font-size:14px;color:var(--down-color)">Gagal Memuat Data</strong>
-    <span style="font-size:12px;color:var(--text-muted);max-width:260px;line-height:1.5">${msg || 'Terjadi kesalahan saat mengambil data. Silakan coba lagi.'}</span>
+  return `<div class="empty-state-card">
+    <div class="empty-state-icon">⚠️</div>
+    <strong class="empty-state-title" style="color:var(--down-color)">Gagal Memuat Data</strong>
+    <span class="empty-state-desc">${msg || 'Terjadi kesalahan saat mengambil data. Silakan coba lagi.'}</span>
   </div>`;
 }
 

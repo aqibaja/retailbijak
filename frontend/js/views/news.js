@@ -1,5 +1,5 @@
-import { fetchNews } from '../api.js?v=20260508B';
-import { observeElements } from '../main.js?v=20260508B';
+import { fetchNews } from '../api.js?v=20260509B';
+import { observeElements } from '../main.js?v=20260509B';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
 
@@ -183,7 +183,7 @@ export async function renderNews(root) {
 
         if (!items.length) {
           document.querySelectorAll('[id^=news-]').forEach(el => {
-            if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Belum ada berita</h3><p>Berita akan muncul setelah scheduler berjalan.</p></div>';
+            if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">📰</div><strong class="empty-state-title">Belum ada berita</strong><span class="empty-state-desc">Berita akan muncul setelah scheduler berjalan.</span></div>';
           });
           return;
         }
@@ -303,7 +303,7 @@ export async function renderNews(root) {
             if (label) label.textContent = filtered.length ? `· filter "${this.value}" (${filtered.length})` : '· tidak ditemukan';
             document.getElementById('news-stream').innerHTML = filtered.length
               ? filtered.map((n, i) => streamCardHtml(n, i)).join('')
-              : '<div class="empty-state-v2 grid-full"><h3>Tidak ditemukan</h3><p>Coba kata kunci lain.</p></div>';
+              : '<div class="empty-state-card"><div class="empty-state-icon">🔍</div><strong class="empty-state-title">Tidak ditemukan</strong><span class="empty-state-desc">Coba kata kunci lain.</span></div>';
           });
           if (clearBtn) {
             clearBtn.addEventListener('click', function() {
@@ -319,7 +319,7 @@ export async function renderNews(root) {
     } catch (err) {
         document.getElementById('news-count').textContent = 'GAGAL';
         const stream = document.getElementById('news-stream');
-        if (stream) stream.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Gagal memuat berita</h3><p>Coba refresh halaman.</p></div>';
+        if (stream) stream.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal memuat berita</strong><span class="empty-state-desc">Coba refresh halaman.</span></div>';
     }
 }
 
@@ -327,7 +327,7 @@ function renderNewsItems(items, res) {
   const label = document.getElementById('news-filter-label');
   if (!items.length) {
     document.querySelectorAll('[id^=news-]').forEach(el => {
-      if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Belum ada berita</h3><p>Coba ubah filter atau sumber.</p></div>';
+      if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">📰</div><strong class="empty-state-title">Belum ada berita</strong><span class="empty-state-desc">Coba ubah filter atau sumber.</span></div>';
     });
     return;
   }

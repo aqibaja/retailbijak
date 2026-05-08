@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260508B';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260508B';
-import { initTheme } from './theme.js?v=20260508B';
+import { handleRoute } from './router.js?v=20260509B';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260509B';
+import { initTheme } from './theme.js?v=20260509B';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];

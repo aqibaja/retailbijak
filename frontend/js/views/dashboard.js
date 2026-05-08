@@ -1,8 +1,8 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260508B';
-import { observeElements, animateValue } from '../main.js?v=20260508B';
-import { nf, pf } from '../utils/format.js?v=20260508B';
-import { ssSet } from '../utils/storage.js?v=20260508B';
-import { loadTodayEvents } from './calendar.js?v=20260508A';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260509B';
+import { observeElements, animateValue } from '../main.js?v=20260509B';
+import { nf, pf } from '../utils/format.js?v=20260509B';
+import { ssSet } from '../utils/storage.js?v=20260509B';
+import { loadTodayEvents } from './calendar.js?v=20260509A';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -487,52 +487,47 @@ async function loadAiPickWidget() {
 
   const payload = await fetchAiPicks('swing', 3).catch(() => null);
   const picks = Array.isArray(payload?.data) ? payload.data : [];
-  const featured = picks[0];
 
-  if (!featured) {
+  const getSignal = (score) => {
+    if (score == null) return 'HOLD';
+    if (score >= 70) return 'BUY';
+    if (score >= 40) return 'HOLD';
+    return 'SELL';
+  };
+
+  const signalClass = (signal) => {
+    if (signal === 'BUY') return 'text-up';
+    if (signal === 'SELL') return 'text-down';
+    return 'text-warn';
+  };
+
+  if (!picks.length) {
     if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
-    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary portfolio-action-btn mt-10">Buka AI Picks</a></div>';
+    mount.innerHTML = '<div class="dashboard-widget-state" style="display:none"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong></div>';
     return;
   }
 
   if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter.`;
-  const alternatives = picks.slice(1, 3);
   mount.innerHTML = `
-    <div class="dash-ai-pick-featured">
-      <a href="#ai-picks" class="dash-ai-pick-featured-link">
-        <div class="dash-ai-pick-head">
-          <div>
-            <span class="dash-intel-kicker">Featured · ${featured.ticker}</span>
-            <strong>${featured.name || featured.ticker}</strong>
-          </div>
-          <div class="dash-ai-pick-score">${nf(featured.score, 1)}</div>
-        </div>
-        <p class="dash-ai-pick-fit">${featured.fit_label || 'Kandidat terbaik untuk mode swing.'}</p>
-        <div class="dash-ai-pick-metrics">
-          <div><span>Keyakinan</span><strong>${featured.confidence || '-'}</strong></div>
-          <div><span>Change</span><strong>${pf(featured.change_pct ?? 0)}</strong></div>
-          <div><span>Vol</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
-        </div>
-        <div class="dash-ai-pick-summary">
-          <span>${featured.reason_labels?.[0] || 'Likuiditas dan teknikal mendukung.'}</span>
-        </div>
-      </a>
-      ${alternatives.length ? `
-        <div class="dash-ai-pick-alt-list">
-          ${alternatives.map(item => `
-            <button class="dash-ai-pick-alt-item" data-dash-ai-pick-alt-detail="${item.ticker}">
-              <span class="dash-ai-pick-alt-ticker">${item.ticker}</span>
-              <strong>${nf(item.score, 1)}</strong>
-              <small>${item.reason_labels?.[0] || item.fit_label || ''}</small>
-            </button>`).join('')}
-        </div>` : ''}
-      <div class="dash-ai-pick-cta-row">
-        <button class="btn" data-dash-ai-pick-open-detail="${featured.ticker}">Buka Detail</button>
-        <a href="#ai-picks" class="dash-ai-pick-cta">Buka AI Picks</a>
+    <div class="dash-ai-picks-mini">
+      <div class="dash-ai-picks-mini-row" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${picks.slice(0, 3).map(item => {
+          const signal = getSignal(item.score);
+          const sClass = signalClass(signal);
+          return `<div class="dash-ai-pick-mini-card" style="background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit" onclick="window.location.hash='#stock/${item.ticker}'" role="button" tabindex="0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:16px;font-family:var(--font-mono);color:var(--text-main)">${item.ticker}</strong>
+              <span class="mono strong ${sClass}" style="font-size:13px;padding:2px 10px;border-radius:6px;background:${signal === 'BUY' ? 'rgba(16,185,129,.12)' : signal === 'SELL' ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)'}">${signal}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name || item.ticker}</div>
+            <div style="font-size:11px;color:var(--text-dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${item.reason_labels?.[0] || item.fit_label || 'Likuiditas dan teknikal mendukung.'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="text-align:right;margin-top:10px">
+        <a href="#ai-picks" class="text-xs text-primary strong">Lihat Semua →</a>
       </div>
     </div>`;
-  wireFeaturedPickDetail(featured, payload?.mode || 'swing');
-  wireAltPickDetails(alternatives, payload?.mode || 'swing');
 }
 
 async function loadNews(){

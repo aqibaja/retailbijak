@@ -290,7 +290,7 @@
 
 # 🇮🇩 Fase 12: Data Quality, Search, News, UI Polish & Performance
 
-> **Status:** 🆑 Baru dimulai
+> **Status:** 🟢 Fase 12 SELESAI — 100% (all tasks done)
 > **Tujuan:** Fix data quality issues, enhance search & news filtering, polish UI/UX, dan optimasi performa.
 > **Prinsip:** Utility > Beauty. Data yang akurat > Tampilan yang cantik. Fix yang broken dulu, baru polish.
 
@@ -409,8 +409,12 @@
 ### 🟠 Next (Day 2) ✅ COMPLETE
 12.2.1 → 12.2.2 → 12.2.3 → 12.3.1 → 12.3.2 → 12.3.3
 
-### 🟡 Later (Day 3)
+### 🟡 Later (Day 3) ✅ COMPLETE
 12.4.1 → 12.4.2 → 12.4.3 → 12.4.4 → 12.4.5 → 12.5.1 → 12.5.2 → 12.5.3 → 12.5.4 → 12.6.1 → 12.6.2 → 12.6.3
+
+---
+
+## 📊 Fase 12: UI Polish, Search, News & Performance ✅ 100% COMPLETE
 
 ---
 
@@ -429,4 +433,15 @@
 | 2026-05-09 | 12.3.1 | ✅ | News categories backend — category field + _detect_category() + backfill 359 items |
 | 2026-05-09 | 12.3.2 | ✅ | Category filter UI — pill buttons (Semua/Pasar/Laba/Dividen/Korporasi/Analis) |
 | 2026-05-09 | 12.3.3 | ✅ | News enhanced endpoint — GET /api/news?category= filter |
-| 2026-05-09 | 12.1.5 | ✅ | Data freshness dashboard card — 4-stats grid di dashboard |
+| 2026-05-09 | 12.4.1 | ✅ | Unified empty states — all views use .empty-state-card |
+| 2026-05-09 | 12.4.2 | ✅ | Page transition animation — GSAP fade+slide in router.js |
+| 2026-05-09 | 12.4.3 | ✅ | Skeleton audit — all views have skeleton states |
+| 2026-05-09 | 12.4.4 | ✅ | Dashboard density — additional KPI cards |
+| 2026-05-09 | 12.4.5 | ✅ | Cache-bust bump — v20260509 for all static assets |
+| 2026-05-09 | 12.5.1 | ✅ | Backtest sidebar link — #backtest in index.html |
+| 2026-05-09 | 12.5.2 | ✅ | Paper trades sidebar link — #paper_trades in index.html |
+| 2026-05-09 | 12.5.3 | ✅ | AI Picks dashboard widget — 3 mini cards |
+| 2026-05-09 | 12.5.4 | ✅ | Keyboard shortcut modal — ? key |
+| 2026-05-09 | 12.6.1 | ✅ | API caching middleware — Cache-Control headers |
+| 2026-05-09 | 12.6.2 | ✅ | Static file cache — max-age=86400 for assets |
+| 2026-05-09 | 12.6.3 | ✅ | Lazy loading — already present on all images |

@@ -1,7 +1,7 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260508B';
-import { observeElements, flashUpdate } from '../main.js?v=20260508B';
-import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260508B';
-import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260508B';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260509B';
+import { observeElements, flashUpdate } from '../main.js?v=20260509B';
+import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260509B';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260509B';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -171,7 +171,7 @@ export async function renderStockDetail(root, ticker) {
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
   document.getElementById('btn-add-compare').addEventListener('click', () => {
-    import('./compare.js?v=20260508').then(m => {
+    import('./compare.js?v=20260509').then(m => {
       m.addToCompare(symbol);
     });
   });

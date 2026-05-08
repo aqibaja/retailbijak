@@ -1,4 +1,4 @@
-import { apiFetch, showToast } from '../api.js?v=20260508C';
+import { apiFetch, showToast } from '../api.js?v=20260509C';
 
 const LABELS = {
   price_above: { label: 'Harga >', icon: 'trending-up', color: 'var(--up-color)' },
@@ -47,10 +47,10 @@ async function loadAlerts(root) {
 
     if (!alerts.length) {
       content.innerHTML = `
-        <div class="empty-state-v2" style="padding:60px 20px">
-          <div class="empty-icon"><i data-lucide="bell-off" style="width:48px;height:48px;color:var(--text-dim)"></i></div>
-          <h3>Belum Ada Alert</h3>
-          <p style="max-width:320px">Buat alert harga atau RSI untuk memantau saham favorit Anda secara otomatis.</p>
+        <div class="empty-state-card">
+          <div class="empty-state-icon">🔕</div>
+          <strong class="empty-state-title">Belum Ada Alert</strong>
+          <span class="empty-state-desc">Buat alert harga atau RSI untuk memantau saham favorit Anda secara otomatis.</span>
           <button class="btn btn-primary mt-12" id="btn-create-alert-empty"><i data-lucide="bell-plus" class="lucide-md"></i> Buat Alert</button>
         </div>`;
       content.querySelector('#btn-create-alert-empty')?.addEventListener('click', () => showCreateAlertDialog(root));
@@ -102,7 +102,7 @@ async function loadAlerts(root) {
     bindAlertEvents(root);
   } catch (e) {
     console.warn('loadAlerts failed', e);
-    content.innerHTML = '<div class="empty-state-v2"><div class="empty-icon"><i data-lucide="alert-triangle" style="color:var(--warn-color)"></i></div><h3>Gagal Memuat</h3><p>Coba refresh halaman.</p><button class="btn btn-primary mt-12" onclick="location.reload()">Muat Ulang</button></div>';
+    content.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal Memuat</strong><span class="empty-state-desc">Coba refresh halaman.</span><button class="btn btn-primary mt-12" onclick="location.reload()">Muat Ulang</button></div>';
     lucide.createIcons();
   }
 }
