@@ -8,6 +8,7 @@ const viewModules = {
   portfolio: () => import('./views/portfolio.js?v=20260507M'),
   market: () => import('./views/market.js?v=20260507M'),
   compare: () => import('./views/compare.js?v=20260508'),
+  backtest: () => import('./views/backtest.js?v=20260510'),
   news: () => import('./views/news.js?v=20260507M'),
   settings: () => import('./views/settings.js?v=20260507M'),
   help: () => import('./views/help.js?v=20260507M'),

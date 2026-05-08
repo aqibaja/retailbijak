@@ -4690,6 +4690,51 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   font-weight: 600;
   font-size: 11px;
 }
+/* ─── Backtest ─── */
+.bt-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+.bt-kpi-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.bt-kpi-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.bt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.bt-table th, .bt-table td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.bt-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: right;
+}
+.bt-table th:first-child,
+.bt-table td:first-child {
+  text-align: left;
+}
+
 /* ─── Stock Comparison ─── */
 .compare-chip {
   display: inline-flex;

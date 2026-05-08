@@ -12,7 +12,7 @@
     12||------|--------|----------|
     13|| **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
     14|| **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 95% |
-    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▰▰▱▱▱▱ 60% |
+    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▰▰▰▰▱▱ 75% |
     16|
     17|---
     18|
@@ -370,6 +370,8 @@
 | 2026-05-10 | 3.5.1 | ✅ | Backend: Supertrend (ATR-based, period=10, multiplier=3) + VWAP (full-period anchored) di calculate_all_indicators |
 | 2026-05-10 | 3.5.2 | ✅ | Frontend: Indicator toggle buttons ST + VWAP di chart toolbar |
 | 2026-05-10 | 3.5.3 | ✅ | Frontend: Supertrend line + markers + VWAP line di LightweightCharts overlay |
+| 2026-05-10 | 3.2.1 | ✅ | Backend: Backtest engine — GET /api/backtest, strategi sma_cross, rsi_reversal, bb_breakout |
+| 2026-05-10 | 3.2.4 | ✅ | Frontend: Backtest page — form input, KPI cards, equity curve (LightweightCharts), trades table |
 
 ---
 
