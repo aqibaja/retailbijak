@@ -145,6 +145,31 @@ def _analyze_sentiment(title: str, summary: str = "") -> str:
     return "neutral"
 
 
+_CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    'dividend': ['dividen', 'dividend', 'deviden', 'bagi hasil', 'cum date', 'ex date', 'cumdividend', 'exdividend'],
+    'earnings': ['laba', 'rugi', 'profit', 'earnings', 'net income', 'pendapatan', 'omzet', 'hasil usaha', 'revenue', 'net profit'],
+    'corporate': ['akuisisi', 'merger', 'rights issue', 'buyback', 'suspensi', 'delisting', 'listing',
+                  'waran', 'obligasi', 'sukuk', 'hmtd', 'rights', 'buy back', 'saham bonus', 'stok split',
+                  'stock split', 'pemecahan saham', 'pencatatan', 'go public', 'ipo', 'penawaran umum'],
+    'analyst': ['rekomendasi', 'target harga', 'rating', 'overweight', 'underweight', 'beli', 'jual', 'tahan',
+                'target price', 'accumulate', 'trading buy', 'speculative buy', 'neutral', 'outperform',
+                'market perform', 'analis', 'analyst', 'upgrade', 'downgrade'],
+}
+
+
+def _detect_category(title: str, summary: str = '') -> str:
+    """Keyword-based category detection for Indonesian financial news.
+
+    Returns one of: 'earnings', 'dividend', 'corporate', 'analyst', 'market'
+    """
+    text = f"{title} {summary}".lower()
+    for cat, keywords in _CATEGORY_KEYWORDS.items():
+        for kw in keywords:
+            if kw in text:
+                return cat
+    return 'market'
+
+
 def _extract_image_url(entry) -> str | None:
     """Extract image URL from RSS entry via media:content, enclosure, or summary HTML."""
     # 1. media:content (media RSS)
@@ -291,6 +316,7 @@ def seed_synthetic_news(db=None, limit: int = 20) -> list[dict]:
                 "image_url": None,
                 "tickers": json.dumps([m["ticker"]]),
                 "sentiment": "positive" if m["change_pct"] > 1.0 else "neutral",
+                "category": _detect_category(title, summary),
             })
 
         # Generate news from top losers (up to 6 items)
@@ -315,6 +341,7 @@ def seed_synthetic_news(db=None, limit: int = 20) -> list[dict]:
                 "image_url": None,
                 "tickers": json.dumps([m["ticker"]]),
                 "sentiment": "negative" if abs(m["change_pct"]) > 1.0 else "neutral",
+                "category": _detect_category(title, summary),
             })
 
         # Generate news from top volume (up to 4 items)
@@ -342,6 +369,7 @@ def seed_synthetic_news(db=None, limit: int = 20) -> list[dict]:
                 "image_url": None,
                 "tickers": json.dumps([m["ticker"]]),
                 "sentiment": "neutral",
+                "category": _detect_category(title, summary),
             })
 
         # Generate some signal-based items (up to 3)
@@ -361,6 +389,7 @@ def seed_synthetic_news(db=None, limit: int = 20) -> list[dict]:
                 "image_url": None,
                 "tickers": json.dumps([t]),
                 "sentiment": "positive",
+                "category": _detect_category(title, summary),
             })
 
         if news_items:
@@ -447,6 +476,7 @@ def update_news():
                         "image_url": _extract_image_url(entry),
                         "tickers": json.dumps(tickers) if tickers else None,
                         "sentiment": _analyze_sentiment(entry.title, summary),
+                        "category": _detect_category(entry.title, summary),
                     }
                     all_news.append(news_item)
                 except Exception as e:
@@ -464,7 +494,8 @@ def update_news():
                     "title": stmt.excluded.title,
                     "published_at": stmt.excluded.published_at,
                     "summary": stmt.excluded.summary,
-                    "image_url": stmt.excluded.image_url
+                    "image_url": stmt.excluded.image_url,
+                    "category": stmt.excluded.category,
                 }
             )
             db.execute(stmt)

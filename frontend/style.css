@@ -506,3 +506,8 @@
   .treemap-meta{gap:8px;font-size:11px}
   .treemap-legend{display:none}
 }
+/* ── News Category Pills (12.3.2) ── */
+.news-category-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.news-category-pill{display:inline-flex;align-items:center;padding:5px 14px;border-radius:16px;font-size:11px;font-weight:600;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .2s ease;white-space:nowrap;line-height:1.4}
+.news-category-pill:hover{border-color:var(--primary-color);color:var(--text-main);background:rgba(99,102,241,0.06)}
+.news-category-pill.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color);box-shadow:0 2px 8px rgba(99,102,241,0.25)}

@@ -116,7 +116,6 @@
 | 2026-05-09 | 12.1.2 | ✅ | Trigger industry classifier — 444 stocks classified |
 | 2026-05-09 | 12.1.3 | ✅ | Admin trigger endpoint POST /api/admin/classify-industries |
 | 2026-05-09 | 12.1.4 | ✅ | Fix news updater — sync outdated prod file, seed 21 synthetic news |
-| 2026-05-09 | 12.1.5 | ✅ | Data freshness dashboard card — 4-stats grid di dashboard |
 | 2026-05-08 | 9.1.1 | ✅ | Sector classifier — keyword-based for 582/974 stocks |
 | 2026-05-08 | 9.1.2 | ✅ | Scheduler registration — daily 03:00 WIB |
 | 2026-05-08 | 9.1.3 | ✅ | Manual trigger endpoint |
@@ -407,7 +406,7 @@
 ### 🔴 NOW (Day 1) ✅ COMPLETE
 12.1.1 → 12.1.2 → 12.1.3 → 12.1.4 → 12.1.5
 
-### 🟠 Next (Day 2)
+### 🟠 Next (Day 2) ✅ COMPLETE
 12.2.1 → 12.2.2 → 12.2.3 → 12.3.1 → 12.3.2 → 12.3.3
 
 ### 🟡 Later (Day 3)
@@ -423,4 +422,11 @@
 | 2026-05-09 | 12.1.2 | ✅ | Trigger industry classifier — 444 stocks classified |
 | 2026-05-09 | 12.1.3 | ✅ | Admin trigger endpoint POST /api/admin/classify-industries |
 | 2026-05-09 | 12.1.4 | ✅ | Fix news updater — sync outdated prod file, seed 21 synthetic news |
+| 2026-05-09 | 12.1.5 | ✅ | Data freshness dashboard card — 4-stats grid di dashboard |
+| 2026-05-09 | 12.2.1 | ✅ | Search autocomplete — debounce 300ms (was 120ms) |
+| 2026-05-09 | 12.2.2 | ✅ | Keyboard navigation — already implemented (arrows + enter + escape) |
+| 2026-05-09 | 12.2.3 | ✅ | Search by sector/industry — already supported in stocks.py |
+| 2026-05-09 | 12.3.1 | ✅ | News categories backend — category field + _detect_category() + backfill 359 items |
+| 2026-05-09 | 12.3.2 | ✅ | Category filter UI — pill buttons (Semua/Pasar/Laba/Dividen/Korporasi/Analis) |
+| 2026-05-09 | 12.3.3 | ✅ | News enhanced endpoint — GET /api/news?category= filter |
 | 2026-05-09 | 12.1.5 | ✅ | Data freshness dashboard card — 4-stats grid di dashboard |

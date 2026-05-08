@@ -3,6 +3,15 @@ import { observeElements } from '../main.js?v=20260508B';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
 
+const NEWS_CATEGORIES = [
+  { value: '', label: 'Semua' },
+  { value: 'market', label: 'Pasar' },
+  { value: 'dividend', label: 'Dividen' },
+  { value: 'earnings', label: 'Laba' },
+  { value: 'corporate', label: 'Korporasi' },
+  { value: 'analyst', label: 'Analis' },
+];
+
 function getNewsId(n, index) { return n.id || n.link || `news-${index}`; }
 
 function generateFallbackGradient(title, source) {
@@ -59,6 +68,7 @@ export async function renderNews(root) {
                   </select>
                   <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
                 </div>
+                <div id="news-category-pills" class="news-category-bar flex gap-2 flex-wrap mt-2"></div>
             </div>
           </div>
         </div>
@@ -106,7 +116,7 @@ export async function renderNews(root) {
           sourceSelect.addEventListener('change', async function() {
             const src = this.value;
             const ticker = (document.getElementById('news-search-input')?.value || '').trim();
-            const newRes = await fetchNews(30, ticker, 0, src);
+            const newRes = await fetchNews(30, ticker, 0, src, '', window.__newsCategory || '');
             const newItems = (newRes && Array.isArray(newRes.data)) ? newRes.data : [];
             const label = document.getElementById('news-filter-label');
             if (label) label.textContent = src ? `· sumber: ${src}` : '';
@@ -123,13 +133,52 @@ export async function renderNews(root) {
               const sent = this.value;
               const ticker = (document.getElementById('news-search-input')?.value || '').trim();
               const src = sourceSelect?.value || '';
-              const newRes = await fetchNews(30, ticker, 0, src, sent);
+              const newRes = await fetchNews(30, ticker, 0, src, sent, window.__newsCategory || '');
               const newItems = (newRes && Array.isArray(newRes.data)) ? newRes.data : [];
               renderNewsItems(newItems, newRes);
               window.__newsOffset = 30;
               window.__newsTotal = newRes.total || 0;
             });
           }
+          }
+
+        // Build category pills
+        const pillsContainer = document.getElementById('news-category-pills');
+        if (pillsContainer) {
+          // Try to get categories from API response, fallback to hardcoded
+          const apiCategories = (res && Array.isArray(res.categories) && res.categories.length) ? res.categories : null;
+          const cats = apiCategories
+            ? [{ value: '', label: 'Semua' }, ...apiCategories.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))]
+            : NEWS_CATEGORIES;
+          pillsContainer.innerHTML = cats.map((c, i) =>
+            `<button type="button" class="news-category-pill${i === 0 ? ' active' : ''}" data-category="${c.value}">${c.label}</button>`
+          ).join('');
+          window.__newsCategory = '';
+
+          // Category pill click handler
+          pillsContainer.addEventListener('click', async function(e) {
+            const pill = e.target.closest('.news-category-pill');
+            if (!pill) return;
+            const cat = pill.dataset.category;
+            if (cat === window.__newsCategory) return; // already active
+
+            // Update active state
+            pillsContainer.querySelectorAll('.news-category-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            window.__newsCategory = cat;
+
+            // Re-fetch with all current filters
+            const ticker = (document.getElementById('news-search-input')?.value || '').trim();
+            const src = document.getElementById('news-source-filter')?.value || '';
+            const sent = document.getElementById('news-sentiment-filter')?.value || '';
+            const newRes = await fetchNews(30, ticker, 0, src, sent, cat);
+            const newItems = (newRes && Array.isArray(newRes.data)) ? newRes.data : [];
+            const label = document.getElementById('news-filter-label');
+            if (label) label.textContent = cat ? `· kategori: ${cats.find(c => c.value === cat)?.label || cat}` : '';
+            renderNewsItems(newItems, newRes);
+            window.__newsOffset = 30;
+            window.__newsTotal = newRes.total || 0;
+          });
         }
 
         if (!items.length) {
@@ -195,7 +244,9 @@ export async function renderNews(root) {
             this.disabled = true;
             this.textContent = 'Memuat...';
             try {
-              const moreRes = await fetchNews(curLimit, searchVal, curOffset);
+              const src = (document.getElementById('news-source-filter')?.value || '');
+              const sent = (document.getElementById('news-sentiment-filter')?.value || '');
+              const moreRes = await fetchNews(curLimit, searchVal, curOffset, src, sent, window.__newsCategory || '');
               const moreItems = (moreRes && Array.isArray(moreRes.data)) ? moreRes.data : [];
               const streamEl = document.getElementById('news-stream');
               if (streamEl && moreItems.length) {

@@ -22,11 +22,12 @@ export async function apiFetch(endpoint, options = {}) {
     }
 }
 
-export async function fetchNews(limit = 6, ticker = '', offset = 0, source = '', sentiment = '') {
+export async function fetchNews(limit = 6, ticker = '', offset = 0, source = '', sentiment = '', category = '') {
     let q = `/news?limit=${limit}&offset=${offset}`;
     if (ticker) q += `&ticker=${encodeURIComponent(ticker)}`;
     if (source) q += `&source=${encodeURIComponent(source)}`;
     if (sentiment) q += `&sentiment=${encodeURIComponent(sentiment)}`;
+    if (category) q += `&category=${encodeURIComponent(category)}`;
     return apiFetch(q) || { count: 0, total: 0, data: [] };
 }
 

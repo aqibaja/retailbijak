@@ -105,6 +105,7 @@ class News(Base):
     image_url = Column(String, nullable=True)
     tickers = Column(String, nullable=True)  # JSON array of related IDX tickers
     sentiment = Column(String, nullable=True)  # 'positive', 'negative', 'neutral'
+    category = Column(String, nullable=True)  # 'earnings', 'dividend', 'corporate', 'market', 'analyst'
 
 
 class UserSetting(Base):

@@ -230,7 +230,7 @@ function setupSearchOverlay() {
    };
    input.addEventListener('input', () => {
        clearTimeout(searchTimer);
-       searchTimer = setTimeout(refreshSuggestions, 120);
+       searchTimer = setTimeout(refreshSuggestions, 300);
    });
    input.addEventListener('focus', refreshSuggestions);
    input.addEventListener('keydown', (e) => {

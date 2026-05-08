@@ -15,9 +15,9 @@ except ModuleNotFoundError:
     from backend.scheduler import scheduler
 
 try:
-    from database import UserSetting, get_db
+    from database import UserSetting, get_db, News
 except ModuleNotFoundError:
-    from backend.database import UserSetting, get_db
+    from backend.database import UserSetting, get_db, News
 
 try:
     from jobs.idx_daily_sync import sync_idx_stock_summary, sync_idx_securities_and_fundamentals
@@ -243,6 +243,31 @@ def trigger_seed_news(limit: int = 20, db: Session = Depends(get_db)):
             'count': len(items),
         }
     except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@router.post('/api/admin/backfill-news-categories')
+def trigger_backfill_news_categories(db: Session = Depends(get_db)):
+    """Backfill category field for all news entries where category is NULL or empty."""
+    try:
+        try:
+            from updaters.news_updater import _detect_category
+        except ModuleNotFoundError:
+            from backend.updaters.news_updater import _detect_category
+
+        rows = db.query(News).filter(
+            (News.category.is_(None)) | (News.category == '')
+        ).all()
+        updated = 0
+        for row in rows:
+            cat = _detect_category(row.title or '', row.summary or '')
+            row.category = cat
+            updated += 1
+        if updated:
+            db.commit()
+        return {'ok': True, 'updated': updated}
+    except Exception as e:
+        db.rollback()
         return {'ok': False, 'error': str(e)}
 
 

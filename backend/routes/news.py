@@ -29,17 +29,22 @@ _corporate_actions_cache: dict[str, Any] = {"data": None, "ts": 0}
 
 
 @router.get('/api/news')
-def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ticker: str = '', source: str = '', sentiment: str = ''):
-    """Get latest market news from DB; optionally filter by ticker, source, or sentiment."""
+def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ticker: str = '', source: str = '', sentiment: str = '', category: str = ''):
+    """Get latest market news from DB; optionally filter by ticker, source, sentiment, or category."""
     q = db.query(News)
-    
+
     # Filter by source
     if source:
         q = q.filter(News.source == source.strip())
-    
+
     # Filter by sentiment
     if sentiment and sentiment in ('positive', 'negative', 'neutral'):
         q = q.filter(News.sentiment == sentiment.strip().lower())
+
+    # Filter by category
+    VALID_CATEGORIES = ('earnings', 'dividend', 'corporate', 'market', 'analyst')
+    if category and category.strip().lower() in VALID_CATEGORIES:
+        q = q.filter(News.category == category.strip().lower())
     
     # Filter by ticker
     if ticker:
@@ -72,12 +77,15 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ti
         except Exception:
             news = []
 
-    data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary, "image_url": n.image_url, "sentiment": n.sentiment, "tickers": n.tickers} for n in news]
+    data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary, "image_url": n.image_url, "sentiment": n.sentiment, "tickers": n.tickers, "category": n.category} for n in news]
     
     # Get available sources for filter UI
     sources = [row[0] for row in db.query(News.source).distinct().filter(News.source != None).order_by(News.source.asc()).all() if row[0]]
-    
-    return {"count": len(data), "total": total, "data": data, "sources": sources, "source": "db" if news else "no_data"}
+
+    # Get available categories for filter UI
+    categories = [row[0] for row in db.query(News.category).distinct().filter(News.category != None).order_by(News.category.asc()).all() if row[0]]
+
+    return {"count": len(data), "total": total, "data": data, "sources": sources, "categories": categories, "source": "db" if news else "no_data"}
 
 
 @router.get('/api/corporate-actions')
