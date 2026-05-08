@@ -1,6 +1,6 @@
 # 🇮🇩 RetailBijak — Fase 9: Intelligence & Data Richness
 
-> **Status:** 🆕 Baru — fase enrichment dan professional-grade analytics
+> **Status:** 🟡 Berjalan — Fase 9: 40% selesai (9.1 Sector ✅, 9.2 Breadth ✅)
 > **Tujuan:** Mengubah retailbijak dari platform fungsional menjadi platform **data-rich, profesional, dan comprehensive**
 > **Prinsip:** Zero external data di runtime. Scheduler boleh fetch metadata (sector/industry) sekali untuk enrichment.
 > **Constraint:** IDX API rate-limited. Semua user-facing feature harus jalan dengan data existing.
@@ -100,7 +100,16 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| 2026-05-08 | — | 🆕 | Mulai Fase 9: Intelligence & Data Richness |
+| 2026-05-08 | 9.1.1 | ✅ | Sector classifier — keyword-based classification for 582/974 stocks (60%). Chunked batches. |
+| 2026-05-08 | 9.1.2 | ✅ | Scheduler registration — daily 03:00 WIB `sector_classifier` job |
+| 2026-05-08 | 9.1.3 | ✅ | Manual trigger — `POST /api/admin/classify-sectors` endpoint |
+| 2026-05-08 | 9.1.4 | ✅ | Sector dashboard handles 12 sectors, 582 stocks. Loading state OK. |
+| 2026-05-08 | 9.2.1 | ✅ | Breadth endpoint — `GET /api/market/breadth` with 50 days gainers/decliners, cumulative breadth |
+| 2026-05-08 | 9.2.2 | ✅ | Breadth chart view — `#breadth` page: Chart.js bar+line, summary cards, visual table, nav link |
+| 2026-05-08 | 9.2.3 | 🟡 | Breadth widget on dashboard — pending |
+| 2026-05-08 | 9.3 | 🟡 | Watchlist groups — backend table exists, frontend pending |
+| 2026-05-08 | 9.4 | 🟡 | Data freshness — pending |
+| 2026-05-08 | 9.5 | 🟡 | Pull-to-refresh — pending |
 
 ---
 
