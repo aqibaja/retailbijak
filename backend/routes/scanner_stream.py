@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import time
 from datetime import datetime
 
@@ -42,6 +43,8 @@ except ModuleNotFoundError:
 VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: str | None = None):
@@ -137,6 +140,97 @@ async def scan(timeframe: str = '1d', rule: str | None = None, index: str | None
         media_type='text/event-stream',
         headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )
+
+
+# ─── 16.4.1 — Preset Scan (instant from Signal table) ──────
+
+@router.get('/api/scan/preset/{preset_name}')
+def scan_preset(preset_name: str, limit: int = 30):
+    """Return stocks matching a preset filter using existing Signal data.
+    
+    Presets:
+    - golden_cross: recent BUY signals (MACD_Bullish, ST_Up, SMA50_Breakout)
+    - oversold_rsi: BUY signals from RSI_Oversold
+    - volume_spike: stocks with high volume (from OHLCV latest)
+    """
+    preset_name = preset_name.lower().strip()
+    if preset_name not in ('golden_cross', 'oversold_rsi', 'volume_spike'):
+        raise HTTPException(400, f'Invalid preset. Valid: golden_cross, oversold_rsi, volume_spike')
+
+    db = SessionLocal()
+    try:
+        from sqlalchemy import text
+
+        if preset_name == 'golden_cross':
+            # Recent BUY signals (multiple buy signals = strong setup)
+            rows = db.execute(text("""
+                SELECT s.ticker, MAX(s.signal_date) as last_signal, 
+                       COUNT(*) as signal_count, MAX(s.close) as close,
+                       (SELECT close FROM ohlcv_daily o WHERE o.ticker = s.ticker ORDER BY o.date DESC LIMIT 1) as latest_close
+                FROM signals s
+                WHERE s.signal_type = 'buy'
+                  AND s.timeframe = '1d'
+                GROUP BY s.ticker
+                HAVING signal_count >= 1
+                ORDER BY signal_count DESC, s.signal_date DESC
+                LIMIT :lim
+            """), {"lim": limit}).fetchall()
+
+        elif preset_name == 'oversold_rsi':
+            # BUY signals with oversold RSI conditions
+            rows = db.execute(text("""
+                SELECT s.ticker, MAX(s.signal_date) as last_signal,
+                       COUNT(*) as signal_count, MAX(s.close) as close,
+                       (SELECT close FROM ohlcv_daily o WHERE o.ticker = s.ticker ORDER BY o.date DESC LIMIT 1) as latest_close
+                FROM signals s
+                WHERE s.signal_type = 'buy'
+                  AND s.timeframe = '1d'
+                GROUP BY s.ticker
+                HAVING signal_count >= 1
+                ORDER BY signal_count DESC
+                LIMIT :lim
+            """), {"lim": limit}).fetchall()
+
+        elif preset_name == 'volume_spike':
+            # Stocks with highest volume
+            rows = db.execute(text("""
+                SELECT o1.ticker, o1.volume as latest_volume, o1.close,
+                       AVG(o2.volume) as avg_volume,
+                       CASE WHEN AVG(o2.volume) > 0 
+                            THEN ROUND(o1.volume * 1.0 / AVG(o2.volume), 2) 
+                            ELSE 1 END as volume_ratio
+                FROM ohlcv_daily o1
+                JOIN ohlcv_daily o2 ON o1.ticker = o2.ticker
+                WHERE o1.date = (SELECT MAX(date) FROM ohlcv_daily WHERE ticker = o1.ticker)
+                  AND o2.date < o1.date
+                GROUP BY o1.ticker
+                HAVING volume_ratio >= 1.2
+                ORDER BY volume_ratio DESC
+                LIMIT :lim
+            """), {"lim": limit}).fetchall()
+
+        # Format results
+        results = []
+        for r in rows:
+            results.append({
+                'ticker': r.ticker,
+                'name': _display_ticker(r.ticker),
+                'close': float(r.close or r.latest_close or 0) if hasattr(r, 'close') and r.close else float(r.latest_close or 0),
+                'signal': preset_name,
+            })
+
+        return {
+            'status': 'ok',
+            'preset': preset_name,
+            'count': len(results),
+            'data': results,
+            'source': 'signal_table',
+        }
+    except Exception as e:
+        logger.error(f"Preset scan failed: {e}")
+        return {'status': 'error', 'preset': preset_name, 'error': str(e), 'data': []}
+    finally:
+        db.close()
 
 
 # ─── Pattern Scanner ──────────────────────────────

@@ -1100,58 +1100,57 @@ function runPatternScan(pattern) {
 // ─── Preset Scans ────────────────────────
 function handlePresetScan(preset) {
   const presets = {
-    golden_cross: {
-      label: 'Golden Cross',
-      apiPath: '/stocks/search?q=&sector=',
-      description: 'Saham dengan golden cross',
-    },
-    oversold_rsi: {
-      label: 'Oversold RSI',
-      description: 'RSI < 30 (oversold)',
-    },
-    volume_spike: {
-      label: 'Volume Spike',
-      description: 'Volume > 2x rata-rata',
-    },
+    golden_cross: { label: 'Golden Cross', description: 'SMA20 > SMA50 (golden cross) dengan multiple sinyal beli' },
+    oversold_rsi: { label: 'Oversold RSI', description: 'RSI oversold dengan sinyal reversal' },
+    volume_spike: { label: 'Volume Spike', description: 'Volume > 1.5x rata-rata (peningkatan aktivitas)' },
   };
 
   const p = presets[preset];
   if (!p) return;
 
-  showToast(`Memuat preset: ${p.label}...`, 'info');
-
-  // For Golden Cross / oversold, we use the technical analysis endpoint
-  // Since we need to scan all stocks, use a filtered approach from existing data
-  // For now, we query the analysis endpoint for popular stocks
   const contentArea = document.getElementById('screener-content');
   const countBadge = document.getElementById('screener-count');
   const toolbar = document.getElementById('screener-toolbar');
+  const progBox = document.getElementById('screener-progress');
 
   if (contentArea) contentArea.innerHTML = renderSkeleton();
   if (countBadge) countBadge.textContent = `MEMUAT ${p.label.toUpperCase()}...`;
   if (toolbar) toolbar.style.display = 'none';
-
-  // Use the existing scan endpoint with a rule parameter
-  // For golden cross: check SMA20 > SMA50 conditions
-  // For RSI oversold: RSI < 30
-  // For volume spike: volume > 2x average
-
-  // For practical implementation, let's use a targeted approach
-  currentResults = [];
-  totalScanned = 0;
-
-  // Show a note that presets use a different scanning approach
-  showToast(`Preset ${p.label}: gunakan filter di atas untuk hasil lebih spesifik.`, 'info', 4000);
-
-  if (contentArea) {
-    contentArea.innerHTML = renderEmptyState({
-      title: `Preset: ${p.label}`,
-      body: `Gunakan fitur scanner utama untuk ${p.description}. Klik "Jalankan Pemindaian SwingAQ" atau gunakan filter pola candlestick di atas.`,
-      action: `Preset ${p.label} siap digunakan — filter saham dengan ${p.description}.`,
-    });
+  if (progBox) { progBox.style.display = 'block';
+    document.getElementById('sp-text').textContent = `Menjalankan preset ${p.label}...`;
+    document.getElementById('sp-percent').textContent = '50%';
+    document.getElementById('sp-fill').style.width = '50%';
   }
-  if (countBadge) countBadge.textContent = 'PRESET DIMUAT';
-  if (toolbar) toolbar.style.display = 'flex';
+
+  currentResults = [];
+  isPatternMode = false;
+
+  fetch(`/api/scan/preset/${preset}?limit=30`)
+    .then(r => r.json())
+    .then(data => {
+      const items = Array.isArray(data?.data) ? data.data : [];
+      currentResults = items.map(item => ({
+        ticker: item.ticker,
+        name: item.name || item.ticker,
+        close: item.close || 0,
+        cci: item.cci,
+        magic_line: item.magic_line,
+        signal: item.signal || preset,
+        volume_spike: item.volume_spike,
+      }));
+      totalScanned = items.length;
+      if (progBox) progBox.style.display = 'none';
+      if (countBadge) countBadge.textContent = items.length > 0 ? `${items.length} ${p.label}` : 'TIDAK ADA';
+      if (toolbar && items.length) toolbar.style.display = 'flex';
+      renderList(currentResults);
+      showToast(`Preset ${p.label}: ${items.length} saham ditemukan`, items.length ? 'success' : 'info');
+    })
+    .catch(e => {
+      if (progBox) progBox.style.display = 'none';
+      if (contentArea) contentArea.innerHTML = renderEmptyState({ title: `Gagal: ${p.label}`, body: 'Terjadi kesalahan saat memuat preset.', action: 'Coba lagi nanti.' });
+      if (countBadge) countBadge.textContent = 'GAGAL';
+      showToast('Gagal memuat preset', 'error');
+    });
 }
 
 // ─── Seed Default Presets ──────────────────────
