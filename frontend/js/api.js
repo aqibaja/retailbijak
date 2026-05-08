@@ -22,9 +22,10 @@ export async function apiFetch(endpoint, options = {}) {
     }
 }
 
-export async function fetchNews(limit = 6, ticker = '') {
-    const q = ticker ? `/news?limit=${limit}&ticker=${encodeURIComponent(ticker)}` : `/news?limit=${limit}`;
-    return apiFetch(q) || { count: 0, data: [] };
+export async function fetchNews(limit = 6, ticker = '', offset = 0) {
+    let q = `/news?limit=${limit}&offset=${offset}`;
+    if (ticker) q += `&ticker=${encodeURIComponent(ticker)}`;
+    return apiFetch(q) || { count: 0, total: 0, data: [] };
 }
 
 export async function fetchFundamental(ticker) {

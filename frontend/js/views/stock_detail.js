@@ -115,9 +115,10 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-side-panel ai-thread-mock"><h3 class="stock-side-panel-title">Pembacaan Cepat AI</h3><div class="ai-thread-mock-inner"></div></div>
             <div class="stock-side-panel"><div class="flex justify-between items-start gap-3"><div class="flex-1"><h3 class="stock-side-panel-title">Ringkasan Teknikal (Custom)</h3><div id="technical-summary" class="intel-item"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div><div id="signal-card" class="signal-inline"><span>Sinyal</span><strong>—</strong><small>Keyakinan —</small></div></div><div id="technical-panel" class="tech-grid-v2 mt-3"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
             <div class="stock-side-panel hidden" id="broker-activity-panel"></div>
+            <div class="stock-side-panel hidden" id="depth-panel"></div>
             <div class="stock-side-panel hidden" id="foreign-flow-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
-            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><a href="#screener" class="btn">Pindai</a></div></div>
+            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
@@ -157,6 +158,11 @@ export async function renderStockDetail(root, ticker) {
     }
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
+  document.getElementById('btn-add-compare').addEventListener('click', () => {
+    import('./compare.js?v=20260508').then(m => {
+      m.addToCompare(symbol);
+    });
+  });
 
   // Tab switching
   document.querySelectorAll('[data-stock-tabs] .stock-tab').forEach(btn => {
@@ -357,6 +363,13 @@ export async function renderStockDetail(root, ticker) {
   apiFetch(`/stocks/${encodeURIComponent(symbol)}/broker-activity?limit=6`).then(brokerRes => {
     if (brokerRes && brokerRes.source === 'db' && brokerRes.data?.length) {
       renderBrokerActivity(brokerRes.data);
+    }
+  }).catch(() => {});
+
+  // Order Book Depth (async, non-blocking)
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/depth`).then(depthRes => {
+    if (depthRes && depthRes.data) {
+      renderStockDepth(depthRes.data);
     }
   }).catch(() => {});
 
@@ -918,6 +931,45 @@ function renderBrokerActivity(data) {
       const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
       return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono broker-name">${r.broker || '—'}</span><span class="mono ${cls} broker-net">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
     }).join('');
+}
+
+function renderStockDepth(depth) {
+  const el = document.getElementById('depth-panel');
+  if (!el || !depth || !depth.bids?.length) return;
+  el.style.display = '';
+  const maxVol = depth.max_volume || 1;
+  const spreadPct = depth.spread_pct || 0;
+  const spreadCls = spreadPct < 0.5 ? 'text-up' : spreadPct < 1.0 ? 'text-warn' : 'text-down';
+  const rows = [];
+  for (let i = 4; i >= 0; i--) rows.push({ side: 'ask', ...depth.asks[i] });
+  for (let i = 0; i < 5; i++) rows.push({ side: 'bid', ...depth.bids[i] });
+  el.innerHTML = `<div class="stock-side-panel">
+    <div class="flex justify-between items-center mb-1"><h3 class="stock-side-panel-title" style="margin-bottom:0">Order Book (5 Level)</h3><span class="text-xs ${spreadCls}" title="Spread estimasi">Spread ${nf(spreadPct,2)}%</span></div>
+    <div class="text-xs text-dim mb-2">Tick ${nf(depth.tick_size||1,0)} · Harga ${money(depth.price)}</div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      ${rows.map(r => {
+        const isAsk = r.side === 'ask';
+        const pct = (r.cumulative / maxVol) * 100;
+        const color = isAsk ? 'var(--down-color)' : 'var(--up-color)';
+        const bgColor = isAsk ? 'rgba(248,113,113,0.08)' : 'rgba(52,211,153,0.08)';
+        return `<div style="display:flex;align-items:center;gap:6px;position:relative;padding:2px 6px;border-radius:3px;background:${bgColor}">
+          <div style="position:absolute;${isAsk?'right':'left'}:0;top:0;height:100%;width:${Math.min(pct,100)}%;background:${color}18;border-radius:3px;transition:width .3s"></div>
+          <span class="mono text-xs" style="width:48px;text-align:${isAsk?'right':'left'};flex-shrink:0;position:relative;z-index:1">${nf(r.price,2)}</span>
+          <div style="flex:1;position:relative;z-index:1;display:flex;gap:2px">
+            <span class="mono text-xs text-dim" style="flex:1;text-align:${isAsk?'left':'right'}">${nf(r.volume,0)}</span>
+            <span class="mono text-xs text-dim" style="flex:1;text-align:${isAsk?'left':'right'}">${nf(r.cumulative,0)}</span>
+          </div>
+          <div style="position:absolute;${isAsk?'left':'right'}:0;top:2px;height:calc(100% - 4px);width:${Math.min(pct,100)}%;background:${color}22;border-radius:2px;pointer-events:none"></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="flex justify-between text-xs text-dim mt-1">
+      <span>Jual</span>
+      <span>Vol</span>
+      <span>Kum.</span>
+      <span>Beli</span>
+    </div>
+  </div>`;
 }
 
 function renderStockForeignFlow(data) {

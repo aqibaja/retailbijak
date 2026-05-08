@@ -10,9 +10,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, get_db
+    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, get_db
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, get_db
+    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, get_db
 
 try:
     from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
@@ -333,6 +333,61 @@ def get_broker_activity(ticker: str, limit: int = 10, db: Session = Depends(get_
 # ─── Alert CRUD ───────────────────────────
 
 
+@router.get('/api/stocks/{ticker}/depth')
+def get_stock_depth(ticker: str, db: Session = Depends(get_db)):
+    """Simulated 5-level order book depth from OHLCV data."""
+    base = _ticker_base(ticker)
+    try:
+        latest_ohlcv = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == base
+        ).order_by(OHLCVDaily.date.desc()).first()
+        if not latest_ohlcv or not latest_ohlcv.close:
+            return _resp_ok(None, source='no_data', count=0)
+        price = float(latest_ohlcv.close)
+        volume = int(latest_ohlcv.volume or 0)
+        tick_size = max(1, round(price * 0.001, -1))
+        if price > 5000:
+            tick_size = round(price * 0.001, -2)
+        elif price > 1000:
+            tick_size = round(price * 0.001, -1)
+        tick_size = max(1, int(tick_size or 1))
+        bid_volume_base = max(1, volume // 20)
+        ask_volume_base = max(1, volume // 22)
+        bids = []
+        asks = []
+        cum_bid_vol = 0
+        cum_ask_vol = 0
+        for level in range(5):
+            spread_offset = tick_size * (level + 1)
+            bid_px = round(price - spread_offset, 2)
+            ask_px = round(price + spread_offset, 2)
+            bid_v = int(bid_volume_base * (1.0 - level * 0.12) * (0.9 + 0.2 * (level % 2)))
+            ask_v = int(ask_volume_base * (1.0 - level * 0.15) * (0.9 + 0.2 * ((level + 1) % 2)))
+            bid_v = max(1, bid_v)
+            ask_v = max(1, ask_v)
+            cum_bid_vol += bid_v
+            cum_ask_vol += ask_v
+            bids.append({'price': round(bid_px, 2), 'volume': bid_v, 'cumulative': cum_bid_vol})
+            asks.append({'price': round(ask_px, 2), 'volume': ask_v, 'cumulative': cum_ask_vol})
+        max_vol = max(cum_bid_vol, cum_ask_vol)
+        spread = round(ask_px - bid_px, 2)
+        spread_pct_display = round((spread / price) * 100, 3) if price else 0
+        return _resp_ok({
+            'ticker': base,
+            'price': price,
+            'spread': spread,
+            'spread_pct': spread_pct_display,
+            'tick_size': tick_size,
+            'bids': bids,
+            'asks': asks,
+            'max_volume': max_vol,
+            'last_price': price,
+            'source': 'derived',
+        }, source='derived', count=5)
+    except Exception:
+        return _resp_ok(None, source='no_data', count=0)
+
+
 @router.get('/api/stocks/{ticker}/foreign-flow')
 def get_stock_foreign_flow(ticker: str, limit: int = 20, db: Session = Depends(get_db)):
     """Daily aggregate foreign flow for a specific stock (all brokers combined)."""
@@ -407,6 +462,37 @@ def delete_alert(alert_id: int, db: Session = Depends(get_db)):
     return {'ok': True, 'message': f'Alert {alert_id} dihapus.'}
 
 
+@router.get('/api/alerts/triggered')
+def get_triggered_alerts(limit: int = 10, db: Session = Depends(get_db)):
+    """Get recent triggered alerts (unseen first)."""
+    rows = db.query(AlertTrigger).order_by(
+        AlertTrigger.seen.asc(),
+        AlertTrigger.triggered_at.desc()
+    ).limit(limit).all()
+    data = [{
+        'id': r.id,
+        'alert_id': r.alert_id,
+        'ticker': r.ticker,
+        'alert_type': r.alert_type,
+        'trigger_value': r.trigger_value,
+        'current_value': r.current_value,
+        'triggered_at': r.triggered_at.isoformat()[:19] if r.triggered_at else '',
+        'seen': bool(r.seen),
+    } for r in rows]
+    return {'count': len(data), 'data': data}
+
+
+@router.post('/api/alerts/triggered/ack')
+def ack_triggered_alerts(ids: list[int] = [], db: Session = Depends(get_db)):
+    """Mark triggered alerts as seen."""
+    if ids:
+        db.query(AlertTrigger).filter(AlertTrigger.id.in_(ids)).update({'seen': 1})
+    else:
+        db.query(AlertTrigger).filter(AlertTrigger.seen == 0).update({'seen': 1})
+    db.commit()
+    return {'ok': True}
+
+
 # ─── Peer Comparison ────────────────────
 
 
@@ -433,3 +519,68 @@ def get_peers(ticker: str, limit: int = 6, db: Session = Depends(get_db)):
                 'change_pct': round(change_pct, 2) if change_pct is not None else None,
             })
     return {'ticker': base, 'source': 'db', 'count': len(peers), 'data': peers}
+
+
+# ─── Stock Comparison ──────────────────
+
+
+@router.get('/api/compare')
+def compare_stocks(tickers: str = '', db: Session = Depends(get_db)):
+    """Compare multiple tickers side-by-side with normalized price overlay."""
+    parts = [t.strip().upper() for t in tickers.split(',') if t.strip()]
+    if not parts or len(parts) < 2:
+        return {'status': 'error', 'message': 'Minimal 2 ticker (contoh: BBCA,BMRI)'}
+    if len(parts) > 5:
+        parts = parts[:5]
+    result = {'tickers': [], 'prices': {}, 'fundamentals': {}, 'stats': {}}
+    for ticker in parts:
+        try:
+            # Fetch OHLCV (last 90 trading days)
+            candles = db.query(OHLCVDaily).filter(
+                OHLCVDaily.ticker == ticker
+            ).order_by(OHLCVDaily.date.desc()).limit(90).all()
+            candles = list(reversed(candles))
+            prices = [{'date': c.date.isoformat()[:10] if c.date else '', 'close': float(c.close)} for c in candles if c.close]
+            result['prices'][ticker] = prices
+            # Normalized to 100 at first close
+            base_price = prices[0]['close'] if prices else 1
+            result['prices'][f'{ticker}_norm'] = [
+                {'date': p['date'], 'value': round((p['close'] / base_price) * 100, 2)}
+                for p in prices
+            ] if base_price else []
+            # Performance
+            if len(prices) >= 2:
+                last = prices[-1]['close']
+                first = prices[0]['close']
+                p1m = prices[-21]['close'] if len(prices) >= 21 else prices[0]['close']
+                p3m = prices[-63]['close'] if len(prices) >= 63 else prices[0]['close']
+                result['stats'][ticker] = {
+                    'return_1m': round(((last / p1m) - 1) * 100, 2) if p1m else None,
+                    'return_3m': round(((last / p3m) - 1) * 100, 2) if p3m else None,
+                    'return_total': round(((last / first) - 1) * 100, 2) if first else None,
+                    'current_price': last,
+                    'high_90d': max(p['close'] for p in prices),
+                    'low_90d': min(p['close'] for p in prices),
+                    'avg_volume': round(sum(c.volume or 0 for c in candles) / len(candles), 0) if candles else 0,
+                }
+            # Fundamental
+            fund = db.query(Fundamental).filter(Fundamental.ticker == ticker).first()
+            stock = db.query(Stock).filter(Stock.ticker == ticker).first()
+            result['fundamentals'][ticker] = {
+                'name': stock.name if stock else ticker,
+                'sector': stock.sector if stock else '',
+                'market_cap': stock.market_cap if stock else None,
+                'pe': round(fund.trailing_pe, 2) if fund and fund.trailing_pe else None,
+                'pbv': round(fund.price_to_book, 2) if fund and fund.price_to_book else None,
+                'roe': round(fund.roe, 2) if fund and fund.roe else None,
+                'der': round(fund.debt_to_equity, 2) if fund and fund.debt_to_equity else None,
+                'dividend_yield': round(fund.dividend_yield, 2) if fund and fund.dividend_yield else None,
+            }
+            result['tickers'].append(ticker)
+        except Exception:
+            continue
+    return {
+        'count': len(result['tickers']),
+        'data': result,
+        'source': 'db' if result['tickers'] else 'no_data',
+    }

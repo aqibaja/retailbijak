@@ -123,7 +123,60 @@ export async function renderNews(root) {
         }).join('');
 
         // Render stream (2-column grid)
-        document.getElementById('news-stream').innerHTML = stream.map((n, i) => streamCardHtml(n, i)).join('');
+        document.getElementById("news-stream").innerHTML = stream.map((n, i) => streamCardHtml(n, i)).join("") +
+          '<div id="news-loader-wrap" class="grid-full flex justify-center mt-3 mb-3"><button id="btn-load-more-news" type="button" class="btn btn-outline">Muat Lainnya <span id="news-load-count">(+30)</span></button></div>';
+
+        // Store state for infinite scroll
+        window.__newsOffset = 30;
+        window.__newsLimit = 30;
+        window.__newsTotal = res.total || 0;
+
+        // Update load more count
+        const rem = Math.max(0, (res.total || 0) - 30);
+        const loadCountEl = document.getElementById('news-load-count');
+        if (loadCountEl) loadCountEl.textContent = rem > 0 ? `(+${rem})` : '(habis)';
+
+        // Load more handler
+        const loadMoreBtn = document.getElementById('btn-load-more-news');
+        if (loadMoreBtn) {
+          if (rem <= 0) { loadMoreBtn.disabled = true; loadMoreBtn.textContent = 'Semua berita termuat'; }
+          loadMoreBtn.addEventListener('click', async function() {
+            const curOffset = window.__newsOffset || 30;
+            const curLimit = window.__newsLimit || 30;
+            const searchVal = (document.getElementById('news-search-input')?.value || '').trim();
+            this.disabled = true;
+            this.textContent = 'Memuat...';
+            try {
+              const moreRes = await fetchNews(curLimit, searchVal, curOffset);
+              const moreItems = (moreRes && Array.isArray(moreRes.data)) ? moreRes.data : [];
+              const streamEl = document.getElementById('news-stream');
+              if (streamEl && moreItems.length) {
+                // Insert before the loader button
+                const loaderWrap = document.getElementById('news-loader-wrap');
+                moreItems.forEach((n, i) => {
+                  const html = streamCardHtml(n, i);
+                  if (loaderWrap) {
+                    loaderWrap.insertAdjacentHTML('beforebegin', html);
+                  } else {
+                    streamEl.insertAdjacentHTML('beforeend', html);
+                  }
+                });
+                window.__newsOffset = curOffset + moreItems.length;
+                const remaining = Math.max(0, (moreRes.total || window.__newsTotal || 0) - window.__newsOffset);
+                const loadCount = document.getElementById('news-load-count');
+                if (loadCount) loadCount.textContent = remaining > 0 ? `(+${remaining})` : '(habis)';
+                this.textContent = remaining > 0 ? 'Muat Lainnya' : 'Semua berita termuat';
+                this.disabled = remaining <= 0;
+              } else {
+                this.textContent = 'Semua berita termuat';
+                this.disabled = true;
+              }
+            } catch(e) {
+              this.textContent = 'Gagal, coba lagi';
+              this.disabled = false;
+            }
+          });
+        }
 
         // Search filter
         window.__newsAllItems = stream;

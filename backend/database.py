@@ -161,6 +161,19 @@ class Alert(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class AlertTrigger(Base):
+    __tablename__ = "alert_triggers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    alert_id = Column(Integer, index=True, nullable=False)
+    ticker = Column(String, index=True, nullable=False)
+    alert_type = Column(String, nullable=False)
+    trigger_value = Column(Float, nullable=False)
+    current_value = Column(Float, nullable=False)
+    triggered_at = Column(DateTime, default=datetime.utcnow, index=True)
+    seen = Column(Integer, default=0)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()

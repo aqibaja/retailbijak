@@ -407,6 +407,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
 
+      // Alert notification polling — check every 2 min for triggered alerts
+      let _lastAlertCheck = Date.now();
+      async function checkTriggeredAlerts() {
+        try {
+          const res = await apiFetch('/alerts/triggered?limit=5');
+          if (res?.data?.length) {
+            const unseen = res.data.filter(a => !a.seen);
+            if (unseen.length && res.data[0] && (!window._lastAlertTs || res.data[0].id > window._lastAlertTs)) {
+              unseen.slice(0, 3).forEach(a => {
+                const label = a.alert_type.replace('_', ' ');
+                showToast(`${a.ticker}: ${label} ${a.trigger_value} (${a.current_value})`, 'info', 8000);
+              });
+              window._lastAlertTs = res.data[0].id;
+              // Acknowledge all
+              apiFetch('/alerts/triggered/ack', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '[]' });
+            }
+          }
+        } catch (e) { /* silent */ }
+      }
+      // Initial check after 10s, then every 120s
+      setTimeout(checkTriggeredAlerts, 10000);
+      setInterval(checkTriggeredAlerts, 120000);
+
       // More Drawer button
       const moreBtn = document.getElementById('bottom-more-btn');
       if (moreBtn) moreBtn.addEventListener('click', openMoreDrawer);

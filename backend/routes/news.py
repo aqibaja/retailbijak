@@ -29,41 +29,40 @@ _corporate_actions_cache: dict[str, Any] = {"data": None, "ts": 0}
 
 
 @router.get('/api/news')
-def get_news(db: Session = Depends(get_db), limit: int = 20, ticker: str = ''):
+def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ticker: str = ''):
     """Get latest market news from DB; optionally filter by ticker/company name."""
     q = db.query(News)
     if ticker:
         ticker_upper = ticker.upper()
         like = f'%{ticker_upper}%'
-        # Company name mapping for stricter matching (full phrase, not per-word)
         names = {'BBCA': 'Bank Central Asia', 'BMRI': 'Bank Mandiri', 'BBRI': 'Bank Rakyat Indonesia',
                  'TLKM': 'Telkom Indonesia', 'GOTO': 'GoTo Gojek', 'ASII': 'Astra International',
                  'ADRO': 'Adaro Energy', 'BYAN': 'Bayan Resources', 'UNVR': 'Unilever Indonesia',
                  'INDF': 'Indofood Sukses', 'HMSP': 'HM Sampoerna'}
         full_name = names.get(ticker_upper, '')
         filters = [News.title.ilike(like), News.summary.ilike(like)]
-        # Also match via tickers JSON column (more accurate)
         filters.append(News.tickers.ilike(f'%{ticker_upper}%'))
         if full_name:
             name_like = f'%{full_name}%'
             filters.append(News.title.ilike(name_like))
             filters.append(News.summary.ilike(name_like))
         q = q.filter(or_(*filters))
-    news = q.order_by(News.published_at.desc()).limit(limit).all()
-    if not news:
+    total = q.count()
+    news = q.order_by(News.published_at.desc()).offset(offset).limit(limit).all()
+    if not news and offset == 0:
         try:
             try:
                 from updaters.news_updater import update_news
             except ModuleNotFoundError:
                 from backend.updaters.news_updater import update_news
             update_news()
-            # Re-apply filter after refresh
-            news = q.order_by(News.published_at.desc()).limit(limit).all()
+            news = q.order_by(News.published_at.desc()).offset(offset).limit(limit).all()
+            total = q.count()
         except Exception:
             news = []
 
     data = [{"title": n.title, "link": n.link, "published_at": n.published_at.isoformat() if n.published_at else None, "source": n.source, "summary": n.summary, "image_url": n.image_url} for n in news]
-    return {"count": len(data), "data": data, "source": "db" if news else "no_data"}
+    return {"count": len(data), "total": total, "data": data, "source": "db" if news else "no_data"}
 
 
 @router.get('/api/corporate-actions')

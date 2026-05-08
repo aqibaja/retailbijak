@@ -32,6 +32,15 @@ except Exception:
             return {"ok": 0, "failed": 0}
 
 try:
+    from updaters.alert_checker import check_alerts
+except Exception:
+    try:
+        from backend.updaters.alert_checker import check_alerts
+    except Exception:
+        def check_alerts():
+            logging.getLogger(__name__).info("alert checker unavailable; skipped")
+
+try:
     from ai_picks import generate_and_store_daily_ai_pick_report
 except Exception:
     from backend.ai_picks import generate_and_store_daily_ai_pick_report
@@ -51,6 +60,7 @@ def init_scheduler():
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_swing", replace_existing=True, kwargs={'mode': 'swing'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_defensive", replace_existing=True, kwargs={'mode': 'defensive'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_catalyst", replace_existing=True, kwargs={'mode': 'catalyst'})
+    scheduler.add_job(check_alerts, trigger=CronTrigger(day_of_week='mon-fri', hour='9-15', minute='*/15', timezone=jkt_tz), id="alert_checker", replace_existing=True)
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     if not scheduler.running:
         scheduler.start()
