@@ -77,6 +77,14 @@
 .sector-empty h3{font-size:18px;color:var(--text-main);margin:0}
 .sector-empty p{font-size:13px;max-width:320px}
 @media (max-width:767px){.sector-detail-grid{grid-template-columns:1fr}.sector-chip{padding:6px 12px;font-size:11px}.sector-chip-ret{font-size:10px}}
+/* ── Search Filter Chips ── */
+.search-filter-bar{padding:8px 12px 4px;border-top:1px solid var(--border-subtle)}
+.search-filter-chips{display:flex;gap:6px;flex-wrap:wrap}
+.search-filter-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:10px;font-weight:600;border:1px solid var(--border-subtle);background:var(--bg-panel);color:var(--text-muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.search-filter-chip:hover{border-color:var(--primary-color);color:var(--text-main)}
+.search-filter-chip.active{background:rgba(16,185,129,.12);border-color:var(--primary-color);color:var(--up-color)}
+.search-filter-chip-count{font-size:9px;color:var(--text-dim);background:rgba(255,255,255,.06);padding:0 5px;border-radius:6px}
+.search-filter-chip.active .search-filter-chip-count{background:rgba(16,185,129,.15);color:var(--up-color)}
 /* ── Mobile Touch Targets ── */
 @media (max-width:767px){.btn,.btn-sm,.btn-icon,.scanner-btn-primary,.scanner-control-btn,.nav-item,.screener-control-btn,.toast-close-btn{min-height:44px;min-width:44px}.btn{padding:12px 20px}.btn-sm{padding:10px 16px}.scanner-row{min-height:60px;padding:12px 16px}.scanner-row-badge{width:44px;height:44px;border-radius:10px}.bottom-nav .nav-item{padding:8px 16px}.topbar-actions .btn-icon{width:44px;height:44px}}
 /* ── Skeleton Loading Refinement ── */

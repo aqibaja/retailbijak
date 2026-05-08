@@ -213,11 +213,13 @@ function setupSearchOverlay() {
            suggestions.innerHTML = '<div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div>';
            currentItems = [];
            activeIndex = -1;
+           hideFilterBar();
            return;
        }
-       const res = await searchStocks(q, 12);
+       const res = await searchStocks(q, 12, activeSectorFilter);
        const items = Array.isArray(res?.data) ? res.data : [];
        renderSuggestions(items, q);
+       updateFilterChips(res);
    };
    const moveActive = (delta) => {
        if (!currentItems.length) return;
@@ -321,6 +323,47 @@ function setupSearchOverlay() {
      }
    });
 }
+// ─── Search Filter Chips ───
+let activeSectorFilter = '';
+function updateFilterChips(res) {
+  const bar = document.getElementById('search-filter-bar');
+  const chips = document.getElementById('search-filter-chips');
+  if (!bar || !chips) return;
+  
+  const sectors = res?.filters?.sectors;
+  if (!sectors || sectors.length < 2) {
+    hideFilterBar();
+    return;
+  }
+  
+  bar.classList.remove('hidden');
+  chips.innerHTML = sectors.map(s => {
+    const isActive = activeSectorFilter && activeSectorFilter === s.name;
+    return `<button class="search-filter-chip ${isActive ? 'active' : ''}" data-sector="${s.name}" onclick="toggleSectorFilter('${s.name}')">${s.name} <span class="search-filter-chip-count">${s.count}</span></button>`;
+  }).join('');
+}
+function hideFilterBar() {
+  const bar = document.getElementById('search-filter-bar');
+  if (bar) bar.classList.add('hidden');
+}
+window.toggleSectorFilter = function(sector) {
+  const input = document.getElementById('global-search-input');
+  if (activeSectorFilter === sector) {
+    activeSectorFilter = '';
+  } else {
+    activeSectorFilter = sector;
+  }
+  // Trigger re-search with filter
+  const q = input?.value?.trim() || '';
+  if (q) {
+    const event = new Event('input', { bubbles: true });
+    input.dispatchEvent(event);
+  }
+  // Update chip visual
+  document.querySelectorAll('.search-filter-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.sector === activeSectorFilter);
+  });
+};
 function setupScrollEffects() {
    const topbar = document.querySelector('.topbar');
    const progressBar = document.getElementById('scroll-progress');
@@ -675,6 +718,23 @@ document.addEventListener('DOMContentLoaded', () => {
       // More Drawer button
       const moreBtn = document.getElementById('bottom-more-btn');
       if (moreBtn) moreBtn.addEventListener('click', openMoreDrawer);
+
+      // Signal badge update
+      async function updateSignalBadge() {
+        const badge = document.getElementById('sidebar-signal-badge');
+        if (!badge) return;
+        try {
+          const res = await apiFetch('/signals/summary?limit=0&days_back=7', { timeout: 5000 });
+          const total = res?.total || 0;
+          if (total > 0) {
+            badge.textContent = total > 99 ? '99+' : total;
+            badge.style.display = 'flex';
+          } else {
+            badge.style.display = 'none';
+          }
+        } catch {}
+      }
+      updateSignalBadge();
   } catch (e) {
       console.error('Init error:', e);
   }

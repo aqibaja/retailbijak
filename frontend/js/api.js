@@ -65,9 +65,10 @@ export async function fetchStockDetail(ticker) {
     return apiFetch(`/stocks/${ticker}`);
 }
 
-export async function searchStocks(query = '', limit = 8) {
+export async function searchStocks(query = '', limit = 8, sector = '') {
     const q = encodeURIComponent(query || '');
-    return apiFetch(`/stocks/search?q=${q}&limit=${limit}`) || { count: 0, data: [] };
+    const sec = sector ? `&sector=${encodeURIComponent(sector)}` : '';
+    return apiFetch(`/stocks/search?q=${q}&limit=${limit}${sec}`) || { count: 0, data: [] };
 }
 
 export async function fetchTopMovers(limit = 10, sort = 'gainers') {
