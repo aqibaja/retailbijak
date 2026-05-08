@@ -160,13 +160,22 @@ export function getScanEventSourceUrl(timeframe) {
     return `${window.location.origin}/api/scan?timeframe=${timeframe}`;
 }
 
-// ─── Toast Notification System ─────────────────────────
+// ─── Toast Notification System V2 ─────────────────
 const MAX_TOASTS = 3;
+
+// Track active messages to prevent duplicates
+const activeToastMessages = new Set();
 
 export function showToast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    
+
+    // Prevent duplicate messages
+    const dedupKey = `${type}:${message}`;
+    if (activeToastMessages.has(dedupKey)) return;
+    activeToastMessages.add(dedupKey);
+    setTimeout(() => activeToastMessages.delete(dedupKey), duration + 500);
+
     // Limit visible toasts: if already at max, dismiss oldest
     while (container.children.length >= MAX_TOASTS) {
         const oldest = container.children[0];
@@ -176,11 +185,12 @@ export function showToast(message, type = 'info', duration = 4000) {
             break;
         }
     }
-    
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.style.pointerEvents = 'auto';
     toast.setAttribute('role', 'alert');
+    toast.dataset.dedup = dedupKey;
     toast.innerHTML = `
         <div class="toast-body">
             <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ'}</span>
@@ -189,27 +199,51 @@ export function showToast(message, type = 'info', duration = 4000) {
         </div>
         <div class="toast-progress" style="animation-duration:${duration}ms"></div>
     `;
-    
+
+    // Stagger: offset each toast slightly
+    const idx = container.children.length;
+    toast.style.marginTop = idx > 0 ? '8px' : '0';
+
     toast.style.animation = 'toastSlideIn 0.35s cubic-bezier(0.16,1,0.3,1)';
     container.appendChild(toast);
-    
+
     // Manual dismiss
     toast.querySelector('.toast-close-btn').onclick = function(e) {
         e.stopPropagation();
+        activeToastMessages.delete(dedupKey);
         dismissToast(toast);
     };
-    
-    // Auto dismiss
-    const timer = setTimeout(() => dismissToast(toast), duration);
-    
+
+    // Auto dismiss with pause-on-hover support
+    let remaining = duration;
+    let startTime = Date.now();
+    let timer = setTimeout(() => {
+        activeToastMessages.delete(dedupKey);
+        dismissToast(toast);
+    }, remaining);
+
+    toast.addEventListener('mouseenter', () => {
+        clearTimeout(timer);
+        remaining -= Date.now() - startTime;
+        toast.querySelector('.toast-progress')?.style.setProperty('animation-play-state', 'paused');
+    });
+    toast.addEventListener('mouseleave', () => {
+        startTime = Date.now();
+        timer = setTimeout(() => {
+            activeToastMessages.delete(dedupKey);
+            dismissToast(toast);
+        }, Math.max(remaining, 500));
+        toast.querySelector('.toast-progress')?.style.setProperty('animation-play-state', 'running');
+    });
+
     // Store timer reference for cleanup
-    toast._dismissTimer = timer;
+    toast._dismissTimer = { timer, remaining, startTime };
 }
 
 function dismissToast(toast) {
     // Clear timer if still active
     if (toast._dismissTimer) {
-        clearTimeout(toast._dismissTimer);
+        clearTimeout(toast._dismissTimer.timer);
         toast._dismissTimer = null;
     }
     toast.classList.add('toast-exit');

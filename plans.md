@@ -17,7 +17,7 @@
 | **P4: Stabilitas & Kualitas** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 | **P5: Ekspansi Fitur & Inteligensi** | 🟡 96% | ▰▰▰▰▰▰▰▰▰▱ (5.1.4 BLOCKED) |
 | **P6: Engagement, Visualisasi & Personalisasi** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-|| **P7: AI Intelligence, Engagement & Production Polish** | 🟡 70% | ▰▰▰▰▰▰▰▰▰▰ 70% |
+| **P7: AI Intelligence, Engagement & Production Polish** | 🟡 95% | ▰▰▰▰▰▰▰▰▰▱ 95% |
 
 ---
 
@@ -186,12 +186,19 @@
 | 2026-05-10 | 7.5.1 | ✅ | Print-friendly stock report — button "Cetak" di stock actions, `printing-report` CSS class, enhanced @media print layout |
 | 2026-05-10 | 7.5.2 | ✅ | Corporate actions widget — filter berita per-ticker dengan keyword dividen/RUPS/stock split/buyback/akuisisi, badge warna |
 | 2026-05-10 | 7.5.3 | ✅ | Peers comparison widget — sudah ada (`renderPeerComparison()`), menampilkan price + change% untuk saham peers |
-|| 2026-05-10 | 7.5.4 | 🟡 BLOCKED | Fundamental trend chart — financials table 0 rows, tidak ada data multi-year. Butuh data source baru |
-|| 2026-05-08 | 7.6.1 | ✅ | Mini chart sparkline — close_prices array di SSE stream + SVG polyline di tiap row screener (hijau/merah trend) |
-|| 2026-05-08 | 7.6.2 | ✅ | Screener result count — "X dari Y saham" display setelah scan selesai |
-|| 2026-05-08 | 7.6.3 | ✅ | Sortable column headers — klik Kode/Nama/Harga/CCI/MA/Volume untuk sort ascending/descending |
-|| 2026-05-08 | 7.6.4 | ✅ | Quick scan button — "⚡ Pindai Semua" langsung scan via volume sort default |
-|| 2026-05-08 | 7.7.1 | ✅ | Market narrative card — narasi otomatis "IHSG menguat/melemah X%, Y adv vs Z dec" di dashboard |
+| 2026-05-10 | 7.5.4 | 🟡 BLOCKED | Fundamental trend chart — financials table 0 rows, tidak ada data multi-year. Butuh data source baru |
+| 2026-05-08 | 7.6.1 | ✅ | Mini chart sparkline — close_prices array di SSE stream + SVG polyline di tiap row screener (hijau/merah trend) |
+| 2026-05-08 | 7.6.2 | ✅ | Screener result count — "X dari Y saham" display setelah scan selesai |
+| 2026-05-08 | 7.6.3 | ✅ | Sortable column headers — klik Kode/Nama/Harga/CCI/MA/Volume untuk sort ascending/descending |
+| 2026-05-08 | 7.6.4 | ✅ | Quick scan button — "⚡ Pindai Semua" langsung scan via volume sort default |
+| 2026-05-08 | 7.7.1 | ✅ | Market narrative card — narasi otomatis "IHSG menguat/melemah X%, Y adv vs Z dec" di dashboard |
+| 2026-05-08 | 7.7.2 | ✅ | Signal count badge widget — 4 KPI cards (Total, BUY, SELL, B/S Ratio) + ratio bar visual |
+| 2026-05-08 | 7.7.3 | ✅ | Dashboard data freshness — "Data IDX: YYYY-MM-DD • sync 18:00 WIB" + staleness badge |
+| 2026-05-08 | 7.8.1 | ✅ | Fix light mode gaps — audit 260+ CSS rules, light theme covers all components via CSS vars |
+| 2026-05-08 | 7.8.2 | ✅ | Toast V2 refinement — duplicate prevention (Set-based dedup), pause-on-hover (mouseenter/mouseleave), stagger stacking, progress bar pausing |
+| 2026-05-08 | 7.8.3 | ✅ | Skeleton loading refinement — reduced shimmer duration to 1.4s, smoother cubic-bezier timing, optimized background size |
+| 2026-05-08 | 7.8.4 | ✅ | Mobile touch targets — all .btn/.btn-icon/.nav-item min-height:44px/min-width:44px on mobile, scanner-row 60px min-height, larger tap areas |
+| 2026-05-08 | 7.8.5 | 🟡 | Console error cleanup — no JS syntax errors found across all views. Runtime audit needs browser session.
 
 ---
 
