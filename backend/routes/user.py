@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 import re
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -506,3 +507,21 @@ def transaction_pnl(ticker: str = '', db: Session = Depends(get_db)):
         'realized_items': [],
         'unrealized_items': unrealized_items,
     }
+
+
+@router.get('/api/screener-presets')
+def get_screener_presets(db: Session = Depends(get_db)):
+    row = db.query(UserSetting).filter(UserSetting.key == 'screener_presets').first()
+    try:
+        data = json.loads(row.value) if row and row.value else []
+    except (json.JSONDecodeError, TypeError):
+        data = []
+    return {'data': data}
+
+
+@router.post('/api/screener-presets')
+def save_screener_presets(payload: dict = Body(...), db: Session = Depends(get_db)):
+    presets = payload.get('presets', [])
+    _upsert_setting(db, 'screener_presets', json.dumps(presets))
+    db.commit()
+    return {'ok': True, 'count': len(presets)}

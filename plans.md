@@ -256,3 +256,5 @@
 | 2026-05-10 | 5.5.1 | ✅ | Intraday timeframe toggle (1D|1H|4H) di chart toolbar + backend wiring. 1H/4H fallback: "Data intraday akan tersedia". TradingView interval mapping D/60/240 |
 | 2026-05-10 | 5.6.3 | ✅ | Sector detail drill-down: endpoint `/api/sectors/{sector}/stocks`, frontend `sector.js` view, clickable sector link di dashboard intel |
 | 2026-05-10 | 5.6.4 | ✅ | First-run onboarding modal — walkthrough 4 fitur utama, localStorage flag agar sekali muncul |
+| 2026-05-10 | 5.4.1 | ✅ | Screener saved presets: upgrade localStorage → backend UserSetting via `/api/screener-presets`. Simpan/load persist di server |
+| 2026-05-10 | 5.5.3 | ✅ | Price flash animation — `flashUpdate()` sudah dipanggil di stock detail `hydrateHeader()`. Tambah CSS class ke critical CSS biar langsung jalan |

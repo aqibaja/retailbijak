@@ -355,19 +355,27 @@ function exportCSV() {
     showToast(`${data.length} sinyal diekspor ke CSV`, 'success');
 }
 
-// ─── Saved Filters ─────────────────────
-const FILTERS_STORAGE_KEY = 'retailbijak.saved_filters';
-
-function getSavedFilters() {
-    try { return JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY)) || []; }
-    catch { return []; }
+// ─── Saved Filters (Backend Persistent) ──
+async function getSavedFilters() {
+    try {
+        const res = await apiFetch('/screener-presets');
+        return Array.isArray(res?.data) ? res.data : [];
+    } catch { return []; }
 }
 
-function saveFilters(filters) {
-    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+async function saveFilters(filters) {
+    try {
+        await apiFetch('/screener-presets', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ presets: filters }),
+        });
+    } catch (e) {
+        console.warn('Failed to save presets to server', e);
+    }
 }
 
-function saveFilterDialog() {
+async function saveFilterDialog() {
     const data = currentResults;
     if (!data.length) {
         showToast('Tidak ada hasil scan untuk disimpan', 'warning');
@@ -375,7 +383,7 @@ function saveFilterDialog() {
     }
     const name = prompt('Nama filter:');
     if (!name || !name.trim()) return;
-    const filters = getSavedFilters();
+    const filters = await getSavedFilters();
     // Build filter config from current sort + search
     const sortEl = document.getElementById('screener-sort');
     const searchEl = document.getElementById('screener-search');
@@ -395,12 +403,12 @@ function saveFilterDialog() {
     } else {
         filters.push(config);
     }
-    saveFilters(filters);
+    await saveFilters(filters);
     showToast(`Filter "${config.name}" disimpan (${data.length} hasil)`, 'success');
 }
 
-function loadFilterDialog() {
-    const filters = getSavedFilters();
+async function loadFilterDialog() {
+    const filters = await getSavedFilters();
     if (!filters.length) {
         showToast('Belum ada filter tersimpan', 'info');
         return;
