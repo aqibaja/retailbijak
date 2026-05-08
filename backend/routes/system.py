@@ -223,6 +223,29 @@ def trigger_industry_classification():
         return {'ok': False, 'error': str(e)}
 
 
+@router.post('/api/admin/backfill-financials')
+def trigger_backfill_financials():
+    """Manually trigger financial statements backfill (income, balance, cash flow) from yfinance."""
+    try:
+        try:
+            from updaters.financial_updater import fetch_and_store_financials
+        except ModuleNotFoundError:
+            from backend.updaters.financial_updater import fetch_and_store_financials
+        try:
+            from database import SessionLocal
+        except ModuleNotFoundError:
+            from backend.database import SessionLocal
+        db = SessionLocal()
+        try:
+            count = fetch_and_store_financials(db)
+            return {'ok': True, 'message': f'Financial backfill complete.', 'records_upserted': count}
+        finally:
+            db.close()
+    except Exception as e:
+        logger.exception("Financial backfill failed")
+        return {'ok': False, 'error': str(e)}
+
+
 @router.post('/api/admin/seed-news')
 def trigger_seed_news(limit: int = 20, db: Session = Depends(get_db)):
     """Manually seed synthetic news from stock price movements (top movers, volume leaders).

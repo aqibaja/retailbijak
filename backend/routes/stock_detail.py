@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 import json
 
@@ -10,9 +11,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, get_db
+    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, Financial, get_db
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, get_db
+    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, Financial, get_db
 
 try:
     from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
@@ -47,6 +48,8 @@ def get_stock(ticker: str, db: Session = Depends(get_db)):
     base = _ticker_base(ticker)
     payload = _fallback_row_for_ticker(base, db)
     if not payload['price'] and not payload['signals']:
+        logger = logging.getLogger(__name__)
+        logger.warning("No price or signals for %s — returning partial data", base)
         return {'ticker': base, 'message': 'No signals found', 'data': payload}
     return {'ticker': base, 'data': payload}
 
@@ -138,6 +141,54 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
             'updated_at': fundamental.updated_at.isoformat() if fundamental.updated_at else None,
         },
     }
+
+
+@router.get('/api/stocks/{ticker}/financials')
+def get_financials(ticker: str, period: str = Query('annual', regex='^(annual|quarterly)$'), db: Session = Depends(get_db)):
+    """Return income statement, balance sheet, and cash flow data."""
+    ticker_with_suffix = _ticker_with_suffix(ticker)
+    ticker_base = _ticker_base(ticker)
+
+    # Determine the types to query based on period
+    if period == 'annual':
+        types = ['income', 'balance', 'cashflow']
+    else:
+        types = ['income_q', 'balance_q', 'cashflow_q']
+
+    result = {}
+    for fin_type in types:
+        try:
+            rows = (
+                db.query(Financial)
+                .filter(Financial.ticker == ticker_with_suffix, Financial.type == fin_type)
+                .order_by(Financial.period.desc())
+                .all()
+            )
+            if not rows:
+                rows = (
+                    db.query(Financial)
+                    .filter(Financial.ticker == ticker_base, Financial.type == fin_type)
+                    .order_by(Financial.period.desc())
+                    .all()
+                )
+            if rows:
+                key = fin_type.replace('_q', '')  # 'income' / 'balance' / 'cashflow'
+                result[key] = [
+                    {
+                        'period': r.period.isoformat()[:10] if hasattr(r.period, 'isoformat') else str(r.period)[:10],
+                        'data': r.data,
+                    }
+                    for r in rows
+                ]
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error fetching financials for {ticker}/{fin_type}: {e}")
+            continue
+
+    if not result:
+        return {'ticker': ticker, 'message': 'Financial data not found', 'data': result}
+
+    return {'ticker': ticker, 'period': period, 'data': result}
 
 
 @router.get('/api/stocks/{ticker}/technical')
@@ -905,6 +956,53 @@ def delete_paper_trade(trade_id: int, db: Session = Depends(get_db)):
     db.delete(trade)
     db.commit()
     return {'ok': True, 'message': f'Trade {trade_id} deleted'}
+
+
+@router.get('/api/stocks/{ticker}/dividends')
+def get_stock_dividends(ticker: str, db: Session = Depends(get_db)):
+    """Return dividend history for a ticker from CalendarEvent table."""
+    base = _ticker_base(ticker)
+    try:
+        from database import CalendarEvent
+    except (ImportError, ModuleNotFoundError):
+        try:
+            from backend.database import CalendarEvent
+        except (ImportError, ModuleNotFoundError):
+            return {'ticker': base, 'count': 0, 'data': [], 'source': 'no_data'}
+    
+    events = (
+        db.query(CalendarEvent)
+        .filter(CalendarEvent.ticker == base, CalendarEvent.event_type == 'dividend')
+        .order_by(CalendarEvent.event_date.desc())
+        .all()
+    )
+    
+    total_yield = 0
+    data = []
+    for e in events:
+        yield_val = None
+        desc = e.description or ''
+        if 'yield' in desc.lower():
+            import re
+            match = re.search(r'([\d.]+)%', desc)
+            if match:
+                yield_val = float(match.group(1))
+                total_yield += yield_val
+        data.append({
+            'id': e.id,
+            'title': e.title,
+            'date': e.event_date.isoformat() if hasattr(e.event_date, 'isoformat') else str(e.event_date),
+            'description': desc,
+            'yield': yield_val,
+        })
+    
+    return {
+        'ticker': base,
+        'count': len(data),
+        'total_yield': round(total_yield, 2),
+        'data': data,
+        'source': 'CalendarEvent',
+    }
 
 
 @router.get('/api/paper-trades/summary')

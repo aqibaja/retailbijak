@@ -418,6 +418,99 @@
 
 ---
 
+# 🇮🇩 Fase 13: Data Completeness, Stock Detail Mastery & PWA
+
+> **Status:** 🆑 Baru dimulai
+> **Tujuan:** Fix financial data pipeline, enhance stock detail with financial viewer + dividend chart, polish PWA.
+> **Prinsip:** Data yang tidak tampil = tidak berguna. Fix pipeline dulu, baru UI.
+
+---
+
+## Masalah Teridentifikasi (Pre-Fase 13 Audit)
+
+| # | Masalah | Prioritas | Dampak |
+|---|---------|-----------|--------|
+| P1 | **Financial data (income/balance/cash flow) return empty** | 🔴 High | User tidak bisa lihat laporan keuangan |
+| P2 | **Stock detail: sector/industry/price kadang None** | 🔴 High | Data penting tidak tampil |
+| P3 | **Tidak ada financial statements viewer di stock detail** | 🟠 Medium | Investor perlu lihat fundamental |
+| P4 | **Dividend history tidak tampil di stock detail** | 🟠 Medium | CalendarEvent ada tapi hidden |
+| P5 | **PWA manifest minim icon** | 🟡 Low | Add-to-homescreen kurang optimal |
+| P6 | **Tidak ada error boundary** — JS crash bikin blank page | 🟠 Medium | UX fatal |
+| P7 | **Cache-bust masih ada yang stale** | 🟡 Low | User bisa lihat JS lama |
+
+---
+
+## 🔴 13.1 Data Pipeline Fix (HIGH IMPACT)
+
+> **Goal:** Pastikan semua data pipeline menghasilkan data yang benar.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 13.1.1 | **Fix financial updater** — Debug kenapa income/balance/cash flow return 0 items | `backend/updaters/fundamental_updater.py` | 30m | Cek yfinance financials fetch, error handling, logging |
+| 13.1.2 | **Fix stock detail data** — Debug BBCA returning None sector/industry/price | `backend/routes/stock_detail.py` | 15m | Cek join query, data mapping |
+| 13.1.3 | **Manual trigger endpoints** — `POST /api/admin/backfill-financials` trigger financial fetch | `backend/routes/system.py` | 10m | Sama pattern dgn classify endpoints |
+| 13.1.4 | **Data health dashboard** — Card yang show data counts per pipeline (stocks/OHLCV/financials/news) | `frontend/js/views/dashboard.js` | 20m | Show counts + last updated time |
+
+**Value:** ★★★★★ — Without data, features don't matter
+
+---
+
+## 🟠 13.2 Stock Detail Enhancement (MEDIUM IMPACT)
+
+> **Goal:** Stock detail jadi pusat analisis — price + TA + fundamentals + financials + dividend.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 13.2.1 | **Financial statements viewer** — Tab section di stock detail: Income Statement, Balance Sheet, Cash Flow | `stock_detail.js`, `style.css` | 35m | Fetch dari `/api/stocks/{ticker}/financials?period=annual&type=income`. Table layout. Period selector: Annual/Quarterly. |
+| 13.2.2 | **Dividend history section** — Tampilkan dividend events dari CalendarEvent table | `stock_detail.js`, `backend/routes/stock_detail.py` | 20m | Tambah endpoint `/api/stocks/{ticker}/dividends`. Tampilkan tabel + total yield. |
+| 13.2.3 | **Fundamental metrics cards** — PE, PBV, ROE, DER, EPS, BVPS sebagai card di overview tab | `stock_detail.js` | 15m | Ambil dari `/api/stocks/{ticker}/fundamental`. Card grid 2x3 atau 3x2. |
+| 13.2.4 | **Revenue & profit chart** — Mini bar chart pendapatan vs laba (Chart.js) | `stock_detail.js` | 20m | Dari data financials income statement. Bar chart 5 tahun. |
+
+**Value:** ★★★★☆ — Institutional-grade analysis
+
+---
+
+## 🟠 13.3 PWA Polish (MEDIUM IMPACT)
+
+> **Goal:** Bikin retailbijak bisa di-install sebagai app dan kerja offline lebih baik.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 13.3.1 | **Manifest update** — Tambah icon 192x192, 512x512. Update name, short_name, theme_color | `frontend/manifest.json` | 15m | Generate SVG icons, convert via CLI. Update `start_url`, `display: standalone` |
+| 13.3.2 | **Service worker cache strategy** — Cache API responses, stale-while-revalidate | `frontend/sw.js` | 20m | Network first for API, cache first for static assets. Background sync. |
+| 13.3.3 | **Install prompt UI** — Tampilkan "Install App" button jika browser supports PWA | `frontend/index.html`, `frontend/js/main.js` | 15m | Listen for `beforeinstallprompt`. Show banner. |
+
+**Value:** ★★★★☆ — Mobile users can install as app
+
+---
+
+## 🟡 13.4 Error Boundary & Stability (LOW IMPACT — CRITICAL UX)
+
+> **Goal:** Eliminate blank pages ketika JS error.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 13.4.1 | **Global error handler** — `window.onerror` + `window.addEventListener('unhandledrejection')` | `frontend/js/main.js` | 15m | Capture error, show toast + fallback UI. Jangan biarkan blank page. |
+| 13.4.2 | **View-level try/catch** — Wrap semua view render dengan try/catch | All view files | 20m | Jika render gagal, tampilkan `.empty-state-card` error + retry button |
+| 13.4.3 | **Cache-bust final cleanup** — Pastikan semua `?v=` sama di semua file | All import statements | 5m | Bump to `20260509C` |
+
+**Value:** ★★★★★ — Never show blank page to users
+
+---
+
+## Prioritas Eksekusi — Fase 13
+
+### 🔴 NOW (Day 1)
+13.1.1 → 13.1.2 → 13.1.3 → 13.1.4
+
+### 🟠 Next (Day 2)
+13.2.1 → 13.2.2 → 13.2.3 → 13.2.4
+
+### 🟡 Later (Day 3)
+13.3.1 → 13.3.2 → 13.3.3 → 13.4.1 → 13.4.2 → 13.4.3
+
+---
+
 ## Log Eksekusi
 
 | Date | Task | Status | Catatan |
