@@ -222,3 +222,6 @@
 | 2026-05-09 | 15.2.3 | ✅ | Ran seed_financials(): 125 records for 25 top stocks (income/balance/cashflow) |
 | 2026-05-09 | 15.2.4 | ✅ | Admin trigger POST /api/admin/seed-financials |
 | 2026-05-09 | 15.4.1 | ✅ | CSS + Indices page styles |
+| 2026-05-09 | 15.7.1 | ✅ | AMOLED CSS: true black background, no box-shadows, minimal borders |
+| 2026-05-09 | 15.7.2 | ✅ | Theme.js: 3-state cycle (dark→light→amoled→dark) + moon-star icon |
+| 2026-05-09 | 15.7.3 | ✅ | Persist AMOLED preference via localStorage + data-theme attribute |
