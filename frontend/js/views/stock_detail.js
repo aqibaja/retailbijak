@@ -73,6 +73,8 @@ export async function renderStockDetail(root, ticker) {
             <label class="indicator-toggle" data-indicator="boll"><span>Boll</span></label>
             <label class="indicator-toggle" data-indicator="sr"><span>S/R</span></label>
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
+            <label class="indicator-toggle" data-indicator="st"><span>ST</span></label>
+            <label class="indicator-toggle" data-indicator="vwap"><span>VWAP</span></label>
           </div>
           <div class="chart-top-spacing"></div>
           <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
@@ -393,7 +395,7 @@ export async function renderStockDetail(root, ticker) {
 
 }
 
-function normalizeCandles(rows){ return rows.map(r => ({ date: r.date || r.time, open:Number(r.open ?? r.close), high:Number(r.high ?? r.close), low:Number(r.low ?? r.close), close:Number(r.close), volume:Number(r.volume || 0) })).filter(r => r.date && r.close); }
+function normalizeCandles(rows){ return rows.map(r => ({ date: r.date || r.time, open:Number(r.open ?? r.close), high:Number(r.high ?? r.close), low:Number(r.low ?? r.close), close:Number(r.close), volume:Number(r.volume || 0), st_value: r.st_value, st_trend: r.st_trend, vwap: r.vwap })).filter(r => r.date && r.close); }
 function hydrateHeader(symbol, detail, fund, candles){
   const last = candles[candles.length-1], prev = candles[candles.length-2] || last;
   const change = last.close - prev.close, pct = prev.close ? change/prev.close*100 : 0;
@@ -529,6 +531,33 @@ function renderStockChart(symbol, candles, technical){
         chart.addLineSeries({ color:clr, lineWidth:1, priceLineVisible:false, lastValueVisible:false, lineStyle:i===2?2:0 })
           .setData([{ time:data[0].date.slice(0,10), value:val }, { time:lastTime, value:val }]);
       });
+    }
+
+    // Supertrend markers
+    if (active.includes('st') && data.some(d => d.st_value != null)) {
+      const stData = data.filter(d => d.st_value != null);
+      if (stData.length) {
+        // Up markers (green dots below candle)
+        chart.addLineSeries({ color:hexWithAlpha(c.up,0.6), lineWidth:1, priceLineVisible:false, lastValueVisible:false })
+          .setData(stData.map(d => ({ time:String(d.date).slice(0,10), value:d.st_value })));
+        // Scatter markers for trend direction
+        const markers = stData.map(d => ({
+          time: String(d.date).slice(0,10),
+          position: d.st_trend ? 'belowBar' : 'aboveBar',
+          color: d.st_trend ? c.up : c.down,
+          shape: d.st_trend ? 'arrowUp' : 'arrowDown',
+          size: 1,
+        }));
+        if (markers.length) {
+          try { cs.setMarkers(markers); } catch(e) {}
+        }
+      }
+    }
+
+    // VWAP line
+    if (active.includes('vwap') && data.some(d => d.vwap != null)) {
+      chart.addLineSeries({ color:hexWithAlpha(c.accentAmber,0.7), lineWidth:1, priceLineVisible:false, lastValueVisible:true })
+        .setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.vwap })).filter(d => d.value != null));
     }
 
     const sr = ind.support_resistance || {};

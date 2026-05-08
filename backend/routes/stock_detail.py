@@ -202,6 +202,9 @@ def get_chart_data(ticker: str, limit: int = 100, db: Session = Depends(get_db))
             'volume': float(row['volume']) if pd.notna(row['volume']) else None,
             'sma_20': float(row['sma_20']) if 'sma_20' in row and pd.notna(row['sma_20']) else None,
             'sma_50': float(row['sma_50']) if 'sma_50' in row and pd.notna(row['sma_50']) else None,
+            'st_value': float(row['st_value']) if 'st_value' in row and pd.notna(row['st_value']) else None,
+            'st_trend': bool(row['st_trend']) if 'st_trend' in row and pd.notna(row['st_trend']) else None,
+            'vwap': float(row['vwap']) if 'vwap' in row and pd.notna(row['vwap']) else None,
         })
 
     return {'ticker': ticker, 'status': 'ok', 'data': records}

@@ -120,6 +120,38 @@ def calculate_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
         df['bb_mid'] = bb.bollinger_mavg()
         df['bb_low'] = bb.bollinger_lband()
         df['vol_sma_20'] = volume.rolling(20).mean()
+
+    # ── Supertrend (ATR-based, period=10, multiplier=3) ──
+    if len(df) >= 11:
+        hl2 = (high + low) / 2
+        atr_10 = df['atr'] if 'atr' in df.columns else ta.volatility.AverageTrueRange(high=high, low=low, close=close, window=10).average_true_range()
+        multiplier = 3.0
+        df['st_upper'] = hl2 + multiplier * atr_10
+        df['st_lower'] = hl2 - multiplier * atr_10
+        st = [True] * len(df)  # True = uptrend
+        st_vals = [0.0] * len(df)
+        for i in range(1, len(df)):
+            prev_upper = df['st_upper'].iloc[i-1]
+            prev_lower = df['st_lower'].iloc[i-1]
+            if df['close'].iloc[i] > prev_upper:
+                st[i] = True
+            elif df['close'].iloc[i] < prev_lower:
+                st[i] = False
+            else:
+                st[i] = st[i-1]
+            st_vals[i] = df['st_lower'].iloc[i] if st[i] else df['st_upper'].iloc[i]
+        df['st_trend'] = st  # True=uptrend(buy), False=downtrend(sell)
+        df['st_value'] = st_vals
+        df['st_color'] = np.where(df['st_trend'], 1, -1)
+
+    # ── VWAP (daily anchored — full period) ──
+    if len(df) >= 2:
+        typical_price = (high + low + close) / 3
+        cum_pv = (typical_price * volume).cumsum()
+        cum_vol = volume.cumsum()
+        df['vwap'] = cum_pv / cum_vol.replace(0, np.nan)
+        df['vwap_dev'] = (close - df['vwap']) / df['vwap'] * 100
+
     return df
 
 

@@ -12,7 +12,7 @@
     12||------|--------|----------|
     13|| **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
     14|| **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 95% |
-    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▰▰▱▱▱▱ 45% |
+    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▰▰▱▱▱▱ 60% |
     16|
     17|---
     18|
@@ -367,6 +367,9 @@
 | 2026-05-10 | 3.3.3 | ✅ | Saved filters — localStorage, Simpan/Muat filter (sort + search), konfirmasi timpa duplicate |
 | 2026-05-10 | 3.4.1 | ✅ | Backend: P&L endpoint `/api/portfolio/summary` — unrealized P&L, invested, current value, sector breakdown |
 | 2026-05-10 | 3.4.2 | ✅ | Frontend: Portfolio dashboard — KPI cards (investasi, nilai, P&L, return%), sektor chips, P&L per posisi di tabel |
+| 2026-05-10 | 3.5.1 | ✅ | Backend: Supertrend (ATR-based, period=10, multiplier=3) + VWAP (full-period anchored) di calculate_all_indicators |
+| 2026-05-10 | 3.5.2 | ✅ | Frontend: Indicator toggle buttons ST + VWAP di chart toolbar |
+| 2026-05-10 | 3.5.3 | ✅ | Frontend: Supertrend line + markers + VWAP line di LightweightCharts overlay |
 
 ---
 
