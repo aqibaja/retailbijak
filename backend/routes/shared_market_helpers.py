@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, timedelta
 from typing import Any
 
 from sqlalchemy import text
@@ -126,6 +127,42 @@ def _batch_historical_closes(
     return result
 
 
+def _batch_historical_closes_date(
+    db: Session, tickers: list[str], targets: dict[str, date]
+) -> dict[str, dict[str, float | None]]:
+    """Batch fetch close prices closest to target dates for many tickers.
+
+    For each ticker and target date label, finds the close price on the
+    most recent trading day on or before the target date. This is more
+    robust than offset-based lookups for stocks with limited history.
+
+    Args:
+        db: SQLAlchemy session
+        tickers: list of raw ticker symbols
+        targets: dict mapping label -> target date (e.g. {'perf_3m': date_90_days_ago})
+
+    Returns:
+        dict mapping ticker -> {label: close_price or None}
+    """
+    if not tickers or not targets:
+        return {}
+
+    result: dict[str, dict[str, float | None]] = {}
+    for ticker in tickers:
+        ticker_closes: dict[str, float | None] = {}
+        for label, target_date in targets.items():
+            row = (
+                db.query(OHLCVDaily.close)
+                .filter(OHLCVDaily.ticker == ticker, OHLCVDaily.date <= target_date)
+                .order_by(OHLCVDaily.date.desc())
+                .limit(1)
+                .first()
+            )
+            ticker_closes[label] = row[0] if row else None
+        result[ticker] = ticker_closes
+    return result
+
+
 def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
     latest_date, pairs = _latest_ohlcv_pairs(db)
     if not latest_date or not pairs:
@@ -134,9 +171,18 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
     stocks = {row.ticker: row.name for row in db.query(Stock).all()}
 
     # Batch-fetch historical closes for multi-timeframe performance
-    ticker_offsets = [5, 21, 63, 126]
+    # Use offset-based lookups for short timeframes (1w, 1m)
+    ticker_offsets = [5, 21]
     tickers_raw = [row['ticker'] for row in pairs]
     historical_closes = _batch_historical_closes(db, tickers_raw, ticker_offsets)
+
+    # Use date-based lookups for longer timeframes (3m, 6m)
+    # More robust for stocks with limited trading-day history
+    date_targets = {
+        'perf_3m': latest_date - timedelta(days=90),
+        'perf_6m': latest_date - timedelta(days=180),
+    }
+    date_closes = _batch_historical_closes_date(db, tickers_raw, date_targets)
 
     rows = []
     for row in pairs:
@@ -149,6 +195,7 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
         close_latest = row['close_price']
 
         closes = historical_closes.get(ticker_raw, {})
+        date_closes_for_ticker = date_closes.get(ticker_raw, {})
 
         # Compute multi-timeframe performance
         def _perf(close_old: float | None) -> float | None:
@@ -166,8 +213,8 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
             'source': 'db',
             'perf_1w': _perf(closes.get(5)),
             'perf_1m': _perf(closes.get(21)),
-            'perf_3m': _perf(closes.get(63)),
-            'perf_6m': _perf(closes.get(126)),
+            'perf_3m': _perf(date_closes_for_ticker.get('perf_3m')),
+            'perf_6m': _perf(date_closes_for_ticker.get('perf_6m')),
         }
         rows.append(item)
     return latest_date, rows

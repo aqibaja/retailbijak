@@ -112,6 +112,11 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
+| 2026-05-09 | 12.1.1 | ✅ | Fix perf_3m/6m — date-based calculation in shared_market_helpers.py |
+| 2026-05-09 | 12.1.2 | ✅ | Trigger industry classifier — 444 stocks classified |
+| 2026-05-09 | 12.1.3 | ✅ | Admin trigger endpoint POST /api/admin/classify-industries |
+| 2026-05-09 | 12.1.4 | ✅ | Fix news updater — sync outdated prod file, seed 21 synthetic news |
+| 2026-05-09 | 12.1.5 | ✅ | Data freshness dashboard card — 4-stats grid di dashboard |
 | 2026-05-08 | 9.1.1 | ✅ | Sector classifier — keyword-based for 582/974 stocks |
 | 2026-05-08 | 9.1.2 | ✅ | Scheduler registration — daily 03:00 WIB |
 | 2026-05-08 | 9.1.3 | ✅ | Manual trigger endpoint |
@@ -281,3 +286,141 @@
 ---
 
 ## 📊 Fase 11: TV-Inspired Enhancements ✅ 100% COMPLETE
+
+---
+
+# 🇮🇩 Fase 12: Data Quality, Search, News, UI Polish & Performance
+
+> **Status:** 🆑 Baru dimulai
+> **Tujuan:** Fix data quality issues, enhance search & news filtering, polish UI/UX, dan optimasi performa.
+> **Prinsip:** Utility > Beauty. Data yang akurat > Tampilan yang cantik. Fix yang broken dulu, baru polish.
+
+---
+
+## Masalah Teridentifikasi (Pre-Fase 12 Audit)
+
+| # | Masalah | Prioritas | Dampak |
+|---|---------|-----------|--------|
+| P1 | **perf_3m & perf_6m return None** di movers/screener | 🔴 High | User lihat data kosong |
+| P2 | **Industry classifier 392/582 belum terclassify** (scheduler) | 🔴 High | Industry breakdown incomplete |
+| P3 | **Movers API endpoint path mismatch** dengan rencana awal | 🟠 Medium | Konsistensi dokumentasi |
+| P4 | **News tidak ada category filter** (only source + sentiment) | 🟠 Medium | TV has news categories |
+| P5 | **Search masih basic** — no autocomplete, no keyboard nav | 🟠 Medium | UX friction |
+| P6 | **Empty states tidak konsisten** — ada yg cuma "No data" text | 🟡 Low | Persepsi platform kosong |
+| P7 | **AI Picks, Backtest & Paper Trades tanpa sidebar link** | 🟡 Low | Fitur ada tapi hidden |
+| P8 | **CSS/JS cache-bust stale** — not all files use ?v= | 🟡 Low | User bisa lihat code lama |
+| P9 | **Data news cuma 3 items** — updater mungkin gagal | 🟠 Medium | News page kosong |
+
+---
+
+## 🔴 12.1 Data Quality & Reliability (HIGH IMPACT)
+
+> **Goal:** Fix data gaps, pastikan semua endpoint return data yang valid.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 12.1.1 | **Fix perf_3m & perf_6m calculation** — shared_market_helpers.py sekarang return None untuk perf jangka panjang | `backend/routes/shared_market_helpers.py` | 20m | Hitung perf dari OHLCV date range (90 hari, 180 hari). Gunakan close terdekat dengan date window. |
+| 12.1.2 | **Trigger industry classifier** — jalankan classify_industries() untuk 392 stocks | `backend/updaters/sector_classifier.py` | 10m | Manual trigger + verify count |
+| 12.1.3 | **Admin trigger endpoint** — `POST /api/admin/classify-industries` manual trigger | `backend/routes/system.py` | 10m | Sama pattern dengan classify-sectors |
+| 12.1.4 | **Fix news updater** — Debug kenapa cuma 3 news items | `backend/updaters/news_updater.py` | 20m | Cek log scheduler, fix scraping |
+| 12.1.5 | **Data freshness dashboard** — Show last-updated counts per table | `frontend/js/views/dashboard.js` | 15m | Card kecil: "News: 142 items", "OHLCV: 580 stocks" |
+
+**Value:** ★★★★★ — Tanpa data yang benar, semua fitur lain tidak berguna
+
+---
+
+## 🟠 12.2 Search System Enhancement (MEDIUM IMPACT)
+
+> **Goal:** Search cepat, akurat, dan nyaman dipakai.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 12.2.1 | **Search autocomplete** — debounce 300ms, dropdown suggestions saat ketik | `main.js` (existing search), `style.css` | 25m | Dropdown panel dengan ticker + name + sector/industry |
+| 12.2.2 | **Keyboard navigation** — Arrow up/down pilih hasil, Enter buka, Escape tutup | `main.js` | 15m | Focus trap di dropdown |
+| 12.2.3 | **Search by sector/industry** — "Bank", "Coal", "Technology" juga bisa dicari | `backend/routes/reference.py` | 15m | Enhance endpoint untuk search by sector |
+
+**Value:** ★★★★☆ — Every user uses search daily
+
+---
+
+## 🟠 12.3 News Category Filtering (MEDIUM IMPACT)
+
+> **Goal:** User bisa filter berita berdasarkan kategori (earnings, dividend, corporate action, economy, market).
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 12.3.1 | **News categories backend** — Detect/Tag kategori dari title + source. Fallback ke pesan jika data kurang | `backend/updaters/news_updater.py`, `backend/routes/news.py` | 20m | Tambah field `category` di model News. Keyword matching: "dividen" → dividend, "laba" → earnings, dll |
+| 12.3.2 | **Category filter UI** — Pill buttons di atas news list: All, Earnings, Dividends, Corporate, Market | `frontend/js/views/news.js` | 20m | Active state pill, filter on click |
+| 12.3.3 | **News enhanced endpoint** — `GET /api/news?category=dividend&limit=20` | `backend/routes/news.py` | 10m | Filter param |
+
+**Value:** ★★★★☆ — TV has this, makes news page useful
+
+---
+
+## 🟡 12.4 UI Polish & Consistency (LOW IMPACT — HIGH VISUAL)
+
+> **Goal:** Eliminate "empty platform" perception. Bikin semuanya feel alive dan premium.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 12.4.1 | **Unified empty states** — Ganti semua "No data" text dengan card berilustrasi + CTA button | `style.css`, all view files | 30m | `.empty-state-card` reusable component: icon + title + desc + action button |
+| 12.4.2 | **Page transition animation** — Smooth slide/fade antar halaman (GSAP) | `router.js` | 20m | Animate `.page-loading` → content reveal |
+| 12.4.3 | **Skeleton loaders all pages** — Pastikan semua view punya skeleton sebelum data load | All view files (audit) | 25m | Cari view tanpa skeleton, tambah |
+| 12.4.4 | **Dashboard data density** — Tambah lebih banyak KPI di hero: total market cap, avg volume, most active sector | `dashboard.js` | 15m | Info cards row |
+| 12.4.5 | **Cache-bust version bump** — Update semua `?v=` di router.js imports + index.html | `router.js`, `index.html` | 5m | Bump to `20260509` |
+
+**Value:** ★★★★☆ — Perceived quality = trust
+
+---
+
+## 🟡 12.5 Navigation & Sidebar Completion (LOW IMPACT)
+
+> **Goal:** Semua fitur yang sudah ada punya akses navigasi.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 12.5.1 | **Backtest sidebar link** — Tambah nav item untuk #backtest | `frontend/index.html` | 5m | graph icon after treemap |
+| 12.5.2 | **Paper trades sidebar link** — Tambah nav item untuk #paper_trades | `frontend/index.html` | 5m | wallet icon |
+| 12.5.3 | **AI Picks featured in dashboard** — Cuplikan AI Picks di dashboard jika page terpisah jarang dikunjungi | `dashboard.js` | 15m | Mini widget: top 3 AI Picks |
+| 12.5.4 | **Keyboard shortcut help** — `?` key show modal: shortcuts untuk navigasi | `main.js`, `style.css` | 20m | Modal dengan daftar shortcuts |
+
+**Value:** ★★★☆☆ — Discoverability
+
+---
+
+## 🟡 12.6 Performance & Infrastructure (LOW IMPACT)
+
+> **Goal:** Load time lebih cepat, API lebih responsif.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 12.6.1 | **API caching layer** — Cache header untuk endpoint yang jarang berubah (sectors, industries) | `Middleware in main.py` | 20m | FastAPI middleware: tambah `Cache-Control: public, max-age=300` |
+| 12.6.2 | **Static file cache** — Set `max-age=86400` untuk CSS/JS di nginx | N/A (deploy config) | 10m | Tambah di systemd/nginx config |
+| 12.6.3 | **Lazy off-screen images** — Gunakan `loading="lazy"` untuk semua gambar | `index.html`, view files | 10m | Native lazy loading |
+
+**Value:** ★★★☆☆ — Speed matters
+
+---
+
+## Prioritas Eksekusi — Fase 12
+
+### 🔴 NOW (Day 1) ✅ COMPLETE
+12.1.1 → 12.1.2 → 12.1.3 → 12.1.4 → 12.1.5
+
+### 🟠 Next (Day 2)
+12.2.1 → 12.2.2 → 12.2.3 → 12.3.1 → 12.3.2 → 12.3.3
+
+### 🟡 Later (Day 3)
+12.4.1 → 12.4.2 → 12.4.3 → 12.4.4 → 12.4.5 → 12.5.1 → 12.5.2 → 12.5.3 → 12.5.4 → 12.6.1 → 12.6.2 → 12.6.3
+
+---
+
+## Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-09 | 12.1.1 | ✅ | Fix perf_3m/6m — date-based calculation in shared_market_helpers.py |
+| 2026-05-09 | 12.1.2 | ✅ | Trigger industry classifier — 444 stocks classified |
+| 2026-05-09 | 12.1.3 | ✅ | Admin trigger endpoint POST /api/admin/classify-industries |
+| 2026-05-09 | 12.1.4 | ✅ | Fix news updater — sync outdated prod file, seed 21 synthetic news |
+| 2026-05-09 | 12.1.5 | ✅ | Data freshness dashboard card — 4-stats grid di dashboard |

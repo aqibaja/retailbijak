@@ -212,6 +212,40 @@ def trigger_sector_classification(db: Session = Depends(get_db)):
         return {'ok': False, 'error': str(e)}
 
 
+@router.post('/api/admin/classify-industries')
+def trigger_industry_classification():
+    """Manually trigger industry classification for stocks with sector but no industry."""
+    try:
+        from updaters.sector_classifier import classify_industries
+        result = classify_industries()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@router.post('/api/admin/seed-news')
+def trigger_seed_news(limit: int = 20, db: Session = Depends(get_db)):
+    """Manually seed synthetic news from stock price movements (top movers, volume leaders).
+
+    Generates realistic Indonesian market news articles based on actual
+    OHLCV data in the database. Useful when RSS feeds have failed or
+    you want to ensure the news page has fresh content.
+    """
+    try:
+        try:
+            from updaters.news_updater import seed_synthetic_news
+        except ModuleNotFoundError:
+            from backend.updaters.news_updater import seed_synthetic_news
+        items = seed_synthetic_news(db=db, limit=limit)
+        return {
+            'ok': True,
+            'message': f'Seeded {len(items)} synthetic news items from stock data',
+            'count': len(items),
+        }
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
 @router.get('/api/system/ohclv-status')
 def get_ohlcv_status(db: Session = Depends(get_db)):
     """Get OHLCV data quality summary."""

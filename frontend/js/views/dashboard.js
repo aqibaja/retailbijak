@@ -76,6 +76,11 @@ export async function renderDashboard(root) {
       </div>
     </div>
 
+    <!-- Data Freshness Stats Card -->
+    <div class="panel" id="dash-freshness-strip" style="padding:8px 14px;margin-top:0;display:none">
+      <div class="dash-freshness-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+    </div>
+
     <div class="dash-grid-pro dash-mobile-shell">
       <div class="panel dash-chart-panel">
         <div class="flex justify-between items-center mb-3">
@@ -164,6 +169,7 @@ export async function renderDashboard(root) {
   loadSignalWidget();
   loadTodayEvents();
   loadBreadthWidget();
+  loadFreshnessStats(); // Data freshness stats card
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 
 // ─── Breadth Widget ────────────────────────────
@@ -268,6 +274,64 @@ async function loadBreadthWidget() {
   });
   // Apply widget visibility on load
   applyWidgetVisibility();
+}
+
+// ─── Data Freshness Stats ────────────────────────────
+async function loadFreshnessStats() {
+  const strip = document.getElementById('dash-freshness-strip');
+  const grid = strip?.querySelector('.dash-freshness-grid');
+  if (!strip || !grid) return;
+  // Inject responsive style once
+  if (!document.getElementById('dash-freshness-style')) {
+    const style = document.createElement('style');
+    style.id = 'dash-freshness-style';
+    style.textContent = '@media(max-width:767px){.dash-freshness-grid{grid-template-columns:repeat(2,1fr)!important}}';
+    document.head.appendChild(style);
+  }
+  try {
+    const [freshnessRes, indRes, stockRes] = await Promise.all([
+      apiFetch('/system/freshness'),
+      apiFetch('/industries'),
+      apiFetch('/stocks'),
+    ]);
+
+    const labels = freshnessRes?.labels || {};
+    const stockCount = stockRes?.count || 0;
+    const indCount = indRes?.total_industries || 0;
+
+    // Determine freshness dot class from label
+    const freshnessCls = (label) => {
+      if (!label || label === 'tidak tersedia') return 'old';
+      if (label.includes('baru') || label.includes('menit')) return 'fresh';
+      if (label.includes('jam')) return 'stale';
+      return 'old';
+    };
+
+    const items = [
+      { icon: 'database', label: 'Saham', value: stockCount.toLocaleString('id-ID'), fLabel: labels.stocks || '—' },
+      { icon: 'bar-chart-3', label: 'OHLCV', value: labels.ohlcv_daily || '—', fLabel: labels.ohlcv_daily || '—' },
+      { icon: 'newspaper', label: 'Berita', value: labels.news || '—', fLabel: labels.news || '—' },
+      { icon: 'building-2', label: 'Industri', value: indCount.toLocaleString('id-ID'), fLabel: labels.fundamentals || '—' },
+    ];
+
+    grid.innerHTML = items.map(({ icon, label, value, fLabel }) => {
+      const cls = freshnessCls(fLabel);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:8px">
+        <i data-lucide="${icon}" style="width:14px;height:14px;flex-shrink:0;opacity:.6"></i>
+        <div style="flex:1;min-width:0;line-height:1.2">
+          <strong style="font-size:13px;display:block">${value}</strong>
+          <small style="font-size:9px;opacity:.55;text-transform:uppercase;letter-spacing:.03em">${label}</small>
+        </div>
+        <span class="freshness-dot ${cls}" title="${fLabel}"></span>
+      </div>`;
+    }).join('');
+
+    strip.style.display = '';
+    if (window.lucide) lucide.createIcons();
+  } catch (e) {
+    console.warn('loadFreshnessStats failed', e);
+    strip.style.display = 'none';
+  }
 }
 
 function applyWidgetVisibility() {
