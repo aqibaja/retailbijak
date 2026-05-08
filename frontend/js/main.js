@@ -1,6 +1,42 @@
-import { handleRoute } from './router.js?v=20260509B';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260509B';
-import { initTheme } from './theme.js?v=20260509B';
+import { handleRoute } from './router.js?v=20260510';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260510';
+import { initTheme } from './theme.js?v=20260510';
+
+// ================= GLOBAL ERROR BOUNDARY =================
+window.__hermesErrors = [];
+
+window.onerror = function(msg, url, line, col, error) {
+  const err = {msg, url, line, col, time: Date.now()};
+  window.__hermesErrors.push(err);
+  console.error('[ErrorBoundary]', msg, url, line, col);
+  showErrorFallback(msg);
+  return true; // Prevent default browser handler
+};
+
+window.addEventListener('unhandledrejection', function(e) {
+  const err = {reason: String(e.reason), time: Date.now()};
+  window.__hermesErrors.push(err);
+  console.error('[ErrorBoundary] Unhandled Rejection:', e.reason);
+  showErrorFallback(e.reason);
+});
+
+function showErrorFallback(detail) {
+  const root = document.getElementById('app-root');
+  if (!root) return;
+  // Only show if root is empty or in loading state
+  if (root.children.length > 1 && !root.classList.contains('page-loading')) return;
+  
+  root.innerHTML = `
+    <div class="empty-state-card" style="min-height:60vh">
+      <div class="empty-state-icon">⚠️</div>
+      <strong class="empty-state-title">Terjadi Kesalahan</strong>
+      <span class="empty-state-desc">${String(detail).substring(0, 100) || 'Halaman gagal dimuat. Silakan coba refresh.'}</span>
+      <button type="button" class="empty-state-action" onclick="location.reload()">
+        <i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang
+      </button>
+    </div>
+  `;
+}
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -722,6 +758,61 @@ document.addEventListener('DOMContentLoaded', () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       }
+
+      // ─── PWA Install Prompt ────────────────────────
+      let deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent Chrome 67+ from automatically showing the prompt
+        e.preventDefault();
+        // Stash the event so it can be triggered later
+        deferredPrompt = e;
+
+        // Check if user already dismissed the banner
+        if (localStorage.getItem('retailbijak.pwa_dismissed')) return;
+
+        // Show install banner
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner) {
+          banner.style.display = 'flex';
+          banner.classList.add('pwa-install-banner-show');
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        const installBtn = e.target.closest('#pwa-install-btn');
+        if (installBtn && deferredPrompt) {
+          // Hide the banner
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) {
+            banner.style.display = 'none';
+            banner.classList.remove('pwa-install-banner-show');
+          }
+          // Show the install prompt
+          deferredPrompt.prompt();
+          // Wait for the user to respond
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('[PWA] User accepted the install prompt');
+            } else {
+              console.log('[PWA] User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+          });
+          return;
+        }
+
+        const closeBtn = e.target.closest('#pwa-install-close');
+        if (closeBtn) {
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) {
+            banner.style.display = 'none';
+            banner.classList.remove('pwa-install-banner-show');
+          }
+          // Set flag so banner doesn't show again
+          localStorage.setItem('retailbijak.pwa_dismissed', '1');
+          deferredPrompt = null;
+        }
+      });
       try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
 
       // Alert notification polling — check every 2 min for triggered alerts

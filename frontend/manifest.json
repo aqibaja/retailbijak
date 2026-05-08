@@ -1,51 +1,26 @@
 {
   "name": "RetailBijak — IDX Stock Intelligence",
   "short_name": "RetailBijak",
-  "description": "Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker.",
+  "description": "Platform analisis saham IDX profesional — scanner, portfolio tracker, AI analysis.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#0b1220",
-  "theme_color": "#0b1220",
-  "categories": ["finance", "investing", "productivity"],
-  "lang": "id",
-  "dir": "ltr",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
   "icons": [
     {
-      "src": "assets/favicon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any",
-      "purpose": "any monochrome"
-    },
-    {
-      "src": "assets/br-logo.svg",
-      "type": "image/svg+xml",
-      "sizes": "180x80",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/site-logo.png",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "1000x550",
-      "purpose": "any"
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "assets/site-logo.png",
-      "type": "image/png",
-      "sizes": "1000x550",
-      "form_factor": "wide",
-      "label": "RetailBijak Dashboard Pasar IDX"
-    },
-    {
-      "src": "assets/site-logo.png",
-      "type": "image/png",
-      "sizes": "1000x550",
-      "form_factor": "narrow",
-      "label": "RetailBijak IDX Stock Intelligence"
-    }
-  ],
-  "prefer_related_applications": false
+  "categories": ["finance", "investing", "business"],
+  "lang": "id-ID",
+  "orientation": "any"
 }

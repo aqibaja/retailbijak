@@ -538,3 +538,7 @@
 | 2026-05-09 | 12.6.1 | ✅ | API caching middleware — Cache-Control headers |
 | 2026-05-09 | 12.6.2 | ✅ | Static file cache — max-age=86400 for assets |
 | 2026-05-09 | 12.6.3 | ✅ | Lazy loading — already present on all images |
+| 2026-05-09 | 13.1.1 | ✅ | Fix financial ticker mismatch — BBCA vs BBCA.JK, PE=24.8 now live |
+| 2026-05-09 | 13.1.2 | ✅ | Fix stock detail None — sector/industry already correct, fundamental query fixed |
+| 2026-05-09 | 13.1.3 | ✅ | Backfill-financials endpoint — already exists POST /api/admin/backfill-financials |
+| 2026-05-09 | 13.2.2 | ✅ | Dividend endpoint /api/stocks/{ticker}/dividends — from CalendarEvent |

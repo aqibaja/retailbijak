@@ -1,6 +1,6 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260509B';
-import { money, nf, pf } from '../utils/format.js?v=20260509B';
-import { observeElements } from '../main.js?v=20260509B';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260510';
+import { money, nf, pf } from '../utils/format.js?v=20260510';
+import { observeElements } from '../main.js?v=20260510';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -522,7 +522,7 @@ async function loadTransactionHistory(el) {
 }
 
 async function showTransactionForm(el) {
-  const { showModal } = await import('./portfolio.js?v=20260509B');
+  const { showModal } = await import('./portfolio.js?v=20260510');
   showModal({
     title: 'Catat Transaksi',
     fields: [

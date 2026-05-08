@@ -1,5 +1,5 @@
-import { clearViewTimers } from './main.js?v=20260509B';
-import { setPageMeta } from './api.js?v=20260509B';
+import { clearViewTimers } from './main.js?v=20260510';
+import { setPageMeta } from './api.js?v=20260510';
 
 // Route meta descriptions
 const ROUTE_META = {
@@ -26,25 +26,25 @@ const ROUTE_META = {
 
 // Dynamic view registry — lazy import per route (1.7.1)
 const viewModules = {
-  dashboard: () => import('./views/dashboard.js?v=20260509B'),
-  stock_detail: () => import('./views/stock_detail.js?v=20260509B'),
-  screener: () => import('./views/screener.js?v=20260509B'),
-  portfolio: () => import('./views/portfolio.js?v=20260509B'),
-  market: () => import('./views/market.js?v=20260509B'),
-  treemap: () => import('./views/treemap.js?v=20260509B'),
-  compare: () => import('./views/compare.js?v=20260509'),
+  dashboard: () => import('./views/dashboard.js?v=20260510'),
+  stock_detail: () => import('./views/stock_detail.js?v=20260510'),
+  screener: () => import('./views/screener.js?v=20260510'),
+  portfolio: () => import('./views/portfolio.js?v=20260510'),
+  market: () => import('./views/market.js?v=20260510'),
+  treemap: () => import('./views/treemap.js?v=20260510'),
+  compare: () => import('./views/compare.js?v=20260510'),
   backtest: () => import('./views/backtest.js?v=20260510'),
   paper_trades: () => import('./views/paper_trades.js?v=20260510'),
-  news: () => import('./views/news.js?v=20260509B'),
-  settings: () => import('./views/settings.js?v=20260509B'),
-  help: () => import('./views/help.js?v=20260509B'),
-  ai_picks: () => import('./views/ai_picks.js?v=20260509B'),
+  news: () => import('./views/news.js?v=20260510'),
+  settings: () => import('./views/settings.js?v=20260510'),
+  help: () => import('./views/help.js?v=20260510'),
+  ai_picks: () => import('./views/ai_picks.js?v=20260510'),
   sector: () => import('./views/sector.js?v=20260510'),
-  breadth: () => import('./views/breadth.js?v=20260509F'),
+  breadth: () => import('./views/breadth.js?v=20260510'),
   signal_overview: () => import('./views/signal_overview.js?v=20260510'),
-  alerts: () => import('./views/alerts.js?v=20260509C'),
-  movers: () => import('./views/movers.js?v=20260509C'),
-  calendar: () => import('./views/calendar.js?v=20260509A'),
+  alerts: () => import('./views/alerts.js?v=20260510'),
+  movers: () => import('./views/movers.js?v=20260510'),
+  calendar: () => import('./views/calendar.js?v=20260510'),
 };
 const viewCache = {};
 
@@ -173,15 +173,27 @@ export function handleRoute(hash) {
             // View content entrance animation
             if (currentToken === routeToken) root.classList.add('view-content');
 
-        } catch (e) {
-            console.error("Routing error:", e);
-            root.innerHTML = `<div class="p-4 text-down">Gagal memuat tampilan.</div>`;
+        } catch (err) {
+            console.error(`[Router] Failed to render ${viewKey}:`, err);
+            root.classList.remove('page-loading');
+            root.innerHTML = `
+              <div class="empty-state-card" style="min-height:60vh">
+                <div class="empty-state-icon">⚠️</div>
+                <strong class="empty-state-title">Gagal Memuat ${routeToViewKey(baseRoute) || 'Halaman'}</strong>
+                <span class="empty-state-desc">${err.message || 'Terjadi kesalahan saat memuat halaman.'}</span>
+                <button type="button" class="empty-state-action" onclick="location.reload()">
+                  <i data-lucide="refresh-cw" class="lucide-md"></i> Coba Lagi
+                </button>
+              </div>
+            `;
         }
 
         // Fade in
-        requestAnimationFrame(() => {
-            if (currentToken === routeToken) root.classList.remove('page-loading');
-        });
+        if (root.classList.contains('page-loading')) {
+          requestAnimationFrame(() => {
+              if (currentToken === routeToken) root.classList.remove('page-loading');
+          });
+        }
 
     }, 60); // Minimal wait — views render instantly with skeletons
 }

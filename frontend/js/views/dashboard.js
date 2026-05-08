@@ -1,8 +1,8 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260509B';
-import { observeElements, animateValue } from '../main.js?v=20260509B';
-import { nf, pf } from '../utils/format.js?v=20260509B';
-import { ssSet } from '../utils/storage.js?v=20260509B';
-import { loadTodayEvents } from './calendar.js?v=20260509A';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260510';
+import { observeElements, animateValue } from '../main.js?v=20260510';
+import { nf, pf } from '../utils/format.js?v=20260510';
+import { ssSet } from '../utils/storage.js?v=20260510';
+import { loadTodayEvents } from './calendar.js?v=20260510';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 

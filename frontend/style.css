@@ -523,3 +523,126 @@
 
 /* ── Keyboard Shortcuts Modal (12.5.4) ── */
 .shortcuts-overlay{position:fixed;inset:0;z-index:1800;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.shortcuts-overlay[hidden]{display:none}.shortcuts-backdrop{position:absolute;inset:0}.shortcuts-panel{position:relative;width:min(480px,calc(100vw - 28px));max-height:min(600px,calc(100vh - 40px));background:var(--bg-mobile-surface);border:1px solid var(--border-strong);border-radius:20px;padding:20px;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.5)}.shortcuts-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.shortcuts-title{font-size:18px;font-weight:800;color:var(--text-main)}.shortcuts-body{display:flex;flex-direction:column;gap:16px}.shortcuts-group{display:flex;flex-direction:column;gap:6px}.shortcuts-group-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-weight:800;margin-bottom:2px}.shortcuts-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.025)}.shortcuts-row kbd{display:inline-block;padding:3px 8px;font:700 12px var(--font-mono);background:rgba(255,255,255,.08);border:1px solid var(--border-subtle);border-radius:6px;color:var(--text-main);min-width:28px;text-align:center}.shortcuts-row span{font-size:13px;color:var(--text-muted);flex:1}[data-theme="light"] .shortcuts-overlay{background:rgba(0,0,0,.25)}[data-theme="light"] .shortcuts-row{background:rgba(0,0,0,.03)}[data-theme="light"] .shortcuts-row kbd{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12)}
+/* ── Fundamental Metrics Card Grid (13.2.3) ── */
+.fundamental-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fundamental-card{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-panel);min-height:82px;transition:border-color .2s,transform .2s ease,box-shadow .2s ease}
+.fundamental-card:hover{border-color:rgba(148,163,184,.2);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.fundamental-card.fundamental-good{border-left:3px solid var(--up-color)}
+.fundamental-card.fundamental-bad{border-left:3px solid var(--danger-text)}
+.fundamental-card.fundamental-neutral{border-left:3px solid var(--border-strong)}
+.fundamental-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim)}
+.fundamental-value{font-size:18px;font-weight:800;font-family:var(--font-mono);color:var(--text-main);line-height:1.2}
+.fundamental-card.fundamental-good .fundamental-value{color:var(--up-color)}
+.fundamental-card.fundamental-bad .fundamental-value{color:var(--danger-text)}
+.fundamental-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+@media(max-width:480px){.fundamental-grid{grid-template-columns:repeat(2,1fr)}}
+/* ── PWA Install Banner (13.3.3) ────────────────────────── */
+.pwa-install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  background: var(--bg-mobile-surface, #111a2e);
+  border-top: 1px solid var(--border-strong, rgba(255,255,255,.14));
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.3);
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.16,1,.3,1);
+}
+.pwa-install-banner.pwa-install-banner-show {
+  transform: translateY(0);
+}
+.pwa-install-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+}
+.pwa-install-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16,185,129,.12);
+  border-radius: 12px;
+}
+.pwa-install-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pwa-install-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main, #e5edf8);
+  line-height: 1.3;
+}
+.pwa-install-sub {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.3;
+}
+.pwa-install-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-subtle, rgba(255,255,255,.08));
+  color: var(--text-muted, #94a3b8);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s ease;
+}
+.pwa-install-close:hover {
+  background: var(--bg-panel-hover, rgba(22,32,50,.95));
+  color: var(--text-main, #e5edf8);
+}
+#pwa-install-btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .pwa-install-banner {
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .pwa-install-content {
+    gap: 8px;
+  }
+  .pwa-install-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+  }
+  .pwa-install-title {
+    font-size: 13px;
+  }
+  .pwa-install-sub {
+    font-size: 10px;
+  }
+  #pwa-install-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .pwa-install-close {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}

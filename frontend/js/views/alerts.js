@@ -1,4 +1,4 @@
-import { apiFetch, showToast } from '../api.js?v=20260509C';
+import { apiFetch, showToast } from '../api.js?v=20260510';
 
 const LABELS = {
   price_above: { label: 'Harga >', icon: 'trending-up', color: 'var(--up-color)' },

@@ -1,6 +1,6 @@
 import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf, money } from '../utils/format.js?v=20260509B';
-import { observeElements } from '../main.js?v=20260509B';
+import { nf, pf, money } from '../utils/format.js?v=20260510';
+import { observeElements } from '../main.js?v=20260510';
 
 export async function renderBacktest(root) {
   document.title = 'RetailBijak — Backtesting';

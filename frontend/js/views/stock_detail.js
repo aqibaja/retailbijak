@@ -1,7 +1,7 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260509B';
-import { observeElements, flashUpdate } from '../main.js?v=20260509B';
-import { nf, pct, pf, money, renderMarkdown } from '../utils/format.js?v=20260509B';
-import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260509B';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260510';
+import { observeElements, flashUpdate } from '../main.js?v=20260510';
+import { nf, pct, pf, money, fmtRp, renderMarkdown } from '../utils/format.js?v=20260510';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=20260510';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -99,6 +99,7 @@ export async function renderStockDetail(root, ticker) {
             <button type="button" class="stock-tab active" data-tab="chat">AI Chat</button>
             <button type="button" class="stock-tab" data-tab="analisis">Analisis</button>
             <button type="button" class="stock-tab" data-tab="berita">Berita</button>
+            <button type="button" class="stock-tab" data-tab="fundamental">Fundamental</button>
           </div>
           <div class="stock-tab-content active" data-tab-content="chat">
             <div class="stock-chat-card">
@@ -136,6 +137,9 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Pengumuman IDX</h3><div id="stock-announcements-feed" class="flex-col gap-2"></div></div>
           </div>
+          <div class="stock-tab-content" data-tab-content="fundamental">
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Fundamental Metrics</h3><div id="fundamental-grid" class="fundamental-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+          </div>
         </div>
       </div>
     </section>`;
@@ -171,7 +175,7 @@ export async function renderStockDetail(root, ticker) {
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
   document.getElementById('btn-add-compare').addEventListener('click', () => {
-    import('./compare.js?v=20260509').then(m => {
+    import('./compare.js?v=20260510').then(m => {
       m.addToCompare(symbol);
     });
   });
@@ -381,6 +385,7 @@ export async function renderStockDetail(root, ticker) {
     }, 100);
   }
   renderMarketStatsV2(fund?.data || detail?.data || {}, candles, technical);
+  renderFundamentalGrid(fund?.data || detail?.data || {});
   renderDecisionPanel(candles, technical);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
@@ -845,6 +850,54 @@ function renderLevelSuggestions(candles, tech){
   const items=[['STOP', levels.stop, 'Kendali risiko', 'metric-bad'], ['ENTRY', levels.entry, 'Zona pullback', 'metric-good'], ['TARGET', levels.target, 'Zona reward', 'metric-warn']];
   el.innerHTML = items.map(([label, price, note, cls]) => `<span class="sugg-chip ${cls}"><strong>${label}</strong> ${money(price)} <small>${note}</small></span>`).join('');
 }
+
+function renderFundamentalGrid(d) {
+  const el = document.getElementById('fundamental-grid');
+  if (!el) return;
+  const hasData = Boolean(d && (d.trailing_pe || d.per || d.price_to_book || d.pbv || d.roe || d.roa || d.debt_to_equity || d.dividend_yield || d.trailing_eps || d.revenue || d.updated_at));
+  if (!hasData) {
+    el.innerHTML = '<div class="empty-state-v2" style="grid-column:1/-1"><h3>Data Fundamental Belum Tersedia</h3><p>Data fundamental sedang diperbarui. Silakan coba lagi nanti.</p></div>';
+    return;
+  }
+  const trailingPE = d.trailing_pe ?? d.per;
+  const forwardPE = d.forward_pe;
+  const pbv = d.price_to_book ?? d.pbv;
+  const roe = d.roe;
+  const roa = d.roa;
+  const der = d.debt_to_equity;
+  const eps = d.trailing_eps;
+  const divYield = d.dividend_yield;
+  const marketCap = d.market_cap;
+  const revenue = d.revenue;
+  const netIncome = d.net_income;
+  function peS(v) { if(v==null||isNaN(v))return'neutral';if(v<12)return'good';if(v<25)return'neutral';return'bad'; }
+  function pbvS(v) { if(v==null||isNaN(v))return'neutral';if(v<1)return'good';if(v<3)return'neutral';return'bad'; }
+  function roeS(v) { if(v==null||isNaN(v))return'neutral';if(v>15)return'good';if(v>5)return'neutral';return'bad'; }
+  function roaS(v) { if(v==null||isNaN(v))return'neutral';if(v>8)return'good';if(v>2)return'neutral';return'bad'; }
+  function derS(v) { if(v==null||isNaN(v))return'neutral';if(v<0.5)return'good';if(v<2)return'neutral';return'bad'; }
+  function epsS(v) { if(v==null||isNaN(v))return'neutral';if(v>0)return'good';return'bad'; }
+  function dyS(v) { if(v==null||isNaN(v))return'neutral';if(v>3)return'good';if(v>0.5)return'neutral';return'bad'; }
+  function card(label,value,sent,sub){
+    const cls=sent==='good'?'fundamental-good':sent==='bad'?'fundamental-bad':'fundamental-neutral';
+    let html='<div class="fundamental-card '+cls+'"><div class="fundamental-label">'+label+'</div><div class="fundamental-value">'+value+'</div>';
+    if(sub)html+='<div class="fundamental-sub">'+sub+'</div>';
+    return html+'</div>';
+  }
+  const cards=[];
+  cards.push(card('P/E (Trailing)',trailingPE!=null?nf(trailingPE,1)+'x':'—',peS(trailingPE),trailingPE!=null?(trailingPE<12?'Murah':trailingPE<25?'Wajar':'Premium'):''));
+  if(forwardPE!=null)cards.push(card('P/E (Forward)',nf(forwardPE,1)+'x',peS(forwardPE),forwardPE<12?'Murah':forwardPE<25?'Wajar':'Premium'));
+  cards.push(card('PBV',pbv!=null?nf(pbv,2)+'x':'—',pbvS(pbv),pbv!=null?(pbv<1?'Di bawah BV':pbv<3?'Wajar':'Premium'):''));
+  cards.push(card('ROE',roe!=null?pf(roe):'—',roeS(roe),roe!=null?(roe>15?'Efisien':roe>5?'Cukup':'Rendah'):''));
+  cards.push(card('ROA',roa!=null?pf(roa):'—',roaS(roa),roa!=null?(roa>8?'Produktif':roa>2?'Cukup':'Rendah'):''));
+  cards.push(card('DER',der!=null?nf(der,2):'—',derS(der),der!=null?(der<0.5?'Rendah':der<2?'Sedang':'Tinggi'):''));
+  cards.push(card('EPS',eps!=null?money(eps):'—',epsS(eps),eps!=null?(eps>0?'Positif':'Negatif'):''));
+  cards.push(card('Dividend Yield',divYield!=null?pf(divYield):'—',dyS(divYield),divYield!=null?(divYield>3?'Tinggi':divYield>0.5?'Sedang':'Rendah'):''));
+  if(marketCap!=null)cards.push(card('Market Cap',fmtRp(marketCap),'neutral',''));
+  if(revenue!=null)cards.push(card('Revenue',fmtRp(revenue),'neutral',''));
+  if(netIncome!=null)cards.push(card('Net Income',fmtRp(netIncome),netIncome>=0?'good':'bad',netIncome>=0?'Profit':'Rugi'));
+  el.innerHTML = cards.join('');
+}
+
 function renderMarketStatsV2(d, candles, tech){
   const el = document.getElementById('market-stats-v2'); if (!el) return;
   const last = candles[candles.length-1] || {}; const prev = candles[candles.length-2] || last;
