@@ -50,6 +50,14 @@ export async function renderSettings(root) {
             </div>
 
             <div class="settings-section-head mt-8">
+              <h2>🗄️ Kesehatan Data</h2>
+              <span>Status pipeline dan ketersediaan data di database</span>
+            </div>
+            <div id="data-health-card" class="settings-health-grid">
+              <div class="text-xs text-dim p-3">Memuat status data...</div>
+            </div>
+
+            <div class="settings-section-head mt-8">
               <h2>OpenRouter AI</h2>
               <span>Aktifkan ringkasan AI untuk analisis saham dan AI Picks dengan model gratis default.</span>
             </div>
@@ -164,6 +172,9 @@ export async function renderSettings(root) {
 
     if (!settings) showToast('Sedang memakai pengaturan cadangan', 'info');
     
+    // ─── 15.10.3 — Data Health Card ──────────────
+    loadDataHealth();
+    
     document.getElementById('save-settings').addEventListener('click', async () => {
         const btn = document.getElementById('save-settings');
         btn.disabled = true;
@@ -206,5 +217,50 @@ export async function renderSettings(root) {
         }
         showToast('Konfigurasi berhasil disinkronkan', 'success');
     });
+}
+
+// ─── 15.10.3 — Data Health Card ═══════════════════
+async function loadDataHealth() {
+  const card = document.getElementById('data-health-card');
+  if (!card) return;
+  try {
+    const res = await fetch('/api/system/data-health');
+    const data = await res.json();
+    const rows = data?.data || {};
+    const health = data?.health || {};
+    const entries = Object.entries(rows);
+    if (!entries.length) {
+      card.innerHTML = '<div class="text-xs text-dim p-3">Tidak ada data</div>';
+      return;
+    }
+    const totalOk = data?.tables_with_data || 0;
+    const totalEmpty = data?.tables_empty || 0;
+    const overallStatus = data?.status || 'unknown';
+    const statusIcon = overallStatus === 'healthy' ? '🟢' : overallStatus === 'degraded' ? '🟡' : '🔴';
+
+    card.innerHTML = `
+      <div class="p-3" style="font-size:12px">
+        <div class="flex items-center gap-2 mb-3" style="font-size:13px">
+          <span>${statusIcon}</span>
+          <strong>${totalOk}/${data?.total_tables || 0} tabel terisi</strong>
+          ${totalEmpty > 0 ? `<span class="text-xs text-dim">(${totalEmpty} kosong)</span>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:4px">
+          ${entries.map(([table, count]) => {
+            const h = health[table];
+            const icon = count > 0 ? '🟢' : h === 'empty' ? '🔴' : '⚠️';
+            const label = table.replace(/_/g, ' ');
+            return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
+              <span style="font-size:11px">${icon}</span>
+              <span style="flex:1;text-transform:capitalize;color:var(--text-main)">${label}</span>
+              <span class="mono strong" style="font-size:11px">${count != null ? count.toLocaleString('id-ID') : '?'}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="text-xs text-dim mt-2">Update: ${data?.generated_at?.slice(0, 19)?.replace('T', ' ') || '—'}</div>
+      </div>`;
+  } catch (e) {
+    card.innerHTML = `<div class="text-xs text-dim p-3">⚠️ Gagal memuat: ${e.message || ''}</div>`;
+  }
 }
 

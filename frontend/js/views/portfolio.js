@@ -121,7 +121,9 @@ export async function renderPortfolio(root, activeTab) {
             <div class="portfolio-tab-switch flex p-1">
               <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">Portofolio</a>
               <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
+              <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="wl-news-tab-btn" style="font-size:11px">📰 News</button>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="rebalance-tab-btn" style="font-size:11px">⚖️ Rebalance</button>
+              <span id="wl-news-badge" class="badge badge-warning hidden ml-1" style="font-size:9px;padding:1px 5px;align-self:center">0</span>
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
           </div>
@@ -139,6 +141,15 @@ export async function renderPortfolio(root, activeTab) {
     if (rebalanceBtn) {
       rebalanceBtn.addEventListener('click', () => renderRebalanceTab(root.querySelector('#tab-content')));
     }
+
+    // Watchlist News tab handler
+    const wlNewsBtn = root.querySelector('#wl-news-tab-btn');
+    if (wlNewsBtn) {
+      wlNewsBtn.addEventListener('click', () => renderWatchlistNews(root.querySelector('#tab-content')));
+    }
+
+    // Load watchlist news badge count
+    loadWatchlistNewsBadge();
 }
 
 // ─── P&L Color ─────────────────────────
@@ -790,4 +801,75 @@ async function showManageGroupsDialog(el) {
   } catch (e) {
     showToast('Gagal memuat grup', 'error');
   }
+}
+
+// ─── 15.8.2 — Watchlist News Widget ───────────────
+async function renderWatchlistNews(el) {
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton" style="height:200px;margin:1rem"></div>';
+  try {
+    const res = await fetch('/api/news/watchlist?limit=20');
+    const data = await res.json();
+    const items = Array.isArray(data?.data) ? data.data : [];
+
+    if (!items.length) {
+      el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">📰</div>
+        <h3>Belum Ada Berita</h3>
+        <p>${data?.source === 'fallback_all' ? 'Belum ada berita terbaru. Coba lagi nanti.' : 'Tambah saham ke daftar pantau untuk melihat berita khusus.'}</p>
+        <button class="btn btn-primary empty-state-action" onclick="window.location.hash='#watchlist'">➕ Tambah ke Pantauan</button>
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-xs uppercase text-dim strong m-0">📰 Berita Pantauan <span class="badge badge-primary ml-2">${items.length}</span></h3>
+          <button type="button" class="btn btn-sm scanner-control-btn" id="wl-news-refresh" title="Refresh">🔄</button>
+        </div>
+        <div class="flex flex-col gap-2" style="max-height:70vh;overflow-y:auto">
+          ${items.map(n => {
+            const tickers = n.tickers || '';
+            const date = n.published_at ? new Date(n.published_at).toLocaleDateString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+            const sentimentIcon = n.sentiment === 'positive' ? '🟢' : n.sentiment === 'negative' ? '🔴' : '⚪';
+            return `<a href="${n.link || '#'}" target="_blank" class="wl-news-card" style="display:flex;gap:10px;padding:12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border-subtle);text-decoration:none;transition:background .15s" onmouseover="this.style.background='var(--bg-panel)'" onmouseout="this.style.background=''">
+              <div style="flex:1;min-width:0">
+                <div class="text-xs strong text-main mb-1" style="line-height:1.4">${n.title || '(tanpa judul)'}</div>
+                <div class="text-xs text-dim mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.summary || ''}</div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs text-muted">${n.source || ''}</span>
+                  <span class="text-xs text-dim">${date}</span>
+                  ${sentimentIcon ? `<span style="font-size:10px">${sentimentIcon}</span>` : ''}
+                  ${tickers ? tickers.split(',').map(t => `<span class="badge" style="font-size:9px;padding:1px 5px">${t.trim()}</span>`).join('') : ''}
+                </div>
+              </div>
+              ${n.image_url ? `<img src="${n.image_url}" alt="" style="width:60px;height:60px;border-radius:6px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" />` : ''}
+            </a>`;
+          }).join('')}
+        </div>
+      </div>`;
+    // Refresh handler
+    document.getElementById('wl-news-refresh')?.addEventListener('click', () => renderWatchlistNews(el));
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">⚠️</div><h3>Gagal Memuat</h3><p>${e.message || 'Coba refresh halaman.'}</p></div>`;
+  }
+}
+
+// ─── 15.8.3 — Watchlist News Badge ───────────────
+async function loadWatchlistNewsBadge() {
+  try {
+    const res = await fetch('/api/news/watchlist?limit=1');
+    const data = await res.json();
+    const count = data?.count || 0;
+    const badge = document.getElementById('wl-news-badge');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+  } catch (e) { /* silent */ }
 }

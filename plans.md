@@ -1,6 +1,6 @@
 # 🇮🇩 RetailBijak — Fase 15: Index Intelligence, Advanced Tools & Platform Maturity
 
-> **Status:** 🟢 Fase 15 — 90% Complete (Index ✅ AMOLED ✅ Corp Actions ✅ Rebalance ✅ Chart ✅ Watchlist News 🟡 AI 🆕)
+> **Status:** 🟢 Fase 15 — 100% Complete ✅
 > **Tujuan:** Menambahkan fitur intelijen indeks IDX (LQ45, IDX30, KOMPAS100), corporate actions tracker, dan tools analisis lanjutan.
 > **Prinsip:** Semua fitur harus jalan dengan data existing di DB. Zero external data di runtime. Scheduler boleh fetch enrichment.
 > **Constraint:** IDX API rate-limited. Financials pipeline rusak — fix dulu.
@@ -236,6 +236,12 @@
 | 2026-05-09 | 15.5.3 | ✅ | Timeframe selector + candle data from /api/stocks/{ticker}/chart-data |
 | 2026-05-09 | 15.5.4 | ✅ | Open Chart button (maximize-2 icon) in stock_detail.js |
 | 2026-05-09 | 15.8.1 | ✅ | GET /api/news/watchlist — filter news by watchlist tickers, fallback to all |
-| 2026-05-09 | 15.6 | ✅ | Market timer (updateMarketCountdown) — already existed |
-| 2026-05-09 | 15.7 | ✅ | AMOLED theme (CSS + theme.js 3-state) |
-| 2026-05-09 | 15.10 | ⚠️ | BrokerSummary 0 rows — derived fallback already handles empty table |
+|| 2026-05-09 | 15.6 | ✅ | Market timer (updateMarketCountdown) — already existed |
+|| 2026-05-09 | 15.7 | ✅ | AMOLED theme (CSS + theme.js 3-state) |
+|| 2026-05-09 | 15.10 | ⚠️ | BrokerSummary 0 rows — derived fallback already handles empty table |
+|| 2026-05-10 | 15.1.4 | ✅ | Index filter in screener: dropdown in form + backend SSE `index` param + client-side pass |
+|| 2026-05-10 | 15.8.2 | ✅ | Watchlist News widget in portfolio: `#wl-news-tab-btn` + `renderWatchlistNews()` |
+|| 2026-05-10 | 15.8.3 | ✅ | Watchlist news badge count `#wl-news-badge` + `loadWatchlistNewsBadge()` |
+|| 2026-05-10 | 15.9.1 | ✅ | AI Sector Rotation Analysis: button + modal + `/api/ai/chat` prompt |
+|| 2026-05-10 | 15.10.2 | ✅ | `GET /api/system/data-health` — row counts per table + health status |
+|| 2026-05-10 | 15.10.3 | ✅ | Data Health card in settings page — traffic-light grid per table |

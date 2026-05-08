@@ -181,6 +181,19 @@ export async function renderScreener(root) {
           <div class="scanner-form flex-col gap-5">
             <div class="scanner-header-text">PUSAT KONTROL</div>
             <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
+            <div class="scanner-form-section">
+              <div class="text-xs text-dim uppercase strong mb-2">Filter Indeks</div>
+              <div class="flex gap-2">
+                <select id="index-filter-select" class="scanner-select" style="flex:1;min-width:140px;">
+                  <option value="">Semua Saham</option>
+                  <option value="LQ45">LQ45</option>
+                  <option value="IDX30">IDX30</option>
+                  <option value="KOMPAS100">KOMPAS100</option>
+                  <option value="IDX80">IDX80</option>
+                  <option value="IDXESGL">IDX ESG Leaders</option>
+                </select>
+              </div>
+            </div>
             <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
             <button id="btn-run-screener" type="button" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
             <button id="btn-quick-scan" type="button" class="btn btn-sm scanner-control-btn mt-1 mb-2">⚡ Pindai Semua</button>
@@ -560,7 +573,11 @@ function runScreener() {
     // Check if we're still mounted before touching DOM
     const isMounted = () => document.getElementById('screener-content') !== null;
 
-    scanEventSource = new EventSource(`${getScanEventSourceUrl('1d')}&rule=SwingAQ`);
+    const indexEl = document.getElementById('index-filter-select');
+    const indexVal = indexEl ? indexEl.value : '';
+    let scanUrl = `${getScanEventSourceUrl('1d')}&rule=SwingAQ`;
+    if (indexVal) scanUrl += `&index=${encodeURIComponent(indexVal)}`;
+    scanEventSource = new EventSource(scanUrl);
     scanEventSource.onmessage = (event) => {
         if (!isMounted()) { scanEventSource.close(); scanEventSource = null; return; }
         const data = JSON.parse(event.data);

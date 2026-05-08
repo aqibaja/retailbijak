@@ -424,3 +424,54 @@ def get_system_freshness(db: Session = Depends(get_db)):
         'labels': labels,
         'generated_at': now.isoformat(timespec='seconds'),
     }
+
+
+# ─── 15.10.2 — Data Pipeline Health ────────────────
+
+@router.get('/api/system/data-health')
+def get_data_health(db: Session = Depends(get_db)):
+    """Return row counts per data table = pipeline health status."""
+    from sqlalchemy import text
+
+    queries = {
+        'stocks': "SELECT COUNT(*) FROM stocks",
+        'ohlcv_daily': "SELECT COUNT(*) FROM ohlcv_daily",
+        'signals': "SELECT COUNT(*) FROM signals",
+        'fundamentals': "SELECT COUNT(*) FROM fundamentals",
+        'financials': "SELECT COUNT(*) FROM financials",
+        'news': "SELECT COUNT(*) FROM news",
+        'stock_indices': "SELECT COUNT(*) FROM stock_indices",
+        'broker_summary': "SELECT COUNT(*) FROM broker_summary",
+        'calendar_events': "SELECT COUNT(*) FROM calendar_events",
+        'watchlist_items': "SELECT COUNT(*) FROM watchlist_items",
+        'portfolio_positions': "SELECT COUNT(*) FROM portfolio_positions",
+    }
+
+    result = {}
+    status = 'healthy'
+    health_details = {}
+
+    for table, sql in queries.items():
+        try:
+            row = db.execute(text(sql)).fetchone()
+            count = row[0] if row else 0
+            result[table] = count
+            if count == 0:
+                health_details[table] = 'empty'
+                status = 'degraded'
+            else:
+                health_details[table] = 'ok'
+        except Exception as e:
+            result[table] = None
+            health_details[table] = f'error: {e}'
+            status = 'error'
+
+    return {
+        'status': status,
+        'data': result,
+        'health': health_details,
+        'total_tables': len(result),
+        'tables_with_data': sum(1 for v in result.values() if v and v > 0),
+        'tables_empty': sum(1 for v in result.values() if v == 0),
+        'generated_at': datetime.utcnow().isoformat(timespec='seconds'),
+    }

@@ -25,6 +25,9 @@ export async function renderSectors(root) {
                     <button class="btn btn-sm btn-icon" id="refreshSectors" title="Refresh">
                         <i data-lucide="refresh-cw" class="icon-14"></i>
                     </button>
+                    <button class="btn btn-sm btn-primary" id="ai-sector-analysis" title="Analisis Rotasi Sektor" style="margin-left:8px">
+                        🤖 Rotasi
+                    </button>
                 </div>
             </div>
 
@@ -41,6 +44,7 @@ export async function renderSectors(root) {
 
     lucide.createIcons();
     document.getElementById('refreshSectors')?.addEventListener('click', loadSectors);
+    document.getElementById('ai-sector-analysis')?.addEventListener('click', runSectorRotationAnalysis);
     await loadSectors();
 }
 
@@ -426,4 +430,66 @@ function renderIndustryItem(ind, idx) {
             </div>
         </div>
     `;
+}
+
+// ─── 15.9.1 — AI Sector Rotation Analysis ────────
+async function runSectorRotationAnalysis() {
+    if (!sectorData?.sectors?.length) {
+        showToast('Tidak ada data sektor untuk analisis', 'warning');
+        return;
+    }
+    const btn = document.getElementById('ai-sector-analysis');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+
+    try {
+        const sectors = sectorData.sectors;
+        const lines = sectors.map(s => {
+            const r = s.avg_returns;
+            return `${s.sector}: 1D=${r['1d']?.toFixed(1)}% 5D=${r['5d']?.toFixed(1)}% 1M=${r['1m']?.toFixed(1)}% 3M=${r['3m']?.toFixed(1)}% (${s.count} saham)`;
+        }).join('\n');
+
+        const prompt = `Kamu adalah analis saham IDX. Analisis rotasi sektor berdasarkan data:
+
+${lines}
+
+Beri analisis singkat (3-4 paragraf) dalam Bahasa Indonesia tentang:
+1. Sektor leading dan lagging
+2. Apakah ada tanda rotasi sektor
+3. Rekomendasi sektor untuk jangka pendek (1-2 minggu)
+4. Sektor berisiko tinggi`;
+
+        const res = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: prompt })
+        });
+        const data = await res.json();
+        const analysis = data?.reply || data?.response || data?.message || 'Tidak ada respons AI';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'ai-sector-overlay';
+        overlay.innerHTML = `
+            <div style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease" onclick="if(event.target===this)this.remove()">
+                <div style="background:var(--card-bg);border-radius:16px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                        <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--text-main)">🤖 Analisis Rotasi Sektor</h3>
+                        <button type="button" onclick="this.closest('#ai-sector-overlay').remove()" style="background:none;border:none;font-size:22px;color:var(--text-dim);cursor:pointer;padding:0;line-height:1">&times;</button>
+                    </div>
+                    <div style="font-size:13px;line-height:1.7;color:var(--text-main);white-space:pre-wrap">${analysis}</div>
+                    <div class="flex gap-2 mt-4 justify-end">
+                        <button type="button" class="btn btn-sm" onclick="this.closest('#ai-sector-overlay').remove()">Tutup</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="ai-sector-reanalyze">Analisis Ulang</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        document.getElementById('ai-sector-reanalyze')?.addEventListener('click', () => {
+            overlay.remove();
+            runSectorRotationAnalysis();
+        });
+    } catch (e) {
+        showToast('Gagal analisis: ' + (e.message || ''), 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🤖 Rotasi'; }
+    }
 }

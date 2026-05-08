@@ -15,6 +15,11 @@ except ModuleNotFoundError:
     from backend.stocks import get_all_tickers
 
 try:
+    from database import StockIndex
+except ModuleNotFoundError:
+    from backend.database import StockIndex
+
+try:
     from routes.shared_stocks_helpers import _display_ticker
 except ModuleNotFoundError:
     from backend.routes.shared_stocks_helpers import _display_ticker
@@ -39,12 +44,22 @@ VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
 router = APIRouter()
 
 
-async def scan_all_db_generator(timeframe: str, rule: str | None = None):
+async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: str | None = None):
     db = SessionLocal()
     try:
         tickers = get_all_tickers()
         total = len(tickers)
         start_time = time.time()
+
+        # Filter by index membership if specified
+        if index:
+            index_upper = index.upper().strip()
+            idx_rows = db.query(StockIndex).filter(
+                StockIndex.index_name == index_upper
+            ).all()
+            idx_tickers = {r.ticker for r in idx_rows}
+            tickers = [t for t in tickers if t in idx_tickers]
+            total = len(tickers)
         yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
 
         signals_found = 0
@@ -113,12 +128,12 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
 
 
 @router.get('/api/scan')
-async def scan(timeframe: str = '1d', rule: str | None = None):
+async def scan(timeframe: str = '1d', rule: str | None = None, index: str | None = None):
     if timeframe not in VALID_TIMEFRAMES:
         raise HTTPException(400, f'Invalid timeframe. Valid: {VALID_TIMEFRAMES}')
 
     return StreamingResponse(
-        scan_all_db_generator(timeframe, rule=rule),
+        scan_all_db_generator(timeframe, rule=rule, index=index),
         media_type='text/event-stream',
         headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )
