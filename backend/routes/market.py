@@ -4,14 +4,14 @@ import json
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 try:
-    from database import BrokerSummary, UserSetting, OHLCVDaily, get_db
+    from database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
 except ModuleNotFoundError:
-    from backend.database import BrokerSummary, UserSetting, OHLCVDaily, get_db
+    from backend.database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
 
 try:
     from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
@@ -235,3 +235,147 @@ def market_breadth(days: int = 50, db: Session = Depends(get_db)):
         })
     
     return {'count': len(data), 'data': data}
+
+
+@router.get('/api/market/treemap')
+def get_market_treemap(
+    date: str | None = Query(None, description='Date in YYYY-MM-DD format, defaults to latest'),
+    db: Session = Depends(get_db),
+):
+    """Treemap visualization data for the entire IDX market by sector.
+
+    Returns sectors with weight (by market cap), 1d return %, and top stocks per sector.
+    Designed for a CSS-based treemap view (11.6.1).
+    """
+    # 1. Determine target date
+    if date:
+        try:
+            target_date = datetime.strptime(date, '%Y-%m-%d')
+        except ValueError:
+            return {'status': 'error', 'message': 'Invalid date format. Use YYYY-MM-DD'}
+    else:
+        latest_date_row = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
+        if not latest_date_row:
+            return {'status': 'empty', 'date': None, 'total_stocks': 0, 'sectors': []}
+        target_date = latest_date_row[0]
+
+    # 2. Get all stocks with sector info
+    db_stocks = db.query(Stock).filter(
+        Stock.sector.isnot(None),
+        Stock.sector != '',
+    ).all()
+
+    if not db_stocks:
+        return {'status': 'empty', 'date': str(target_date)[:10], 'total_stocks': 0, 'sectors': []}
+
+    stock_map = {s.ticker: s for s in db_stocks}
+
+    # 3. Get OHLCV rows for target date
+    ohlcv_rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == target_date).all()
+    price_map = {r.ticker: r for r in ohlcv_rows}
+
+    # 4. Get previous close prices (last trading day before target_date)
+    prev_date_row = db.query(OHLCVDaily.date).filter(
+        OHLCVDaily.date < target_date,
+    ).order_by(OHLCVDaily.date.desc()).first()
+
+    prev_price_map = {}
+    if prev_date_row:
+        prev_rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == prev_date_row[0]).all()
+        prev_price_map = {r.ticker: r.close for r in prev_rows if r.close is not None}
+
+    # 5. Build unified stock data with sector info
+    total_market_cap = 0.0
+    stock_data_list = []
+
+    for ticker, stock in stock_map.items():
+        ohlcv = price_map.get(ticker)
+        if not ohlcv or ohlcv.close is None:
+            continue
+
+        close_price = float(ohlcv.close)
+        prev_close = prev_price_map.get(ticker)
+        change_pct = None
+        if prev_close is not None and prev_close > 0:
+            change_pct = round(((close_price - prev_close) / prev_close) * 100, 2)
+
+        market_cap = float(stock.market_cap or 0)
+        total_market_cap += market_cap
+
+        stock_data_list.append({
+            'ticker': ticker,
+            'name': stock.name or ticker,
+            'price': close_price,
+            'change': change_pct,
+            'market_cap': market_cap,
+            'sector': stock.sector.strip(),
+        })
+
+    if not stock_data_list:
+        return {'status': 'empty', 'date': str(target_date)[:10], 'total_stocks': 0, 'sectors': []}
+
+    # 6. Group by sector — accumulate market cap and returns
+    sector_groups: dict[str, dict] = {}
+    for sd in stock_data_list:
+        sec = sd['sector']
+        if sec not in sector_groups:
+            sector_groups[sec] = {'stocks': [], 'total_market_cap': 0.0, 'return_sum': 0.0, 'return_count': 0}
+        sector_groups[sec]['stocks'].append(sd)
+        sector_groups[sec]['total_market_cap'] += sd['market_cap']
+        if sd['change'] is not None:
+            sector_groups[sec]['return_sum'] += sd['change']
+            sector_groups[sec]['return_count'] += 1
+
+    # 7. Build sector list with weight and avg return
+    sector_list = []
+    for sec, info in sector_groups.items():
+        weight = info['total_market_cap'] / total_market_cap if total_market_cap > 0 else 0
+        avg_return = round(info['return_sum'] / info['return_count'], 2) if info['return_count'] > 0 else 0
+
+        # Top 10 stocks in sector by market cap
+        top_stocks = sorted(info['stocks'], key=lambda x: x['market_cap'], reverse=True)[:10]
+
+        sector_list.append({
+            'sector': sec,
+            'weight': round(weight, 4),
+            'return_1d': avg_return,
+            'stocks': top_stocks,
+        })
+
+    # 8. Sort sectors by weight descending, limit top 10 + "Other" bucket
+    sector_list.sort(key=lambda x: x['weight'], reverse=True)
+
+    if len(sector_list) > 10:
+        top_sectors = sector_list[:10]
+
+        # Aggregate "Other" sector
+        other_weight = 0.0
+        other_total_return = 0.0
+        other_count = 0
+        other_stocks_pool = []
+        for s in sector_list[10:]:
+            other_weight += s['weight']
+            sec_name = s['sector']
+            if sec_name in sector_groups:
+                for stk in sector_groups[sec_name]['stocks']:
+                    other_stocks_pool.append(stk)
+                    if stk['change'] is not None:
+                        other_total_return += stk['change']
+                        other_count += 1
+
+        other_avg_return = round(other_total_return / other_count, 2) if other_count > 0 else 0
+        other_stocks_sorted = sorted(other_stocks_pool, key=lambda x: x['market_cap'], reverse=True)[:10]
+
+        sector_list = top_sectors + [{
+            'sector': 'Other',
+            'weight': round(other_weight, 4),
+            'return_1d': other_avg_return,
+            'stocks': other_stocks_sorted,
+        }]
+
+    return {
+        'status': 'ok',
+        'date': str(target_date)[:10],
+        'total_stocks': len(stock_data_list),
+        'sectors': sector_list,
+    }

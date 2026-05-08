@@ -218,6 +218,14 @@ def sector_detail(sector: str, db: Session = Depends(get_db)):
 
     latest_close_map = {r.ticker: {'date': r.date, 'close': r.close} for r in latest_closes}
 
+    # Build ticker -> name/industry mapping
+    stock_info_map = {}
+    for s in stocks:
+        stock_info_map[s.ticker] = {
+            'name': s.name or s.ticker,
+            'industry': s.industry.strip() if s.industry else 'Unknown',
+        }
+
     industry_breakdown = []
     for ind_name, tickers in sorted(industry_map.items()):
         stock_list = []
@@ -243,8 +251,10 @@ def sector_detail(sector: str, db: Session = Depends(get_db)):
                 continue
 
             latest_close = latest['close']
+            stock_info = stock_info_map.get(ticker, {})
             stock_entry = {
                 'ticker': ticker,
+                'name': stock_info.get('name', ticker),
                 'close': latest_close,
                 'returns': {},
             }
@@ -257,7 +267,7 @@ def sector_detail(sector: str, db: Session = Depends(get_db)):
             stock_count += 1
             stock_list.append(stock_entry)
 
-        # Sort stocks by 1d return desc
+        # Sort stocks by 1d return desc (sector detail)
         stock_list.sort(key=lambda x: x['returns'].get('1d', 0), reverse=True)
 
         avg_returns = {}

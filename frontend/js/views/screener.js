@@ -134,6 +134,32 @@ let scanSoundEnabled = true;
 let isPatternMode = false;
 let currentPatternFilter = '';
 let perfVisible = true;
+let sortChain = []; // [{column, dir}, ...]
+let activeFilterChips = new Set();
+let visibleColumns = null;
+const STORAGE_KEY_COLS = 'rbk_screener_cols';
+
+const SCREENER_COLUMNS = [
+  { key: 'ticker', label: 'Kode', group: 'main', default: true, sortable: true, align: 'left', width: 'minmax(80px,1fr)' },
+  { key: 'name', label: 'Nama', group: 'main', default: true, sortable: true, align: 'left', width: 'minmax(80px,1fr)' },
+  { key: 'chart',  label: '',     group: 'main', default: true, sortable: false, align: 'center', width: '68px' },
+  { key: 'close',  label: 'Harga', group: 'price', default: true, sortable: true, align: 'right', width: 'minmax(60px,auto)' },
+  { key: 'cci',    label: 'CCI',  group: 'tech', default: true, sortable: true, align: 'right', width: 'minmax(50px,auto)' },
+  { key: 'ma',     label: 'MA',   group: 'tech', default: true, sortable: true, align: 'right', width: 'minmax(50px,auto)' },
+  { key: 'volume', label: 'Vol',  group: 'volume', default: true, sortable: true, align: 'right', width: 'minmax(50px,auto)' },
+  { key: 'perf_1w', label: '1W', group: 'perf', default: true, sortable: true, align: 'right', width: 'minmax(44px,auto)' },
+  { key: 'perf_1m', label: '1M', group: 'perf', default: true, sortable: true, align: 'right', width: 'minmax(44px,auto)' },
+  { key: 'perf_3m', label: '3M', group: 'perf', default: false, sortable: true, align: 'right', width: 'minmax(44px,auto)' },
+  { key: 'perf_6m', label: '6M', group: 'perf', default: false, sortable: true, align: 'right', width: 'minmax(44px,auto)' },
+];
+
+const FILTER_CHIP_DEFS = [
+  { id: 'gainers', label: '🚀 Gainers', check: r => (r.perf_1w || 0) > 0 },
+  { id: 'volume_spike', label: '📊 Volume Spike', check: r => (r.volume_spike || 0) > 2.0 },
+  { id: 'rsi_oversold', label: '📉 RSI Oversold', check: r => r.rsi != null && r.rsi < 30 },
+  { id: 'rsi_overbought', label: '📈 RSI Overbought', check: r => r.rsi != null && r.rsi > 70 },
+  { id: 'most_active', label: '🔥 Most Active', check: r => (r.volume_spike || 0) > 1.0 },
+];
 
 
 export async function renderScreener(root) {
@@ -214,6 +240,7 @@ export async function renderScreener(root) {
                 <button id="btn-save-filter" type="button" class="btn btn-sm scanner-control-btn" title="Simpan Filter">Simpan</button>
                 <button id="btn-load-filter" type="button" class="btn btn-sm scanner-control-btn" title="Muat Filter">Muat</button>
                 <button id="btn-perf-toggle" type="button" class="btn btn-sm scanner-control-btn" title="Tampilkan/sembunyikan kolom performa">📊 Perf</button>
+                <button id="btn-columns" type="button" class="btn btn-sm scanner-control-btn" title="Pilih kolom tampilan">☰ Kolom</button>
                 <div class="scanner-control-stack">
                   <select id="screener-sort" class="scanner-select screener-control-select">
                       <option value="cci">Urut: CCI</option>
@@ -229,6 +256,8 @@ export async function renderScreener(root) {
                 </div>
               </div>
             </div>
+            <div id="screener-filter-bar" class="screener-filter-bar hidden"></div>
+            <div id="screener-sort-bar" class="screener-sort-bar hidden"></div>
             <div id="screener-content" class="screener-content-area">${renderEmptyState()}</div>
           </div>
         </div>
@@ -267,6 +296,30 @@ export async function renderScreener(root) {
       });
     }
     applyPerfVisibility();
+
+    // Column toggle button
+    root.querySelector('#btn-columns')?.addEventListener('click', toggleColumnDropdown);
+
+    // Close column dropdown on outside click
+    document.addEventListener('click', (e) => {
+      const dd = document.getElementById('col-toggle-dropdown');
+      const btn = document.getElementById('btn-columns');
+      if (dd && !dd.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+        dd.remove();
+      }
+    });
+
+    // Filter chip clicks (delegated)
+    root.querySelector('#screener-filter-bar')?.addEventListener('click', (e) => {
+      const chip = e.target.closest('.screener-chip');
+      if (chip) toggleFilterChip(chip.dataset.chip);
+    });
+
+    // Clear sort button (delegated)
+    root.querySelector('#screener-sort-bar')?.addEventListener('click', (e) => {
+      const clearBtn = e.target.closest('#btn-clear-sort');
+      if (clearBtn) { sortChain = []; renderAll(); }
+    });
 
     // TV Screener Widget — load after DOM ready
     setTimeout(() => {
@@ -356,16 +409,26 @@ function applyPerfVisibility() {
 function renderList(results) {
     const contentArea = document.getElementById('screener-content');
     const toolbar = document.getElementById('screener-toolbar');
-    const hasResults = results.length > 0;
+    if (!contentArea) return;
+    // Apply chip filters on top of passed results
+    const chipFiltered = applyQuickFilters(results);
+    // Apply multi-sort
+    const sorted = applySorting(chipFiltered);
+    const hasResults = sorted.length > 0;
     if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
     const sc = document.getElementById('screener-search');
     const totalEl = document.getElementById('screener-total');
     if (totalEl && totalScanned > 0) {
-      totalEl.textContent = `${results.length} dari ${totalScanned} saham`;
+      totalEl.textContent = `${sorted.length} dari ${totalScanned} saham`;
       totalEl.classList.remove('hidden');
     }
+    // Render filter & sort bars
+    renderFilterBar();
+    renderSortBar();
+
     if (hasResults) {
       if (isPatternMode) {
+        // Keep existing pattern mode rendering
         contentArea.innerHTML = `
           <div class="scanner-results-header">
             <span class="scanner-col-sortable" data-sort="ticker">Kode</span>
@@ -380,46 +443,80 @@ function renderList(results) {
             <span class="scanner-col-perf">3M</span>
             <span class="scanner-col-perf">6M</span>
           </div>
-          <div class="flex-col gap-2">${results.map(r => renderRow(r)).join('')}</div>
+          <div class="flex-col gap-2">${sorted.map(r => renderRow(r)).join('')}</div>
         `;
       } else {
+        // Dynamic column rendering
+        const visCols = getVisibleColumns();
+        const activeCols = SCREENER_COLUMNS.filter(c => visCols.has(c.key));
+        const gridTemplate = activeCols.map(c => c.width).join(' ');
+        // Build header
+        const headerHtml = activeCols.map(c => {
+          if (c.key === 'chart') {
+            return `<span class="scanner-col-chart" data-col="chart"></span>`;
+          }
+          const sortInfo = sortChain.find(s => s.column === c.key);
+          let cls = 'scanner-col-sortable';
+          if (sortInfo) cls += sortInfo.dir === 'asc' ? ' sort-asc' : ' sort-desc';
+          const num = sortInfo ? `<span class="sort-num">${sortChain.indexOf(sortInfo) + 1}</span>` : '';
+          return `<span class="${cls}" data-col="${c.key}" data-sortable="${c.sortable}">${c.label}${num}</span>`;
+        }).join('');
+        // Build rows
+        const rowsHtml = sorted.map(r => {
+          const cells = activeCols.map(c => {
+            if (c.key === 'ticker') {
+              const badge = r.ticker.substring(0, 2);
+              return `<span class="scanner-cell scanner-cell-ticker" data-col="ticker"><a href="#stock/${r.ticker}" class="scanner-link"><span class="scanner-cell-badge">${badge}</span><span class="scanner-cell-ticker-text">${r.ticker}</span></a></span>`;
+            }
+            if (c.key === 'name') {
+              return `<span class="scanner-cell scanner-cell-name" data-col="name"><span class="scanner-cell-name-text">${r.name || 'Ekuitas IDX'}</span></span>`;
+            }
+            if (c.key === 'chart') {
+              return `<span class="scanner-cell scanner-cell-chart" data-col="chart">${renderSparkline(r.close_prices)}</span>`;
+            }
+            if (c.key === 'close') {
+              return `<span class="scanner-cell scanner-cell-close mono" data-col="close">${Number(r.close || 0).toLocaleString('id-ID')}</span>`;
+            }
+            if (c.key === 'cci') {
+              return `<span class="scanner-cell scanner-cell-cci mono" data-col="cci">${r.cci ?? '—'}</span>`;
+            }
+            if (c.key === 'ma') {
+              return `<span class="scanner-cell scanner-cell-ma mono" data-col="ma">${r.magic_line ?? '—'}</span>`;
+            }
+            if (c.key === 'volume') {
+              return `<span class="scanner-cell scanner-cell-vol mono" data-col="volume">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</span>`;
+            }
+            if (c.key.startsWith('perf_')) {
+              return `<span class="scanner-cell scanner-cell-perf" data-col="${c.key}">${perfCell(r[c.key])}</span>`;
+            }
+            return '';
+          }).join('');
+          return `<a href="#stock/${r.ticker}" class="scanner-row scanner-row-grid" style="grid-template-columns:${gridTemplate}">${cells}</a>`;
+        }).join('');
         contentArea.innerHTML = `
-          <div class="scanner-results-header">
-            <span class="scanner-col-sortable" data-sort="ticker">Kode</span>
-            <span class="scanner-col-sortable" data-sort="name">Nama</span>
-            <span class="scanner-col-chart"></span>
-            <span class="scanner-col-sortable" data-sort="close">Harga</span>
-            <span class="scanner-col-sortable" data-sort="cci">CCI</span>
-            <span class="scanner-col-sortable" data-sort="ma">MA</span>
-            <span class="scanner-col-sortable" data-sort="volume">Volume</span>
-            <span class="scanner-col-perf">1W</span>
-            <span class="scanner-col-perf">1M</span>
-            <span class="scanner-col-perf">3M</span>
-            <span class="scanner-col-perf">6M</span>
-          </div>
-          <div class="flex-col gap-2">${results.map(r => renderRow(r)).join('')}</div>
+          <div class="scanner-results-header" style="grid-template-columns:${gridTemplate}">${headerHtml}</div>
+          <div class="flex-col gap-1">${rowsHtml}</div>
         `;
       }
-        // Wire sortable headers
-        contentArea.querySelectorAll('.scanner-col-sortable').forEach(el => {
-          el.addEventListener('click', () => {
-            const sort = el.dataset.sort;
-            const sel = document.getElementById('screener-sort');
-            if (sel && sort) sel.value = sort;
-            if (sort) sortResults();
-          });
+      // Wire sortable headers — multi-sort
+      contentArea.querySelectorAll('.scanner-col-sortable').forEach(el => {
+        el.addEventListener('click', () => {
+          const colKey = el.dataset.col;
+          if (!colKey || el.dataset.sortable === 'false') return;
+          handleSortClick(colKey);
         });
+      });
     } else if (sc && sc.value !== '' && currentResults.length > 0) {
-        // Filter returned nothing — clear search and re-render full list
-        sc.value = '';
-        renderList(currentResults);
-        return;
+      // Filter returned nothing — clear search and re-render full list
+      sc.value = '';
+      renderList(currentResults);
+      return;
     } else {
-        contentArea.innerHTML = renderEmptyState({
-            title: 'Tidak ada sinyal terdeteksi',
-            body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
-            action: 'Coba jalankan scan lagi nanti.',
-        });
+      contentArea.innerHTML = renderEmptyState({
+        title: 'Tidak ada sinyal terdeteksi',
+        body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
+        action: 'Coba jalankan scan lagi nanti.',
+      });
     }
     applyPerfVisibility();
 }
@@ -874,4 +971,184 @@ async function seedDefaultPresets() {
   } catch (e) {
     console.warn('[screener] Failed to seed default presets:', e);
   }
+}
+
+// ══════════════════════════════════════════════════
+// 11.5.1 — Column Toggle
+// ══════════════════════════════════════════════════
+
+function getVisibleColumns() {
+  if (visibleColumns) return visibleColumns;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_COLS);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) {
+        visibleColumns = new Set(parsed);
+        return visibleColumns;
+      }
+    }
+  } catch (e) { /* ignore */ }
+  // Default: all ON except perf_3m, perf_6m
+  const defaults = new Set(SCREENER_COLUMNS.filter(c => c.default !== false).map(c => c.key));
+  visibleColumns = defaults;
+  return defaults;
+}
+
+function saveVisibleColumns() {
+  try {
+    localStorage.setItem(STORAGE_KEY_COLS, JSON.stringify([...visibleColumns]));
+  } catch (e) { /* ignore */ }
+}
+
+function toggleColumnDropdown() {
+  // Remove existing dropdown if open
+  const existing = document.getElementById('col-toggle-dropdown');
+  if (existing) { existing.remove(); return; }
+  const toolbar = document.getElementById('screener-toolbar');
+  if (!toolbar) return;
+  const vis = getVisibleColumns();
+  const groups = [...new Set(SCREENER_COLUMNS.map(c => c.group))];
+  let html = '<div class="col-toggle-dropdown" id="col-toggle-dropdown"><div class="col-toggle-header">Pilih Kolom</div>';
+  groups.forEach(group => {
+    const cols = SCREENER_COLUMNS.filter(c => c.group === group);
+    if (!cols.length) return;
+    html += `<div class="col-toggle-group-label">${group}</div>`;
+    cols.forEach(c => {
+      const checked = vis.has(c.key) ? 'checked' : '';
+      html += `<label class="col-toggle-item"><input type="checkbox" data-col="${c.key}" ${checked}><span>${c.label || c.key}</span></label>`;
+    });
+  });
+  html += '</div>';
+  // Append to toolbar as last child
+  toolbar.insertAdjacentHTML('beforeend', html);
+  // Wire toggles
+  document.querySelectorAll('.col-toggle-item input').forEach(cb => {
+    cb.addEventListener('change', () => {
+      toggleColumn(cb.dataset.col);
+    });
+  });
+}
+
+function toggleColumn(colKey) {
+  const vis = getVisibleColumns();
+  if (vis.has(colKey)) vis.delete(colKey);
+  else vis.add(colKey);
+  visibleColumns = vis;
+  saveVisibleColumns();
+  // Re-render
+  const results = document.getElementById('screener-content');
+  if (results) renderList(currentResults);
+}
+
+// ══════════════════════════════════════════════════
+// 11.5.2 — Multi-Sort
+// ══════════════════════════════════════════════════
+
+function handleSortClick(colKey) {
+  const idx = sortChain.findIndex(s => s.column === colKey);
+  if (idx >= 0) {
+    const entry = sortChain[idx];
+    if (entry.dir === 'asc') {
+      // asc → desc
+      entry.dir = 'desc';
+    } else {
+      // desc → remove
+      sortChain.splice(idx, 1);
+    }
+  } else {
+    // Add new with asc
+    sortChain.push({ column: colKey, dir: 'asc' });
+  }
+  renderList(currentResults);
+}
+
+function applySorting(arr) {
+  if (!arr || !arr.length || !sortChain.length) return arr || [];
+  const result = [...arr];
+  // Apply sorts in reverse order (stable sort)
+  for (let i = sortChain.length - 1; i >= 0; i--) {
+    const { column, dir } = sortChain[i];
+    const multiplier = dir === 'asc' ? 1 : -1;
+    result.sort((a, b) => {
+      let va, vb;
+      switch (column) {
+        case 'ticker': va = a.ticker || ''; vb = b.ticker || ''; return va.localeCompare(vb) * multiplier;
+        case 'name': va = a.name || ''; vb = b.name || ''; return va.localeCompare(vb) * multiplier;
+        case 'close': va = a.close || 0; vb = b.close || 0; return (va - vb) * multiplier;
+        case 'cci': va = a.cci || 0; vb = b.cci || 0; return (va - vb) * multiplier;
+        case 'ma': va = a.magic_line || 0; vb = b.magic_line || 0; return (va - vb) * multiplier;
+        case 'volume': va = a.volume_spike || 0; vb = b.volume_spike || 0; return (va - vb) * multiplier;
+        case 'perf_1w': va = a.perf_1w || 0; vb = b.perf_1w || 0; return (va - vb) * multiplier;
+        case 'perf_1m': va = a.perf_1m || 0; vb = b.perf_1m || 0; return (va - vb) * multiplier;
+        case 'perf_3m': va = a.perf_3m || 0; vb = b.perf_3m || 0; return (va - vb) * multiplier;
+        case 'perf_6m': va = a.perf_6m || 0; vb = b.perf_6m || 0; return (va - vb) * multiplier;
+        default: return 0;
+      }
+    });
+  }
+  return result;
+}
+
+function renderSortBar() {
+  const bar = document.getElementById('screener-sort-bar');
+  if (!bar) return;
+  if (!sortChain.length) {
+    bar.classList.add('hidden');
+    bar.innerHTML = '';
+    return;
+  }
+  bar.classList.remove('hidden');
+  const chips = sortChain.map((s, i) => {
+    const arrow = s.dir === 'asc' ? '↑' : '↓';
+    const label = (SCREENER_COLUMNS.find(c => c.key === s.column) || {}).label || s.column;
+    return `<span class="sort-chip">${i + 1}. ${label} ${arrow}</span>`;
+  }).join('');
+  bar.innerHTML = `<div class="sort-bar-inner"><span class="sort-bar-label">Urut:</span> ${chips} <button type="button" class="btn btn-sm sort-clear-btn" id="btn-clear-sort">✕ Hapus</button></div>`;
+}
+
+// ══════════════════════════════════════════════════
+// 11.5.3 — Quick Filter Chips
+// ══════════════════════════════════════════════════
+
+function toggleFilterChip(chipId) {
+  if (activeFilterChips.has(chipId)) {
+    activeFilterChips.delete(chipId);
+  } else {
+    activeFilterChips.add(chipId);
+  }
+  renderList(currentResults);
+}
+
+function applyQuickFilters(results) {
+  if (!results || !results.length || !activeFilterChips.size) return results;
+  return results.filter(r => {
+    for (const chipId of activeFilterChips) {
+      const def = FILTER_CHIP_DEFS.find(d => d.id === chipId);
+      if (def && !def.check(r)) return false;
+    }
+    return true;
+  });
+}
+
+function renderFilterBar() {
+  const bar = document.getElementById('screener-filter-bar');
+  if (!bar) return;
+  const hasResults = currentResults.length > 0;
+  if (!hasResults) {
+    bar.classList.add('hidden');
+    bar.innerHTML = '';
+    return;
+  }
+  bar.classList.remove('hidden');
+  const chips = FILTER_CHIP_DEFS.map(c => {
+    const active = activeFilterChips.has(c.id) ? ' active' : '';
+    return `<span class="screener-chip${active}" data-chip="${c.id}">${c.label}</span>`;
+  }).join('');
+  bar.innerHTML = `<div class="screener-filter-bar-inner">${chips}</div>`;
+}
+
+// ─── Re-render helper ───────────────────────────
+function renderAll() {
+  renderList(currentResults);
 }

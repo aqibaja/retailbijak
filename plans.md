@@ -162,6 +162,12 @@
 | 2026-05-08 | 11.3.3 | ✅ | Dashboard calendar widget — today's events mini list |
 | 2026-05-08 | 11.4.1 | ✅ | Industry classifier — classify_industries() + keyword fallback + scheduler |
 | 2026-05-08 | 11.4.2 | ✅ | Industry endpoint — /api/sectors/{sector} industry_breakdown + /api/industries |
+| 2026-05-08 | 11.4.3 | ✅ | Industry UI accordion — expand/collapse industry → stocks |
+| 2026-05-08 | 11.5.1 | ✅ | Column toggle UI — dropdown checklist + localStorage |
+| 2026-05-08 | 11.5.2 | ✅ | Multi-sort — sort chain 2+ columns + indicators |
+| 2026-05-08 | 11.5.3 | ✅ | Quick filter chips — 5 presets (Gainers, Volume Spike, RSI) |
+| 2026-05-08 | 11.6.1 | ✅ | Treemap endpoint — GET /api/market/treemap |
+| 2026-05-08 | 11.6.2 | ✅ | Treemap view — CSS treemap + mobile list |
 
 ---
 
@@ -236,7 +242,7 @@
 **Value:** ★★★☆☆ — Better sector analysis
 **Data:** yfinance info.industry (sudah di yfinance.info)
 
-### 🟡 11.5 Screener Enhancements (LOW IMPACT)
+### 🟡 11.5 Screener Enhancements (LOW IMPACT) ✅ COMPLETE
 > **Seperti TV:** Quick filter chips, multi-sort, column toggles
 
 | # | Task | Files | Est. | Detail |
@@ -248,7 +254,7 @@
 **Value:** ★★★☆☆ — UX refinement
 **Data:** Existing
 
-### 🟡 11.6 Market Treemap (LOW IMPACT)
+### 🟡 11.6 Market Treemap (LOW IMPACT) ✅ COMPLETE
 > **Seperti TV:** Visual treemap seluruh pasar IDX
 
 | # | Task | Files | Est. | Detail |
@@ -269,5 +275,9 @@
 ### 🟠 Next ✅ COMPLETE
 11.2.3 → 11.3.1 → 11.3.2 → 11.3.3 → 11.4.1 → 11.4.2
 
-### 🟡 Later
+### 🟡 Later ✅ COMPLETE
 11.4.3 → 11.5.1 → 11.5.2 → 11.5.3 → 11.6.1 → 11.6.2
+
+---
+
+## 📊 Fase 11: TV-Inspired Enhancements ✅ 100% COMPLETE
