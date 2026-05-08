@@ -4605,6 +4605,27 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 .dashboard-chart-wrap .chart-empty-state p { font-size: 14px; font-weight: 600; margin: 0; }
 .dashboard-chart-wrap .chart-empty-state small { font-size: 11px; opacity: 0.6; }
 
+/* ─── Scanner Controls ─── */
+.scanner-control-btn {
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+  height: auto !important;
+  min-height: unset !important;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.scanner-control-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  border-color: var(--primary-color);
+}
 /* ─── Stock Comparison ─── */
 .compare-chip {
   display: inline-flex;

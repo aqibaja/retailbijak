@@ -89,6 +89,9 @@ export async function renderScreener(root) {
                 <span class="badge" id="screener-count">BELUM SCAN</span>
               </div>
               <div id="screener-toolbar" class="flex gap-2 screener-toolbar hidden">
+                <button id="btn-export-csv" type="button" class="btn btn-sm scanner-control-btn" title="Export CSV">CSV</button>
+                <button id="btn-save-filter" type="button" class="btn btn-sm scanner-control-btn" title="Simpan Filter">Simpan</button>
+                <button id="btn-load-filter" type="button" class="btn btn-sm scanner-control-btn" title="Muat Filter">Muat</button>
                 <div class="scanner-control-stack">
                   <select id="screener-sort" class="scanner-select screener-control-select">
                       <option value="cci">Urut: CCI</option>
@@ -116,6 +119,9 @@ export async function renderScreener(root) {
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
+    root.querySelector('#btn-export-csv')?.addEventListener('click', exportCSV);
+    root.querySelector('#btn-save-filter')?.addEventListener('click', saveFilterDialog);
+    root.querySelector('#btn-load-filter')?.addEventListener('click', loadFilterDialog);
 
     // TV Screener Widget — load after DOM ready
     setTimeout(() => {
@@ -240,7 +246,6 @@ function runScreener() {
         progBox.style.display = 'none';
         countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERPUTUS` : 'GAGAL';
         if (currentResults.length > 0) {
-            // Keep partial results visible
             renderList(currentResults);
             showToast('Pemindaian terputus. Hasil parsial ditampilkan.', 'warning');
         } else {
@@ -248,4 +253,105 @@ function runScreener() {
             showToast('Pemindaian gagal.', 'error');
         }
     };
+}
+
+// ─── Export CSV ────────────────────────
+function exportCSV() {
+    const data = currentResults;
+    if (!data.length) {
+        showToast('Tidak ada data untuk diekspor', 'warning');
+        return;
+    }
+    const headers = ['Ticker', 'Nama', 'Harga', 'Signal', 'CCI', 'MA', 'Stop Loss', 'SL%', 'Volume Spike'];
+    const rows = data.map(r => [
+        r.ticker, r.name || '', r.close || '', r.signal || '',
+        r.cci ?? '', r.magic_line ?? '', r.stop_loss ?? '',
+        r.sl_pct != null ? r.sl_pct + '%' : '', r.volume_spike ?? ''
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `retailbijak-screener-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`${data.length} sinyal diekspor ke CSV`, 'success');
+}
+
+// ─── Saved Filters ─────────────────────
+const FILTERS_STORAGE_KEY = 'retailbijak.saved_filters';
+
+function getSavedFilters() {
+    try { return JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY)) || []; }
+    catch { return []; }
+}
+
+function saveFilters(filters) {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+}
+
+function saveFilterDialog() {
+    const data = currentResults;
+    if (!data.length) {
+        showToast('Tidak ada hasil scan untuk disimpan', 'warning');
+        return;
+    }
+    const name = prompt('Nama filter:');
+    if (!name || !name.trim()) return;
+    const filters = getSavedFilters();
+    // Build filter config from current sort + search
+    const sortEl = document.getElementById('screener-sort');
+    const searchEl = document.getElementById('screener-search');
+    const config = {
+        id: Date.now(),
+        name: name.trim(),
+        sort: sortEl?.value || 'cci',
+        search: searchEl?.value || '',
+        count: data.length,
+        savedAt: new Date().toISOString(),
+    };
+    // Check duplicate name
+    const existing = filters.findIndex(f => f.name.toLowerCase() === config.name.toLowerCase());
+    if (existing >= 0) {
+        if (!confirm(`Filter "${config.name}" sudah ada. Timpa?`)) return;
+        filters[existing] = config;
+    } else {
+        filters.push(config);
+    }
+    saveFilters(filters);
+    showToast(`Filter "${config.name}" disimpan (${data.length} hasil)`, 'success');
+}
+
+function loadFilterDialog() {
+    const filters = getSavedFilters();
+    if (!filters.length) {
+        showToast('Belum ada filter tersimpan', 'info');
+        return;
+    }
+    // Simple modal-like selection
+    const list = filters.map((f, i) =>
+        `${i + 1}. ${f.name} (${f.count} hasil — ${(f.savedAt || '').slice(0,10)})`
+    ).join('\n');
+    const choice = prompt(`Pilih filter (1-${filters.length}):\n\n${list}`);
+    if (!choice) return;
+    const idx = parseInt(choice) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= filters.length) {
+        showToast('Pilihan tidak valid', 'error');
+        return;
+    }
+    const filter = filters[idx];
+    // Apply filter config
+    const sortEl = document.getElementById('screener-sort');
+    if (sortEl && filter.sort) sortEl.value = filter.sort;
+    const searchEl = document.getElementById('screener-search');
+    if (searchEl && filter.search) {
+        searchEl.value = filter.search;
+        filterResults();
+    } else {
+        sortResults();
+    }
+    showToast(`Filter "${filter.name}" diterapkan`, 'success');
 }

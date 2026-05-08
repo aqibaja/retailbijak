@@ -12,7 +12,7 @@
     12||------|--------|----------|
     13|| **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
     14|| **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 95% |
-    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▱▱▱▱▱▱ 15% |
+    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▱▱▱▱▱▱ 30% |
     16|
     17|---
     18|
@@ -362,6 +362,9 @@
    373|| 2026-05-09 | 3.1.1 | ✅ | Backend: Comparison endpoint `/api/compare` — multi-ticker normalized price, stats, fundamentals |
    374|| 2026-05-09 | 3.1.2 | ✅ | Frontend: Compare page — LightweightCharts overlay + tabel fundamental/performansi |
    375|| 2026-05-09 | 3.1.3 | ✅ | Add to compare — button di stock detail + link di More drawer |
+| 2026-05-10 | 3.3.1 | ✅ | CSV export — frontend-side Blob download dari hasil screener (Ticker, Harga, CCI, MA, dll) |
+| 2026-05-10 | 3.3.2 | ✅ | Export button di screener toolbar — tombol CSV dengan download otomatis |
+| 2026-05-10 | 3.3.3 | ✅ | Saved filters — localStorage, Simpan/Muat filter (sort + search), konfirmasi timpa duplicate |
    376|
    377|---
    378|
