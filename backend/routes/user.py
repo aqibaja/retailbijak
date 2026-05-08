@@ -525,3 +525,99 @@ def save_screener_presets(payload: dict = Body(...), db: Session = Depends(get_d
     _upsert_setting(db, 'screener_presets', json.dumps(presets))
     db.commit()
     return {'ok': True, 'count': len(presets)}
+
+
+@router.get('/api/portfolio/analytics')
+def portfolio_analytics(db: Session = Depends(get_db)):
+    from collections import defaultdict
+    import math
+
+    # 1. Equity curve: portfolio value over time
+    txns = db.query(TransactionLog).order_by(TransactionLog.transaction_date.asc()).all()
+    equity_curve = []
+    running_map = defaultdict(lambda: {'shares': 0, 'total_cost': 0.0})
+    unique_tickers = set()
+    all_dates = set()
+
+    for txn in txns:
+        t, shares, cost, tick = txn.transaction_type, txn.shares, float(txn.total), txn.ticker
+        unique_tickers.add(tick)
+        if t == 'buy':
+            running_map[tick]['shares'] += shares
+            running_map[tick]['total_cost'] += cost
+        elif t == 'sell':
+            avg = running_map[tick]['total_cost'] / running_map[tick]['shares'] if running_map[tick]['shares'] else 0
+            running_map[tick]['shares'] -= shares
+            running_map[tick]['total_cost'] -= avg * shares
+
+    if unique_tickers:
+        ohclv_rows = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker.in_(list(unique_tickers))
+        ).order_by(OHLCVDaily.date.asc()).all()
+
+        date_prices = defaultdict(dict)
+        for row in ohclv_rows:
+            date_prices[row.date.isoformat()][row.ticker] = float(row.close or 0)
+            all_dates.add(row.date.isoformat())
+
+        sorted_dates = sorted(all_dates)
+        # Replay transactions to get equity at each date
+        replay = defaultdict(lambda: {'shares': 0, 'total_cost': 0.0})
+        realized_cash = 0.0
+        txn_idx = 0
+
+        for d in sorted_dates:
+            # Process transactions up to this date
+            while txn_idx < len(txns) and txns[txn_idx].transaction_date.isoformat() <= d:
+                txn = txns[txn_idx]
+                t, shares, cost, tick = txn.transaction_type, txn.shares, float(txn.total), txn.ticker
+                if t == 'buy':
+                    replay[tick]['shares'] += shares
+                    replay[tick]['total_cost'] += cost
+                elif t == 'sell':
+                    avg = replay[tick]['total_cost'] / replay[tick]['shares'] if replay[tick]['shares'] else 0
+                    replay[tick]['shares'] -= shares
+                    replay[tick]['total_cost'] -= avg * shares
+                    realized_cash += cost
+                txn_idx += 1
+            # Calculate value at this date
+            mv = 0.0
+            for tick, pos in replay.items():
+                if pos['shares'] > 0:
+                    price = date_prices.get(d, {}).get(tick, 0)
+                    mv += price * pos['shares']
+            total_value = mv + realized_cash
+            if total_value > 0:
+                equity_curve.append({'date': d, 'value': round(total_value, 2)})
+
+    # 2. Sector allocation
+    positions = db.query(PortfolioPosition).all()
+    sector_value = defaultdict(float)
+    total_portfolio_value = 0.0
+
+    for pos in positions:
+        latest = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == pos.ticker
+        ).order_by(OHLCVDaily.date.desc()).first()
+        price = float(latest.close) if latest and latest.close else float(pos.avg_price or 0)
+        val = price * pos.lots * 100  # 1 lot = 100 shares
+        sector_name = 'Lainnya'
+        if pos.ticker:
+            stock = db.query(Stock).filter(Stock.ticker == pos.ticker).first()
+            if stock and stock.sector:
+                sector_name = stock.sector
+        sector_value[sector_name] += val
+        total_portfolio_value += val
+
+    sectors = [{
+        'name': name,
+        'value': round(val, 2),
+        'pct': round((val / total_portfolio_value) * 100, 1) if total_portfolio_value > 0 else 0
+    } for name, val in sorted(sector_value.items(), key=lambda x: -x[1])]
+
+    return {
+        'equity_curve': equity_curve,
+        'sectors': sectors,
+        'total_value': round(total_portfolio_value, 2),
+        'has_data': bool(equity_curve or sectors),
+    }

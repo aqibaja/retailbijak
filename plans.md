@@ -14,7 +14,7 @@
 || **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 95% |
 || **P3: Fitur Lanjutan** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 || **P4: Stabilitas & Kualitas** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
-|| **P5: Ekspansi Fitur & Inteligensi** | 🟡 Berjalan | ▰▰▰▰▰▱▱▱▱▱ 50% |
+|| **P5: Ekspansi Fitur & Inteligensi** | 🟡 Berjalan | ▰▰▰▰▰▰▰▰▰▱ 96% |
 
 ---
 
@@ -258,3 +258,127 @@
 | 2026-05-10 | 5.6.4 | ✅ | First-run onboarding modal — walkthrough 4 fitur utama, localStorage flag agar sekali muncul |
 | 2026-05-10 | 5.4.1 | ✅ | Screener saved presets: upgrade localStorage → backend UserSetting via `/api/screener-presets`. Simpan/load persist di server |
 | 2026-05-10 | 5.5.3 | ✅ | Price flash animation — `flashUpdate()` sudah dipanggil di stock detail `hydrateHeader()`. Tambah CSS class ke critical CSS biar langsung jalan |
+| 2026-05-10 | 5.4.3 | ✅ | Screener export CSV — verified: `exportCSV()` function, tombol `#btn-export-csv` di toolbar, download file CSV dgn header kolom lengkap |
+| 2026-05-10 | 5.6.1 | ✅ | Compare tool — verified: `compare.js`, `addToCompare()` dari stock detail, `renderCompare()` chart side-by-side, sessionStorage persist, max 5 ticker |
+| 2026-05-10 | 5.6.2 | ✅ | Backtest detail — verified: `backtest.js`, 3 strategies (sma_cross/rsi_reversal/bb_breakout), endpoint `/api/backtest` return equity curve+trades+metrics + win rate, max drawdown, sharpe |
+| 2026-05-10 | 5.1.4 | 🔴 **BLOCKED** | Signal accuracy upgrade: IDX API rate limit masih blokir. Data 50 bars/ticker belum cukup untuk >200 bars. Butuh data source pulih |
+
+---
+
+# 🇮🇩 RetailBijak — Rencana Pengembangan Fase 6
+
+> **Status:** 🆕 Baru — fase fitur engagement, visualisasi data, dan personalisasi
+> **Prinsip:** Zero dependency pada data source baru. Semua fitur harus jalan dengan data existing (50 bars/ticker). Fokus pada user engagement dan decision support.
+> **Goal:** Transformasi dari platform monitor menjadi platform **analisis & decision-making**
+
+## Masalah Teridentifikasi (dari User Experience Audit)
+
+| # | Masalah | Dampak | Prioritas |
+|---|---------|--------|-----------|
+| M1 | **Portfolio cuma angka tanpa grafik** — nggak ada equity curve, allocation pie, atau benchmark comparison | User nggak bisa lihat performa portofolio secara visual | 🔴 High |
+| M2 | **Cari saham harus buka screener** — gak ada global search di topbar | Navigasi lambat, friction tinggi | 🔴 High |
+| M3 | **Sektor cuma list text** — gak ada heatmap visual untuk lihat performa sektor sekilas | Butuh scan manual, gak intuitif | 🟠 Medium |
+| M4 | **Dashboard statis** — semua widget muncul, gak bisa diatur sesuai preferensi user | Informasi overload, gak personal | 🟠 Medium |
+| M5 | **Watchlist 1 dimensi** — cuma 1 list, gak bisa dikelompokkan | Susah manage banyak saham | 🟡 Medium |
+| M6 | **Gak ada economic calendar** — data makro (BI rate, inflasi) gak tampil | Kurang konteks market | 🟡 Low |
+
+## P6: Engagement, Visualisasi & Personalisasi
+
+### 6.1 🔴 Portfolio Analytics Dashboard
+
+Visualisasi performa portofolio dengan grafik interaktif.
+
+| # | Task | Files | Est. | Data Source |
+|---|------|-------|------|-------------|
+| 6.1.1 | **Equity curve chart** — Plot nilai portofolio historis dari TransactionLog + OHLCV. Pakai Chart.js line chart dgn range selector (1M/3M/6M/1Y/ALL) | `portfolio.js`, `routes/user.py` | 45m | TransactionLog + OHLCV |
+| 6.1.2 | **Sector allocation pie chart** — Visual breakdown sektor dari portfolio positions. Warna sesuai sektor | `portfolio.js`, `routes/user.py` | 20m | PortfolioPosition + Stock.sector |
+| 6.1.3 | **Benchmark comparison** — Bandingkan return portofolio vs IHSG. Overlay line chart | `portfolio.js`, `routes/user.py` | 30m | OHLCV (IHSG/^JKSE) |
+| 6.1.4 | **Portfolio summary cards** — Total return, best/worst performer, daily P&L, Sharpe ratio estimasi | `portfolio.js` | 20m | Existing P&L + OHLCV |
+
+**Dependency:** Portfolio + TransactionLog data — ✅ sudah ada
+**Value:** ★★★★★ — fitur paling diminta oleh trader
+
+### 6.2 🔴 Global Ticker Search (Cmd+K)
+
+Search bar di topbar untuk akses instan ke semua saham.
+
+| # | Task | Files | Est. | Data Source |
+|---|------|-------|------|-------------|
+| 6.2.1 | **Search endpoint** — `/api/stocks/search?q=` return ticker + name + sector + price + change, top 15 results | `routes/stock_detail.py` | 15m | Stock + OHLCV |
+| 6.2.2 | **Search UI component** — Overlay modal dgn input + autocomplete dropdown. Trigger via click atau `Ctrl+K`/`Cmd+K` | `main.js`, `index.html` | 30m | — |
+| 6.2.3 | **Debounced input + keyboard nav** — 200ms debounce, arrow keys navigasi, Enter go to stock detail | `main.js` | 15m | — |
+| 6.2.4 | **Recent searches** — Simpan 5 search terakhir di localStorage | `main.js` | 10m | localStorage |
+
+**Dependency:** Stock list + latest price — ✅ sudah ada
+**Value:** ★★★★★ — UX improvement paling signifikan
+
+### 6.3 🟠 Sector Heatmap (Treemap)
+
+Visual heatmap performa sektor dengan warna + ukuran.
+
+| # | Task | Files | Est. | Data Source |
+|---|------|-------|------|-------------|
+| 6.3.1 | **Heatmap endpoint** — `/api/market/heatmap` return tiap sektor: name, change%, total market cap, jumlah saham | `routes/market_summary.py` | 15m | Stock + OHLCV |
+| 6.3.2 | **Treemap render** — Pakai Canvas atau div-based treemap. Warna: hijau=naik, merah=turun, intensitas berdasarkan magnitude | `market.js` or `dashboard.js` | 30m | — |
+| 6.3.3 | **Interaksi** — Hover lihat detail sektor (change%, saham count), klik → `#sector/{name}` | `market.js` | 15m | — |
+| 6.3.4 | **Mobile responsive** — Stack vertikal untuk layar kecil, layout grid untuk desktop | `style.css` | 10m | — |
+
+**Dependency:** Stock.sector + latest OHLCV — ✅ sudah ada (tapi cuma 1 sektor)
+**Value:** ★★★★☆ — visual yang menarik, nambah "wow factor"
+
+### 6.4 🟠 Watchlist Folders/Groups
+
+Multiple watchlists dengan nama kustom.
+
+| # | Task | Files | Est. | Data Source |
+|---|------|-------|------|-------------|
+| 6.4.1 | **Model WatchlistGroup** — `id, name, icon, sort_order` | `database.py` | 10m | — |
+| 6.4.2 | **Update WatchlistItem** — tambah `group_id` nullable FK ke WatchlistGroup | `database.py` | 5m | — |
+| 6.4.3 | **CRUD endpoints** — `GET/POST/PUT/DELETE /api/watchlist-groups` + update `/api/watchlist` untuk dukung `group_id` | `routes/user.py` | 30m | — |
+| 6.4.4 | **UI tabs** — Tab bar untuk group, click ganti group. Default: "Semua" | `portfolio.js` | 20m | — |
+
+**Dependency:** Watchlist model — ✅ sudah ada
+**Value:** ★★★★☆ — power user feature
+
+### 6.5 🟡 Stock Detail Enhancement
+
+| # | Task | Files | Est. | Data Source |
+|---|------|-------|------|-------------|
+| 6.5.1 | **Key financials widget** — PER, PBV, ROE, DER, Market Cap dari data fundamental existing | `stock_detail.js` | 15m | Fundamental table |
+| 6.5.2 | **Related news per ticker** — Filter berita yg mention ticker ini (sudah ada `News.tickers` column) | `stock_detail.js`, `routes/stock_detail.py` | 20m | News table |
+| 6.5.3 | **Key levels** — Support/resistance dari pivot points + SMA lines overlay | `stock_detail.js` | 20m | OHLCV |
+
+**Dependency:** Existing data — ✅ semua sudah ada
+**Value:** ★★★★☆ — depth analysis
+
+### 6.6 🟡 Dashboard Customization
+
+| # | Task | Files | Est. | Data Source |
+|---|------|-------|------|-------------|
+| 6.6.1 | **Widget visibility per user** — Simpan toggle state ke UserSetting (`dashboard_widgets_visible`) | `dashboard.js`, `routes/user.py` | 15m | UserSetting |
+| 6.6.2 | **Quick action toolbar** — Refresh all, clear cache, open screener langsung di dashboard | `dashboard.js`, `index.html` | 15m | — |
+
+**Dependency:** UserSetting — ✅ sudah ada
+**Value:** ★★★☆☆ — quality of life
+
+## Prioritas Eksekusi
+
+### 🔴 Minggu Ini (High Impact)
+6.1.1 → 6.1.2 → 6.1.3 → 6.2.1 → 6.2.2 → 6.2.3
+
+### 🟠 Berikutnya
+6.3.1 → 6.3.2 → 6.4.1 → 6.4.2 → 6.4.3 → 6.4.4 → 6.5.1 → 6.5.2
+
+### 🟡 Setelahnya
+6.5.3 → 6.6.1 → 6.6.2
+
+---
+
+## Log Eksekusi — Fase 6
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-10 | 6.1.1 | ✅ | Equity curve endpoint `/api/portfolio/analytics` — replay transaksi historis + OHLCV prices, return array {date, value} |
+| 2026-05-10 | 6.1.2 | ✅ | Sector allocation pie endpoint — breakdown dari PortfolioPosition + Stock.sector, return name, value, pct |
+| 2026-05-10 | 6.1.3 | 🟡 PLACEHOLDER | Benchmark IHSG: yfinance rate-limited. CAGR/XIRR dari equity curve bisa jadi alternatif |
+| 2026-05-10 | 6.1.4 | ✅ | Frontend portfolio analytics — equity curve chart (LightweightCharts area series), range selector (1B/3B/6B/1T/ALL), sector pie chart (CSS conic-gradient, zero dep), legend dengan warna + persentase |

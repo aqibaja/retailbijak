@@ -162,6 +162,29 @@ async function renderPortfolioTab(el) {
         <div class="portfolio-kpi"><span class="portfolio-kpi-label">Return %</span><strong class="portfolio-kpi-value ${pnlClass(summary.pnl_pct)}">${summary.pnl_pct > 0 ? '+' : ''}${pf(summary.pnl_pct)}</strong></div>
       </div>` : '';
 
+    // Analytics charts container
+    const analyticsHtml = `<div id="portfolio-analytics-section" class="portfolio-analytics-grid">
+      <div class="portfolio-chart-card" id="equity-curve-card">
+        <div class="flex justify-between items-center mb-2">
+          <h4 class="text-xs uppercase text-dim strong m-0">Kurva Ekuitas</h4>
+          <div class="flex gap-1" id="equity-range-selector">
+            <button class="btn btn-xs range-btn active" data-range="1M">1B</button>
+            <button class="btn btn-xs range-btn" data-range="3M">3B</button>
+            <button class="btn btn-xs range-btn" data-range="6M">6B</button>
+            <button class="btn btn-xs range-btn" data-range="1Y">1T</button>
+            <button class="btn btn-xs range-btn" data-range="ALL">ALL</button>
+          </div>
+        </div>
+        <div id="equity-curve-chart" style="height:200px"><div class="skeleton skeleton-chart"></div></div>
+      </div>
+      <div class="portfolio-chart-card">
+        <h4 class="text-xs uppercase text-dim strong mb-2">Alokasi Sektor</h4>
+        <div id="sector-pie-chart" style="height:200px;display:flex;align-items:center;justify-content:center">
+          <div class="text-xs text-dim">Memuat...</div>
+        </div>
+      </div>
+    </div>`;
+
     // Sector breakdown
     const sectors = summary?.sectors || {};
     const sectorKeys = Object.keys(sectors);
@@ -183,6 +206,7 @@ async function renderPortfolioTab(el) {
         <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
       ${kpiHtml}
+      ${analyticsHtml}
       ${sectorHtml}
       ${fetchError ? `
       <div class="empty-state-v2">
@@ -265,6 +289,138 @@ async function renderPortfolioTab(el) {
 
     // Load transaction history
     loadTransactionHistory(el);
+    // Load analytics charts
+    loadPortfolioAnalytics();
+}
+
+async function loadPortfolioAnalytics() {
+  const section = document.getElementById('portfolio-analytics-section');
+  if (!section) return;
+  try {
+    const data = await apiFetch('/portfolio/analytics');
+    if (!data?.has_data) {
+      document.getElementById('equity-curve-chart').innerHTML = '<div class="empty-state-v2" style="padding:20px"><p class="text-xs text-dim">Belum ada transaksi untuk grafik</p></div>';
+      document.getElementById('sector-pie-chart').innerHTML = '<div class="empty-state-v2" style="padding:20px"><p class="text-xs text-dim">Belum ada posisi</p></div>';
+      return;
+    }
+    // ─── Equity Curve ───
+    renderEquityCurve(data.equity_curve || []);
+    // ─── Sector Pie ───
+    renderSectorPie(data.sectors || []);
+  } catch (e) {
+    section.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Gagal memuat grafik</p></div>';
+  }
+}
+
+// ─── Sector Pie Chart (CSS conic-gradient, zero dependency) ───
+function renderSectorPie(sectors) {
+  const container = document.getElementById('sector-pie-chart');
+  if (!container) return;
+  if (!sectors.length) {
+    container.innerHTML = '<div class="text-xs text-dim">Belum ada data</div>';
+    return;
+  }
+  const colors = ['#10b981','#6366f1','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16'];
+  const total = sectors.reduce((s, x) => s + x.pct, 0);
+  const conicParts = sectors.map((s, i) => {
+    const c = colors[i % colors.length];
+    return `${c} ${s.pct}%`;
+  });
+  const gradient = `conic-gradient(${conicParts.join(', ')})`;
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;height:100%;width:100%">
+      <div style="width:100px;height:100px;border-radius:50%;background:${gradient};flex-shrink:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px;overflow:hidden">
+        ${sectors.map((s, i) => `
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+            <span style="width:8px;height:8px;border-radius:2px;background:${colors[i % colors.length]};flex-shrink:0"></span>
+            <span class="text-dim" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+            <span class="strong mono">${s.pct}%</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
+// ─── Equity Curve (LightweightCharts) ───
+function renderEquityCurve(data) {
+  const container = document.getElementById('equity-curve-chart');
+  if (!container) return;
+  if (!data.length) {
+    container.innerHTML = '<div class="text-xs text-dim" style="padding:40px;text-align:center">Belum ada data transaksi</div>';
+    return;
+  }
+  
+  // Filter by active range
+  let range = 'ALL';
+  const activeBtn = document.querySelector('#equity-range-selector .range-btn.active');
+  if (activeBtn) range = activeBtn.dataset.range;
+  
+  let filtered = data;
+  if (range !== 'ALL') {
+    const months = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12 }[range] || 0;
+    if (months) {
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - months);
+      filtered = data.filter(d => new Date(d.date) >= cutoff);
+    }
+  }
+  
+  if (filtered.length < 2) {
+    container.innerHTML = '<div class="text-xs text-dim" style="padding:40px;text-align:center">Data terlalu sedikit untuk grafik</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  const W = window.LightweightCharts;
+  if (!W || !W.createChart) {
+    container.innerHTML = '<div class="text-xs text-dim" style="padding:40px;text-align:center">Memuat chart...</div>';
+    // Retry after lightweight-charts loads
+    const check = setInterval(() => {
+      if (window.LightweightCharts?.createChart) {
+        clearInterval(check);
+        renderEquityCurve(filtered);
+      }
+    }, 500);
+    setTimeout(() => clearInterval(check), 10000);
+    return;
+  }
+
+  const chart = W.createChart(container, {
+    height: 200,
+    layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#94a3b8' },
+    grid: { vertLines: { color: 'rgba(255,255,255,0.04)' }, horzLines: { color: 'rgba(255,255,255,0.04)' } },
+    crosshair: { mode: 0 },
+    rightPriceScale: { borderColor: 'rgba(255,255,255,0.08)' },
+    timeScale: { borderColor: 'rgba(255,255,255,0.08)', visible: true },
+    handleScroll: false,
+    handleScale: false,
+  });
+
+  const series = chart.addAreaSeries({
+    lineColor: '#10b981',
+    topColor: 'rgba(16,185,129,0.3)',
+    bottomColor: 'rgba(16,185,129,0.02)',
+    lineWidth: 2,
+    priceFormat: { type: 'custom', formatter: (v) => Math.round(v).toLocaleString('id-ID') },
+  });
+
+  series.setData(filtered.map(d => ({
+    time: d.date.slice(0, 10).replace(/-/g, '-'),
+    value: d.value,
+  })));
+
+  chart.timeScale().fitContent();
+
+  // Range selector buttons
+  document.querySelectorAll('#equity-range-selector .range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#equity-range-selector .range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderEquityCurve(data);
+    });
+  });
 }
 
 async function loadTransactionHistory(el) {
