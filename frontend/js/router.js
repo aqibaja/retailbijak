@@ -20,6 +20,7 @@ const ROUTE_META = {
   signal_overview: { title: 'RetailBijak — Signal Overview', desc: 'Pantau semua sinyal trading terkini dari seluruh saham IDX. Filter BUY/SELL berdasarkan data teknikal.' },
   alerts: { title: 'RetailBijak — Alert Harga', desc: 'Buat dan kelola alert harga saham IDX. Dapatkan notifikasi otomatis saat harga atau RSI mencapai level tertentu.' },
   movers: { title: 'RetailBijak — Market Movers', desc: 'Lihat saham IDX dengan pergerakan terbesar: gainers, losers, dan most active dengan multi-timeframe performance.' },
+  calendar: { title: 'RetailBijak — Kalender Pasar', desc: 'Kalender dividen, laba, dan aksi korporasi saham IDX.' },
 };
 
 // Dynamic view registry — lazy import per route (1.7.1)
@@ -41,6 +42,7 @@ const viewModules = {
   signal_overview: () => import('./views/signal_overview.js?v=20260510'),
   alerts: () => import('./views/alerts.js?v=20260508C'),
   movers: () => import('./views/movers.js?v=20260508C'),
+  calendar: () => import('./views/calendar.js?v=20260508A'),
 };
 const viewCache = {};
 

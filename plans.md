@@ -157,6 +157,11 @@
 | 2026-05-08 | 11.2.1 | ✅ | Scanner perf columns — perf_1w/1m/3m/6m in scanner_stream.py |
 | 2026-05-08 | 11.2.2 | ✅ | Screener perf columns — frontend table + toggle + CSV export |
 | 2026-05-08 | 11.2.3 | ✅ | Stock detail perf chips — 1W/1M/3M badges from candles |
+| 2026-05-08 | 11.3.1 | ✅ | Calendar endpoint + model + updater — CalendarEvent, /api/calendar |
+| 2026-05-08 | 11.3.2 | ✅ | Calendar view — calendar.js month grid + event list |
+| 2026-05-08 | 11.3.3 | ✅ | Dashboard calendar widget — today's events mini list |
+| 2026-05-08 | 11.4.1 | ✅ | Industry classifier — classify_industries() + keyword fallback + scheduler |
+| 2026-05-08 | 11.4.2 | ✅ | Industry endpoint — /api/sectors/{sector} industry_breakdown + /api/industries |
 
 ---
 
@@ -207,7 +212,7 @@
 **Value:** ★★★★☆ — Professional analysis data
 **Data:** OHLCV, pure calculation
 
-### 🟠 11.3 Economic & Corporate Calendar (MEDIUM IMPACT)
+### 🟠 11.3 Economic & Corporate Calendar (MEDIUM IMPACT) ✅ COMPLETE
 > **Seperti TV:** Kalender ekonomi + corporate actions
 
 | # | Task | Files | Est. | Detail |
@@ -219,7 +224,7 @@
 **Value:** ★★★★☆ — Institutional-grade feature
 **Data:** Perlu scraping IDX atau sumber eksternal
 
-### 🟠 11.4 Industry Breakdown in Sectors (MEDIUM IMPACT)
+### 🟠 11.4 Industry Breakdown in Sectors (MEDIUM IMPACT) ✅ COMPLETE
 > **Seperti TV:** Dalam sektor, ada sub-industri dengan perf masing-masing
 
 | # | Task | Files | Est. | Detail |
@@ -261,7 +266,7 @@
 ### 🔴 NOW
 11.1.1 → 11.1.2 → 11.1.3 → 11.1.4 → 11.2.1 → 11.2.2
 
-### 🟠 Next
+### 🟠 Next ✅ COMPLETE
 11.2.3 → 11.3.1 → 11.3.2 → 11.3.3 → 11.4.1 → 11.4.2
 
 ### 🟡 Later

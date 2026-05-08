@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, create_engine
+from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, Date, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:////opt/swingaq/backend/swingaq.db")
@@ -231,6 +231,20 @@ class ChatHistory(Base):
     message = Column(String, nullable=False)
     metadata_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class CalendarEvent(Base):
+    """Calendar events — dividend dates, earnings dates, corporate actions."""
+    __tablename__ = "calendar_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=True)  # Null for economic events
+    title = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)  # 'dividend', 'earnings', 'corporate', 'economic', 'ipo', 'rights'
+    event_date = Column(Date, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    source = Column(String, default='manual')  # 'yfinance', 'idx', 'manual'
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 # Dependency for FastAPI

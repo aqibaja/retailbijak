@@ -104,25 +104,97 @@ SECTOR_KEYWORDS = {
     ],
 }
 
-# Industry sub-classification (more specific)
+# Industry sub-classification (more specific) — covers all sectors
 INDUSTRY_KEYWORDS = {
     'Financials': [
-        ('Bank', ['BANK', 'BNI', 'BCA', 'BRI', 'MANDIRI', 'BNK', 'SYARIAH']),
+        ('Bank', ['BANK', 'BNI', 'BCA', 'BRI', 'MANDIRI', 'BNK', 'SYARIAH', 'BPR']),
         ('Insurance', ['ASURANSI', 'INSURANCE']),
-        ('Securities', ['SEKURITAS', 'SECURITIES']),
+        ('Securities', ['SEKURITAS', 'SECURITIES', 'INVESTAMA']),
+        ('Multi-Finance', ['PEMBIAYAAN', 'MULTIFINANCE', 'FINANCE', 'KREDIT', 'DANA']),
         ('Fintech', ['FINTECH', 'DIGITAL', 'PAYMENT']),
+        ('Asset Management', ['ASSET', 'MANAJEMEN', 'MANAGEMENT', 'VENTURA', 'KAPITAL']),
     ],
     'Energy': [
-        ('Coal Mining', ['BATUBARA', 'COAL']),
-        ('Oil & Gas', ['MINYAK', 'OIL', 'GAS']),
+        ('Coal Mining', ['BATUBARA', 'COAL', 'ARCHI']),
+        ('Oil & Gas', ['MINYAK', 'OIL', 'GAS', 'PERTAMINA', 'ENERGI']),
         ('Geothermal', ['GEOTHERMAL', 'PANAS BUMI']),
+        ('Renewable Energy', ['ENERGI BARU', 'RENEWABLE', 'HYDRO', 'SURYA', 'SOLAR']),
+        ('Power Utility', ['POWER', 'PLN', 'LISTRIK']),
     ],
     'Basic Materials': [
-        ('Metal Mining', ['NIKEL', 'NICKEL', 'EMAS', 'GOLD', 'TIMAH', 'TIN', 'LOGAM', 'METAL']),
+        ('Metal & Mineral Mining', ['NIKEL', 'NICKEL', 'EMAS', 'GOLD', 'TIMAH', 'TIN', 'LOGAM', 'METAL', 'MINERAL', 'ALUMINDO']),
         ('Cement', ['SEMEN', 'CEMENT']),
         ('Steel', ['BAJA', 'STEEL']),
         ('Chemicals', ['KIMIA', 'CHEMICAL']),
         ('Pulp & Paper', ['KERTAS', 'PAPER', 'PULP']),
+        ('Packaging', ['KEMASAN', 'PACKAGING', 'KALENG', 'PLASTIK', 'POLY']),
+        ('Glass & Ceramics', ['KACA', 'GLASS', 'KERAMIK', 'CERAMIC']),
+    ],
+    'Industrials': [
+        ('Machinery', ['MESIN', 'MACHINERY', 'ALAT BERAT', 'HEAVY EQUIPMENT']),
+        ('Construction', ['KONSTRUKSI', 'CONSTRUCTION', 'KARYA', 'WIKA', 'WASKITA', 'ADHI', 'PTPP']),
+        ('Automotive', ['OTOMOTIF', 'AUTOMOTIVE', 'ASII', 'SPAREPARTS', 'SPARE PART']),
+        ('Electronics', ['ELEKTRONIK', 'ELECTRONIC', 'ELEKTRINDO']),
+        ('Cable', ['KABEL', 'CABLE']),
+        ('Engineering', ['ENGINEERING', 'REKAYASA', 'INDUSTRI']),
+        ('Pipe & Steel Fabrication', ['PIPA', 'PIPE', 'FABRIKASI', 'FABRICATION']),
+    ],
+    'Consumer Non-Cyclicals': [
+        ('Food & Beverage', ['MAKANAN', 'FOOD', 'MINUMAN', 'BEVERAGE', 'INDOFOOD', 'SUSU', 'MILK', 'PANGAN', 'BERKAH']),
+        ('Tobacco', ['ROKOK', 'TOBACCO', 'CIGARETTE', 'GUDANG GARAM', 'GGRM', 'HMSP']),
+        ('Pharmaceuticals', ['FARMASI', 'PHARMACEUTICAL', 'OBAT', 'KALBE', 'DARYA VARIA']),
+        ('Cosmetics & Household', ['KOSMETIK', 'COSMETIC', 'UNILEVER', 'RUMAH TANGGA', 'HIDUP']),
+        ('Agriculture', ['AGRO', 'AGRICULTURE', 'TANI', 'FARM', 'SAWIT', 'PALM', 'LESTARI', 'PERKEBUNAN', 'PLANTATION']),
+        ('Fishery', ['IKAN', 'FISH', 'MINA', 'PERIKANAN', 'LAUT']),
+        ('Healthcare', ['KESEHATAN', 'HEALTH', 'RUMAH SAKIT', 'HOSPITAL', 'SILOAM', 'MEDICAL']),
+    ],
+    'Consumer Cyclicals': [
+        ('Retail', ['RITEL', 'RETAIL', 'SUPERMARKET', 'DEPARTEMEN', 'STORE', 'MATAHARI', 'RAMAYANA']),
+        ('Entertainment', ['HIBURAN', 'ENTERTAINMENT', 'MEDIA', 'FILM', 'TELEVISI', 'TV', 'BROADCAST']),
+        ('Hospitality', ['HOTEL', 'RESORT', 'PARIWISATA', 'TOURISM', 'RESTORAN', 'RESTAURANT']),
+        ('Fashion & Lifestyle', ['FASHION', 'MUSTIKA', 'ASPIRASI', 'HIDUP']),
+        ('Property Developer', ['PROPERTI', 'PROPERTY', 'REALTY', 'LAND', 'TANAH', 'GEDUNG', 'BUILDING', 'APARTEMEN', 'APARTMENT']),
+    ],
+    'Healthcare': [
+        ('Hospital', ['RUMAH SAKIT', 'HOSPITAL', 'SILOAM', 'MITRA KELUARGA']),
+        ('Pharmaceutical', ['FARMASI', 'PHARMA', 'OBAT', 'KALBE', 'DARYA VARIA']),
+        ('Medical Devices', ['ALAT KESEHATAN', 'MEDICAL', 'DIAGNOSTIK']),
+        ('Laboratory', ['LABORATORIUM', 'LAB', 'PRODIA']),
+    ],
+    'Technology': [
+        ('Software', ['SOFTWARE', 'TEKNOLOGI', 'TECHNOLOGY', 'INFORMATIKA', 'IT ']),
+        ('Digital Services', ['DIGITAL', 'ONLINE', 'PLATFORM', 'GOTO', 'E-COMMERCE']),
+        ('Hardware & Devices', ['KOMPUTER', 'COMPUTER', 'HARDWARE', 'ELEKTRONIK']),
+        ('Telecommunication', ['TELEKOMUNIKASI', 'TELKOM', 'TELEKOM', 'DATA', 'NETWORK', 'FIBER']),
+        ('Media & Broadcasting', ['MEDIA', 'TELEVISI', 'TV', 'BROADCAST', 'GRAPHIA', 'CITRA']),
+    ],
+    'Infrastructure': [
+        ('Telecommunication', ['TELEKOMUNIKASI', 'TELKOM', 'TELEKOM', 'TOWER', 'FIBER', 'DATA', 'NETWORK']),
+        ('Toll Road', ['JALAN TOL', 'TOLL ROAD', 'TOL']),
+        ('Port & Harbor', ['PELABUHAN', 'PORT', 'HARBOR']),
+        ('Airport', ['BANDARA', 'AIRPORT']),
+        ('Logistics', ['LOGISTIK', 'LOGISTICS', 'KURIR', 'DELIVERY']),
+        ('Utility', ['UTILITY', 'AIR', 'WATER', 'LISTRIK', 'POWER', 'ENERGI']),
+    ],
+    'Transportation': [
+        ('Shipping', ['PELAYARAN', 'SHIPPING', 'KAPAL', 'SHIP', 'LAUT', 'MARINE']),
+        ('Aviation', ['PENERBANGAN', 'AVIATION', 'MASKAPAI', 'AIRLINE']),
+        ('Land Transport', ['KERETA', 'TRAIN', 'TAXI', 'BUS', 'SARANA']),
+        ('Logistics', ['LOGISTIK', 'LOGISTICS', 'KARGO', 'CARGO', 'ANCARA']),
+    ],
+    'Property & Real Estate': [
+        ('Property Development', ['PROPERTI', 'PROPERTY', 'DEVELOPMENT', 'DEVELOPER', 'REALTY', 'KAWASAN', 'PURI', 'GREEN']),
+        ('Real Estate', ['REAL ESTATE', 'TANAH', 'LAND', 'RUMAH']),
+        ('REIT', ['REIT', 'DANA INVESTASI', 'PROPERTI']),
+        ('Building Management', ['GEDUNG', 'BUILDING', 'APARTEMEN', 'APARTMENT', 'KOMMUTER', 'COMMUTER']),
+    ],
+    'Energy & Mineral': [
+        ('Coal Mining', ['ARCHI', 'ATLAS', 'RESOURCES', 'TAMBANG', 'MINING']),
+        ('Oil & Gas', ['ENERGY', 'ENERGI', 'MINYAK', 'GAS']),
+    ],
+    'Investment Services': [
+        ('Investment', ['ASHMORE', 'INVESTMENT', 'INVESTASI', 'ASSET MANAGEMENT']),
+        ('Financial Advisory', ['ADVISORY', 'KONSULTAN', 'SECURITIES']),
     ],
 }
 
@@ -239,7 +311,95 @@ def classify_all_missing():
         db.close()
 
 
+def _industry_keyword_fallback(ticker: str, name: str, sector: str) -> str | None:
+    """Fallback industry classification using name keywords within a given sector."""
+    if not name:
+        return None
+
+    name_upper = name.upper()
+    sector_industries = INDUSTRY_KEYWORDS.get(sector, [])
+
+    for ind_name, ind_keywords in sector_industries:
+        if any(kw in name_upper for kw in ind_keywords):
+            return ind_name
+
+    return None
+
+
+def classify_industries():
+    """Classify industry (sub-sector) for stocks that have sector but no industry.
+
+    Strategy:
+    1. Query stocks with sector set but industry missing
+    2. Try ticker overrides first
+    3. Fallback: keyword-based industry matching
+    4. If still not found, use sector->default industry mapping
+    """
+    db = SessionLocal()
+    try:
+        # Stocks that have sector but no industry
+        stocks = db.query(Stock).filter(
+            Stock.sector.isnot(None),
+            Stock.sector != '',
+            (Stock.industry.is_(None)) | (Stock.industry == ''),
+        ).order_by(Stock.ticker).all()
+
+        logger.info(f"Found {len(stocks)} stocks with sector but no industry")
+
+        updated = 0
+        skipped = 0
+
+        for stock in stocks:
+            ticker_base = stock.ticker.replace('.JK', '')
+
+            # 1. Check ticker overrides first
+            if ticker_base in TICKER_OVERRIDES:
+                _, industry = TICKER_OVERRIDES[ticker_base]
+                if industry:
+                    stock.industry = industry
+                    updated += 1
+                    logger.info(f"[OVERRIDE] {stock.ticker}: {stock.sector} → {industry}")
+                    continue
+
+            # 2. Keyword-based industry matching for stocks in this sector
+            industry = _industry_keyword_fallback(ticker_base, stock.name, stock.sector)
+            if industry:
+                stock.industry = industry
+                updated += 1
+                logger.info(f"[KEYWORD] {stock.ticker}: {stock.sector} → {industry}")
+                continue
+
+            # 3. Use default industry per sector if available
+            sector_industries = INDUSTRY_KEYWORDS.get(stock.sector, [])
+            if sector_industries:
+                default_ind = sector_industries[0][0]
+                stock.industry = default_ind
+                updated += 1
+                logger.info(f"[DEFAULT] {stock.ticker}: {stock.sector} → {default_ind}")
+            else:
+                skipped += 1
+                logger.debug(f"[SKIP] {stock.ticker}: no industry mapping for sector '{stock.sector}'")
+
+        db.commit()
+        logger.info(f"Industry classification done: {updated} updated, {skipped} skipped")
+
+        return {
+            'updated': updated,
+            'skipped': skipped,
+            'total': len(stocks),
+        }
+
+    except Exception as e:
+        logger.error(f"Error classifying industries: {e}")
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     result = classify_all_missing()
-    print(f"Done: {result['classified']} classified, {result['unclassified']} unclassified out of {result['total']}")
+    print(f"Sector classify done: {result['classified']} classified, {result['unclassified']} unclassified out of {result['total']}")
+    result2 = classify_industries()
+    print(f"Industry classify done: {result2['updated']} updated, {result2['skipped']} skipped out of {result2['total']}")

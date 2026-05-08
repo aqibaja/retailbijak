@@ -161,3 +161,217 @@ def sector_list(db: Session = Depends(get_db)):
     return {
         'sectors': [{'name': r[0], 'count': r[1]} for r in rows],
     }
+
+
+@router.get('/api/sectors/{sector}')
+def sector_detail(sector: str, db: Session = Depends(get_db)):
+    """Return sector detail with industry breakdown.
+
+    Groups stocks by industry within the sector and computes avg returns.
+    """
+    from sqlalchemy import func as sa_func
+
+    sector_normalized = sector.replace('-', ' ').strip()
+
+    # Get all stocks in this sector
+    stocks = db.query(
+        Stock.ticker, Stock.name, Stock.sector, Stock.industry
+    ).filter(
+        sa_func.upper(Stock.sector) == sa_func.upper(sector_normalized),
+        Stock.sector.isnot(None),
+        Stock.sector != '',
+    ).all()
+
+    if not stocks:
+        return {'sector': sector_normalized, 'count': 0, 'industry_breakdown': []}
+
+    # Build industry → stocks mapping
+    from collections import defaultdict
+    industry_map = defaultdict(list)
+    for s in stocks:
+        ind = s.industry.strip() if s.industry else 'Unknown'
+        industry_map[ind].append(s.ticker)
+
+    # Get latest close for each ticker
+    today = datetime.utcnow().date()
+    periods = {
+        '1d': today - timedelta(days=3),
+        '5d': today - timedelta(days=9),
+        '1m': today - timedelta(days=35),
+        '3m': today - timedelta(days=95),
+    }
+
+    latest_close_subq = db.query(
+        OHLCVDaily.ticker,
+        func.max(OHLCVDaily.date).label('max_date')
+    ).filter(OHLCVDaily.ticker.in_([s.ticker for s in stocks])).group_by(OHLCVDaily.ticker).subquery()
+
+    latest_closes = db.query(
+        OHLCVDaily.ticker,
+        OHLCVDaily.date,
+        OHLCVDaily.close,
+    ).join(
+        latest_close_subq,
+        (OHLCVDaily.ticker == latest_close_subq.c.ticker) &
+        (OHLCVDaily.date == latest_close_subq.c.max_date)
+    ).all()
+
+    latest_close_map = {r.ticker: {'date': r.date, 'close': r.close} for r in latest_closes}
+
+    industry_breakdown = []
+    for ind_name, tickers in sorted(industry_map.items()):
+        stock_list = []
+        total_return = {'1d': 0.0, '5d': 0.0, '1m': 0.0, '3m': 0.0}
+        stock_count = 0
+
+        for ticker in tickers:
+            latest = latest_close_map.get(ticker)
+            if not latest or not latest['close'] or latest['close'] == 0:
+                continue
+
+            hist_closes = {}
+            for period_name, cutoff_date in periods.items():
+                hist = db.query(OHLCVDaily.close).filter(
+                    OHLCVDaily.ticker == ticker,
+                    OHLCVDaily.date <= cutoff_date,
+                    OHLCVDaily.close.isnot(None),
+                ).order_by(OHLCVDaily.date.desc()).first()
+                if hist and hist[0] and hist[0] > 0:
+                    hist_closes[period_name] = hist[0]
+
+            if not hist_closes:
+                continue
+
+            latest_close = latest['close']
+            stock_entry = {
+                'ticker': ticker,
+                'close': latest_close,
+                'returns': {},
+            }
+
+            for period_name, hist_close in hist_closes.items():
+                ret = ((latest_close - hist_close) / hist_close) * 100
+                stock_entry['returns'][period_name] = round(ret, 2)
+                total_return[period_name] += ret
+
+            stock_count += 1
+            stock_list.append(stock_entry)
+
+        # Sort stocks by 1d return desc
+        stock_list.sort(key=lambda x: x['returns'].get('1d', 0), reverse=True)
+
+        avg_returns = {}
+        for period_name in periods:
+            if stock_count > 0:
+                avg_returns[period_name] = round(total_return[period_name] / stock_count, 2)
+            else:
+                avg_returns[period_name] = 0
+
+        industry_breakdown.append({
+            'industry': ind_name,
+            'count': stock_count,
+            'avg_returns': avg_returns,
+            'stocks': stock_list,
+        })
+
+    # Sort industries by count desc
+    industry_breakdown.sort(key=lambda x: x['count'], reverse=True)
+
+    return {
+        'sector': sector_normalized,
+        'total_stocks': len(stocks),
+        'industry_breakdown': industry_breakdown,
+        'updated_at': str(today),
+    }
+
+
+@router.get('/api/industries')
+def industries_list(db: Session = Depends(get_db)):
+    """Return list of all industries with stock count and avg performance."""
+    from collections import defaultdict
+
+    # Get all stocks with industry data
+    stocks = db.query(
+        Stock.ticker, Stock.name, Stock.sector, Stock.industry
+    ).filter(
+        Stock.industry.isnot(None),
+        Stock.industry != '',
+    ).all()
+
+    # Group by industry
+    industry_map = defaultdict(lambda: {'tickers': [], 'sectors': set()})
+    for s in stocks:
+        ind = s.industry.strip() if s.industry else 'Unknown'
+        industry_map[ind]['tickers'].append(s.ticker)
+        industry_map[ind]['sectors'].add(s.sector.strip() if s.sector else 'Unknown')
+
+    # Get latest close data
+    today = datetime.utcnow().date()
+    periods = {
+        '1d': today - timedelta(days=3),
+        '5d': today - timedelta(days=9),
+        '1m': today - timedelta(days=35),
+        '3m': today - timedelta(days=95),
+    }
+
+    all_tickers = [s.ticker for s in stocks]
+    latest_close_subq = db.query(
+        OHLCVDaily.ticker,
+        func.max(OHLCVDaily.date).label('max_date')
+    ).filter(OHLCVDaily.ticker.in_(all_tickers)).group_by(OHLCVDaily.ticker).subquery()
+
+    latest_closes = db.query(
+        OHLCVDaily.ticker,
+        OHLCVDaily.date,
+        OHLCVDaily.close,
+    ).join(
+        latest_close_subq,
+        (OHLCVDaily.ticker == latest_close_subq.c.ticker) &
+        (OHLCVDaily.date == latest_close_subq.c.max_date)
+    ).all()
+
+    latest_close_map = {r.ticker: {'date': r.date, 'close': r.close} for r in latest_closes}
+
+    result = []
+    for ind_name, info in sorted(industry_map.items()):
+        total_return = {'1d': 0.0, '5d': 0.0, '1m': 0.0, '3m': 0.0}
+        stock_count = 0
+
+        for ticker in info['tickers']:
+            latest = latest_close_map.get(ticker)
+            if not latest or not latest['close'] or latest['close'] == 0:
+                continue
+
+            for period_name, cutoff_date in periods.items():
+                hist = db.query(OHLCVDaily.close).filter(
+                    OHLCVDaily.ticker == ticker,
+                    OHLCVDaily.date <= cutoff_date,
+                    OHLCVDaily.close.isnot(None),
+                ).order_by(OHLCVDaily.date.desc()).first()
+                if hist and hist[0] and hist[0] > 0:
+                    ret = ((latest['close'] - hist[0]) / hist[0]) * 100
+                    total_return[period_name] += ret
+                    stock_count += 1
+
+        avg_returns = {}
+        for period_name in periods:
+            if stock_count > 0:
+                avg_returns[period_name] = round(total_return[period_name] / stock_count, 2)
+            else:
+                avg_returns[period_name] = 0
+
+        result.append({
+            'industry': ind_name,
+            'count': len(info['tickers']),
+            'sectors': sorted(info['sectors']),
+            'avg_returns': avg_returns,
+        })
+
+    # Sort by count desc
+    result.sort(key=lambda x: x['count'], reverse=True)
+
+    return {
+        'industries': result,
+        'total_industries': len(result),
+        'updated_at': str(today),
+    }

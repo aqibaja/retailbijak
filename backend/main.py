@@ -80,6 +80,7 @@ try:
     from backend.routes.news import router as news_router
     from backend.routes.scanner_stream import router as scanner_stream_router
     from backend.routes.signals import router as signals_router
+    from backend.routes.calendar import router as calendar_router
 except ModuleNotFoundError:
     from routes.user import router as user_router
     from routes.system import router as system_router
@@ -92,6 +93,7 @@ except ModuleNotFoundError:
     from routes.scanner_stream import router as scanner_stream_router
     from routes.signals import router as signals_router
     from routes.sectors import router as sectors_router
+    from routes.calendar import router as calendar_router
 
 
 @asynccontextmanager
@@ -118,6 +120,7 @@ app.include_router(news_router)
 app.include_router(scanner_stream_router)
 app.include_router(signals_router)
 app.include_router(sectors_router)
+app.include_router(calendar_router)
 
 app.add_middleware(
     CORSMiddleware,

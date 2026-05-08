@@ -2,6 +2,7 @@ import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetc
 import { observeElements, animateValue } from '../main.js?v=20260508B';
 import { nf, pf } from '../utils/format.js?v=20260508B';
 import { ssSet } from '../utils/storage.js?v=20260508B';
+import { loadTodayEvents } from './calendar.js?v=20260508A';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -137,6 +138,8 @@ export async function renderDashboard(root) {
         </div>
       </div>
     </div>
+    <!-- Calendar Widget -->
+    <div class="panel" id="dash-calendar-widget" style="margin-top:14px;display:none"></div>
   </section>`;
   observeElements();
   const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
@@ -159,6 +162,7 @@ export async function renderDashboard(root) {
   // Foreign Flow card (async, non-blocking)
   loadForeignFlow();
   loadSignalWidget();
+  loadTodayEvents();
   loadBreadthWidget();
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 

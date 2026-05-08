@@ -50,6 +50,16 @@ except Exception:
             logging.getLogger(__name__).info("alert checker unavailable; skipped")
 
 try:
+    from updaters.calendar_updater import update_calendar_events
+except Exception:
+    try:
+        from backend.updaters.calendar_updater import update_calendar_events
+    except Exception:
+        def update_calendar_events():
+            logging.getLogger(__name__).info("calendar updater unavailable; skipped")
+
+
+try:
     from ai_picks import generate_and_store_daily_ai_pick_report
 except Exception:
     from backend.ai_picks import generate_and_store_daily_ai_pick_report
@@ -72,11 +82,13 @@ def init_scheduler():
     scheduler.add_job(check_alerts, trigger=CronTrigger(day_of_week='mon-fri', hour='9-15', minute='*/15', timezone=jkt_tz), id="alert_checker", replace_existing=True)
     # Sector classifier — daily 03:00 (update missing sector/industry data)
     try:
-        from updaters.sector_classifier import classify_all_missing
+        from updaters.sector_classifier import classify_all_missing, classify_industries
         scheduler.add_job(classify_all_missing, trigger=CronTrigger(hour=3, minute=0, timezone=jkt_tz), id="sector_classifier", replace_existing=True)
-        logger.info("Registered sector_classifier job (daily 03:00 WIB)")
+        scheduler.add_job(classify_industries, trigger=CronTrigger(hour=3, minute=5, timezone=jkt_tz), id="industry_classifier", replace_existing=True)
+        logger.info("Registered sector_classifier job (daily 03:00 WIB) and industry_classifier (03:05 WIB)")
     except Exception as e:
         logger.warning(f"Could not register sector_classifier: {e}")
+    scheduler.add_job(update_calendar_events, trigger=CronTrigger(hour=4, minute=0, timezone=jkt_tz), id="calendar_update", replace_existing=True)
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id="yfinance_daily_sync", replace_existing=True)
     if not scheduler.running:
