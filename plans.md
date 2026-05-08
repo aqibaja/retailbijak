@@ -15,7 +15,7 @@
 || **P3: Fitur Lanjutan** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 || **P4: Stabilitas & Kualitas** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 || **P5: Ekspansi Fitur & Inteligensi** | 🟡 96% | ▰▰▰▰▰▰▰▰▰▱ |
-|| **P6: Engagement, Visualisasi & Personalisasi** | 🟡 Berjalan | ▰▰▰▰▰▰▱▱▱▱ |
+|| **P6: Engagement, Visualisasi & Personalisasi** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
 
 ---
 
@@ -393,3 +393,8 @@ Multiple watchlists dengan nama kustom.
 | 2026-05-10 | 6.4.2 | ✅ | Update WatchlistItem — tambah group_id (FK nullable). Migration ALTER TABLE + response include group_id |
 | 2026-05-10 | 6.4.3 | ✅ | CRUD endpoints: GET/POST/PUT/DELETE /api/watchlist-groups + PUT /api/watchlist/{ticker}/group |
 | 2026-05-10 | 6.4.4 | ✅ | UI: group tabs + filter by group + manage groups dialog (create/delete). CSS: grp-tab, grp-mgr, delete-group |
+| 2026-05-10 | 6.5.1 | ✅ | Add PBV to financials stat tiles di renderMarketStatsV2 (sebelumnya sudah ada P/E, ROE, DER). Dapat fundamental dari fetchFundamental endpoint |
+| 2026-05-10 | 6.5.2 | ✅ | Related news per ticker — fetchNews(6, symbol) sudah jalan di stock_detail line 309, menampilkan di tab Berita via renderStockNewsFeed |
+| 2026-05-10 | 6.5.3 | ✅ | Key levels support/resistance — chart overlay S/R lines (stock_detail line 641-649) + panel Level Kunci (line 705) + entry plan calculator |
+| 2026-05-10 | 6.6.1 | ✅ | Dashboard widget visibility — modal atur widget (sembunyikan/tampilkan IHSG Chart, Movers, Intel, Arus Asing, AI Picks, Berita). Persist ke localStorage, reset button |
+| 2026-05-10 | 6.6.2 | ✅ | Quick actions toolbar di dashboard — Refresh (reload), Clear Cache (caches + localStorage + reload), Widget Toggle (modal visibility) |

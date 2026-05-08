@@ -36,6 +36,11 @@ export async function renderDashboard(root) {
         <div class="dash-actions dash-actions-compact">
           <a href="#screener" class="btn btn-primary dash-primary-cta">Jalankan Pemindai</a>
           <a href="#market" class="btn dash-secondary-cta">Ikhtisar Pasar</a>
+          <div class="dash-quick-actions" style="display:inline-flex;gap:4px;margin-left:8px">
+            <button class="btn btn-sm" id="dash-refresh-btn" title="Refresh semua data"><i data-lucide="refresh-cw" style="width:14px"></i></button>
+            <button class="btn btn-sm" id="dash-clear-cache-btn" title="Bersihkan cache"><i data-lucide="trash-2" style="width:14px"></i></button>
+            <button class="btn btn-sm" id="dash-widget-toggle" title="Atur widget"><i data-lucide="layout" style="width:14px"></i></button>
+          </div>
         </div>
         <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack" aria-live="polite" aria-atomic="true">
           <div class="dash-summary-card">
@@ -112,6 +117,90 @@ export async function renderDashboard(root) {
   // Foreign Flow card (async, non-blocking)
   loadForeignFlow();
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
+
+  // ─── Dashboard Quick Actions ───
+  document.getElementById('dash-refresh-btn')?.addEventListener('click', () => {
+    showToast('Me-refresh dashboard...', 'info');
+    location.reload();
+  });
+  document.getElementById('dash-clear-cache-btn')?.addEventListener('click', () => {
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(n => caches.delete(n)));
+    }
+    localStorage.clear();
+    showToast('Cache dibersihkan. Refresh halaman...', 'success');
+    setTimeout(() => location.reload(), 1000);
+  });
+  document.getElementById('dash-widget-toggle')?.addEventListener('click', () => {
+    const widgets = [
+      { id: 'dash-chart-panel', label: 'IHSG Chart', key: 'widget_chart' },
+      { id: 'dash-movers-panel', label: 'Penggerak Teratas', key: 'widget_movers' },
+      { id: 'market-intel-parent', label: 'Intelijen Pasar', key: 'widget_intel', selector: '#market-intel' },
+      { id: 'foreign-flow-card', label: 'Arus Asing', key: 'widget_foreign' },
+      { id: 'dash-ai-pick-widget', label: 'AI Picks', key: 'widget_ai' },
+      { id: 'news-container', label: 'Berita Terbaru', key: 'widget_news' },
+    ];
+    const settings = JSON.parse(localStorage.getItem('retailbijak.widget_visibility') || '{}');
+    const items = widgets.map(w => {
+      const visible = settings[w.key] !== false;
+      return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer">
+        <input type="checkbox" data-key="${w.key}" ${visible ? 'checked' : ''} style="accent-color:var(--primary-color)" />
+        <span class="text-sm">${w.label}</span>
+      </label>`;
+    }).join('');
+    const overlay = document.createElement('div');
+    overlay.id = 'stock-modal-overlay';
+    overlay.innerHTML = `<div class="modal-backdrop"></div>
+      <div class="modal-panel" style="width:min(340px,90vw)">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm strong m-0">Atur Widget Dashboard</h3>
+          <button class="btn-icon modal-close-btn"><i data-lucide="x"></i></button>
+        </div>
+        ${items}
+        <div class="flex gap-3 mt-4">
+          <button class="btn modal-cancel-btn modal-btn" id="widget-reset-btn" style="flex:1">Reset</button>
+          <button class="btn btn-primary modal-btn" id="widget-apply-btn" style="flex:1">Terapkan</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    overlay.querySelector('.modal-backdrop').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('.modal-close-btn').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#widget-reset-btn').addEventListener('click', () => {
+      localStorage.removeItem('retailbijak.widget_visibility');
+      overlay.remove();
+      location.reload();
+    });
+    overlay.querySelector('#widget-apply-btn').addEventListener('click', () => {
+      const newSettings = {};
+      overlay.querySelectorAll('input[type=checkbox]').forEach(cb => {
+        newSettings[cb.dataset.key] = cb.checked;
+      });
+      localStorage.setItem('retailbijak.widget_visibility', JSON.stringify(newSettings));
+      overlay.remove();
+      applyWidgetVisibility();
+      showToast('Tampilan dashboard diperbarui', 'success');
+    });
+  });
+  // Apply widget visibility on load
+  applyWidgetVisibility();
+}
+
+function applyWidgetVisibility() {
+  const settings = JSON.parse(localStorage.getItem('retailbijak.widget_visibility') || '{}');
+  const widgets = [
+    { el: document.querySelector('.dash-chart-panel'), key: 'widget_chart' },
+    { el: document.querySelector('.dash-movers-panel'), key: 'widget_movers' },
+    { el: document.getElementById('market-intel')?.closest('.panel'), key: 'widget_intel' },
+    { el: document.getElementById('foreign-flow-card')?.closest('.panel'), key: 'widget_foreign' },
+    { el: document.getElementById('dash-ai-pick-widget')?.closest('.panel'), key: 'widget_ai' },
+    { el: document.getElementById('news-container')?.closest('.panel'), key: 'widget_news' },
+  ];
+  widgets.forEach(w => {
+    if (w.el && settings[w.key] === false) {
+      w.el.style.display = 'none';
+    }
+  });
 }
 
 async function loadMarketSummary() {

@@ -808,6 +808,7 @@ function renderMarketStatsV2(d, candles, tech){
     statTile('Rentang', `${money(last.high)}/${money(last.low)}`, 'sesi harian', 'metric-neutral'),
     statTile('ROE', roeLabel, hasFundamental ? 'profitabilitas' : '', isNaN(d.roe) ? '' : d.roe > 15 ? 'metric-good' : d.roe > 5 ? 'metric-neutral' : 'metric-bad'),
     statTile('P/E', peLabel, hasFundamental ? 'valuasi' : '', d.trailing_pe ? (d.trailing_pe > 25 ? 'metric-bad' : d.trailing_pe < 12 ? 'metric-good' : 'metric-neutral') : ''),
+    statTile('P/BV', pbLabel, hasFundamental ? 'valuasi' : '', d.price_to_book ? (d.price_to_book > 3 ? 'metric-bad' : d.price_to_book < 1 ? 'metric-good' : 'metric-neutral') : ''),
     statTile('DER', derLabel, hasFundamental ? 'leverage' : '', d.debt_to_equity > 2 ? 'metric-bad' : d.debt_to_equity > 0 ? 'metric-neutral' : ''),
   ].join('');
 }
