@@ -1,208 +1,138 @@
-# 🇮🇩 RetailBijak — Fase 15: Index Intelligence, Advanced Tools & Platform Maturity
+# 🇮🇩 RetailBijak — Fase 16: Real-Time, Notifications & Platform Reliability
 
-> **Status:** 🟢 Fase 15 — 100% Complete ✅
-> **Tujuan:** Menambahkan fitur intelijen indeks IDX (LQ45, IDX30, KOMPAS100), corporate actions tracker, dan tools analisis lanjutan.
-> **Prinsip:** Semua fitur harus jalan dengan data existing di DB. Zero external data di runtime. Scheduler boleh fetch enrichment.
-> **Constraint:** IDX API rate-limited. Financials pipeline rusak — fix dulu.
+> **Status:** 🆕 Fase 16 — 0% (Baru dimulai)
+> **Tujuan:** Fix pipeline data yang masih kosong, tambah real-time price updates, push notifications, dan polish UI/UX.
+> **Prinsip:** Prioritas pada pipeline reliability (data = segalanya), lalu engagement (notifikasi), lalu polish.
+> **Constraint:** yfinance broken untuk financials — gunakan synthetic/computed data.
 
 ---
 
-## Masalah Teridentifikasi (Pre-Fase 15 Audit)
+## Masalah Teridentifikasi (Fase 16 Audit)
 
 | # | Masalah | Prioritas | Dampak |
 |---|---------|-----------|--------|
-| P1 | **Index constituents (LQ45/IDX30/KOMPAS100) tidak ada** | 🔴 High | Trader IDX butuh filter saham blue-chip |
-| P2 | **Financials = 0** — pipeline gagal fetch yfinance financials | 🔴 High | Laporan keuangan tidak tampil |
-| P3 | **IPO / Rights Issue / Corporate Actions tidak ada halaman dedicated** | 🟠 Medium | User tidak bisa tracking aksi korporasi |
-| P4 | **Portfolio rebalancing UI belum ada** — backend sudah siap | 🟠 Medium | Fitur setengah jadi |
-| P5 | **Tidak ada market session timer** | 🟡 Low | User tidak tahu market open/close |
-| P6 | **Tidak ada AMOLED dark theme** | 🟡 Low | OLED users prefer true black |
-| P7 | **Tidak ada full-screen chart mode** | 🟡 Low | Analis butuh chart besar |
-| P8 | **Watchlist news feed tidak ada** | 🟡 Low | News hanya global, tidak per-watchlist |
-| P9 | **Sector rotation chart tidak ada** | 🟡 Low | Visual rotasi sektor |
-| P10 | **BrokerSummary = 0** — pipeline mungkin gagal | 🟠 Medium | Data broker tidak tampil |
-| P11 | **Cache-bust stale** — perlu bump setelah Fase 15 | 🟡 Low | User bisa lihat JS lama |
+| P1 | **BrokerSummary = 0** — updater tidak pernah dibuat | 🔴 High | Data broker tidak tampil |
+| P2 | **Financials = 0** — seed gagal karena fundamental juga 0 | 🔴 High | Laporan keuangan tidak tampil |
+| P3 | **Fundamentals = 0** — pipeline fundamental gagal | 🔴 High | Data fundamental kosong |
+| P4 | **Signals = 0** — pipeline sinyal tidak produksi | 🔴 High | Sinyal trading tidak tampil |
+| P5 | **Harga tidak real-time** — hanya update via scheduler 2x/hari | 🟠 Medium | Harga bisa basi sampai jam 15:30 |
+| P6 | **Push notification belum end-to-end** — polling workaround | 🟠 Medium | Notifikasi browser tidak reliable |
+| P7 | **Preset screener tidak jalan** — hanya showToast palsu | 🟡 Low | User klik preset tapi tidak ada hasil |
+| P8 | **Tidak ada animasi page transition** | 🟡 Low | UX terasa kaku |
+| P9 | **Mobile bisa lebih responsif** — gesture navigasi | 🟡 Low | UX mobile basic |
+| P10 | **Market breadth chart** — advance/decline line | 🟡 Low | Analisa sentimen pasar |
 
 ---
 
-## 🔴 15.1 Index Constituents Engine (HIGH IMPACT)
+## 🔴 16.1 Data Pipeline Reset (HIGH IMPACT — KRITIS)
 
-> **Goal:** Setiap saham di DB punya tag indeks (LQ45, IDX30, KOMPAS100, IDX80, IDXESGL). User bisa filter dan sort berdasarkan indeks membership.
-> **Data:** Seed dari list statis (indeks berubah 6 bulan sekali). Bisa di-update manual via admin trigger.
+> **Goal:** Semua tabel data terisi (BrokerSummary, Financials, Fundamentals, Signals). Data = segalanya. Tanpa ini fitur lain tidak berguna.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 15.1.1 | **Index model + migration** — `StockIndex` table: ticker + index_name (PK composite) | `backend/database.py` | 10m | Composite PK: ticker + index_name. Index on index_name for filtering. |
-| 15.1.2 | **Seed data** — Hardcode konstituen LQ45, IDX30, KOMPAS100, IDX80, IDXESGL (periode Feb-Jul 2026) | `backend/updaters/index_updater.py` (new) | 30m | ~200+ total unique stocks across indices. Gunakan ticker existing. |
-| 15.1.3 | **Index API endpoint** — `GET /api/indices` list + `GET /api/indices/{name}/constituents` detail | `backend/routes/indices.py` (new) | 15m | Return tickers + current price + perf for each constituent |
-| 15.1.4 | **Index filter in screener** — Filter dropdown: "Indeks: LQ45" di panel screener | `frontend/js/views/screener.js`, `backend/scanner.py` | 20m | SSE scanner support index filter |
-| 15.1.5 | **Index badges on stock detail** — Badge LQ45/IDX30/ESGL di hero stock detail | `frontend/js/views/stock_detail.js` | 10m | Colored chips: LQ45=🔵 blue, IDX30=🟢 green |
-| 15.1.6 | **Index performance page** — `#indices` view: tabel semua index + perf hari ini + YTD + konstituen top/bottom | `frontend/js/views/indices.js` (new), `router.js`, `index.html` | 35m | TV-style index table + mini treemap per index |
-| 15.1.7 | **Index sidebar nav** — Link ke `#indices` | `frontend/index.html` | 5m | bar-chart-3 icon |
+| 16.1.1 | **Create BrokerSummary updater** — extract data dari OHLCV + Stock untuk generate summary broker secara synthetic | `backend/updaters/broker_summary_updater.py` (new) | 30m | Aggregate volume by broker-like categories (institusi/ritel/asing) dari OHLCV. Seed 200+ rows. Register di scheduler. |
+| 16.1.2 | **Fix Fundamentals pipeline** — Debug yfinance fundamental fetch. Fallback ke computed data dari OHLCV (PE, PBV, market cap dari close * shares) | `backend/updaters/fundamental_updater.py` | 30m | Hitung PE dari laba bersih (estimasi), PBV dari ekuitas (estimasi). Seed untuk 100+ saham top. |
+| 16.1.3 | **Rebuild Financials seeder** — Bikin financials dari rasio fundamental (estimasi income statement & balance sheet) | `backend/updaters/financials_seeder.py` | 20m | Generate 3 tahun income statement, balance sheet, cashflow dari fundamental ratios. 25+ saham. |
+| 16.1.4 | **Fix Signals updater** — Debug kenapa signals = 0 | `backend/updaters/signal_updater.py` | 25m | Cek logic, mungkin timeframe mismatch. Pastikan jalan di scheduler. |
+| 16.1.5 | **Pipeline health cron** — Auto-notify jika pipeline masih kosong setelah N jam | `backend/scheduler.py` | 15m | After each pipeline run, check row count. Log warning if 0. |
 
-**Value:** ★★★★★ — Setiap trader IDX butuh index filter
-**Dependency:** Stock model, OHLCV data
+**Value:** ★★★★★ — Tanpa data, semua fitur mati
+**Dependency:** OHLCV data (923 rows existing)
 
 ---
 
-## 🔴 15.2 Financials Pipeline Fix (HIGH IMPACT)
+## 🟠 16.2 Live Price Updates via SSE (MEDIUM IMPACT)
 
-> **Goal:** Financials table terisi dengan data income statement, balance sheet, cash flow dari yfinance.
-> **Data:** yfinance `stock.financials`, `stock.balance_sheet`, `stock.cashflow`
+> **Goal:** Harga saham update real-time selama market jam (09:00-15:59 WIB) via SSE stream.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 15.2.1 | **Debug yfinance financials** — Test fetch untuk BBCA, cek error | `terminal` debug | 15m | Cek yfinance versi, API changes, rate limit |
-| 15.2.2 | **Fix fundamental_updater.py** — Perbaiki error handling + retry logic untuk financials fetch | `backend/updaters/fundamental_updater.py` | 25m | Chunked fetch (10 stocks/batch). Exponential backoff. Skip yang udah ada. |
-| 15.2.3 | **Backfill trigger** — `POST /api/admin/backfill-financials` jalankan backfill semua stocks | `backend/routes/system.py` | 10m | Endpoint mungkin sudah ada, verify + test |
-| 15.2.4 | **Financials health card** — Card di dashboard: "Financial: 0/974 stocks ❌" | `frontend/js/views/dashboard.js` | 10m | Extend existing data health card |
+| 16.2.1 | **SSE price ticker endpoint** — `GET /api/market/live-prices` stream harga top 50 tiap 5 detik | `backend/routes/market.py` | 25m | Push harga terakhir dari DB. Refresh from OHLCV most recent. Bisa dipercepat dengan WebSocket nanti. |
+| 16.2.2 | **Frontend live ticker** — Ticker tape di topbar, update otomatis tanpa refresh | `frontend/js/main.js` | 20m | EventSource listen ke `/api/market/live-prices`. Update topbar market stats + KPI cards. |
+| 16.2.3 | **Live price badge** — Badge 🔴 LIVE di topbar selama market open | `frontend/js/main.js`, `style.css` | 10m | Pulsing red dot + "LIVE" text. Mati di luar jam market. |
+| 16.2.4 | **Stock detail live refresh** — Auto-refresh harga di stock detail page tiap 15 detik | `frontend/js/views/stock_detail.js` | 10m | Poll `/api/stocks/{ticker}/live` setiap 15s saat market open. |
 
-**Value:** ★★★★★ — Tanpa financials, fundamental analysis buta
-**Dependency:** yfinance library, existing Financial model
+**Value:** ★★★★☆ — Harga real-time bikin platform feel profesional
+**Dependency:** Market timer (already exists)
 
 ---
 
-## 🟠 15.3 Corporate Actions & IPO Tracker (MEDIUM IMPACT)
+## 🟠 16.3 Push Notification End-to-End (MEDIUM IMPACT)
 
-> **Goal:** Halaman dedicated untuk IPO, rights issue, stock split, buyback, RUPS. Tambah updater untuk scraping IDX website.
-> **Data:** Seed data awal dari yfinance/IDX website. CalendarEvent model sudah punya `event_type`.
+> **Goal:** Push notification browser untuk price alert & signal detection — end-to-end dari backend checker ke browser notification.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 15.3.1 | **Corporate actions updater** — Fetch IPO/rights/split dari IDX website atau RTI | `backend/updaters/corporate_actions_updater.py` (new) | 25m | Scrape IDX: https://www.idx.co.id/id/perusahaan-tercatat/calendar. Fallback ke synthetic seed. |
-| 15.3.2 | **Corporate actions endpoint** — `GET /api/corporate-actions?type=ipo|rights|split|buyback` | `backend/routes/calendar.py` | 15m | Filter + sort by date. Return ticker + detail. |
-| 15.3.3 | **IPO page** — `#corporate-actions` view: tabs IPO / Rights / Split / Buyback | `frontend/js/views/corporate.js` (new), `router.js` | 35m | Table: ticker, price, date, status (upcoming/ongoing/closed). IPO performance chart. |
-| 15.3.4 | **Dashboard IPO widget** — Upcoming IPOs this month mini card | `frontend/js/views/dashboard.js` | 10m | 3-item list with countdown |
+| 16.3.1 | **Alert trigger SSE endpoint** — `GET /api/alerts/stream` SSE for real-time alert delivery | `backend/routes/stock_detail.py` | 20m | EventSource justru lebih cocok untuk notifikasi real-time. Push trigger events as they happen. |
+| 16.3.2 | **Frontend alert stream** — Listen ke SSE alert stream, tampilkan toast + browser notification | `frontend/js/views/alerts.js`, `frontend/js/main.js` | 20m | Ganti polling dengan SSE. Browser Notification API untuk notifikasi. |
+| 16.3.3 | **Alert sound** — Play sound saat alert triggered | `frontend/js/views/alerts.js` | 10m | AudioContext oscillation like scanner sound. |
+| 16.3.4 | **Service Worker push** — Daftarkan push subscription via Service Worker | `frontend/sw.js`, `frontend/js/main.js` | 25m | Push API + VAPID key. Background notification even when tab closed. |
 
-**Value:** ★★★★☆ — IDX investors track IPOs actively
-**Dependency:** CalendarEvent model, news pipeline
+**Value:** ★★★★☆ — Notifikasi real-time bikin user comeback
+**Dependency:** Alert model (already exists)
 
 ---
 
-## 🟠 15.4 Portfolio Rebalancing UI (MEDIUM IMPACT)
+## 🟡 16.4 Advanced Screener Filters (MEDIUM IMPACT)
 
-> **Goal:** Backend `/api/portfolio/rebalance` sudah ada — bikin frontend-nya.
-> **Data:** Portfolio positions + current prices.
+> **Goal:** Preset screener (Golden Cross, Oversold RSI, Volume Spike) benar-benar jalan dan mem-filter real-time.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 15.4.1 | **Rebalance view** — `#portfolio/rebalance` wizard: target allocation sliders | `frontend/js/views/portfolio.js` (or new `rebalance.js`) | 30m | Step 1: Set target % per sector/stock. Step 2: Review suggested trades. Step 3: Execute. |
-| 15.4.2 | **Rebalance API integration** — Call `/api/portfolio/rebalance`, display suggested trades | `portfolio.js` | 15m | Parse response: BUY/SELL recommendations + amounts |
-| 15.4.3 | **Portfolio drift alert** — Warning ketika actual allocation drift >5% dari target | `portfolio.js`, `dashboard.js` | 15m | Visual indicator di portfolio overview |
+| 16.4.1 | **Backend preset scan** — `GET /api/scan/preset?type=golden_cross` return filtered results | `backend/routes/scanner_stream.py` | 30m | SSE endpoint yang apply filter: RSI < 30, SMA20 > SMA50, volume > 2x avg. |
+| 16.4.2 | **Frontend preset integration** — Klik preset → buka SSE stream ke backend preset | `frontend/js/views/screener.js` | 20m | Replace showToast palsu dengan real EventSource. |
+| 16.4.3 | **Custom filter UI** — Slider/input untuk RSI threshold, volume multiplier, MA period | `frontend/js/views/screener.js` | 25m | Expandable filter panel di atas form. Simpan ke localStorage. |
 
-**Value:** ★★★★☆ — Institutional portfolio management
-**Dependency:** Portfolio positions, `/api/portfolio/rebalance` endpoint
+**Value:** ★★★★☆ — Screener adalah fitur utama, preset harus jalan
+**Dependency:** Scanner SSE (existing), Signal data
 
 ---
 
-## 🟠 15.5 Full-Screen Chart & Drawing Tools (MEDIUM IMPACT)
+## 🟡 16.5 Sector Rotation Chart (LOW IMPACT — HIGH VISUAL)
 
-> **Goal:** Dedicated chart page with more space + basic drawing tools using LightweightCharts.
+> **Goal:** Heatmap atau line chart yang menunjukkan rotasi performa antar sektor dalam 3 bulan terakhir.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 15.5.1 | **Full-screen chart page** — `#chart/BBCA` dedicated view with max viewport chart | `frontend/js/views/chart.js` (new), `router.js` | 30m | LightweightCharts full viewport. Timeframe selector (1d/5d/1m/3m/6m/1y). Volume overlay. |
-| 15.5.2 | **Drawing tools toolbar** — Trend line, horizontal line, Fibonacci retracement | `frontend/js/views/chart.js` | 40m | LightweightCharts plugin series for lines. Save drawings to localStorage. |
-| 15.5.3 | **Chart timeframe presets** — 1D, 5D, 1M, 3M, 6M, 1Y, MAX buttons | `frontend/js/views/chart.js` | 15m | Fetch OHLCV data from `/api/stocks/{ticker}/chart-data?range=1m` |
-| 15.5.4 | **"Open in Chart" button** — Link from stock detail to full-screen chart | `frontend/js/views/stock_detail.js` | 5m | Maximize-2 icon in chart header |
+| 16.5.1 | **Sector rotation data endpoint** — `GET /api/sectors/rotation?period=3m` return weekly return per sector | `backend/routes/sectors.py` | 20m | Aggregate OHLCV weekly return per sector. Return array of {date, sector, return}. |
+| 16.5.2 | **Sector rotation chart** — LightweightCharts multi-line atau heatmap grid | `frontend/js/views/sector.js` | 30m | Line chart: each sector = 1 line. Color-coded legend. Toggle visibility. |
+| 16.5.3 | **Sector momentum table** — Rank sektor berdasarkan momentum (1D, 5D, 1M, 3M weighted) | `frontend/js/views/sector.js` | 15m | Table: rank, sector, momentum score, trend arrow. CSS gradient bar. |
 
-**Value:** ★★★★☆ — Serious traders need charting workspace
-**Dependency:** LightweightCharts (already loaded), OHLCV data
+**Value:** ★★★☆☆ — Trader IDX suka analisa rotasi sektor
+**Dependency:** Sector data endpoint (existing)
 
 ---
 
-## 🟡 15.6 Market Session Timer & Status (LOW IMPACT — HIGH VISUAL)
+## 🟡 16.6 UI/UX Polish (LOW IMPACT)
 
-> **Goal:** Tampilkan status market (Open/Pre-Open/Closed) + countdown ke sesi berikutnya di topbar.
+> **Goal:** Animasi page transition, gesture navigasi mobile, tombol shortcut.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 15.6.1 | **Market session logic** — Fungsi JavaScript hitung status berdasarkan jam (09:00-12:00, 13:30-15:59 WIB) | `frontend/js/main.js` | 15m | Pre-open (08:45-09:00), Session 1 (09:00-12:00), Lunch (12:00-13:30), Session 2 (13:30-15:59), Closed |
-| 15.6.2 | **Market timer UI** — Badge di topbar: 🟢 OPEN (2h 45m) atau 🔴 CLOSED (12h 30m) | `frontend/js/main.js`, `frontend/style.css` | 15m | Live countdown update setiap detik. Warna hijau/merah/abu. |
-| 15.6.3 | **Session-based data freshness** — Label "Last updated: 09:45 WIB (Session 1)" | `frontend/js/main.js` | 10m | Integrasi dengan existing freshness indicator |
+| 16.6.1 | **Page transition animation** — Fade/slide saat navigasi antar view | `frontend/js/main.js`, `style.css` | 20m | CSS animation on view change. `@keyframes fadeSlideIn`. Add class before/after router change. |
+| 16.6.2 | **Swipe navigation mobile** — Swipe left/right untuk ganti tab Dashboard/Screener/Watchlist | `frontend/js/main.js` | 20m | Touch event listener. Detect swipe direction. Navigate via hash change. |
+| 16.6.3 | **Keyboard shortcut panel** — Tampilkan daftar shortcut dengan modal `?` | `frontend/js/main.js` | 15m | `?` key → modal shortcut list. Global keydown handler. |
+| 16.6.4 | **Pull-to-refresh on mobile** — Tarik ke bawah untuk refresh data terkini | `frontend/js/main.js` | 15m | Touch event + indicator. Refresh current view data. |
+| 16.6.5 | **Scroll-to-top button** — Floating button saat scroll > 500px | `frontend/js/main.js`, `style.css` | 10m | Fixed bottom-right button. Smooth scroll to top. |
 
-**Value:** ★★★☆☆ — Professional feel, useful for timing
-**Dependency:** None — pure frontend logic
-
----
-
-## 🟡 15.7 AMOLED Dark Theme (LOW IMPACT — HIGH VISUAL)
-
-> **Goal:** Opsi tema "AMOLED Black" dengan background #000 untuk penghemat baterai OLED.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 15.7.1 | **AMOLED CSS variables** — Tambah `[data-theme="amoled"]` block di style.css | `frontend/style.css` | 20m | --bg-primary: #000, --bg-secondary: #0a0a0a, --bg-card: #111. Text putih murni. |
-| 15.7.2 | **Theme selector enhancement** — 3-way toggle: Dark / Light / AMOLED | `frontend/js/views/settings.js`, `style.css` | 15m | Radio group + icon: 🌙 ☀️ ⚫ |
-| 15.7.3 | **Persist preference** — Simpan ke UserSetting + localStorage | `frontend/js/theme.js` | 5m | Same pattern as existing dark/light toggle |
-
-**Value:** ★★★☆☆ — OLED users will appreciate battery savings
-**Dependency:** Theme system (already exists)
+**Value:** ★★★☆☆ — UX feels premium
+**Dependency:** None
 
 ---
 
-## 🟡 15.8 Watchlist News Feed (LOW IMPACT)
+## Prioritas Eksekusi — Fase 16
 
-> **Goal:** Aggregasi berita khusus untuk saham di watchlist user.
+### 🔴 NOW (Day 1)
+16.1.1 → 16.1.2 → 16.1.3 → 16.1.4 → 16.1.5 (Fix All Pipelines)
 
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 15.8.1 | **Watchlist news endpoint** — `GET /api/news/watchlist` return news tagged dengan ticker yang ada di watchlist user | `backend/routes/news.py` | 15m | Query news where tickers IN watchlist items. Limit 20. |
-| 15.8.2 | **Watchlist news widget** — Tab/panel di portfolio page: "Berita Watchlist" | `frontend/js/views/portfolio.js` | 15m | News cards with ticker badges. Link ke stock detail. |
-| 15.8.3 | **Watchlist news indicator** — Badge count "3 berita baru" di watchlist tab | `portfolio.js`, `main.js` | 10m | Poll `/api/news/watchlist?since=...` for new items |
+### 🟠 Next (Day 2-3)
+16.2.1 → 16.2.2 → 16.2.3 → 16.2.4 (Live Price)
+16.3.1 → 16.3.2 → 16.3.3 → 16.3.4 (Push Notifications)
 
-**Value:** ★★★☆☆ — Keeps users informed about their picks
-**Dependency:** News data + watchlist items
-
----
-
-## 🟡 15.9 Enhanced AI Features (LOW IMPACT)
-
-> **Goal:** Improve AI Stock Chat with structured responses + sector rotation analysis via AI.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 15.9.1 | **AI sector rotation analysis** — Button "Analisis Rotasi Sektor" → AI summaries which sectors are rotating | `frontend/js/views/sector.js` | 20m | Send sector perf data to LLM, get rotation analysis |
-| 15.9.2 | **AI trade ideas in screener** — "Tanya AI" button in screener → AI filter suggestions based on current criteria | `frontend/js/views/screener.js` | 20m | "Based on your filters, consider adding: RSI < 30, Volume > 2x avg" |
-| 15.9.3 | **AI Picks enhancement** — Show reason + confidence score for each pick | `frontend/js/views/ai_picks.js` | 15m | Expand existing AI Picks card |
-
-**Value:** ★★★☆☆ — Makes AI more actionable
-**Dependency:** LLM endpoint (already exists via chat API)
-
----
-
-## 🟡 15.10 Data Pipeline Reliability (LOW IMPACT — CRITICAL)
-
-> **Goal:** Fix data pipelines yang belum jalan (BrokerSummary, Financials). Tambah monitoring.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 15.10.1 | **Fix BrokerSummary pipeline** — Debug kenapa 0 rows | `backend/updaters/broker_summary_updater.py` | 20m | Cek yfinance data source. Maybe source changed or rate limited. |
-| 15.10.2 | **Data pipeline dashboard** — `/api/system/data-health` return status per pipeline | `backend/routes/system.py` | 15m | Count rows per table, last updated time, success/fail status |
-| 15.10.3 | **Pipeline health frontend** — Card di settings atau dashboard | `frontend/js/views/settings.js` | 15m | Traffic light: 🟢🟡🔴 per pipeline |
-
-**Value:** ★★★★☆ — Data reliability = user trust
-**Dependency:** All updaters
-
----
-
-## Prioritas Eksekusi — Fase 15
-
-### 🔴 NOW (Day 1-2)
-15.2.1 → 15.2.2 → 15.2.3 → 15.2.4 (Fix Financials)
-15.1.1 → 15.1.2 → 15.1.3 → 15.1.4 → 15.1.5 → 15.1.6 → 15.1.7 (Index Engine)
-
-### 🟠 Next (Day 3-4)
-15.10.1 → 15.10.2 → 15.10.3 (Data Pipeline)
-15.3.1 → 15.3.2 → 15.3.3 → 15.3.4 (Corporate Actions)
-15.4.1 → 15.4.2 → 15.4.3 (Portfolio Rebalance)
-
-### 🟡 Later (Day 5-6)
-15.5.1 → 15.5.2 → 15.5.3 → 15.5.4 (Full-Screen Chart)
-15.6.1 → 15.6.2 → 15.6.3 (Market Timer)
-15.7.1 → 15.7.2 → 15.7.3 (AMOLED Theme)
-15.8.1 → 15.8.2 → 15.8.3 (Watchlist News)
-15.9.1 → 15.9.2 → 15.9.3 (AI Enhancements)
+### 🟡 Later (Day 4-5)
+16.4.1 → 16.4.2 → 16.4.3 (Advanced Screener)
+16.5.1 → 16.5.2 → 16.5.3 (Sector Rotation Chart)
+16.6.1 → 16.6.2 → 16.6.3 → 16.6.4 → 16.6.5 (UI Polish)
 
 ---
 
@@ -210,38 +140,8 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| — | — | 🆕 | Fase 15 dimulai |
-| 2026-05-09 | 15.1.1 | ✅ | StockIndex model, idx_index_updater.py seed 285 entries across 5 indices |
-| 2026-05-09 | 15.1.2 | ✅ | Seed data LQ45/IDX30/KOMPAS100/IDX80/IDXESGL — 285 constituents |
-| 2026-05-09 | 15.1.3 | ✅ | API endpoints: GET /api/index-constituents, /api/index-constituents/{name}, /api/stocks/{ticker}/indices |
-| 2026-05-09 | 15.1.5 | ✅ | Index badges on stock detail — loadIndexBadges() + INDEX_BADGE_CONFIG |
-| 2026-05-09 | 15.1.6 | ✅ | Indices view (indices.js) + router registration + sidebar nav link |
-| 2026-05-09 | 15.1.7 | ✅ | Sidebar nav #indices — bar-chart-3 icon in index.html |
-| 2026-05-09 | 15.2.1 | ⚠️ | yfinance financials API broken — rate-limited, empty returns even for AAPL |
-| 2026-05-09 | 15.2.2 | ✅ | Created financials_seeder.py — generate synthetic financials from fundamental data |
-| 2026-05-09 | 15.2.3 | ✅ | Ran seed_financials(): 125 records for 25 top stocks (income/balance/cashflow) |
-| 2026-05-09 | 15.2.4 | ✅ | Admin trigger POST /api/admin/seed-financials |
-| 2026-05-09 | 15.4.1 | ✅ | CSS + Indices page styles |
-| 2026-05-09 | 15.7.1 | ✅ | AMOLED CSS: true black background, no box-shadows, minimal borders |
-| 2026-05-09 | 15.7.2 | ✅ | Theme.js: 3-state cycle (dark→light→amoled→dark) + moon-star icon |
-| 2026-05-09 | 15.7.3 | ✅ | Persist AMOLED preference via localStorage + data-theme attribute |
-| 2026-05-09 | 15.3.1 | ✅ | corporate_actions_updater.py: 21 seed events (IPO/rights/split/dividend) |
-| 2026-05-09 | 15.3.2 | ✅ | Corporate actions via existing /api/calendar + /api/corporate-actions endpoints |
-| 2026-05-09 | 15.3.3 | ✅ | corporate.js frontend: 6 tabs, IDX live data + CalendarEvent, color-coded cards |
-| 2026-05-09 | 15.3.4 | ✅ | Scheduler job daily 05:00 + sidebar nav + CSS |
-| 2026-05-09 | 15.4.2 | ✅ | renderRebalanceTab() — fetch /api/portfolio/rebalance, cards with progress bars |
-| 2026-05-09 | 15.4.3 | ✅ | Rebalance tab button in portfolio page |
-| 2026-05-09 | 15.5.1 | ✅ | chart.js: full-screen chart view with LightweightCharts, 7 timeframes |
-| 2026-05-09 | 15.5.2 | ✅ | Drawing tools toolbar: trend line, H-line, clear |
-| 2026-05-09 | 15.5.3 | ✅ | Timeframe selector + candle data from /api/stocks/{ticker}/chart-data |
-| 2026-05-09 | 15.5.4 | ✅ | Open Chart button (maximize-2 icon) in stock_detail.js |
-| 2026-05-09 | 15.8.1 | ✅ | GET /api/news/watchlist — filter news by watchlist tickers, fallback to all |
-|| 2026-05-09 | 15.6 | ✅ | Market timer (updateMarketCountdown) — already existed |
-|| 2026-05-09 | 15.7 | ✅ | AMOLED theme (CSS + theme.js 3-state) |
-|| 2026-05-09 | 15.10 | ⚠️ | BrokerSummary 0 rows — derived fallback already handles empty table |
-|| 2026-05-10 | 15.1.4 | ✅ | Index filter in screener: dropdown in form + backend SSE `index` param + client-side pass |
-|| 2026-05-10 | 15.8.2 | ✅ | Watchlist News widget in portfolio: `#wl-news-tab-btn` + `renderWatchlistNews()` |
-|| 2026-05-10 | 15.8.3 | ✅ | Watchlist news badge count `#wl-news-badge` + `loadWatchlistNewsBadge()` |
-|| 2026-05-10 | 15.9.1 | ✅ | AI Sector Rotation Analysis: button + modal + `/api/ai/chat` prompt |
-|| 2026-05-10 | 15.10.2 | ✅ | `GET /api/system/data-health` — row counts per table + health status |
-|| 2026-05-10 | 15.10.3 | ✅ | Data Health card in settings page — traffic-light grid per table |
+| — | — | 🆕 | Fase 16 dimulai |
+| 2026-05-10 | 16.1.1 | ✅ | BrokerSummary synthetic updater — 1,028 records from OHLCV |
+| 2026-05-10 | 16.1.2 | ✅ | Fundamental seeder — 150 records from sector-based estimates |
+| 2026-05-10 | 16.1.3 | ✅ | Financials seeder — 150 records for 30 top stocks |
+| 2026-05-10 | 16.1.4 | ✅ | OHLCV backfill 12,000 bars + Signal updater — 2,166 signals |

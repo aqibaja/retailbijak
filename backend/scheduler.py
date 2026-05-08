@@ -110,6 +110,13 @@ def init_scheduler():
         logger.info("Registered corporate_actions_seed job (daily 05:00 WIB)")
     except Exception as e:
         logger.warning(f"Could not register corporate_actions_seed: {e}")
+    # BrokerSummary seed — daily 05:30
+    try:
+        from updaters.broker_summary_updater import update_broker_summary
+        scheduler.add_job(update_broker_summary, trigger=CronTrigger(hour=5, minute=30, timezone=jkt_tz), id='broker_summary_seed', replace_existing=True)
+        logger.info("Registered broker_summary_seed job (daily 05:30 WIB)")
+    except Exception as e:
+        logger.warning(f"Could not register broker_summary_seed: {e}")
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id="yfinance_daily_sync", replace_existing=True)
     if not scheduler.running:

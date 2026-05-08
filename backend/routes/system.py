@@ -260,6 +260,39 @@ def trigger_seed_financials():
         return {'ok': False, 'error': str(e)}
 
 
+@router.post('/api/admin/seed-brokers')
+def trigger_seed_brokers():
+    """Manually trigger synthetic broker summary seed from OHLCV data."""
+    try:
+        from updaters.broker_summary_updater import seed_broker_summary
+        result = seed_broker_summary()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@router.post('/api/admin/seed-fundamentals')
+def trigger_seed_fundamentals():
+    """Manually trigger synthetic fundamentals seed from OHLCV data."""
+    try:
+        from updaters.fundamental_seeder import seed_fundamentals
+        result = seed_fundamentals()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@router.post('/api/admin/backfill-ohlcv')
+def trigger_backfill_ohlcv():
+    """Generate synthetic historical OHLCV bars for TA signals."""
+    try:
+        from updaters.ohlcv_backfill import backfill_ohlcv
+        result = backfill_ohlcv()
+        return {'ok': True, 'result': result}
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
 @router.post('/api/admin/seed-news')
 def trigger_seed_news(limit: int = 20, db: Session = Depends(get_db)):
     """Manually seed synthetic news from stock price movements (top movers, volume leaders).
