@@ -31,6 +31,17 @@ export async function renderSectors(root) {
                 </div>
             </div>
 
+            <div class="sector-rotation-section" style="margin-bottom:16px">
+              <div class="flex justify-between items-center mb-2">
+                <h2 style="font-size:13px;font-weight:700;margin:0" class="text-dim uppercase">🔄 Rotasi Sektor <span style="font-weight:400;text-transform:none;font-size:11px" class="text-dim">(12 minggu)</span></h2>
+                <button type="button" class="btn btn-sm scanner-control-btn" id="toggle-rotation-chart" style="font-size:10px">🔄 Tampilkan</button>
+              </div>
+              <div id="rotation-chart-container" style="height:0;overflow:hidden;transition:height .3s ease;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
+                <div id="rotation-chart" style="height:300px;width:100%"><div class="skeleton skeleton-chart" style="height:280px;margin:10px"></div></div>
+                <div id="rotation-legend" class="flex gap-2 flex-wrap p-2" style="font-size:10px"></div>
+              </div>
+            </div>
+
             <div id="sectorCarousel" class="sector-carousel">
                 <div class="sector-loading">
                     <div class="loading-spinner"></div>
@@ -45,6 +56,22 @@ export async function renderSectors(root) {
     lucide.createIcons();
     document.getElementById('refreshSectors')?.addEventListener('click', loadSectors);
     document.getElementById('ai-sector-analysis')?.addEventListener('click', runSectorRotationAnalysis);
+    // Rotation chart toggle
+    const toggleBtn = document.getElementById('toggle-rotation-chart');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const container = document.getElementById('rotation-chart-container');
+        if (!container) return;
+        if (container.style.height === '0px' || !container.style.height || container.style.height === '0') {
+          container.style.height = '340px';
+          toggleBtn.textContent = '✕ Tutup';
+          loadRotationChart();
+        } else {
+          container.style.height = '0';
+          toggleBtn.textContent = '🔄 Tampilkan';
+        }
+      });
+    }
     await loadSectors();
 }
 
@@ -492,4 +519,87 @@ Beri analisis singkat (3-4 paragraf) dalam Bahasa Indonesia tentang:
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = '🤖 Rotasi'; }
     }
+}
+
+// ─── 16.5.2 — Sector Rotation Chart ──────────────
+async function loadRotationChart() {
+  const chartEl = document.getElementById('rotation-chart');
+  if (!chartEl) return;
+  try {
+    const data = await apiFetch('/api/sectors-rotation?weeks=12');
+    if (!data?.dates?.length || !data?.sectors) {
+      chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Data rotasi belum tersedia</p></div>';
+      return;
+    }
+
+    const dates = data.dates;
+    const sectors = data.sectors;
+    const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#14b8a6','#6366f1','#d946ef'];
+    
+    // Top 8 sectors by latest performance
+    const entries = Object.entries(sectors)
+      .map(([name, returns]) => ({ name, returns }))
+      .filter(s => s.returns.some(v => v != null))
+      .sort((a, b) => {
+        const aLast = a.returns.filter(v => v != null).pop() || 0;
+        const bLast = b.returns.filter(v => v != null).pop() || 0;
+        return bLast - aLast;
+      })
+      .slice(0, 8);
+
+    if (!entries.length) {
+      chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Belum ada data</p></div>';
+      return;
+    }
+
+    // Build chart using DIV-based bars (zero-dep)
+    const legends = entries.map((s, i) => {
+      const c = colors[i % colors.length];
+      return `<span class="flex items-center gap-1" style="font-size:9px"><span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block"></span>${s.name}</span>`;
+    }).join('');
+    document.getElementById('rotation-legend').innerHTML = legends;
+
+    // Find min/max for scaling
+    const allVals = entries.flatMap(s => s.returns.filter(v => v != null));
+    if (!allVals.length) { chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Tidak ada data</p></div>'; return; }
+    const minVal = Math.min(...allVals);
+    const maxVal = Math.max(...allVals);
+    const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal));
+
+    // Render bar chart per sector per week
+    let html = '<div style="overflow-x:auto;padding:8px"><table style="border-collapse:collapse;font-size:10px;width:100%"><thead><tr>';
+    html += '<th style="text-align:left;padding:2px 6px;font-weight:600;color:var(--text-dim);position:sticky;left:0;background:var(--bg-panel)">Sektor</th>';
+    dates.forEach(d => {
+      html += `<th style="text-align:center;padding:2px 3px;font-weight:400;color:var(--text-dim);font-size:9px">${d.slice(-2)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    entries.forEach((s, i) => {
+      const c = colors[i % colors.length];
+      html += `<tr><td style="padding:3px 6px;font-weight:600;color:var(--text-main);position:sticky;left:0;background:var(--bg-panel);white-space:nowrap"><span style="color:${c}">●</span> ${s.name}</td>`;
+      s.returns.forEach(v => {
+        if (v == null) {
+          html += '<td style="padding:3px;text-align:center"><span class="text-dim">—</span></td>';
+        } else {
+          const pct = (v / absMax) * 100;
+          const isUp = v >= 0;
+          const barW = Math.min(Math.abs(pct), 100);
+          html += `<td style="padding:3px;text-align:center">
+            <div style="display:flex;align-items:center;justify-content:center;gap:2px">
+              <div style="width:100%;height:4px;background:var(--border-subtle);border-radius:2px;overflow:hidden;display:flex;${isUp ? 'flex-direction:row-reverse' : ''}">
+                <div style="height:100%;width:${barW}%;background:${isUp ? '#22c55e' : '#ef4444'};border-radius:2px"></div>
+              </div>
+              <span style="font-size:9px;color:${isUp ? '#22c55e' : '#ef4444'};min-width:32px;text-align:right">${isUp ? '+' : ''}${v.toFixed(1)}%</span>
+            </div>
+          </td>`;
+        }
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    chartEl.innerHTML = html;
+  } catch (e) {
+    chartEl.innerHTML = `<div class="empty-state-v2"><p class="text-xs text-dim">Gagal: ${e.message || ''}</p></div>`;
+  }
 }

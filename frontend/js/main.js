@@ -416,6 +416,131 @@ function setupScrollEffects() {
        }
    }, { passive: true });
 }
+
+// ─── 16.6.5 — Scroll-to-top button ──────────────
+function setupScrollToTop() {
+  const btn = document.getElementById('scroll-to-top');
+  if (!btn) return;
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 500) {
+      btn.style.display = 'flex';
+      requestAnimationFrame(() => { btn.style.opacity = '1'; });
+    } else {
+      btn.style.opacity = '0';
+      setTimeout(() => { if (window.scrollY <= 500) btn.style.display = 'none'; }, 200);
+    }
+  }, { passive: true });
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// ─── 16.6.3 — Keyboard Shortcut Panel ───────────
+function setupShortcutPanel() {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.target.closest('input,textarea,select')) {
+      e.preventDefault();
+      toggleShortcutModal();
+    }
+  });
+}
+
+function toggleShortcutModal() {
+  const existing = document.getElementById('shortcut-modal-overlay');
+  if (existing) { existing.remove(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'shortcut-modal-overlay';
+  overlay.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease" onclick="if(event.target===this)this.remove()">
+      <div style="background:var(--card-bg);border-radius:16px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--text-main)">⌨️ Pintasan Keyboard</h3>
+          <button type="button" onclick="this.closest('#shortcut-modal-overlay').remove()" style="background:none;border:none;font-size:22px;color:var(--text-dim);cursor:pointer">&times;</button>
+        </div>
+        <div style="font-size:13px;line-height:2">
+          <div><kbd>?</kbd> — Buka pintasan ini</div>
+          <div><kbd>Ctrl+K</kbd> — Cari saham</div>
+          <div><kbd>D</kbd> — Dashboard</div>
+          <div><kbd>S</kbd> — Screener</div>
+          <div><kbd>P</kbd> — Portfolio</div>
+          <div><kbd>N</kbd> — News</div>
+          <div><kbd>T</kbd> — Ganti tema</div>
+          <div><kbd>Esc</kbd> — Tutup modal</div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// ─── 16.6.1 — Page Transition Animation ─────────
+function setupPageTransitions() {
+  // Add fade-in class to views when they mount
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.view-content:not(.view-visible)').forEach(el => {
+      el.classList.add('view-visible');
+      el.style.animation = 'viewFadeIn .3s ease forwards';
+    });
+  });
+  observer.observe(document.getElementById('app') || document.body, { childList: true, subtree: true });
+}
+
+// ─── 16.6.2 — Swipe Navigation ──────────────────
+function setupSwipeNavigation() {
+  let startX = 0, startY = 0;
+  document.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return; // not horizontal enough
+    const navOrder = ['#dashboard', '#screener', '#portfolio', '#settings'];
+    const current = window.location.hash || '#dashboard';
+    const idx = navOrder.indexOf(current);
+    if (dx > 0 && idx > 0) { // swipe right → previous
+      window.location.hash = navOrder[idx - 1];
+    } else if (dx < 0 && idx < navOrder.length - 1) { // swipe left → next
+      window.location.hash = navOrder[idx + 1];
+    }
+  }, { passive: true });
+}
+
+// ─── 16.6.4 — Pull-to-refresh ───────────────────
+function setupPullToRefresh() {
+  let startY = 0, pulling = false;
+  const indicator = document.createElement('div');
+  indicator.id = 'ptr-indicator';
+  indicator.style.cssText = 'position:fixed;top:-40px;left:0;right:0;z-index:9999;text-align:center;padding:10px;font-size:12px;color:var(--text-dim);transition:top .3s;background:var(--bg-panel)';
+  indicator.textContent = '⬇️ Tarik untuk refresh';
+  document.body.appendChild(indicator);
+
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY > 10) { startY = 0; return; }
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!startY || window.scrollY > 10) return;
+    const pull = e.touches[0].clientY - startY;
+    if (pull > 60) {
+      pulling = true;
+      indicator.style.top = '0';
+      indicator.textContent = '🔃 Lepas untuk refresh';
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (pulling) {
+      pulling = false;
+      indicator.textContent = '⏳ Memuat ulang...';
+      setTimeout(() => {
+        location.reload();
+      }, 300);
+    }
+    startY = 0;
+    indicator.style.top = '-40px';
+  }, { passive: true });
+}
+
 // Global button click effect
 document.addEventListener('click', (e) => {
    const btn = e.target.closest('.btn');
@@ -911,6 +1036,11 @@ document.addEventListener('DOMContentLoaded', () => {
       setupKeyboardShortcuts();
       startMarketCountdown();
       setupLivePriceStream();
+      setupScrollToTop();
+      setupShortcutPanel();
+      setupPageTransitions();
+      setupSwipeNavigation();
+      setupPullToRefresh();
       setupTouchGestures();
       showOnboarding();
       // Register PWA service worker (1.7.6)

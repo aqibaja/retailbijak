@@ -385,3 +385,76 @@ def industries_list(db: Session = Depends(get_db)):
         'total_industries': len(result),
         'updated_at': str(today),
     }
+
+
+# ─── 16.5.1 — Sector Rotation Data ───────────────
+
+@router.get('/api/sectors-rotation')
+def sector_rotation(weeks: int = 12, db: Session = Depends(get_db)):
+    """Return weekly return per sector for rotation chart.
+    
+    Groups OHLCV data by week and sector, calculates avg return.
+    Returns {dates: [...], sectors: {sector_name: [weekly_returns...]}}
+    """
+    from sqlalchemy import text as _text
+    from collections import defaultdict
+
+    try:
+        rows = db.execute(_text("""
+            SELECT s.sector, o.date,
+                   (o.close - o.open) / o.open * 100 as daily_return
+            FROM ohlcv_daily o
+            JOIN stocks s ON s.ticker = o.ticker
+            WHERE s.sector IS NOT NULL AND s.sector != ''
+              AND o.close > 0 AND o.open > 0
+            ORDER BY o.date
+            LIMIT 50000
+        """)).fetchall()
+
+        if not rows:
+            return {'status': 'ok', 'dates': [], 'sectors': {}, 'count': 0}
+
+        # Group by sector + week
+        weekly = defaultdict(lambda: defaultdict(list))
+        date_set = set()
+        for r in rows:
+            if r.date is None or r.daily_return is None:
+                continue
+            d = r.date
+            # Handle both string and datetime.date
+            if isinstance(d, str):
+                d = datetime.strptime(d[:10], '%Y-%m-%d').date()
+            elif hasattr(d, 'date'):
+                d = d.date()
+            # Get ISO week
+            iso = d.isocalendar()
+            week_key = f"{iso[0]}-W{iso[1]:02d}"
+            date_set.add(week_key)
+            weekly[r.sector][week_key].append(r.daily_return)
+
+        # Sort dates
+        sorted_dates = sorted(date_set)
+        if len(sorted_dates) > weeks:
+            sorted_dates = sorted_dates[-weeks:]
+
+        # Build result: avg return per sector per week
+        result = {}
+        for sector, week_data in weekly.items():
+            sector_returns = []
+            for w in sorted_dates:
+                vals = week_data.get(w, [])
+                if vals:
+                    sector_returns.append(round(sum(vals) / len(vals), 2))
+                else:
+                    sector_returns.append(None)
+            result[sector] = sector_returns
+
+        return {
+            'status': 'ok',
+            'dates': sorted_dates,
+            'sectors': result,
+            'sector_count': len(result),
+            'week_count': len(sorted_dates),
+        }
+    except Exception as e:
+        return {'status': 'error', 'error': str(e), 'dates': [], 'sectors': {}}
