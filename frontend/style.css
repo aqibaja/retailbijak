@@ -4626,6 +4626,70 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   color: var(--text-main);
   border-color: var(--primary-color);
 }
+
+/* ─── Portfolio P&L ─── */
+.portfolio-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.portfolio-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+.portfolio-kpi-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.portfolio-kpi-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+}
+.portfolio-sector-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.portfolio-sector-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.portfolio-sector-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.portfolio-sector-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+.portfolio-sector-weight {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.portfolio-sector-pnl {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11px;
+}
 /* ─── Stock Comparison ─── */
 .compare-chip {
   display: inline-flex;

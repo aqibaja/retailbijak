@@ -12,7 +12,7 @@
     12||------|--------|----------|
     13|| **P1: UI/UX Professional Redesign** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 100% |
     14|| **P2: Fitur IDX Wajib** | ✅ Selesai | ▰▰▰▰▰▰▰▰▰▰ 95% |
-    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▱▱▱▱▱▱ 30% |
+    15|| **P3: Fitur Lanjutan** | 🟡 Progress | ▰▰▰▰▰▰▱▱▱▱ 45% |
     16|
     17|---
     18|
@@ -365,10 +365,12 @@
 | 2026-05-10 | 3.3.1 | ✅ | CSV export — frontend-side Blob download dari hasil screener (Ticker, Harga, CCI, MA, dll) |
 | 2026-05-10 | 3.3.2 | ✅ | Export button di screener toolbar — tombol CSV dengan download otomatis |
 | 2026-05-10 | 3.3.3 | ✅ | Saved filters — localStorage, Simpan/Muat filter (sort + search), konfirmasi timpa duplicate |
-   376|
-   377|---
-   378|
-   379|### Sisa Minor (P1 sudah tuntas)
+| 2026-05-10 | 3.4.1 | ✅ | Backend: P&L endpoint `/api/portfolio/summary` — unrealized P&L, invested, current value, sector breakdown |
+| 2026-05-10 | 3.4.2 | ✅ | Frontend: Portfolio dashboard — KPI cards (investasi, nilai, P&L, return%), sektor chips, P&L per posisi di tabel |
+
+---
+
+### Sisa Minor (P1 sudah tuntas)
    380|- 1.2.2 CSS size optimasi (opsional, dari 213KB) — bisa dikerjakan kapan saja
    381|
    382|## Fase 2: Fitur IDX Wajib — Rencana Eksekusi

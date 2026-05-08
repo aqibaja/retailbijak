@@ -12,6 +12,11 @@ except ModuleNotFoundError:
     from backend.database import UserSetting, WatchlistItem, PortfolioPosition, get_db
 
 try:
+    from database import Stock, OHLCVDaily
+except ModuleNotFoundError:
+    from backend.database import Stock, OHLCVDaily
+
+try:
     from services.openrouter_llm import (
         DEFAULT_AI_PICKS_MODEL,
         DEFAULT_STOCK_ANALYSIS_MODEL,
@@ -213,3 +218,82 @@ def delete_portfolio(ticker: str, db: Session = Depends(get_db)):
     db.delete(row)
     db.commit()
     return {'ok': True}
+
+
+@router.get('/api/portfolio/summary')
+def portfolio_summary(db: Session = Depends(get_db)):
+    """P&L calculation with sector breakdown for portfolio positions."""
+    from collections import defaultdict
+    positions = db.query(PortfolioPosition).order_by(PortfolioPosition.ticker.asc()).all()
+    if not positions:
+        return {'count': 0, 'data': {'positions': [], 'total_invested': 0, 'current_value': 0, 'pnl': 0, 'pnl_pct': 0, 'sectors': {}}}
+
+    total_invested = 0
+    current_value = 0
+    pos_data = []
+    sector_groups = defaultdict(lambda: {'invested': 0, 'value': 0, 'pnl': 0})
+
+    for pos in positions:
+        ticker = pos.ticker
+        lots = pos.lots or 0
+        avg_price = pos.avg_price or 0
+        shares = lots * 100  # 1 lot = 100 shares
+        invested = avg_price * shares
+        total_invested += invested
+
+        # Latest price
+        latest = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == ticker
+        ).order_by(OHLCVDaily.date.desc()).first()
+        current_price = float(latest.close) if latest and latest.close else avg_price
+        val = current_price * shares
+        current_value += val
+
+        pnl = val - invested
+        pnl_pct = ((current_price - avg_price) / avg_price * 100) if avg_price else 0
+
+        # Sector
+        stock = db.query(Stock).filter(Stock.ticker == ticker).first()
+        sector = stock.sector if stock and stock.sector else 'Lainnya'
+
+        sector_groups[sector]['invested'] += invested
+        sector_groups[sector]['value'] += val
+        sector_groups[sector]['pnl'] += pnl
+
+        pos_data.append({
+            'ticker': ticker,
+            'name': stock.name if stock else ticker,
+            'sector': sector,
+            'lots': lots,
+            'avg_price': round(avg_price, 2),
+            'current_price': round(current_price, 2),
+            'invested': round(invested, 2),
+            'value': round(val, 2),
+            'pnl': round(pnl, 2),
+            'pnl_pct': round(pnl_pct, 2),
+        })
+
+    overall_pnl = current_value - total_invested
+    overall_pnl_pct = ((current_value / total_invested) - 1) * 100 if total_invested else 0
+
+    sectors = {}
+    for s, v in sector_groups.items():
+        sectors[s] = {
+            'invested': round(v['invested'], 2),
+            'value': round(v['value'], 2),
+            'pnl': round(v['pnl'], 2),
+            'pct': round((v['pnl'] / v['invested']) * 100, 2) if v['invested'] else 0,
+            'weight': round((v['invested'] / total_invested) * 100, 2) if total_invested else 0,
+        }
+
+    return {
+        'count': len(pos_data),
+        'data': {
+            'positions': pos_data,
+            'total_invested': round(total_invested, 2),
+            'current_value': round(current_value, 2),
+            'pnl': round(overall_pnl, 2),
+            'pnl_pct': round(overall_pnl_pct, 2),
+            'sectors': sectors,
+        },
+    }

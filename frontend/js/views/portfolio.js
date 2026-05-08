@@ -1,5 +1,5 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507M';
-import { money } from '../utils/format.js?v=20260507M';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260507M';
+import { money, nf, pf } from '../utils/format.js?v=20260507M';
 import { observeElements } from '../main.js?v=20260507M';
 
 // ─── Focus Trap ──────────────────────────────
@@ -13,15 +13,9 @@ function trapFocus(container) {
   container.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab') return;
     if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
     } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
 }
@@ -30,7 +24,6 @@ function trapFocus(container) {
 export function showModal({ title, fields = [], confirmText = 'Simpan', cancelText = 'Batal', onConfirm }) {
   const existing = document.getElementById('stock-modal-overlay');
   if (existing) existing.remove();
-
   const overlay = document.createElement('div');
   overlay.id = 'stock-modal-overlay';
   overlay.innerHTML = `
@@ -55,16 +48,11 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
     </div>`;
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
-
   return new Promise((resolve) => {
     const close = (resolveVal = null) => {
       overlay.querySelector('.modal-backdrop')?.classList.add('closing');
       overlay.querySelector('.modal-panel')?.classList.add('closing');
-      setTimeout(() => {
-        overlay.remove();
-        document.body.style.overflow = '';
-        resolve(resolveVal);
-      }, 200);
+      setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; resolve(resolveVal); }, 200);
     };
     overlay.querySelector('.modal-close-btn')?.addEventListener('click', () => close());
     overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', () => close());
@@ -76,27 +64,13 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
       });
       try {
         const result = await onConfirm(values);
-        if (result !== false) {
-          close(values);
-        }
-      } catch (e) {
-        console.warn('onConfirm failed', e);
-        showToast('Terjadi kesalahan, coba lagi', 'error');
-      }
+        if (result !== false) close(values);
+      } catch (e) { showToast('Terjadi kesalahan, coba lagi', 'error'); }
     });
-    // Form submit catches Enter key (keyboard + iOS "Go" button)
-    overlay.querySelector('.modal-fields')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      overlay.querySelector('.modal-confirm-btn')?.click();
-    });
-    // Escape to close
-    overlay.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') close();
-    });
-    // Focus first field
+    overlay.querySelector('.modal-fields')?.addEventListener('submit', (e) => { e.preventDefault(); overlay.querySelector('.modal-confirm-btn')?.click(); });
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
     const firstInput = overlay.querySelector('.form-input, .modal-input');
     if (firstInput) setTimeout(() => firstInput.focus(), 100);
-    // Focus trap
     setTimeout(() => trapFocus(overlay), 150);
   });
 }
@@ -105,7 +79,6 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
 export function showConfirm({ title, message, confirmText = 'Yakin', cancelText = 'Batal', danger = false }) {
   const existing = document.getElementById('stock-modal-overlay');
   if (existing) existing.remove();
-
   const overlay = document.createElement('div');
   overlay.id = 'stock-modal-overlay';
   overlay.innerHTML = `
@@ -122,25 +95,12 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
     </div>`;
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
-
   return new Promise((resolve) => {
-    const close = (val) => {
-      overlay.querySelector('.modal-backdrop')?.classList.add('closing');
-      overlay.querySelector('.modal-panel')?.classList.add('closing');
-      setTimeout(() => {
-        overlay.remove();
-        document.body.style.overflow = '';
-        resolve(val);
-      }, 200);
-    };
+    const close = (val) => { overlay.querySelector('.modal-backdrop')?.classList.add('closing'); overlay.querySelector('.modal-panel')?.classList.add('closing'); setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; resolve(val); }, 200); };
     overlay.querySelector('.modal-backdrop')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-cancel-btn')?.addEventListener('click', () => close(false));
     overlay.querySelector('.modal-confirm-btn')?.addEventListener('click', () => close(true));
-    // Escape to close
-    overlay.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') close(false);
-    });
-    // Focus trap
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(false); });
     setTimeout(() => trapFocus(overlay), 150);
   });
 }
@@ -173,139 +133,96 @@ export async function renderPortfolio(root, activeTab) {
     else await renderWatchlistTab(root.querySelector('#tab-content'));
 }
 
-async function renderWatchlistTab(el) {
-    let data, fetchError;
-    try { data = await fetchWatchlist(); } catch (e) { fetchError = true; data = null; console.warn('fetchWatchlist failed', e); }
-    const rows = Array.isArray(data?.data) ? data.data : [];
-
-    el.innerHTML = `
-      <div class="flex justify-between items-center p-4 border-bottom-subtle">
-        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
-        <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
-      </div>
-      ${fetchError ? `
-      <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="alert-triangle" class="watchlist-empty-icon" style="color:var(--warn-color);"></i></div>
-        <h3>Gagal Memuat</h3>
-        <p>Data tidak dapat dimuat. Coba refresh halaman atau periksa koneksi.</p>
-        <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
-      </div>` : rows.length ? `
-      <div class="table-wrapper">
-        <table class="table">
-          <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
-          <tbody>${rows.map(r => `
-            <tr>
-              <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
-              <td class="text-muted text-sm">${r.notes || '-'}</td>
-              <td class="text-right"><button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
-            </tr>`).join('')}</tbody>
-        </table>
-      </div>
-      <div id="watchlist-mini-charts" class="portfolio-mini-grid mt-3"></div>` : `
-      <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="eye" class="watchlist-empty-icon"></i></div>
-        <h3>Daftar Pantau Kosong</h3>
-        <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
-        <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
-      </div>`}`;
-
-    // Watchlist add
-    const addBtn = el.querySelector('#add-watchlist') || el.querySelector('#add-watchlist-empty');
-    if (addBtn) addBtn.addEventListener('click', async () => {
-        const vals = await showModal({
-            title: 'Tambah Saham ke Pantauan',
-            fields: [{ label: 'Kode Saham', placeholder: 'BBCA' }, { label: 'Catatan (opsional)', placeholder: 'Target swing' }],
-            confirmText: 'Tambah',
-            onConfirm: async ([ticker, notes]) => {
-                if (!ticker || !ticker.trim()) { showToast('Kode saham wajib diisi', 'error'); return false; }
-                await saveWatchlistItem({ ticker: ticker.toUpperCase().trim(), notes: notes || '' });
-                showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
-            }
-        });
-    });
-
-    // Watchlist delete
-    el.querySelectorAll('.delete-watchlist').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const ticker = e.currentTarget.getAttribute('data-ticker');
-            const ok = await showConfirm({ title: 'Hapus dari Pantauan?', message: `Yakin ingin menghapus ${ticker} dari daftar pantau?`, confirmText: 'Hapus', danger: true });
-            if (ok) {
-                try {
-                    await deleteWatchlistItem(ticker);
-                    showToast(`${ticker} dihapus`, 'success');
-                    await renderWatchlistTab(el);
-                } catch (e) {
-                    console.warn('deleteWatchlistItem failed', e);
-                    showToast(`Gagal menghapus ${ticker}`, 'error');
-                }
-            }
-        });
-    });
-    
-    // Load TV mini charts for the first 4 watchlist items
-    const miniGrid = document.getElementById('watchlist-mini-charts');
-    if (miniGrid && rows.length) {
-      const watchSymbols = rows.slice(0, 4);
-      miniGrid.innerHTML = watchSymbols.map((r, i) => `<div id="tv-mini-${i}" class="portfolio-mini-card"></div>`).join('');
-      watchSymbols.forEach((r, i) => {
-        setTimeout(() => {
-          const containerId = `tv-mini-${i}`;
-          loadTVWidget(containerId, 'mini-symbol-overview', {
-            symbol: `IDX:${r.ticker.toUpperCase().replace('.JK','')}`,
-            width: '100%',
-            height: 160,
-            dateRange: '3M',
-            colorTheme: getTVTheme(),
-            isTransparent: false,
-            autosize: false,
-            chartOnly: false,
-            locale: 'id_ID',
-          });
-        }, i * 200);
-      });
-    }
-}
+// ─── P&L Color ─────────────────────────
+function pnlClass(v) { return v > 0 ? 'text-up' : v < 0 ? 'text-down' : 'text-dim'; }
+function pnlArrow(v) { return v > 0 ? '▲' : v < 0 ? '▼' : '—'; }
+function pnlFmt(v) { return v > 0 ? `+${money(v)}` : money(v); }
 
 async function renderPortfolioTab(el) {
     let data, fetchError;
-    try { data = await fetchPortfolio(); } catch (e) { fetchError = true; data = null; console.warn('fetchPortfolio failed', e); }
-    const rows = Array.isArray(data?.data) ? data.data : [];
+    try {
+        const [posRes, sumRes] = await Promise.all([
+            fetchPortfolio(),
+            apiFetch('/portfolio/summary').catch(() => null)
+        ]);
+        data = { positions: posRes, summary: sumRes };
+    } catch (e) { fetchError = true; data = null; }
+
+    const rows = Array.isArray(data?.positions?.data) ? data.positions.data : [];
+    const summary = data?.summary?.data;
+    const hasSummary = summary && summary.positions?.length > 0;
+
+    // KPI cards
+    const kpiHtml = hasSummary ? `
+      <div class="portfolio-kpi-grid">
+        <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Investasi</span><strong class="portfolio-kpi-value">${money(summary.total_invested)}</strong></div>
+        <div class="portfolio-kpi"><span class="portfolio-kpi-label">Nilai Saat Ini</span><strong class="portfolio-kpi-value">${money(summary.current_value)}</strong></div>
+        <div class="portfolio-kpi"><span class="portfolio-kpi-label">Untung/Rugi</span><strong class="portfolio-kpi-value ${pnlClass(summary.pnl)}">${pnlFmt(summary.pnl)}</strong></div>
+        <div class="portfolio-kpi"><span class="portfolio-kpi-label">Return %</span><strong class="portfolio-kpi-value ${pnlClass(summary.pnl_pct)}">${summary.pnl_pct > 0 ? '+' : ''}${pf(summary.pnl_pct)}</strong></div>
+      </div>` : '';
+
+    // Sector breakdown
+    const sectors = summary?.sectors || {};
+    const sectorKeys = Object.keys(sectors);
+    const sectorHtml = sectorKeys.length ? `
+      <div class="portfolio-sector-section">
+        <h4 class="text-xs uppercase text-dim strong mb-2">Sektor</h4>
+        <div class="portfolio-sector-grid">
+          ${sectorKeys.map(s => {
+            const sec = sectors[s];
+            const cls = pnlClass(sec.pnl);
+            return `<div class="portfolio-sector-chip"><span class="portfolio-sector-name">${s}</span><span class="portfolio-sector-weight">${pf(sec.weight)}</span><span class="portfolio-sector-pnl ${cls}">${sec.pnl > 0 ? '+' : ''}${money(sec.pnl)}</span></div>`;
+          }).join('')}
+        </div>
+      </div>` : '';
 
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
         <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
       </div>
+      ${kpiHtml}
+      ${sectorHtml}
       ${fetchError ? `
       <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="alert-triangle" class="watchlist-empty-icon" style="color:var(--warn-color);"></i></div>
+        <div class="empty-icon"><i data-lucide="alert-triangle" style="color:var(--warn-color);"></i></div>
         <h3>Gagal Memuat</h3>
-        <p>Data portofolio tidak dapat dimuat. Coba refresh halaman atau periksa koneksi.</p>
+        <p>Data portofolio tidak dapat dimuat. Coba refresh halaman.</p>
         <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
       </div>` : rows.length ? `
       <div class="table-wrapper">
         <table class="table">
-          <thead><tr><th>Kode Saham</th><th>Lot</th><th>Harga Rata-Rata</th><th class="text-right">Aksi</th></tr></thead>
-          <tbody>${rows.map(r => `
-            <tr>
+          <thead><tr><th>Kode Saham</th><th>Sektor</th><th>Lot</th><th>Harga Rata-Rata</th><th>Harga Saat Ini</th><th>Untung/Rugi</th><th>Return %</th><th class="text-right">Aksi</th></tr></thead>
+          <tbody>${rows.map(r => {
+            const sumItem = summary?.positions?.find(p => p.ticker === r.ticker);
+            const cp = sumItem?.current_price;
+            const pnl = sumItem?.pnl;
+            const pnlPct = sumItem?.pnl_pct;
+            const sector = sumItem?.sector || '';
+            return `<tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
+              <td class="text-xs text-dim">${sector || '—'}</td>
               <td class="mono font-size-14">${r.lots}</td>
               <td class="mono font-size-14 text-muted">${money(r.avg_price)}</td>
+              <td class="mono font-size-14">${cp ? money(cp) : '—'}</td>
+              <td class="mono font-size-14 ${pnlClass(pnl)}">${pnl != null ? pnlFmt(pnl) : '—'}</td>
+              <td class="mono font-size-14 ${pnlClass(pnlPct)}">${pnlPct != null ? `${pnlPct > 0 ? '+' : ''}${pf(pnlPct)}` : '—'}</td>
               <td class="text-right"><button type="button" class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
-            </tr>`).join('')}</tbody>
+            </tr>`;
+          }).join('')}</tbody>
         </table>
       </div>` : `
       <div class="empty-state-v2">
-        <div class="empty-icon"><i data-lucide="briefcase" class="watchlist-empty-icon"></i></div>
+        <div class="empty-icon"><i data-lucide="briefcase"></i></div>
         <h3>Belum Ada Posisi</h3>
         <p>Mulai catat posisi saham Anda untuk melacak portofolio.</p>
         <button id="add-portfolio-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
       </div>`}`;
 
-    // Portfolio add
+    // Add
     const addBtn = el.querySelector('#add-portfolio') || el.querySelector('#add-portfolio-empty');
     if (addBtn) addBtn.addEventListener('click', async () => {
-        const vals = await showModal({
+        await showModal({
             title: 'Tambah Posisi Portofolio',
             fields: [
                 { label: 'Kode Saham', placeholder: 'BBCA' },
@@ -322,7 +239,7 @@ async function renderPortfolioTab(el) {
         });
     });
 
-    // Portfolio delete
+    // Delete
     el.querySelectorAll('.delete-portfolio').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const ticker = e.currentTarget.getAttribute('data-ticker');
@@ -332,11 +249,86 @@ async function renderPortfolioTab(el) {
                     await deletePortfolioPosition(ticker);
                     showToast(`${ticker} dihapus`, 'success');
                     await renderPortfolioTab(el);
-                } catch (e) {
-                    console.warn('deletePortfolioPosition failed', e);
-                    showToast(`Gagal menghapus ${ticker}`, 'error');
-                }
+                } catch (e) { showToast(`Gagal menghapus ${ticker}`, 'error'); }
             }
         });
     });
+}
+
+// ─── Watchlist ─────────────────────────────
+async function renderWatchlistTab(el) {
+    let data, fetchError;
+    try { data = await fetchWatchlist(); } catch (e) { fetchError = true; data = null; }
+    const rows = Array.isArray(data?.data) ? data.data : [];
+    el.innerHTML = `
+      <div class="flex justify-between items-center p-4 border-bottom-subtle">
+        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
+        <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+      </div>
+      ${fetchError ? `
+      <div class="empty-state-v2">
+        <div class="empty-icon"><i data-lucide="alert-triangle" style="color:var(--warn-color);"></i></div>
+        <h3>Gagal Memuat</h3>
+        <p>Data tidak dapat dimuat. Coba refresh halaman.</p>
+        <button type="button" class="btn btn-primary mt-12" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
+      </div>` : rows.length ? `
+      <div class="table-wrapper">
+        <table class="table">
+          <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
+          <tbody>${rows.map(r => `
+            <tr>
+              <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
+              <td class="text-muted text-sm">${r.notes || '-'}</td>
+              <td class="text-right"><button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div id="watchlist-mini-charts" class="portfolio-mini-grid mt-3"></div>` : `
+      <div class="empty-state-v2">
+        <div class="empty-icon"><i data-lucide="eye"></i></div>
+        <h3>Daftar Pantau Kosong</h3>
+        <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
+        <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
+      </div>`}`;
+
+    const addBtn = el.querySelector('#add-watchlist') || el.querySelector('#add-watchlist-empty');
+    if (addBtn) addBtn.addEventListener('click', async () => {
+        const vals = await showModal({
+            title: 'Tambah Saham ke Pantauan',
+            fields: [{ label: 'Kode Saham', placeholder: 'BBCA' }, { label: 'Catatan (opsional)', placeholder: 'Target swing' }],
+            confirmText: 'Tambah',
+            onConfirm: async ([ticker, notes]) => {
+                if (!ticker || !ticker.trim()) { showToast('Kode saham wajib diisi', 'error'); return false; }
+                await saveWatchlistItem({ ticker: ticker.toUpperCase().trim(), notes: notes || '' });
+                showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
+            }
+        });
+    });
+
+    el.querySelectorAll('.delete-watchlist').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const ticker = e.currentTarget.getAttribute('data-ticker');
+            const ok = await showConfirm({ title: 'Hapus dari Pantauan?', message: `Yakin ingin menghapus ${ticker}?`, confirmText: 'Hapus', danger: true });
+            if (ok) {
+                try { await deleteWatchlistItem(ticker); showToast(`${ticker} dihapus`, 'success'); await renderWatchlistTab(el); }
+                catch (e) { showToast(`Gagal menghapus ${ticker}`, 'error'); }
+            }
+        });
+    });
+
+    // TV mini charts
+    const miniGrid = document.getElementById('watchlist-mini-charts');
+    if (miniGrid && rows.length) {
+      const watchSymbols = rows.slice(0, 4);
+      miniGrid.innerHTML = watchSymbols.map((r, i) => `<div id="tv-mini-${i}" class="portfolio-mini-card"></div>`).join('');
+      watchSymbols.forEach((r, i) => {
+        setTimeout(() => {
+          loadTVWidget(`tv-mini-${i}`, 'mini-symbol-overview', {
+            symbol: `IDX:${r.ticker.toUpperCase().replace('.JK','')}`, width: '100%', height: 160,
+            dateRange: '3M', colorTheme: getTVTheme(), isTransparent: false, autosize: false,
+            chartOnly: false, locale: 'id_ID',
+          });
+        }, i * 200);
+      });
+    }
 }
