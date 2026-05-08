@@ -65,6 +65,9 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
             df_sig = compute_swingaq_signals(df)
             latest = df_sig.iloc[-1]
 
+            # Extract last 20 close prices for sparkline
+            closes = [round(float(x), 2) for x in df['Close'].tail(20).values]
+
             signal_type = 'BUY' if latest['buy_signal'] else None
             if signal_type:
                 close = float(latest['Close'])
@@ -85,6 +88,7 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None):
                     'cci': round(float(latest['cci']), 2),
                     'volume_spike': round(float(latest.get('volume_spike', 0)), 2),
                     'signal': signal_type,
+                    'close_prices': closes,
                 }
                 signals_found += 1
                 yield f"data: {json.dumps({'type': 'result', 'data': result})}\n\n"

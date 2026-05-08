@@ -98,9 +98,32 @@ export async function renderDashboard(root) {
       <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dari feed.</span></div></div></div>
     </div>
+    <!-- Market Narrative Card -->
+    <div class="panel market-narrative-panel" id="market-narrative-card">
+      <div class="market-narrative-inner">
+        <div class="market-narrative-icon">📊</div>
+        <div class="market-narrative-body">
+          <div class="market-narrative-text" id="market-narrative-text">Memuat narasi pasar...</div>
+          <div class="market-narrative-meta" id="market-narrative-meta"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Signal Overview Widget -->
+    <div class="panel" id="signal-widget" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 class="panel-title" style="margin:0">📡 Ringkasan Sinyal</h3>
+        <a href="#signal_overview" class="text-xs text-primary strong">Lihat Semua</a>
+      </div>
+      <div id="signal-widget-content" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+        <div class="dashboard-widget-state" style="grid-column:1/-1;padding:24px">
+          <strong class="dashboard-widget-state-title">Memuat sinyal...</strong>
+        </div>
+      </div>
+    </div>
   </section>`;
   observeElements();
   const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
+  loadMarketNarrative();
   // Lazy load Chart.js only for dashboard (1.7.2)
   if (typeof Chart === 'undefined' && document.getElementById('ihsgMainChart')) {
     try {
@@ -116,6 +139,7 @@ export async function renderDashboard(root) {
   initChart(market);
   // Foreign Flow card (async, non-blocking)
   loadForeignFlow();
+  loadSignalWidget();
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 
   // ─── Dashboard Quick Actions ───
@@ -545,5 +569,88 @@ async function loadForeignFlow() {
   } catch (e) {
     console.warn('loadForeignFlow failed', e);
     el.innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat</strong><span class="dashboard-widget-state-note">Data foreign flow tidak tersedia.</span></div>`;
+  }
+}
+// ─── Signal Widget ────────────────────────────
+async function loadSignalWidget() {
+  const el = document.getElementById('signal-widget-content');
+  if (!el) return;
+  try {
+    const res = await apiFetch('/signals/summary?limit=0&days_back=30', { timeout: 8000 });
+    const counts = res?.counts || {};
+    const buy = counts.buy || 0;
+    const sell = counts.sell || 0;
+    const total = res?.total || 0;
+    const ratio = sell > 0 ? ((buy / sell) * 100).toFixed(1) : '—';
+    const max = Math.max(buy, sell, 1);
+    el.innerHTML = `
+      <div class="stat-tile" style="border:1px solid var(--border-subtle);border-radius:12px;padding:12px;background:var(--bg-panel)">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Total</div>
+        <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);margin-top:4px">${total}</div>
+      </div>
+      <div class="stat-tile" style="border:1px solid var(--border-subtle);border-radius:12px;padding:12px;background:var(--up-bg)">
+        <div style="font-size:10px;color:var(--up-color);text-transform:uppercase;letter-spacing:.04em">BUY</div>
+        <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--up-color);margin-top:4px">${buy}</div>
+      </div>
+      <div class="stat-tile" style="border:1px solid var(--border-subtle);border-radius:12px;padding:12px;background:var(--down-bg)">
+        <div style="font-size:10px;color:var(--down-color);text-transform:uppercase;letter-spacing:.04em">SELL</div>
+        <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--down-color);margin-top:4px">${sell}</div>
+      </div>
+      <div class="stat-tile" style="border:1px solid var(--border-subtle);border-radius:12px;padding:12px;background:var(--bg-panel)">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">B/S Ratio</div>
+        <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);margin-top:4px">${ratio}</div>
+      </div>
+      <div style="grid-column:1/-1;height:6px;background:var(--border-subtle);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${(buy/max*100).toFixed(1)}%;background:var(--up-color);float:left;transition:width .5s ease"></div>
+        <div style="height:100%;width:${(sell/max*100).toFixed(1)}%;background:var(--down-color);float:left;transition:width .5s ease"></div>
+      </div>
+      <div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--text-dim);margin-top:2px">
+        Sinyal 30 hari terakhir · <a href="#signal_overview" style="color:var(--primary-color)">Lihat detail →</a>
+      </div>`;
+  } catch (e) {
+    console.warn('loadSignalWidget failed', e);
+    el.innerHTML = '<div class="dashboard-widget-state" style="grid-column:1/-1"><strong class="dashboard-widget-state-title">Gagal memuat sinyal</strong></div>';
+  }
+}
+// ─── Market Narrative ──────────────────────────
+async function loadMarketNarrative() {
+  const textEl = document.getElementById('market-narrative-text');
+  const metaEl = document.getElementById('market-narrative-meta');
+  if (!textEl) return;
+  try {
+    const [summary, breadth] = await Promise.all([
+      fetchMarketSummary().catch(() => null),
+      fetchMarketBreadth().catch(() => null),
+    ]);
+    const s = summary?.value != null ? summary : null;
+    const b = breadth?.data || {};
+    const adv = Number(b.advancing ?? 0);
+    const dec = Number(b.declining ?? 0);
+    const total = adv + dec + Number(b.unchanged ?? 0);
+    if (!s) {
+      textEl.textContent = 'Data pasar belum tersedia. Silakan tunggu jadwal sinkronisasi harian.';
+      if (metaEl) metaEl.innerHTML = '';
+      return;
+    }
+    const v = s.value;
+    const cp = Number(s.change_pct ?? 0);
+    const sign = cp >= 0 ? 'menguat' : 'melemah';
+    const arrow = cp >= 0 ? '▲' : '▼';
+    const parts = [`IHSG ${nf(v, 2)} ${sign} ${pf(Math.abs(cp))} pada ${s.data_date || 'hari ini'}.`];
+    if (total > 0) {
+      const advPct = total > 0 ? ((adv / total) * 100).toFixed(0) : 0;
+      const decPct = total > 0 ? ((dec / total) * 100).toFixed(0) : 0;
+      parts.push(`Dari ${total} saham aktif, ${adv} menguat (${advPct}%), ${dec} melemah (${decPct}%).`);
+      if (cp >= 0 && adv >= dec) parts.push('Breadth mendukung — sentimen positif dominan.');
+      else if (cp < 0 && dec > adv) parts.push('Tekanan jual meluas — selektivitas penting.');
+      else parts.push('Divergensi breadth — perhatikan sektor defensif.');
+    } else {
+      parts.push('Data breadth belum tersedia.');
+    }
+    textEl.textContent = parts.join(' ');
+    if (metaEl) metaEl.innerHTML = `<span class="badge badge-neutral badge-mini">Narasi otomatis</span> <span class="text-dim">${arrow} IHSG ${pf(cp)}</span>`;
+  } catch (e) {
+    console.warn('loadMarketNarrative failed', e);
+    textEl.textContent = 'Gagal memuat narasi pasar.';
   }
 }

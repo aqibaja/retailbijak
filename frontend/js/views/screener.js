@@ -20,6 +20,23 @@ const renderSkeleton = () => `
   </div>
 `;
 
+// ─── SVG Sparkline ────────────────────────────────
+function renderSparkline(closes, width = 64, height = 24) {
+  if (!closes || closes.length < 2) return '';
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const range = max - min || 1;
+  const points = closes.map((c, i) => {
+    const x = (i / (closes.length - 1)) * width;
+    const y = height - ((c - min) / range) * (height - 2) - 1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const trend = closes[closes.length - 1] >= closes[0] ? '#22c55e' : '#ef4444';
+  return `<svg class="sparkline-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <polyline fill="none" stroke="${trend}" stroke-width="1.5" points="${points}"/>
+  </svg>`;
+}
+
 const renderRow = (r) => `
   <a href="#stock/${r.ticker}" class="scanner-row">
     <div class="scanner-row-main">
@@ -31,6 +48,7 @@ const renderRow = (r) => `
         <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}</div>
       </div>
     </div>
+    <div class="scanner-row-chart">${renderSparkline(r.close_prices)}</div>
     <div class="scanner-row-stats">
       <div class="scanner-row-stat">
         <span>Harga</span>
@@ -53,6 +71,7 @@ const renderRow = (r) => `
 `;
 
 let currentResults = [];
+let totalScanned = 0;
 let scanEventSource = null;
 let scanErrorHandled = false;
 let autoRefreshTimer = null;
@@ -81,17 +100,19 @@ export async function renderScreener(root) {
             <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
             <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
             <button id="btn-run-screener" type="button" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
+            <button id="btn-quick-scan" type="button" class="btn btn-sm scanner-control-btn mt-1 mb-2">⚡ Pindai Semua</button>
             <div id="screener-progress" class="hidden panel-lite p-4 scanner-progress">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
               <div class="screener-progress-track"><div id="sp-fill" class="screener-progress-fill"></div></div>
             </div>
           </div>
           <div class="scanner-results flex-col">
-            <div class="flex justify-between items-center p-5 border-b border-subtle">
-              <div class="flex items-center gap-3">
-                <h3 class="text-xs strong uppercase m-0 screener-signal-title">Sinyal Live</h3>
-                <span class="badge" id="screener-count">BELUM SCAN</span>
-              </div>
+              <div class="flex justify-between items-center p-5 border-b border-subtle">
+                <div class="flex items-center gap-3">
+                  <h3 class="text-xs strong uppercase m-0 screener-signal-title">Sinyal Live</h3>
+                  <span class="badge" id="screener-count">BELUM SCAN</span>
+                  <span id="screener-total" class="text-xs text-dim hidden"></span>
+                </div>
               <div id="screener-toolbar" class="flex gap-2 screener-toolbar hidden">
                 <button id="btn-sound" type="button" class="btn btn-sm scanner-control-btn btn-active" title="Bunyikan alert saat sinyal baru">🔊</button>
                 <button id="btn-auto-refresh" type="button" class="btn btn-sm scanner-control-btn" title="Aktifkan auto-refresh tiap 30 detik">⏱ Auto</button>
@@ -103,6 +124,9 @@ export async function renderScreener(root) {
                       <option value="cci">Urut: CCI</option>
                       <option value="volume">Urut: Volume</option>
                       <option value="ma">Urut: MA</option>
+                      <option value="close">Urut: Harga</option>
+                      <option value="ticker">Urut: Kode</option>
+                      <option value="name">Urut: Nama</option>
                   </select>
                 </div>
                 <div class="scanner-control-stack">
@@ -123,6 +147,11 @@ export async function renderScreener(root) {
       </section>`;
     observeElements();
     root.querySelector('#btn-run-screener').addEventListener('click', runScreener);
+    root.querySelector('#btn-quick-scan')?.addEventListener('click', () => {
+      const sel = document.getElementById('screener-sort');
+      if (sel) sel.value = 'volume';
+      runScreener();
+    });
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
     root.querySelector('#btn-export-csv')?.addEventListener('click', exportCSV);
@@ -152,6 +181,9 @@ function sortResults() {
         if (sortBy === 'cci') return (b.cci || 0) - (a.cci || 0);
         if (sortBy === 'volume') return (b.volume_spike || 0) - (a.volume_spike || 0);
         if (sortBy === 'ma') return (b.magic_line || 0) - (a.magic_line || 0);
+        if (sortBy === 'close') return (b.close || 0) - (a.close || 0);
+        if (sortBy === 'ticker') return (a.ticker || '').localeCompare(b.ticker || '');
+        if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
         return 0;
     });
     renderList(currentResults);
@@ -169,8 +201,33 @@ function renderList(results) {
     const hasResults = results.length > 0;
     if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
     const sc = document.getElementById('screener-search');
+    const totalEl = document.getElementById('screener-total');
+    if (totalEl && totalScanned > 0) {
+      totalEl.textContent = `${results.length} dari ${totalScanned} saham`;
+      totalEl.classList.remove('hidden');
+    }
     if (hasResults) {
-        contentArea.innerHTML = `<div class="flex-col gap-3">${results.map(r => renderRow(r)).join('')}</div>`;
+        contentArea.innerHTML = `
+          <div class="scanner-results-header">
+            <span class="scanner-col-sortable" data-sort="ticker">Kode</span>
+            <span class="scanner-col-sortable" data-sort="name">Nama</span>
+            <span class="scanner-col-chart"></span>
+            <span class="scanner-col-sortable" data-sort="close">Harga</span>
+            <span class="scanner-col-sortable" data-sort="cci">CCI</span>
+            <span class="scanner-col-sortable" data-sort="ma">MA</span>
+            <span class="scanner-col-sortable" data-sort="volume">Volume</span>
+          </div>
+          <div class="flex-col gap-2">${results.map(r => renderRow(r)).join('')}</div>
+        `;
+        // Wire sortable headers
+        contentArea.querySelectorAll('.scanner-col-sortable').forEach(el => {
+          el.addEventListener('click', () => {
+            const sort = el.dataset.sort;
+            const sel = document.getElementById('screener-sort');
+            if (sel) sel.value = sort;
+            sortResults();
+          });
+        });
     } else if (sc && sc.value !== '' && currentResults.length > 0) {
         // Filter returned nothing — clear search and re-render full list
         sc.value = '';
@@ -210,6 +267,7 @@ function runScreener() {
     const searchInput = document.getElementById('screener-search');
     if (searchInput) searchInput.value = '';
     countBadge.textContent = 'MEMINDAI...';
+    totalScanned = 0;
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
     progBox.style.display = 'block';
@@ -237,6 +295,7 @@ function runScreener() {
             countBadge.textContent = `${currentResults.length} TERDETEKSI`;
             renderList(currentResults);
         } else if (data.type === 'done') {
+            totalScanned = data.total_scanned || 0;
             btn.disabled = false;
             btn.classList.remove('btn-loading');
             progBox.style.display = 'none';
