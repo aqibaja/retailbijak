@@ -1,5 +1,5 @@
 import { handleRoute } from './router.js?v=20260508B';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260508B';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260508B';
 import { initTheme } from './theme.js?v=20260508B';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
@@ -661,6 +661,38 @@ function showOnboarding() {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
+// ─── Data Freshness ────────────────────────
+window.loadFreshness = async function loadFreshness() {
+  const textEl = document.getElementById('freshness-text');
+  const dotEl = document.querySelector('.freshness-dot');
+  if (!textEl) return;
+  try {
+    const res = await apiFetch('/system/freshness');
+    const labels = res?.labels || {};
+    // Find the most recent meaningful data freshness
+    const keyOrder = ['ohlcv_daily', 'signals', 'broker_summary', 'stocks', 'news'];
+    let bestLabel = null;
+    for (const key of keyOrder) {
+      if (labels[key] && labels[key] !== 'tidak tersedia') {
+        bestLabel = labels[key];
+        break;
+      }
+    }
+    // Determine staleness
+    let freshnessClass = 'fresh';
+    if (bestLabel) {
+      if (bestLabel.includes('hari')) freshnessClass = 'old';
+      else if (bestLabel.includes('jam')) freshnessClass = 'stale';
+    }
+    if (dotEl) { dotEl.className = 'freshness-dot ' + freshnessClass; }
+    textEl.textContent = bestLabel || 'tidak tersedia';
+    textEl.title = 'OHLCV: ' + (labels.ohlcv_daily || '—') + ' | Signal: ' + (labels.signals || '—');
+  } catch (e) {
+    textEl.textContent = 'error';
+    if (dotEl) dotEl.className = 'freshness-dot old';
+  }
+};
+
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
   try {
@@ -697,8 +729,11 @@ document.addEventListener('DOMContentLoaded', () => {
       async function checkTriggeredAlerts() {
         try {
           const res = await apiFetch('/alerts/triggered?limit=5');
+          const badge = document.getElementById('sidebar-alert-badge');
           if (res?.data?.length) {
             const unseen = res.data.filter(a => !a.seen);
+            const total = res.data.length;
+            if (badge) { badge.textContent = total > 99 ? '99+' : total; badge.style.display = 'flex'; }
             if (unseen.length && res.data[0] && (!window._lastAlertTs || res.data[0].id > window._lastAlertTs)) {
               unseen.slice(0, 3).forEach(a => {
                 const label = a.alert_type.replace('_', ' ');
@@ -708,6 +743,8 @@ document.addEventListener('DOMContentLoaded', () => {
               // Acknowledge all
               apiFetch('/alerts/triggered/ack', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '[]' });
             }
+          } else {
+            if (badge) badge.style.display = 'none';
           }
         } catch (e) { /* silent */ }
       }
@@ -735,6 +772,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch {}
       }
       updateSignalBadge();
+      // Data freshness polling — refresh every 5 min
+      loadFreshness();
+      setInterval(loadFreshness, 300000);
   } catch (e) {
       console.error('Init error:', e);
   }

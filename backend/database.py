@@ -221,6 +221,18 @@ class TransactionLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class ChatHistory(Base):
+    """AI chat history per stock — persistent Q&A context."""
+    __tablename__ = "chat_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=False)
+    role = Column(String, nullable=False)  # 'user' or 'assistant'
+    message = Column(String, nullable=False)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()

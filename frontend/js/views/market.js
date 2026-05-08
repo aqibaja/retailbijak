@@ -405,10 +405,79 @@ export async function renderMarket(root) {
     });
   }, 200);
 
+  // Local CSS Grid Heatmap (below TV widget)
+  loadLocalHeatmap(root);
+
   // Stagger reveal
   document.querySelectorAll('.market-section-group').forEach((el, i) => {
     el.style.setProperty('--stagger-delay', `${i * 90}ms`);
     el.classList.add('stagger-item');
   });
 
+}
+
+// ─── Local CSS Grid Heatmap ─────────────────────────
+async function loadLocalHeatmap(root) {
+  const heatmapSection = root.querySelector('.market-section-group-heatmap');
+  if (!heatmapSection) return;
+
+  // Check if already rendered
+  if (document.getElementById('local-sector-heatmap')) return;
+
+  try {
+    const res = await apiFetch('/sectors/performance', { timeout: 8000 });
+    const sectors = res?.sectors || [];
+    if (!sectors.length) return;
+
+    // Sort by 1d return descending
+    const sorted = [...sectors].sort((a, b) => (b.avg_returns?.['1d'] || 0) - (a.avg_returns?.['1d'] || 0));
+
+    const items = sorted.map(s => {
+      const ret = s.avg_returns?.['1d'] || 0;
+      const isUp = ret >= 0;
+      const intensity = Math.min(Math.abs(ret) / 5, 1);
+      const count = s.count || 0;
+      const topTicker = s.top_stock?.ticker || '';
+      const bottomTicker = s.bottom_stock?.ticker || '';
+      const topRet = s.top_stock?.returns?.['1d'] || 0;
+
+      // Color intensity calculation
+      const bgOpacity = 0.1 + 0.4 * intensity;
+      const borderOpacity = 0.2 + 0.5 * intensity;
+      const color = isUp ? 'var(--up-color)' : 'var(--down-color)';
+      const bg = isUp ? `rgba(52,211,153,${bgOpacity})` : `rgba(248,113,113,${bgOpacity})`;
+      const borderColor = isUp ? `rgba(52,211,153,${borderOpacity})` : `rgba(248,113,113,${borderOpacity})`;
+
+      return `<div class="heatmap-cell" style="background:${bg};border:1px solid ${borderColor};border-radius:8px;padding:10px 8px;min-height:72px;display:flex;flex-direction:column;gap:2px;cursor:pointer" data-sector="${encodeURIComponent(s.sector)}" onclick="window.location.hash='#sector/${encodeURIComponent(s.sector)}'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <span style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em">${s.sector}</span>
+          <span style="font-size:13px;font-weight:700;color:${color}">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span style="font-size:10px;color:var(--text-dim)">${count} saham</span>
+          ${topTicker ? `<span style="font-size:9px;color:var(--up-color)">${topTicker} ${topRet >= 0 ? '+' : ''}${topRet.toFixed(1)}%</span>` : ''}
+        </div>
+        <div style="height:3px;border-radius:2px;background:var(--border-subtle);margin-top:4px;overflow:hidden">
+          <div style="height:100%;width:${isUp ? Math.min(intensity * 100, 100) : 0}%;background:var(--up-color);border-radius:2px;transition:width .5s"></div>
+          <div style="height:100%;width:${!isUp ? Math.min(intensity * 100, 100) : 0}%;background:var(--down-color);border-radius:2px;margin-top:-3px;transition:width .5s"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const localHeatmap = document.createElement('div');
+    localHeatmap.id = 'local-sector-heatmap';
+    localHeatmap.className = 'market-section-group';
+    localHeatmap.style.marginTop = '14px';
+    localHeatmap.innerHTML = `
+      <header class="market-section-group-head">
+        <div class="market-section-group-title">Heatmap Sektor (CSS Grid)</div>
+        <p>Performa sektor IDX berdasarkan data OHLCV lokal — ukuran intensitas = perubahan % 1 hari.</p>
+      </header>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">${items}</div>
+      <div style="margin-top:8px;text-align:center;font-size:10px;color:var(--text-dim)">Klik sektor untuk detail · Data dari database lokal</div>`;
+
+    heatmapSection.insertAdjacentElement('afterend', localHeatmap);
+  } catch (e) {
+    console.warn('loadLocalHeatmap failed', e);
+  }
 }

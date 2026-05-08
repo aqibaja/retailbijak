@@ -33,6 +33,7 @@ function renderAiPickContextBanner(symbol) {
     ssRemove(AI_PICKS_CONTEXT_KEY);
     return { bannerHtml: '', heroBackHref: '#dashboard' };
   }
+}
 
 export async function renderStockDetail(root, ticker) {
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
@@ -60,6 +61,8 @@ export async function renderStockDetail(root, ticker) {
           <div class="stock-hero-meta">
             <span class="stock-hero-change" id="stock-change">—</span>
           </div>
+          <div id="pattern-tags" class="stock-pattern-tags mt-2 flex gap-1 flex-wrap"></div>
+          <div id="perf-chips" class="stock-perf-chips mt-1 flex gap-1 flex-wrap"></div>
         </div>
       </div>
       <div id="tv-symbol-profile" class="stock-side-panel hidden"></div>
@@ -300,6 +303,7 @@ export async function renderStockDetail(root, ticker) {
   }
   // Hydrate header with price data immediately (no waiting for fundamental/technical)
   hydrateHeader(symbol, detail, null, candles);
+  loadPerfChips(candles);
 
   // Phase 2: Load remaining data in background (fundamental, technical, analysis, news)
   const [fund, tech, analysis, news, announcements] = await Promise.all([
@@ -339,7 +343,8 @@ export async function renderStockDetail(root, ticker) {
   const analysisPayload = { ...(analysisData || {}), llm: analysis?.llm || analysisData?.llm || null };
   renderTechnicalPanel(technical);
   renderSnapshotPanel(fund?.data || detail?.data || {}, candles, technical);
-  
+  loadPatterns(symbol);
+
   // TV Technical Analysis widget
   const taContainer = document.getElementById('tv-technical-analysis');
   if (taContainer) {
@@ -428,6 +433,61 @@ export async function renderStockDetail(root, ticker) {
   
   
 
+}
+
+const LOCALE_NAMES_ID = {
+  doji: 'Doji',
+  hammer: 'Hammer',
+  inverted_hammer: 'Inverted Hammer',
+  bullish_engulfing: 'Bullish Engulfing',
+  bearish_engulfing: 'Bearish Engulfing',
+  morning_star: 'Morning Star',
+  evening_star: 'Evening Star',
+  three_white_soldiers: 'Three White Soldiers',
+  three_black_crows: 'Three Black Crows',
+};
+
+async function loadPatterns(symbol) {
+  const container = document.getElementById('pattern-tags');
+  if (!container) return;
+  try {
+    const res = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/patterns`);
+    if (!res || res.status !== 'ok' || !Array.isArray(res.patterns) || res.patterns.length === 0) {
+      container.classList.add('hidden');
+      return;
+    }
+    container.innerHTML = res.patterns.map(p => {
+      const label = LOCALE_NAMES_ID[p.pattern] || p.label || p.pattern;
+      const direction = p.direction === 'bullish' ? 'bullish' : p.direction === 'bearish' ? 'bearish' : 'neutral';
+      const daysAgo = p.days_ago != null ? p.days_ago : '—';
+      return `<span class="pattern-chip pattern-${direction}"><span class="pattern-chip-label">${label}</span><span class="pattern-chip-date">${daysAgo} hari lalu</span></span>`;
+    }).join('');
+    container.classList.remove('hidden');
+  } catch {
+    container.classList.add('hidden');
+  }
+}
+
+function loadPerfChips(candles) {
+  const container = document.getElementById('perf-chips');
+  if (!container || !candles || candles.length < 20) return;
+  const closes = candles.map(c => Number(c.close)).filter(v => v > 0);
+  if (closes.length < 20) return;
+  const latest = closes[closes.length - 1];
+  const offsets = [5, 21, 63];
+  const labels = ['1W', '1M', '3M'];
+  const chips = offsets.map((offset, i) => {
+    const idx = closes.length - 1 - offset;
+    if (idx < 0 || idx >= closes.length) return null;
+    const old = closes[idx];
+    if (!old || old <= 0) return null;
+    const perf = ((latest - old) / old) * 100;
+    const direction = perf >= 0 ? 'up' : 'down';
+    const arrow = perf >= 0 ? '▲' : '▼';
+    return `<span class="perf-chip perf-${direction}"><span class="perf-chip-label">${labels[i]}</span><span>${arrow} ${Math.abs(perf).toFixed(1)}%</span></span>`;
+  }).filter(Boolean).join('');
+  container.innerHTML = chips;
+  container.classList.remove('hidden');
 }
 
 let currentTimeframe = '1D';

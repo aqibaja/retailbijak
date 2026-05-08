@@ -10,9 +10,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, get_db
+    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, get_db
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, get_db
+    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, get_db
 
 try:
     from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
@@ -227,13 +227,14 @@ class ChatMessage(BaseModel):
     message: str = Field(min_length=1, max_length=500)
 
 
-@router.post('/api/stocks/{ticker}/chat')
-def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
+def _build_chat_context(ticker: str, db: Session) -> tuple:
+    """Build tech, fundamental, news data for AI context."""
     base = _ticker_base(ticker)
-    # Build context: technical, fundamental, recent news
     tech = None
     fund = None
     news_rows = []
+    company_name = None
+
     try:
         from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
     except ModuleNotFoundError:
@@ -268,17 +269,13 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
     except Exception:
         fund = None
 
-    # Stock name lookup for news matching
-    company_name = None
     company_names = [base]
     try:
         stock = db.query(Stock).filter(Stock.ticker == base).first()
         if stock and stock.name:
             company_name = stock.name
-            # Clean company name: remove PT, (Persero), Tbk
             clean = stock.name.replace('PT ', '').replace('(Persero)', '').replace('Tbk.', '').replace('Tbk', '').replace('.', '').strip()
             company_names.append(clean.upper())
-            # Also add full original name for matching
             company_names.append(stock.name.upper())
     except Exception:
         pass
@@ -291,13 +288,39 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
                 break
             title_upper = (n.title or '').upper()
             summary_upper = (n.summary or '').upper()
-            # Match ticker or company name
             matched = any(cn in title_upper or cn in summary_upper for cn in company_names if cn)
             if matched and n.title and n.title not in seen_titles:
                 seen_titles.add(n.title)
                 news_rows.append({'title': n.title, 'published_at': str(n.published_at)[:10] if n.published_at else ''})
     except Exception:
         pass
+
+    return tech, fund, news_rows, company_name
+
+
+@router.post('/api/stocks/{ticker}/chat')
+def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
+    tech, fund, news_rows, company_name = _build_chat_context(ticker, db)
+
+    # Load recent chat history for context injection (last 3 exchanges)
+    recent_history = []
+    try:
+        hist_rows = db.query(ChatHistory).filter(
+            ChatHistory.ticker == base
+        ).order_by(ChatHistory.created_at.desc()).limit(6).all()
+        hist_rows.reverse()  # chronological order
+        for h in hist_rows:
+            recent_history.append({'role': h.role, 'message': h.message})
+    except Exception:
+        pass
+
+    # Save user message to history
+    try:
+        db.add(ChatHistory(ticker=base, role='user', message=body.message))
+        db.commit()
+    except Exception:
+        db.rollback()
 
     llm_response = build_stock_chat_llm_payload(
         ticker=base,
@@ -307,8 +330,87 @@ def stock_chat(ticker: str, body: ChatMessage, db: Session = Depends(get_db)):
         news=news_rows,
         db=db,
         company_name=company_name,
+        chat_history=recent_history,
     )
+
+    # Save assistant reply to history
+    reply = llm_response.get('reply', '')
+    if reply:
+        try:
+            db.add(ChatHistory(ticker=base, role='assistant', message=reply))
+            db.commit()
+        except Exception:
+            db.rollback()
+
     return llm_response
+
+
+@router.get('/api/stocks/{ticker}/chat-history')
+def get_chat_history(ticker: str, limit: int = 50, db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
+    rows = db.query(ChatHistory).filter(
+        ChatHistory.ticker == base
+    ).order_by(ChatHistory.created_at.desc()).limit(limit).all()
+    rows.reverse()  # chronological
+    data = [{
+        'id': r.id,
+        'role': r.role,
+        'message': r.message,
+        'created_at': r.created_at.isoformat() if r.created_at else None,
+    } for r in rows]
+    return {'ticker': base, 'count': len(data), 'data': data}
+
+
+@router.delete('/api/stocks/{ticker}/chat-history')
+def clear_chat_history(ticker: str, db: Session = Depends(get_db)):
+    base = _ticker_base(ticker)
+    deleted = db.query(ChatHistory).filter(ChatHistory.ticker == base).delete()
+    db.commit()
+    return {'status': 'ok', 'ticker': base, 'deleted': deleted}
+
+
+# ─── Candlestick Pattern Recognition ───────────
+
+
+@router.get('/api/stocks/{ticker}/patterns')
+def get_stock_patterns(ticker: str, db: Session = Depends(get_db)):
+    """Return detected candlestick patterns for the last 30 trading days."""
+    base = _ticker_base(ticker)
+
+    try:
+        from indicators_extended import get_ohlcv_dataframe
+    except ModuleNotFoundError:
+        try:
+            from backend.indicators_extended import get_ohlcv_dataframe
+        except ModuleNotFoundError as exc:
+            return {'ticker': base, 'status': 'no_data', 'patterns': [], 'message': str(exc)}
+
+    try:
+        from updaters.pattern_detector import get_patterns_with_dates
+    except ModuleNotFoundError:
+        from backend.updaters.pattern_detector import get_patterns_with_dates
+
+    ticker_with_suffix = _ticker_with_suffix(ticker)
+    df = get_ohlcv_dataframe(db, ticker_with_suffix, limit=60)
+    if df.empty:
+        return {'ticker': base, 'status': 'no_data', 'patterns': []}
+
+    opens = df['open'].astype(float).tolist()
+    highs = df['high'].astype(float).tolist()
+    lows = df['low'].astype(float).tolist()
+    closes = df['close'].astype(float).tolist()
+    dates = df.index.tolist() if hasattr(df, 'index') else df['date'].tolist()
+
+    # Try to get date column
+    if isinstance(dates[0], str) and len(dates) > 0:
+        pass
+    elif 'date' in df.columns:
+        dates = df['date'].tolist()
+    else:
+        dates = [str(d)[:10] for d in dates]
+
+    patterns = get_patterns_with_dates(opens, highs, lows, closes, dates, lookback=30)
+    return {'ticker': base, 'status': 'ok', 'count': len(patterns), 'patterns': patterns}
 
 
 @router.get('/api/stocks/{ticker}/broker-activity')

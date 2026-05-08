@@ -58,6 +58,11 @@ export async function renderDashboard(root) {
             <strong id="dash-lead-sector">Memuat...</strong>
             <small id="dash-lead-sector-note">Snapshot rotasi sektor.</small>
           </div>
+          <div class="dash-summary-card" id="dash-pnl-card">
+            <span>Portofolio P&L</span>
+            <strong id="dash-pnl-label">Memuat...</strong>
+            <small id="dash-pnl-note">Menghitung nilai portofolio.</small>
+          </div>
         </div>
       </div>
       <div class="dash-quote-card dash-mobile-status" aria-live="polite" aria-atomic="true">
@@ -86,13 +91,25 @@ export async function renderDashboard(root) {
       <div class="panel dash-movers-panel">
         <div class="flex justify-between items-center mb-3">
           <div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape dimuat</span></div></div>
-          <a href="#market" class="text-xs text-primary strong">Lihat Semua</a>
+          <a href="#movers" class="text-xs text-primary strong">Lihat Semua → #movers</a>
         </div>
         <div id="movers-list" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan data</strong></div></div>
       </div>
     </div>
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
+      <div class="panel dash-breadth-panel" id="dash-breadth-panel">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="panel-title" style="margin:0">📊 Market Breadth</h3>
+          <a href="#breadth" class="text-xs text-primary strong">Detail →</a>
+        </div>
+        <div id="dash-breadth-content">
+          <div class="dashboard-widget-state">
+            <strong class="dashboard-widget-state-title">Memuat breadth...</strong>
+            <span class="dashboard-widget-state-note">Menghitung data advance-decline.</span>
+          </div>
+        </div>
+      </div>
       <div class="panel"><h3 class="panel-title mb-3">Intelijen Pasar</h3><div id="market-intel" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">Arus Asing</h3><div id="foreign-flow-card" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Memuat data asing</strong><span class="dashboard-widget-state-note">Menarik net foreign buy/sell dari IDX.</span></div></div></div>
       <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
@@ -124,6 +141,8 @@ export async function renderDashboard(root) {
   observeElements();
   const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
   loadMarketNarrative();
+  loadPnlWidget();  // P&L widget (async)
+  loadMiniHeatmapWidget(); // Mini heatmap widget (async)
   // Lazy load Chart.js only for dashboard (1.7.2)
   if (typeof Chart === 'undefined' && document.getElementById('ihsgMainChart')) {
     try {
@@ -140,8 +159,45 @@ export async function renderDashboard(root) {
   // Foreign Flow card (async, non-blocking)
   loadForeignFlow();
   loadSignalWidget();
+  loadBreadthWidget();
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 
+// ─── Breadth Widget ────────────────────────────
+async function loadBreadthWidget() {
+  const el = document.getElementById('dash-breadth-content');
+  if (!el) return;
+  try {
+    const res = await fetchMarketBreadth();
+    const b = res?.data || {};
+    const adv = Number(b.advancing ?? 0);
+    const dec = Number(b.declining ?? 0);
+    const unch = Number(b.unchanged ?? 0);
+    const total = adv + dec + unch;
+    const ratio = dec > 0 ? (adv / dec).toFixed(2) : '—';
+    const advPct = total > 0 ? (adv / total * 100).toFixed(0) : 0;
+    const decPct = total > 0 ? (dec / total * 100).toFixed(0) : 0;
+    const isPositive = adv >= dec;
+    el.innerHTML = `
+      <div class="dash-breadth-visual">
+        <div class="dash-breadth-big-numbers">
+          <div class="dash-breadth-stat up">${adv}<span class="label">↑</span></div>
+          <div class="dash-breadth-stat down">${dec}<span class="label">↓</span></div>
+          <div class="dash-breadth-stat muted">${unch}<span class="label">—</span></div>
+        </div>
+        <div class="dash-breadth-bar-track">
+          <div class="dash-breadth-fill is-up" style="flex:${advPct};min-width:${Math.max(advPct, 4)}%"></div>
+          <div class="dash-breadth-fill is-down" style="flex:${decPct};min-width:${Math.max(decPct, 4)}%"></div>
+        </div>
+        <div class="dash-breadth-footer">
+          <span class="dash-breadth-ratio ${isPositive ? 'up' : 'down'}">A/D Ratio: ${ratio}</span>
+          <span class="dash-breadth-source">${b.latest_date || '—'}</span>
+        </div>
+      </div>`;
+  } catch (e) {
+    console.warn('loadBreadthWidget failed', e);
+    el.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat breadth</strong><span class="dashboard-widget-state-note">Coba refresh halaman.</span></div>';
+  }
+}
   // ─── Dashboard Quick Actions ───
   document.getElementById('dash-refresh-btn')?.addEventListener('click', () => {
     showToast('Me-refresh dashboard...', 'info');
@@ -320,7 +376,7 @@ async function loadMovers() {
     if (moversSummaryChip) moversSummaryChip.textContent = `${positiveCount}/${items.length} positif`;
     document.getElementById('movers-list').innerHTML = items.slice(0,4).map((r, index) => row({
       ticker: r.ticker, name: r.name || r.sector || 'Ekuitas IDX', price: r.price ?? 0,
-      change: r.change_pct ?? 0, rank: index + 1,
+      change: r.change_pct ?? 0, perf_1w: r.perf_1w ?? 0, rank: index + 1,
     })).join('');
   } else {
     if (moversSummaryChip) moversSummaryChip.textContent = 'Data belum tersedia';
@@ -440,6 +496,7 @@ const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row dash-mover-row
   <div class="text-right">
     <b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b>
     <small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small>
+    <small class="${r.perf_1w>=0?'text-up':'text-down'}">1W: ${pf(r.perf_1w)}</small>
   </div>
 </a>`;
 
@@ -652,5 +709,119 @@ async function loadMarketNarrative() {
   } catch (e) {
     console.warn('loadMarketNarrative failed', e);
     textEl.textContent = 'Gagal memuat narasi pasar.';
+  }
+}
+
+// ─── P&L Widget ────────────────────────────
+async function loadPnlWidget() {
+  const labelEl = document.getElementById('dash-pnl-label');
+  const noteEl = document.getElementById('dash-pnl-note');
+  const cardEl = document.getElementById('dash-pnl-card');
+  if (!labelEl || !noteEl) return;
+
+  try {
+    const [summaryRes, txnRes] = await Promise.all([
+      apiFetch('/portfolio/summary', { timeout: 5000 }).catch(() => null),
+      apiFetch('/portfolio/transactions/pnl', { timeout: 5000 }).catch(() => null),
+    ]);
+
+    const summary = summaryRes?.data;
+    const txn = txnRes?.data;
+
+    const totalValue = summary?.current_value || 0;
+    const pnl = summary?.pnl || 0;
+    const pnlPct = summary?.pnl_pct || 0;
+    const totalInvested = summary?.total_invested || 0;
+    const realizedPnl = txn?.realized_pnl || 0;
+
+    const hasData = totalValue > 0 || totalInvested > 0;
+
+    if (!hasData) {
+      // Check if there are any transactions (realized P&L)
+      if (realizedPnl !== 0 || (txn?.total_buy_cost || 0) > 0) {
+        labelEl.textContent = `Realisasi ${money(Math.abs(realizedPnl))}`;
+        labelEl.className = realizedPnl >= 0 ? 'up' : 'down';
+        noteEl.textContent = `Realized P&L dari transaksi`;
+        cardEl.className = `dash-summary-card ${realizedPnl >= 0 ? '' : 'down'}`;
+      } else {
+        labelEl.textContent = '—';
+        noteEl.textContent = 'Belum ada portofolio. Tambah posisi di halaman Portofolio.';
+        cardEl.className = 'dash-summary-card';
+      }
+      return;
+    }
+
+    // Format the display
+    const pnlSign = pnl >= 0 ? '+' : '';
+    const pnlClass = pnl >= 0 ? 'up' : 'down';
+    const pnlPctSign = pnlPct >= 0 ? '+' : '';
+    labelEl.textContent = `${pnlSign}${money(Math.abs(pnl))}`;
+    labelEl.className = pnlClass;
+    noteEl.innerHTML = `${pnlPctSign}${pf(Math.abs(pnlPct))} · Total ${money(totalValue)}`;
+    cardEl.className = `dash-summary-card ${pnlClass}`;
+
+    // Add a small progress bar
+    const barEl = document.createElement('div');
+    barEl.className = 'dash-pnl-bar';
+    const barPct = Math.min(Math.abs(pnlPct) / 20 * 100, 100); // Cap at 20% change
+    barEl.innerHTML = `<div style="height:3px;border-radius:2px;background:${pnl >= 0 ? 'var(--up-color)' : 'var(--down-color)'};width:${barPct}%;margin-top:4px;transition:width .5s"></div>`;
+    cardEl?.appendChild(barEl);
+
+  } catch (e) {
+    console.warn('loadPnlWidget failed', e);
+    labelEl.textContent = 'Gagal';
+    noteEl.textContent = 'Data portofolio tidak tersedia.';
+  }
+}
+
+// ─── Mini Heatmap Widget ────────────────────────────
+async function loadMiniHeatmapWidget() {
+  const dashBottomGrid = document.querySelector('.dash-bottom-grid-phase2');
+  if (!dashBottomGrid) return;
+
+  // Check if already rendered
+  if (document.getElementById('dash-mini-heatmap')) return;
+
+  try {
+    const res = await apiFetch('/sectors/performance', { timeout: 8000 });
+    const sectors = res?.sectors || [];
+    if (!sectors.length) return;
+
+    // Sort by 1d return
+    const sorted = [...sectors].sort((a, b) => (b.avg_returns?.['1d'] || 0) - (a.avg_returns?.['1d'] || 0));
+
+    // Create heatmap HTML
+    const items = sorted.slice(0, 12).map(s => {
+      const ret = s.avg_returns?.['1d'] || 0;
+      const isUp = ret >= 0;
+      const intensity = Math.min(Math.abs(ret) / 5, 1); // 0-1 scale, 5% = max
+      const r = isUp ? Math.round(34 + (22 - 34) * intensity) : Math.round(248 + (239 - 248) * (1 - intensity));
+      const g = isUp ? Math.round(211 - 180 * intensity) : Math.round(113 + (68 - 113) * (1 - intensity));
+      const b = isUp ? Math.round(153 - 130 * intensity) : Math.round(113 + (70 - 113) * (1 - intensity));
+      const bg = isUp ? `rgba(${r},${g},${b},${0.15 + 0.35 * intensity})` : `rgba(${r},${g},${b},${0.15 + 0.35 * (1 - intensity)})`;
+      const color = isUp ? `rgb(${Math.round(34 - 15 * intensity)}, ${Math.round(211 + 20 * intensity)}, ${Math.round(153 - 20 * intensity)})`
+        : `rgb(${Math.round(248 + 5 * intensity)}, ${Math.round(113 - 20 * intensity)}, ${Math.round(113 - 20 * intensity)})`;
+
+      return `<a href="#sector/${encodeURIComponent(s.sector)}" class="dash-heatmap-item" style="background:${bg};color:${color};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;border-radius:8px;text-align:center;gap:2px;text-decoration:none;font-size:11px;font-weight:600;min-height:60px">
+        <span style="font-size:9px;opacity:.8;line-height:1.2">${String(s.sector).slice(0, 12)}</span>
+        <span style="font-size:13px">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</span>
+      </a>`;
+    }).join('');
+
+    const widget = document.createElement('div');
+    widget.id = 'dash-mini-heatmap';
+    widget.className = 'panel';
+    widget.style.marginTop = '14px';
+    widget.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 class="panel-title" style="margin:0">🗂️ Heatmap Sektor</h3>
+        <a href="#market" class="text-xs text-primary strong">Lihat Semua</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">${items}</div>
+      <div style="margin-top:8px;text-align:center;font-size:10px;color:var(--text-dim)">Performa 1 hari · Ukuran berdasarkan perubahan %</div>`;
+
+    dashBottomGrid.appendChild(widget);
+  } catch (e) {
+    console.warn('loadMiniHeatmapWidget failed', e);
   }
 }

@@ -61,12 +61,83 @@ def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
     return latest_date, db.execute(sql, {'latest_date': latest_date_sql}).mappings().all()
 
 
+def _historical_close_offset(db: Session, ticker: str, offset: int) -> float | None:
+    """Get close price N trading days before the most recent date for a ticker.
+
+    Uses SQL ORDER BY date DESC LIMIT 1 OFFSET N to fetch the close
+    price from N trading days ago.
+
+    Args:
+        db: SQLAlchemy session
+        ticker: raw ticker symbol
+        offset: number of trading days to look back (0 = latest, 5 = 1 week ago)
+
+    Returns:
+        close price as float, or None if not enough historical data
+    """
+    row = (
+        db.query(OHLCVDaily.close)
+        .filter(OHLCVDaily.ticker == ticker)
+        .order_by(OHLCVDaily.date.desc())
+        .offset(offset)
+        .limit(1)
+        .first()
+    )
+    return row[0] if row else None
+
+
+def _batch_historical_closes(
+    db: Session, tickers: list[str], offsets: list[int]
+) -> dict[str, dict[int, float | None]]:
+    """Batch fetch historical close prices at multiple offsets for many tickers.
+
+    For each ticker, runs a single query to get closes at the specified
+    offsets (trading days ago). More efficient than calling
+    _historical_close_offset individually for each ticker/offset combo.
+
+    Args:
+        db: SQLAlchemy session
+        tickers: list of raw ticker symbols
+        offsets: list of offsets (e.g. [5, 21, 63, 126])
+
+    Returns:
+        dict mapping ticker -> {offset: close_price or None}
+    """
+    if not tickers or not offsets:
+        return {}
+
+    max_offset = max(offsets)
+    # Fetch the most recent (max_offset + 1) closes for each ticker
+    # to avoid N+1 queries per ticker per offset
+    result: dict[str, dict[int, float | None]] = {}
+    for ticker in tickers:
+        rows = (
+            db.query(OHLCVDaily.close)
+            .filter(OHLCVDaily.ticker == ticker)
+            .order_by(OHLCVDaily.date.desc())
+            .limit(max_offset + 1)
+            .all()
+        )
+        closes = [r[0] for r in rows]
+        ticker_closes: dict[int, float | None] = {}
+        for off in offsets:
+            ticker_closes[off] = closes[off] if len(closes) > off else None
+        result[ticker] = ticker_closes
+    return result
+
+
 def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
     latest_date, pairs = _latest_ohlcv_pairs(db)
     if not latest_date or not pairs:
         return latest_date, []
 
     stocks = {row.ticker: row.name for row in db.query(Stock).all()}
+
+    # Batch-fetch historical closes for multi-timeframe performance
+    ticker_offsets = [5, 21, 63, 126]
+    tickers_raw = [row['ticker'] for row in pairs]
+    historical_closes = _batch_historical_closes(db, tickers_raw, ticker_offsets)
+
     rows = []
     for row in pairs:
         prev_close = row['prev_close']
@@ -74,15 +145,31 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
             continue
         change_pct = ((row['close_price'] - prev_close) / prev_close) * 100
         ticker = _display_ticker(row['ticker'])
-        rows.append({
+        ticker_raw = row['ticker']
+        close_latest = row['close_price']
+
+        closes = historical_closes.get(ticker_raw, {})
+
+        # Compute multi-timeframe performance
+        def _perf(close_old: float | None) -> float | None:
+            if close_old is not None and close_old != 0:
+                return round(((close_latest - close_old) / close_old) * 100, 2)
+            return None
+
+        item: dict[str, Any] = {
             'ticker': ticker,
             'name': stocks.get(ticker) or _company_name(row['ticker']),
-            'price': row['close_price'],
+            'price': close_latest,
             'change_pct': round(change_pct, 2),
             'volume': row.get('volume'),
             'date': latest_date.isoformat() if hasattr(latest_date, 'isoformat') else str(latest_date),
             'source': 'db',
-        })
+            'perf_1w': _perf(closes.get(5)),
+            'perf_1m': _perf(closes.get(21)),
+            'perf_3m': _perf(closes.get(63)),
+            'perf_6m': _perf(closes.get(126)),
+        }
+        rows.append(item)
     return latest_date, rows
 
 

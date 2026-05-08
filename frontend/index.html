@@ -59,6 +59,10 @@
       <span class="mono text-xs countdown-clock hidden" id="market-countdown"></span>
     </div>
   </div>
+  <div class="topbar-freshness" id="topbar-freshness" title="Data freshness">
+    <span class="freshness-dot"></span>
+    <span class="text-xs text-dim" id="freshness-text">Memuat...</span>
+  </div>
   <div class="topbar-ticker-wrap"><div class="tape-row" id="running-ticker"></div></div>
    <div class="topbar-actions flex items-center gap-4">
     <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari" data-i18n-aria="topbar.search"><i data-lucide="search" style="width:18px;"></i></button>
@@ -76,7 +80,9 @@
     <a href="#portfolio" class="nav-item" data-view="portfolio" data-tooltip="Aset" data-i18n-aria="sidebar.portfolio"><i data-lucide="briefcase" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#news" class="nav-item" data-view="news" data-tooltip="Berita" data-i18n-aria="sidebar.news"><i data-lucide="newspaper" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#signal_overview" class="nav-item" data-view="signal_overview" data-tooltip="Sinyal" data-i18n-aria="sidebar.signals"><i data-lucide="activity" style="width:20px;" aria-hidden="true"></i><span class="nav-badge signal-badge" id="sidebar-signal-badge" style="display:none">0</span></a>
+    <a href="#alerts" class="nav-item" data-view="alerts" data-tooltip="Alert" data-i18n-aria="sidebar.alerts"><i data-lucide="bell" style="width:20px;" aria-hidden="true"></i><span class="nav-badge alert-badge" id="sidebar-alert-badge" style="display:none">0</span></a>
     <a href="#breadth" class="nav-item" data-view="breadth" data-tooltip="Breadth" data-i18n-aria="sidebar.breadth"><i data-lucide="bar-chart-3" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#movers" class="nav-item" data-view="movers" data-tooltip="Movers" data-i18n-aria="sidebar.movers"><i data-lucide="trending-up" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks" data-i18n-aria="sidebar.ai_picks"><i data-lucide="sparkles" style="width:20px;" aria-hidden="true"></i></a>
   </nav>
 </aside>

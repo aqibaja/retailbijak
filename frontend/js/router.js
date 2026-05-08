@@ -18,6 +18,8 @@ const ROUTE_META = {
   sector: { title: 'RetailBijak — Sektor Saham', desc: 'Lihat daftar saham IDX berdasarkan sektor. Analisis performa sektoral dan daftar emiten.' },
   breadth: { title: 'RetailBijak — Market Breadth', desc: 'Analisis market breadth IDX: advance-decline line, cumulative breadth, gainers/decliners ratio.' },
   signal_overview: { title: 'RetailBijak — Signal Overview', desc: 'Pantau semua sinyal trading terkini dari seluruh saham IDX. Filter BUY/SELL berdasarkan data teknikal.' },
+  alerts: { title: 'RetailBijak — Alert Harga', desc: 'Buat dan kelola alert harga saham IDX. Dapatkan notifikasi otomatis saat harga atau RSI mencapai level tertentu.' },
+  movers: { title: 'RetailBijak — Market Movers', desc: 'Lihat saham IDX dengan pergerakan terbesar: gainers, losers, dan most active dengan multi-timeframe performance.' },
 };
 
 // Dynamic view registry — lazy import per route (1.7.1)
@@ -37,6 +39,8 @@ const viewModules = {
   sector: () => import('./views/sector.js?v=20260510'),
   breadth: () => import('./views/breadth.js?v=20260508F'),
   signal_overview: () => import('./views/signal_overview.js?v=20260510'),
+  alerts: () => import('./views/alerts.js?v=20260508C'),
+  movers: () => import('./views/movers.js?v=20260508C'),
 };
 const viewCache = {};
 

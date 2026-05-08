@@ -134,19 +134,36 @@ def update_settings(payload: SettingsPayload, db: Session = Depends(get_db)):
 @router.get('/api/watchlist')
 def get_watchlist(db: Session = Depends(get_db)):
     rows = db.query(WatchlistItem).order_by(WatchlistItem.ticker.asc()).all()
-    return {
-        'count': len(rows),
-        'data': [
-            {
-                'id': row.id,
-                'ticker': row.ticker,
-                'notes': row.notes,
-                'group_id': row.group_id,
-                'created_at': row.created_at.isoformat() if row.created_at else None,
-            }
-            for row in rows
-        ],
-    }
+    # Enrich with latest price & change
+    enriched = []
+    for row in rows:
+        price_row = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == row.ticker
+        ).order_by(OHLCVDaily.date.desc()).first()
+        # Get previous close for change calculation
+        prev_row = None
+        if price_row:
+            prev_row = db.query(OHLCVDaily).filter(
+                OHLCVDaily.ticker == row.ticker,
+                OHLCVDaily.date < price_row.date
+            ).order_by(OHLCVDaily.date.desc()).first()
+
+        price = price_row.close if price_row else None
+        prev_close = prev_row.close if prev_row else None
+        change = (price - prev_close) if (price and prev_close) else None
+        change_pct = ((price - prev_close) / prev_close * 100) if (price and prev_close) else None
+
+        enriched.append({
+            'id': row.id,
+            'ticker': row.ticker,
+            'notes': row.notes,
+            'group_id': row.group_id,
+            'price': price,
+            'change': round(change, 2) if change is not None else None,
+            'change_pct': round(change_pct, 2) if change_pct is not None else None,
+            'created_at': row.created_at.isoformat() if row.created_at else None,
+        })
+    return {'count': len(enriched), 'data': enriched}
 
 
 @router.post('/api/watchlist')
@@ -220,6 +237,48 @@ def delete_portfolio(ticker: str, db: Session = Depends(get_db)):
     db.delete(row)
     db.commit()
     return {'ok': True}
+
+
+@router.post('/api/portfolio/seed-sample')
+def seed_sample_portfolio(db: Session = Depends(get_db)):
+    """Seed sample portfolio data for demo/first-time user."""
+    sample = [
+        {'ticker': 'BBCA', 'lots': 2, 'avg_price': 6225.0},
+        {'ticker': 'TLKM', 'lots': 5, 'avg_price': 3800.0},
+        {'ticker': 'ASII', 'lots': 3, 'avg_price': 5100.0},
+        {'ticker': 'BMRI', 'lots': 4, 'avg_price': 7200.0},
+        {'ticker': 'BBRI', 'lots': 3, 'avg_price': 4800.0},
+    ]
+    created = 0
+    for item in sample:
+        existing = db.query(PortfolioPosition).filter(PortfolioPosition.ticker == item['ticker']).first()
+        if not existing:
+            row = PortfolioPosition(ticker=item['ticker'], lots=item['lots'], avg_price=item['avg_price'])
+            db.add(row)
+            created += 1
+    # Add some sample transactions
+    if created > 0:
+        from datetime import datetime, timedelta
+        sample_txns = [
+            {'ticker': 'BBCA', 'type': 'buy', 'price': 6100, 'lots': 2, 'date': datetime.utcnow() - timedelta(days=30)},
+            {'ticker': 'TLKM', 'type': 'buy', 'price': 3850, 'lots': 5, 'date': datetime.utcnow() - timedelta(days=45)},
+            {'ticker': 'ASII', 'type': 'buy', 'price': 5050, 'lots': 3, 'date': datetime.utcnow() - timedelta(days=20)},
+            {'ticker': 'BMRI', 'type': 'buy', 'price': 7100, 'lots': 4, 'date': datetime.utcnow() - timedelta(days=60)},
+            {'ticker': 'BBRI', 'type': 'buy', 'price': 4750, 'lots': 3, 'date': datetime.utcnow() - timedelta(days=15)},
+        ]
+        for txn in sample_txns:
+            txn_row = TransactionLog(
+                ticker=txn['ticker'],
+                transaction_type=txn['type'],
+                price=txn['price'],
+                lots=txn['lots'],
+                shares=txn['lots'] * 100,
+                total=txn['price'] * txn['lots'] * 100,
+                transaction_date=txn['date'],
+            )
+            db.add(txn_row)
+    db.commit()
+    return {'ok': True, 'created': created, 'message': f'{created} posisi sample ditambahkan'}
 
 
 @router.get('/api/portfolio/summary')
@@ -527,6 +586,66 @@ def save_screener_presets(payload: dict = Body(...), db: Session = Depends(get_d
     db.commit()
     return {'ok': True, 'count': len(presets)}
 
+
+@router.get('/api/portfolio/rebalance')
+def portfolio_rebalance(db: Session = Depends(get_db)):
+    """Calculate current vs target sector allocation and suggest rebalancing."""
+    from collections import defaultdict
+
+    positions = db.query(PortfolioPosition).all()
+    if not positions:
+        return {'has_data': False, 'message': 'Belum ada posisi portofolio'}
+
+    # Get latest prices and sector info
+    ticker_values = {}
+    sector_map = {}
+    total_value = 0
+
+    for pos in positions:
+        ticker = pos.ticker
+        latest = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == ticker
+        ).order_by(OHLCVDaily.date.desc()).first()
+        price = latest.close if latest else pos.avg_price
+        value = price * pos.lots * 100
+        ticker_values[ticker] = {'lots': pos.lots, 'price': price, 'value': value, 'avg_price': pos.avg_price}
+        total_value += value
+
+        stock = db.query(Stock).filter(Stock.ticker == ticker).first()
+        sector_map[ticker] = stock.sector if stock and stock.sector else 'Lainnya'
+
+    # Current allocation by sector
+    sector_alloc = defaultdict(lambda: {'value': 0, 'tickers': []})
+    for ticker, info in ticker_values.items():
+        sec = sector_map.get(ticker, 'Lainnya')
+        sector_alloc[sec]['value'] += info['value']
+        sector_alloc[sec]['tickers'].append(ticker)
+
+    # Target: equal-weight across sectors
+    num_sectors = len(sector_alloc)
+    target_pct = 100.0 / num_sectors if num_sectors > 0 else 0
+
+    rebalance_suggestions = []
+    for sector, data in sorted(sector_alloc.items(), key=lambda x: -x[1]['value']):
+        current_pct = (data['value'] / total_value * 100) if total_value > 0 else 0
+        diff = current_pct - target_pct
+        action = 'overweight' if diff > 2 else ('underweight' if diff < -2 else 'balanced')
+        rebalance_suggestions.append({
+            'sector': sector,
+            'current_pct': round(current_pct, 1),
+            'target_pct': round(target_pct, 1),
+            'diff': round(diff, 1),
+            'value': round(data['value']),
+            'action': action,
+            'tickers': data['tickers'],
+        })
+
+    return {
+        'has_data': True,
+        'total_value': round(total_value),
+        'num_sectors': num_sectors,
+        'suggestions': rebalance_suggestions,
+    }
 
 @router.get('/api/portfolio/analytics')
 def portfolio_analytics(db: Session = Depends(get_db)):

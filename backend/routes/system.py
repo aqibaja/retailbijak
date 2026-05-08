@@ -260,3 +260,71 @@ def scheduler_jobs():
         return {'status': 'ok', 'source': 'apscheduler', 'count': len(scheduler.get_jobs()), 'data': [j.id for j in scheduler.get_jobs()]}
     except Exception as exc:
         return {'status': 'error', 'source': 'apscheduler', 'count': 0, 'data': [], 'error': str(exc)}
+
+
+# ─── Data Freshness ──────────────────────────────
+
+@router.get('/api/system/freshness')
+def get_system_freshness(db: Session = Depends(get_db)):
+    """Return last-updated timestamp for each data table."""
+    from sqlalchemy import text
+    from datetime import timezone
+
+    queries = {
+        'stocks': "SELECT MAX(updated_at) FROM stocks",
+        'ohlcv_daily': "SELECT MAX(date) FROM ohlcv_daily",
+        'signals': "SELECT MAX(signal_date) FROM signals",
+        'fundamentals': "SELECT MAX(updated_at) FROM fundamentals",
+        'financials': "SELECT MAX(period) FROM financials",
+        'news': "SELECT MAX(published_at) FROM news",
+        'broker_summary': "SELECT MAX(updated_at) FROM broker_summary",
+        'ai_pick_reports': "SELECT MAX(generated_at) FROM ai_pick_reports",
+        'watchlist_items': "SELECT MAX(updated_at) FROM watchlist_items",
+        'portfolio_positions': "SELECT MAX(updated_at) FROM portfolio_positions",
+    }
+
+    result = {}
+    for table, sql in queries.items():
+        try:
+            row = db.execute(text(sql)).fetchone()
+            val = row[0]
+            if val is not None:
+                if hasattr(val, 'isoformat'):
+                    val = val.isoformat(timespec='seconds')
+                elif hasattr(val, 'strftime'):
+                    val = val.strftime('%Y-%m-%d')
+                else:
+                    val = str(val)[:19]
+            result[table] = val or None
+        except Exception as e:
+            result[table] = None
+            logger.warning(f"Freshness query failed for {table}: {e}")
+
+    # Calculate human-readable summary
+    now = datetime.utcnow()
+    labels = {}
+    for table, ts in result.items():
+        if ts is None:
+            labels[table] = 'tidak tersedia'
+            continue
+        try:
+            dt = datetime.fromisoformat(ts) if isinstance(ts, str) else ts
+            diff = now - dt
+            mins = int(diff.total_seconds() / 60)
+            if mins < 1:
+                labels[table] = 'baru saja'
+            elif mins < 60:
+                labels[table] = f'{mins} menit lalu'
+            elif mins < 1440:
+                labels[table] = f'{mins // 60} jam lalu'
+            else:
+                labels[table] = f'{mins // 1440} hari lalu'
+        except Exception:
+            labels[table] = ts
+
+    return {
+        'status': 'ok',
+        'data': result,
+        'labels': labels,
+        'generated_at': now.isoformat(timespec='seconds'),
+    }

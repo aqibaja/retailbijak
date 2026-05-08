@@ -239,9 +239,18 @@ async function renderPortfolioTab(el) {
       </div>` : `
       <div class="empty-state-v2">
         <div class="empty-icon"><i data-lucide="briefcase"></i></div>
-        <h3>Belum Ada Posisi</h3>
-        <p>Mulai catat posisi saham Anda untuk melacak portofolio.</p>
-        <button id="add-portfolio-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
+        <h3>Mulai Portofolio Anda</h3>
+        <p style="max-width:340px">Catat posisi saham yang Anda miliki dan pantau P&amp;L secara real-time. Data tersimpan di akun Anda.</p>
+        <div class="mt-8 flex gap-2" style="justify-content:center;flex-wrap:wrap">
+          <button id="add-portfolio-empty" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
+          <a href="#screener" class="btn portfolio-action-btn" style="padding:8px 16px;font-size:12px"><i data-lucide="radar" class="lucide-md"></i> Cari Ide Saham</a>
+          <button id="seed-sample-portfolio" type="button" class="btn portfolio-action-btn" style="padding:8px 16px;font-size:12px"><i data-lucide="test-tube" class="lucide-md"></i> Contoh Data</button>
+        </div>
+        <div class="mt-6 text-xs text-dim" style="max-width:340px;line-height:1.6;text-align:left;padding:12px 16px;background:var(--bg-panel);border-radius:12px;border:1px solid var(--border-subtle)">
+          <strong class="text-muted">📊 Contoh Portofolio:</strong><br>
+          BBCA — 2 lot @ Rp6.225 (+4.6%) &nbsp;•&nbsp; TLKM — 5 lot @ Rp3.800 (-1.2%)<br>
+          <span style="color:var(--text-dim)">Tambahkan posisi Anda untuk lihat grafik equity curve, alokasi sektor, dan P&amp;L.</span>
+        </div>
       </div>`}`;
 
     // Add
@@ -262,6 +271,24 @@ async function renderPortfolioTab(el) {
                 showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
             }
         });
+    });
+
+    // Seed Sample Data
+    const seedBtn = el.querySelector('#seed-sample-portfolio');
+    if (seedBtn) seedBtn.addEventListener('click', async () => {
+        seedBtn.disabled = true;
+        seedBtn.textContent = 'Menambahkan...';
+        try {
+            const res = await apiFetch('/portfolio/seed-sample', { method: 'POST' });
+            if (res?.ok) {
+                showToast(res.message || 'Data contoh ditambahkan!', 'success');
+                await renderPortfolioTab(el);
+            }
+        } catch (e) {
+            showToast('Gagal menambahkan data contoh', 'error');
+            seedBtn.disabled = false;
+            seedBtn.innerHTML = '<i data-lucide="test-tube" class="lucide-md"></i> Contoh Data';
+        }
     });
 
     // Delete
@@ -291,6 +318,7 @@ async function renderPortfolioTab(el) {
     loadTransactionHistory(el);
     // Load analytics charts
     loadPortfolioAnalytics();
+    loadRebalancing();
 }
 
 async function loadPortfolioAnalytics() {
@@ -557,7 +585,10 @@ async function renderWatchlistTab(el, activeGroupId) {
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
-        <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+        <div class="flex gap-2">
+          <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+          <button id="btn-compare-watchlist" type="button" class="btn portfolio-action-btn"><i data-lucide="bar-chart-3" class="lucide-sm"></i> Bandingkan</button>
+        </div>
       </div>
         ${groupTabs}
       ${fetchError ? `
@@ -587,7 +618,15 @@ async function renderWatchlistTab(el, activeGroupId) {
       </div>`}`;
     
     // Group tab handlers
-    el.querySelectorAll('.grp-tab').forEach(btn => {
+    // Compare watchlist button
+    document.getElementById('btn-compare-watchlist')?.addEventListener('click', () => {
+      const tickers = allRows.map(r => r.ticker).filter(Boolean);
+      if (tickers.length < 2) { showToast('Minimal 2 saham untuk dibandingkan', 'warning'); return; }
+      window.location.hash = '#compare/' + tickers.join('+');
+    });
+
+    // Group select change handler
+    el.querySelectorAll('.wl-group-select').forEach(sel => {
       btn.addEventListener('click', async () => {
         const gid = parseInt(btn.dataset.grpId) || 0;
         // Re-render with this group active
