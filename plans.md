@@ -1,162 +1,113 @@
-# 🇮🇩 RetailBijak — Fase 17: Platform Maturity, Mobile UX & Tooling
+# 🇮🇩 RetailBijak — Fase 18: Advanced Analytics, Export & Intelligence
 
-> **Status:** 🟢 Fase 17 — ~75% Complete (17.1 ✅ | 17.2 ✅ | 17.3 ✅ | 17.5 ✅ | 17.6 ✅ | 17.8 ✅)
-> **Tujuan:** Fix pipeline yang masih kosong (calendar_events), polish light theme, enhance mobile UX, tambah fitur export/import Docker, dan selesaikan i18n.
-> **Prinsip:** Maturity sebelum scaling — fix yang broken dulu, baru tambah fitur baru.
-> **Constraint:** yfinance masih rate-limited — semua scheduler harus punya synthetic fallback.
+> **Status:** 🆕 Fase 18 dimulai — 0%
+> **Tujuan:** Tambah fitur high-value: PDF report, portfolio performance chart, AI market briefing, push notifications, screener alerts.
+> **Prinsip:** Setiap fitur harus punya value proposition jelas — jangan nambah bloat.
+> **Constraint:** FREE models only (Nvidia Nemotron). No paid API dependencies.
 
 ---
 
-## Masalah Teridentifikasi (Fase 17 Audit)
+## Masalah Teridentifikasi (Fase 18 Audit)
 
 | # | Masalah | Prioritas | Dampak |
 |---|---------|-----------|--------|
-| P1 | **Calendar events = 0** — seed gagal karena yfinance | 🔴 High | Dividen, IPO, rights issue tidak tampil |
-| P2 | **Light theme belum sempurna** — banyak komponen masih hardcoded dark | 🟠 Medium | User light mode lihat teks putih di background putih |
-| P3 | **Tidak ada CSV import portfolio** — harus input manual 1 per 1 | 🟠 Medium | User dengan banyak posisi malas input |
-| P4 | **Search hanya terbatas** — cmd-K minimalis, tidak ada autocomplete | 🟡 Low | User susah cari saham |
-| P5 | **Chart tidak bisa di-export** — screenshot atau download image | 🟡 Low | Analis tidak bisa share chart |
-| P6 | **No Docker setup** — deployment manual via cp ke /opt/swingaq | 🟡 Low | Developer lain susah clone & run |
-| P7 | **i18n belum selesai** — English mode hanya sebagian | 🟡 Low | User non-Indonesia kurang nyaman |
-| P8 | **Mobile PWA install prompt masih basic** | 🟡 Low | Install rate rendah |
-| P9 | **Bottom nav desktop** — sidebar bagus, tapi desktop juga butuh bottom bar | 🟡 Low | Navigasi desktop bisa lebih efisien |
+| P1 | **Tidak ada PDF report** — Analis tidak bisa download laporan saham | 🔴 High | Loss of professional users |
+| P2 | **Portfolio performance chart** — Equity curve tidak ada | 🔴 High | User tidak bisa lihat performa portofolio secara visual |
+| P3 | **AI Market Briefing** — Belum ada ringkasan pasar harian otomatis | 🟠 Medium | User ketinggalan konteks market |
+| P4 | **Browser push notification** — Alert hanya via in-app polling | 🟠 Medium | User harus buka web untuk lihat alert |
+| P5 | **Screener filter sebagai alert** — Tidak bisa simpan kondisi scan | 🟡 Low | Power user harus buka screener terus |
+| P6 | **Compare view minim** — Hanya 233 lines, no radar/spider chart | 🟡 Low | Analisis komparasi terbatas |
 
 ---
 
-## 🔴 17.1 Calendar Pipeline Fix (HIGH IMPACT)
+## 🔴 18.1 PDF Stock Report (HIGH IMPACT)
 
-> **Goal:** Calendar events terisi data dividen, IPO, dan earnings dari synthetic data + OHLCV.
+> **Goal:** Download one-click PDF laporan saham: TA summary + FA data + AI analysis.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 17.1.1 | **Synthetic calendar seeder** — Generate dividend events from OHLCV price data + random IPO/rights for top stocks | `backend/updaters/calendar_updater.py` (modify) | 20m | Use dividend_yield from fundamentals to calculate dividend dates. Add synthetic IPO events for recent years. |
-| 17.1.2 | **Admin trigger endpoint** — `POST /api/admin/seed-calendar` | `backend/routes/system.py` | 5m | Simple wrapper like seed-brokers |
-| 17.1.3 | **Calendar health card** — Show calendar event count in settings health | already done | 0m | 16.10.3 already covers this |
+| 18.1.1 | **PDF generation service** — Generate HTML → PDF via weasyprint or pdfkit | `backend/services/pdf_report.py` (new) | 30m | Use `pdfkit` (wkhtmltopdf wrapper) — easier install than weasyprint. Template: company header, key stats table, TA signals, FA data, AI summary, footer. |
+| 18.1.2 | **PDF endpoint** — `GET /api/stocks/{ticker}/report` return PDF | `backend/routes/stock_detail.py` | 15m | Async generate HTML, render to PDF, return `FileResponse` with `Content-Type: application/pdf` |
+| 18.1.3 | **Download button UI** — Add "Download Report" button in stock detail | `frontend/js/views/stock_detail.js` | 10m | Button in stock hero/toolbar area. Click → download PDF. Show loading toast. |
 
-**Value:** ★★★★☆ — Dividen tracker adalah fitur yang paling diminta investor IDX
-**Dependency:** Fundamentals data (150 rows), OHLCV data
+**Value:** ★★★★★ — Fitur paling diminta analyst/sales
+**Dependency:** `pdfkit` (~30MB), `wkhtmltopdf` system package
+**Risk:** wkhtmltopdf mungkin tidak available di semua VPS. Alternatif: HTML report page + browser print.
 
 ---
 
-## 🟠 17.2 Light Theme Polish (MEDIUM IMPACT)
+## 🔴 18.2 Portfolio Performance Chart (HIGH IMPACT)
 
-> **Goal:** Light theme benar-benar usable — semua komponen punya light mode styling.
+> **Goal:** Equity curve chart + benchmark comparison (IHSG).
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 17.2.1 | **Audit light mode issues** — Find all hardcoded dark colors | `frontend/style.css` (audit) | 15m | Search for `#1a1a2e`, `#0f0f1a`, `#16213e` and similar dark-only colors |
-| 17.2.2 | **Fix remaining light mode CSS** — Add `[data-theme="light"]` overrides | `frontend/style.css` | 30m | Focus on: cards, tables, inputs, headers, bottom nav, sidebar |
-| 17.2.3 | **Test all views in light mode** — Manual QA | manual | 15m | Check each view: dashboard, screener, stock detail, portfolio, news, settings |
+| 18.2.1 | **Portfolio value history endpoint** — `GET /api/portfolio/history?range=1M,3M,1Y` | `backend/routes/user.py` | 20m | Aggregate TransactionLog + latest prices to compute daily portfolio value. Return series of {date, value, invested, pnl_pct}. |
+| 18.2.2 | **Equity curve chart** — LightweightCharts line series di portfolio tab | `frontend/js/views/portfolio.js` | 20m | Tab baru "Kinerja" di portfolio. Line chart: portfolio return vs IHSG. Range selector: 1M, 3M, 1Y, MAX. |
 
-**Value:** ★★★★☆ — Light mode users currently get a broken experience
-**Dependency:** CSS knowledge
+**Value:** ★★★★★ — Portfolio tanpa performance chart = gelap
+**Dependency:** LightweightCharts (already loaded), TransactionLog data
 
 ---
 
-## 🟠 17.3 Portfolio CSV Import (MEDIUM IMPACT)
+## 🟠 18.3 AI Market Briefing (MEDIUM IMPACT)
 
-> **Goal:** Import portfolio positions from broker CSV (format: ticker, lots, avg_price).
+> **Goal:** Daily AI-generated market summary — brief, actionable, IDX-focused.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 17.3.1 | **CSV import endpoint** — `POST /api/portfolio/import-csv` parse CSV body, batch insert | `backend/routes/portfolio.py` | 20m | Accept multipart/form-data. Support columns: ticker, lots, avg_price, notes. |
-| 17.3.2 | **CSV import UI** — Upload button + file picker + preview + confirm | `frontend/js/views/portfolio.js` | 20m | Drag-and-drop or file input. Preview parsed rows before import. Toast result. |
-| 17.3.3 | **Sample CSV download** — `GET /api/portfolio/sample-csv` return template | `backend/routes/portfolio.py` | 5m | Downloadable CSV template with example data |
+| 18.3.1 | **Market briefing generator** — Collect top movers, sector performance, breadth → AI summary | `backend/services/market_briefing.py` (new) | 25m | Use existing OpenRouter LLM service (FREE model: nvidia/nemotron-3-nano). Prompt: "Buat ringkasan pasar IDX hari ini dalam 3 paragraf: IHSG, top movers, sektor terbaik/terburuk, breadth, sentimen." |
+| 18.3.2 | **Briefing cache + scheduler** — Generate every trading day 16:30 WIB, cache di DB | `backend/scheduler.py` | 10m | Job: daily at 16:30. Store result in `market_briefings` table. Max 1 per day. |
+| 18.3.3 | **Briefing widget** — Card di dashboard + dedicated `#briefing` page | `frontend/js/views/dashboard.js` | 15m | Narrative card like existing market-narrative-panel. Show: generated time, refresh button. |
 
-**Value:** ★★★★☆ — Saves users hours of manual entry
-**Dependency:** Portfolio routes (already exist)
+**Value:** ★★★★☆ — Daily context saves user 15 menit riset
+**Dependency:** OpenRouter LLM (FREE model), existing API key
+**Risk:** LLM latency 5-15 detik — async generation acceptable
 
 ---
 
-## 🟡 17.4 Search Enhancement (LOW IMPACT)
+## 🟠 18.4 Web Push Notifications (MEDIUM IMPACT)
 
-> **Goal:** Search overlay yang lebih powerful — autocomplete, sector filter, keyboard nav.
+> **Goal:** Browser push notifications when alert triggers — even when tab is closed.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 17.4.1 | **Enhanced search endpoint** — `GET /api/search?q=...` return stocks + sectors + indices | `backend/routes/system.py` | 15m | UNION query: stocks matching name/ticker, sectors matching name |
-| 17.4.2 | **Search UI upgrade** — Autocomplete dropdown dengan kategori | `frontend/js/main.js` (setupSearchOverlay) | 25m | Debounced input. Show results grouped: Saham, Sektor, Indeks. Arrow key nav + Enter to select. |
-| 17.4.3 | **Mobile search** — Search bar di bottom drawer / dedicated search page | `frontend/js/views/search.js` (new) | 20m | Route `#search` with full-page search. Keyboard opens instantly. |
+| 18.4.1 | **VAPID key setup** — Generate key pair for push protocol | terminal | 5m | `npx web-push generate-vapid-keys`. Save in env vars. |
+| 18.4.2 | **Push subscription endpoint** — `POST /api/push/subscribe` save subscription | `backend/routes/system.py` | 15m | Store endpoint + keys in `push_subscriptions` table. One per device. |
+| 18.4.3 | **Push trigger from alert checker** — When alert triggers, send push | `backend/updaters/alert_checker.py` | 15m | Use `py-webpush` to send notification. Payload: ticker, alert type, value. |
+| 18.4.4 | **Service worker push handler** — Show notification when push arrives | `frontend/sw.js` | 10m | `self.addEventListener('push', ...)` show notification with click → open stock detail. |
 
-**Value:** ★★★☆☆ — Power users navigate via keyboard
-**Dependency:** None
+**Value:** ★★★★☆ — User dapat alert real-time tanpa buka web
+**Dependency:** `py-webpush` library, VAPID keys, HTTPS (already have via nginx/cloudflare)
 
 ---
 
-## 🟡 17.5 Chart Export (LOW IMPACT)
+## 🟡 18.5 Compare View Enhancement (LOW IMPACT)
 
-> **Goal:** Export chart sebagai PNG image.
+> **Goal:** Radar chart + correlation matrix for stock comparison.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 17.5.1 | **Export chart button** — Tambah button di chart toolbar | `frontend/js/views/chart.js` | 15m | `Download as PNG` button. Use canvas.toDataURL() for LightweightCharts. |
-| 17.5.2 | **Download trigger** — Create temporary link + click | `frontend/js/views/chart.js` | 5m | Auto-download with filename: `BBCA_2026-05-10_chart.png` |
+| 18.5.1 | **Radar chart** — Multi-metric comparison (RSI, Volume, PER, PBV, Yield) | `frontend/js/views/compare.js` | 20m | Use Canvas API or lightweight chart. Compare 2-4 stocks on 5 metrics. |
+| 18.5.2 | **Correlation matrix** — Price correlation heatmap | `backend/routes/stocks.py` + `frontend/js/views/compare.js` | 20m | Backend: compute Pearson correlation from OHLCV daily returns. Frontend: simple CSS grid heatmap. |
 
-**Value:** ★★★☆☆ — Analis suka simpan chart untuk laporan
-**Dependency:** LightweightCharts (canvas-based)
-
----
-
-## 🟡 17.6 Docker Setup (LOW IMPACT — HIGH INFRA)
-
-> **Goal:** Dockerfile + docker-compose untuk development & production.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 17.6.1 | **Dockerfile** — Python + uvicorn production image | `Dockerfile` (new) | 15m | Multi-stage: install deps, copy backend, expose 8000. |
-| 17.6.2 | **Nginx config for Docker** — Static files + reverse proxy | `deploy/nginx.conf` (new) | 15m | Serve frontend via nginx, proxy `/api` to uvicorn. |
-| 17.6.3 | **docker-compose.yml** — App + optional watchtower for auto-update | `docker-compose.yml` (new) | 10m | Single service app. Mount volume for SQLite. |
-
-**Value:** ★★★☆☆ — Reproducible deployment, easier onboarding
-**Dependency:** None
+**Value:** ★★★☆☆ — Power user tool, niche but sticky
+**Dependency:** OHLCV data (already available)
 
 ---
 
-## 🟡 17.7 i18n Completion (LOW IMPACT)
-
-> **Goal:** English translation 100% complete — toggle ID/EN works everywhere.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 17.7.1 | **Audit missing translations** — Find views that don't use `__()` | `frontend/js/views/*.js` | 15m | Search for hardcoded Indonesian strings that should be translated |
-| 17.7.2 | **Add missing i18n keys** — For 5-10 most-viewed pages | `frontend/js/i18n.js` | 20m | Add keys for dashboard, screener, stock detail, portfolio |
-| 17.7.3 | **English toggle in settings** — Persistent language preference | `frontend/js/views/settings.js` | 10m | Dropdown/setting to choose language. Save to localStorage + UserSetting. |
-
-**Value:** ★★★☆☆ — Membuka pasar pengguna internasional
-**Dependency:** i18n.js (already exists)
-
----
-
-## 🟡 17.8 Mobile UX Polish (LOW IMPACT)
-
-> **Goal:** Mobile experience feels native — bottom nav enhancement, PWA install, touch feedback.
-
-| # | Task | Files | Est. | Detail |
-|---|------|-------|------|--------|
-| 17.8.1 | **Desktop bottom nav** — Show bottom nav on desktop too (compact mode) | `frontend/index.html`, `style.css` | 15m | Bottom nav visible on all screen sizes. Hide sidebar on mobile. |
-| 17.8.2 | **PWA install prompt enhancement** — Better banner UI with screenshots | `frontend/js/main.js` | 15m | Custom install dialog with app screenshots. Track dismissed state. |
-| 17.8.3 | **Touch feedback** — Ripple effect on buttons/cards | `frontend/style.css` | 10m | CSS `:active` state with transform scale + background flash. |
-
-**Value:** ★★★☆☆ — Mobile users = majority of Indonesian retail traders
-**Dependency:** None
-
----
-
-## Prioritas Eksekusi — Fase 17
+## Prioritas Eksekusi — Fase 18
 
 ### 🔴 NOW (Day 1)
-17.1.1 → 17.1.2 (Calendar Pipeline)
+18.1.1 → 18.1.2 → 18.1.3 (PDF Report)
 
 ### 🟠 Next (Day 2)
-17.2.1 → 17.2.2 → 17.2.3 (Light Theme)
-17.3.1 → 17.3.2 → 17.3.3 (CSV Import)
+18.2.1 → 18.2.2 (Portfolio Performance)
 
 ### 🟡 Later (Day 3-4)
-17.4.1 → 17.4.2 → 17.4.3 (Search)
-17.5.1 → 17.5.2 (Chart Export)
-17.6.1 → 17.6.2 → 17.6.3 (Docker)
-17.7.1 → 17.7.2 → 17.7.3 (i18n)
-17.8.1 → 17.8.2 → 17.8.3 (Mobile UX)
+18.3.1 → 18.3.2 → 18.3.3 (AI Briefing)
+18.4.1 → 18.4.2 → 18.4.3 → 18.4.4 (Push Notifications)
+18.5.1 → 18.5.2 (Compare Enhancement)
 
 ---
 
@@ -164,11 +115,4 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| 2026-05-10 | 17.1.1 | ✅ | Synthetic calendar seeder — 1,716 events (dividends, earnings, IPO, rights/split) |
-| 2026-05-10 | 17.1.2 | ✅ | `POST /api/admin/seed-calendar` — admin trigger endpoint |
-| 2026-05-10 | 17.2 | ✅ | Light Theme — comprehensive `[data-theme="light"]` component overrides (50+ selectors) di style.css |
-| 2026-05-10 | 17.3 | ✅ | Portfolio CSV Import — `POST /api/portfolio/import-csv` + `GET /api/portfolio/sample-csv` + frontend file picker dengan preview modal |
-| 2026-05-10 | 17.5 | ✅ | Chart Export — camera button di fullscreen chart toolbar, download PNG via `chart.takeScreenshot()` |
-| 2026-05-10 | 17.6 | ✅ | Docker Setup — Dockerfile (multi-stage, python:3.12-slim), docker-compose.yml (volume mount, healthcheck), nginx-friendly |
-| 2026-05-10 | 17.8 | ✅ | Mobile UX — Touch feedback CSS (active state scale), improved PWA install banner styling |
-| — | — | 🟡 | **17.4 Search** & **17.7 i18n** deferred — existing implementation sudah cukup mature |
+| — | — | 🆕 | Fase 18 dimulai |

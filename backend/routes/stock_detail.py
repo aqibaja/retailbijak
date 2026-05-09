@@ -1058,6 +1058,31 @@ def get_stock_dividends(ticker: str, db: Session = Depends(get_db)):
     }
 
 
+@router.get('/api/stocks/{ticker}/report')
+def get_stock_report_pdf(ticker: str, db: Session = Depends(get_db)):
+    """Generate PDF stock report via WeasyPrint."""
+    try:
+        from services.pdf_report import generate_stock_report
+    except ModuleNotFoundError:
+        from backend.services.pdf_report import generate_stock_report
+    from fastapi.responses import Response, JSONResponse
+
+    pdf_bytes = generate_stock_report(db, ticker)
+    if pdf_bytes is None:
+        return JSONResponse(
+            status_code=500,
+            content={'ok': False, 'message': 'Gagal generate laporan PDF. Coba lagi nanti.'}
+        )
+
+    return Response(
+        content=pdf_bytes,
+        media_type='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename="{ticker}_laporan_retailbijak.pdf"',
+            'Content-Length': str(len(pdf_bytes)),
+        }
+    )
+
 @router.get('/api/paper-trades/summary')
 def paper_trade_summary(db: Session = Depends(get_db)):
     from sqlalchemy import func

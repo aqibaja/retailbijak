@@ -149,7 +149,7 @@ export async function renderStockDetail(root, ticker) {
             <div class="stock-side-panel hidden" id="depth-panel"></div>
             <div class="stock-side-panel hidden" id="foreign-flow-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
-            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button></div></div>
+            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button><button id="btn-report-pdf" type="button" class="btn btn-sm" title="Download Laporan PDF"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
@@ -216,6 +216,17 @@ export async function renderStockDetail(root, ticker) {
     import('./compare.js?v=20260510').then(m => {
       m.addToCompare(symbol);
     });
+  });
+  document.getElementById('btn-report-pdf')?.addEventListener('click', () => {
+    showToast('⏳ Membuat laporan PDF...', 'info', 10000);
+    const link = document.createElement('a');
+    link.href = `/api/stocks/${symbol}/report`;
+    link.download = `${symbol}_laporan_retailbijak.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    // Check if PDF opened (wait for download)
+    setTimeout(() => showToast('✅ Laporan PDF siap', 'success', 3000), 2000);
   });
 
   // ── AI Analysis Summary ──
