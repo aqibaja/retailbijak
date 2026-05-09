@@ -123,6 +123,7 @@ export async function renderPortfolio(root, activeTab) {
               <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="wl-news-tab-btn" style="font-size:11px">📰 News</button>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="rebalance-tab-btn" style="font-size:11px">⚖️ Rebalance</button>
+              <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="perf-chart-btn" style="font-size:11px">📈 Kinerja</button>
               <span id="wl-news-badge" class="badge badge-warning hidden ml-1" style="font-size:9px;padding:1px 5px;align-self:center">0</span>
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
@@ -141,6 +142,12 @@ export async function renderPortfolio(root, activeTab) {
     const rebalanceBtn = root.querySelector('#rebalance-tab-btn');
     if (rebalanceBtn) {
       rebalanceBtn.addEventListener('click', () => renderRebalanceTab(root.querySelector('#tab-content')));
+    }
+
+    // Perf chart handler (18.2)
+    const perfBtn = root.querySelector('#perf-chart-btn');
+    if (perfBtn) {
+      perfBtn.addEventListener('click', () => renderPerfChart(root.querySelector('#tab-content')));
     }
 
     // Watchlist News tab handler
@@ -968,4 +975,78 @@ async function loadWatchlistNewsBadge() {
       }
     }
   } catch (e) { /* silent */ }
+}
+
+// ─── 18.2 — Portfolio Performance Chart ────────
+async function renderPerfChart(el) {
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton" style="height:320px;margin:1rem"></div>';
+  try {
+    const res = await apiFetch('/portfolio/analytics');
+    const equity = res?.equity_curve;
+    if (!equity || !equity.length) {
+      el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">📈</div><h3>Belum Ada Data Kinerja</h3><p>Tambah transaksi portofolio dulu untuk melihat grafik performa.</p><button class="btn btn-primary empty-state-action" onclick="window.location.hash='#portfolio'">➕ Tambah Posisi</button></div>`;
+      return;
+    }
+
+    const firstVal = equity[0].value;
+    const lastVal = equity[equity.length - 1].value;
+    const totalReturn = firstVal > 0 ? ((lastVal - firstVal) / firstVal * 100) : 0;
+    const retClass = totalReturn >= 0 ? 'text-up' : 'text-down';
+    const retSign = totalReturn >= 0 ? '+' : '';
+
+    el.innerHTML = `
+      <div class="p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-xs uppercase text-dim strong m-0">📈 Kinerja Portofolio</h3>
+          <span class="${retClass} mono strong">${retSign}${totalReturn.toFixed(2)}%</span>
+        </div>
+        <div id="perf-chart-container" style="height:300px;width:100%"></div>
+        <div class="flex justify-between mt-2 text-xs text-dim">
+          <span>${equity[0].date}</span>
+          <span>Rp ${firstVal.toLocaleString('id-ID', {maximumFractionDigits:0})}</span>
+          <span>→</span>
+          <span>Rp ${lastVal.toLocaleString('id-ID', {maximumFractionDigits:0})}</span>
+          <span>${equity[equity.length - 1].date}</span>
+        </div>
+      </div>`;
+
+    // Render chart with LightweightCharts
+    const container = document.getElementById('perf-chart-container');
+    if (!container || typeof LightweightCharts === 'undefined') return;
+
+    const chart = LightweightCharts.createChart(container, {
+      layout: {
+        background: { color: 'transparent' },
+        textColor: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94a3b8',
+        fontSize: 10,
+      },
+      grid: {
+        vertLines: { color: 'rgba(255,255,255,0.03)' },
+        horzLines: { color: 'rgba(255,255,255,0.03)' },
+      },
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.1 } },
+      timeScale: { borderVisible: false, timeVisible: false },
+      handleScroll: false,
+      handleScale: false,
+      width: container.clientWidth,
+      height: 300,
+    });
+
+    const lineSeries = chart.addLineSeries({
+      color: '#10b981',
+      lineWidth: 2,
+      crosshairMarkerVisible: true,
+      priceFormat: { type: 'custom', formatter: (v) => 'Rp ' + Math.round(v).toLocaleString('id-ID') },
+    });
+
+    lineSeries.setData(equity.map(p => ({
+      time: p.date,
+      value: p.value,
+    })));
+
+    chart.timeScale().fitContent();
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">⚠️</div><h3>Gagal Memuat Grafik</h3><p>${e.message || 'Coba refresh halaman.'}</p></div>`;
+  }
 }

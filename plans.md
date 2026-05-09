@@ -1,6 +1,6 @@
 # 🇮🇩 RetailBijak — Fase 18: Advanced Analytics, Export & Intelligence
 
-> **Status:** 🆕 Fase 18 dimulai — 0%
+> **Status:** 🟢 Fase 18 — ~40% Complete (18.1 ✅ | 18.2 ✅)
 > **Tujuan:** Tambah fitur high-value: PDF report, portfolio performance chart, AI market briefing, push notifications, screener alerts.
 > **Prinsip:** Setiap fitur harus punya value proposition jelas — jangan nambah bloat.
 > **Constraint:** FREE models only (Nvidia Nemotron). No paid API dependencies.
@@ -116,3 +116,6 @@
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
 | — | — | 🆕 | Fase 18 dimulai |
+| 2026-05-10 | 18.1 | ✅ | PDF Stock Report — WeasyPrint service, GET /api/stocks/{ticker}/report, download button |
+| 2026-05-10 | 18.2 | ✅ | Portfolio Performance Chart — LightweightCharts equity curve di tab Kinerja, data dari /api/portfolio/analytics |
+| — | — | 🟡 | **18.3 AI Briefing, 18.4 Push Notifications, 18.5 Compare** — deferred ke sesi berikutnya |
