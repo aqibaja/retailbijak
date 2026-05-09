@@ -126,6 +126,7 @@ export async function renderPortfolio(root, activeTab) {
               <span id="wl-news-badge" class="badge badge-warning hidden ml-1" style="font-size:9px;padding:1px 5px;align-self:center">0</span>
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
+            ${isPort ? '<button class="btn btn-sm" id="import-csv-btn" title="Import CSV"><i data-lucide="upload" style="width:16px"></i> Import</button>' : ''}
           </div>
         </div>
         <div id="tab-content" class="col-span-12 panel flex-col portfolio-card">
@@ -329,6 +330,101 @@ async function renderPortfolioTab(el) {
     if (csvBtn) {
         csvBtn.addEventListener('click', () => {
             window.location.href = '/api/portfolio/export-csv';
+        });
+    }
+
+    // CSV Import handler (17.3)
+    const importBtn = document.getElementById('import-csv-btn');
+    if (importBtn) {
+        importBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv,.tsv,.txt';
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const text = await file.text();
+                const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+                if (lines.length < 2) { showToast('CSV harus memiliki header + minimal 1 baris data', 'error'); return; }
+                const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/["']/g, ''));
+                const tickerIdx = headers.indexOf('ticker');
+                const lotsIdx = headers.indexOf('lots');
+                const priceIdx = headers.indexOf('avg_price');
+                if (tickerIdx === -1 || lotsIdx === -1 || priceIdx === -1) {
+                    showToast('CSV harus memiliki kolom: ticker, lots, avg_price', 'error');
+                    return;
+                }
+                const rows = [];
+                const errors = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',').map(c => c.trim().replace(/["']/g, ''));
+                    if (cols.length < 3) { errors.push(`Baris ${i+1}: format salah`); continue; }
+                    const ticker = cols[tickerIdx].toUpperCase();
+                    const lots = parseInt(cols[lotsIdx]);
+                    const avgPrice = parseFloat(cols[priceIdx]);
+                    if (!ticker || isNaN(lots) || isNaN(avgPrice) || lots <= 0 || avgPrice <= 0) {
+                        errors.push(`Baris ${i+1}: data tidak valid (${cols.join(',')})`);
+                        continue;
+                    }
+                    rows.push({ ticker, lots, avg_price: avgPrice });
+                }
+                if (!rows.length) { showToast('Tidak ada data valid untuk diimport', 'error'); return; }
+                // Show preview modal
+                const previewHtml = rows.slice(0, 20).map(r =>
+                    `<div class="flex justify-between px-3 py-1 text-xs" style="border-bottom:1px solid var(--border-subtle)">
+                      <span class="mono strong">${r.ticker}</span>
+                      <span>${r.lots} lot</span>
+                      <span>Rp${r.avg_price.toLocaleString('id-ID')}</span>
+                    </div>`
+                ).join('');
+                const totalHtml = `<div class="flex justify-between px-3 py-2 text-xs text-dim strong">
+                  <span>${rows.length} posisi</span>
+                  <span>${errors.length ? `${errors.length} error` : ''}</span>
+                </div>`;
+                // Build inline confirm dialog
+                const confirmOverlay = document.createElement('div');
+                confirmOverlay.id = 'stock-modal-overlay';
+                confirmOverlay.innerHTML = `
+                  <div class="modal-backdrop"></div>
+                  <div class="modal-panel modal-panel-narrow">
+                    <div class="text-center py-4">
+                      <h3 class="text-sm strong m-0 text-main">Import ${rows.length} Posisi?</h3>
+                      <div class="import-preview" style="max-height:260px;overflow-y:auto;margin-top:12px;border:1px solid var(--border-subtle);border-radius:8px">
+                        ${previewHtml}${totalHtml}
+                      </div>
+                      <p class="text-xs text-muted mt-2">Mode: append (tambah ke posisi existing)</p>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                      <button type="button" class="btn modal-cancel-btn modal-btn modal-btn-cancel" id="import-cancel-btn">Batal</button>
+                      <button type="button" class="btn btn-primary modal-confirm-btn modal-btn" id="import-confirm-btn">Import</button>
+                    </div>
+                  </div>`;
+                document.body.appendChild(confirmOverlay);
+                document.body.style.overflow = 'hidden';
+                const closeConfirm = (confirmed) => {
+                  confirmOverlay.querySelector('.modal-backdrop')?.classList.add('closing');
+                  confirmOverlay.querySelector('.modal-panel')?.classList.add('closing');
+                  setTimeout(() => { confirmOverlay.remove(); document.body.style.overflow = ''; }, 200);
+                  if (!confirmed) return;
+                  apiFetch('/portfolio/import-csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows, mode: 'append' })
+                  }).then(res => {
+                    if (res?.ok) {
+                      showToast(`✅ ${res.created} posisi diimport`, 'success', 5000);
+                      renderPortfolioTab(document.getElementById('tab-content'));
+                    } else {
+                      showToast(`Gagal import: ${res?.message || 'unknown error'}`, 'error');
+                    }
+                  });
+                };
+                confirmOverlay.querySelector('#import-cancel-btn')?.addEventListener('click', () => closeConfirm(false));
+                confirmOverlay.querySelector('#import-confirm-btn')?.addEventListener('click', () => closeConfirm(true));
+                confirmOverlay.querySelector('.modal-backdrop')?.addEventListener('click', () => closeConfirm(false));
+                confirmOverlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeConfirm(false); });
+            });
+            input.click();
         });
     }
 

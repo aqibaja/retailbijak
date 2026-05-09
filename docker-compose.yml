@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: retailbijak
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - swingaq-data:/app/backend
+      - ./frontend:/app/frontend:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Asia/Jakarta
+      - SQLITE_PATH=/app/backend/swingaq.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  swingaq-data:

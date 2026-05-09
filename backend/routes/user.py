@@ -281,6 +281,68 @@ def seed_sample_portfolio(db: Session = Depends(get_db)):
     return {'ok': True, 'created': created, 'message': f'{created} posisi sample ditambahkan'}
 
 
+@router.post('/api/portfolio/import-csv')
+def import_portfolio_csv(payload: dict = Body(...), db: Session = Depends(get_db)):
+    """Import portfolio positions from CSV body.
+    Expects: { 'rows': [{'ticker':'BBCA','lots':2,'avg_price':6225}, ...] }
+    Mode: 'overwrite' (default) clears all existing, 'append' adds to existing.
+    """
+    rows = payload.get('rows', [])
+    mode = payload.get('mode', 'overwrite')
+    if not rows:
+        raise HTTPException(400, 'No rows provided')
+    if mode == 'overwrite':
+        db.query(PortfolioPosition).delete()
+        db.query(TransactionLog).delete()
+    created = 0
+    errors = []
+    for i, row in enumerate(rows):
+        ticker = str(row.get('ticker', '')).upper().strip()
+        if not ticker:
+            errors.append(f'Row {i}: missing ticker')
+            continue
+        try:
+            lots = int(row.get('lots', 0))
+            avg_price = float(row.get('avg_price', 0))
+        except (ValueError, TypeError):
+            errors.append(f'Row {i}: invalid number format')
+            continue
+        if lots <= 0 or avg_price <= 0:
+            errors.append(f'Row {i}: lots and avg_price must be positive')
+            continue
+        existing = db.query(PortfolioPosition).filter(PortfolioPosition.ticker == ticker).first()
+        if existing:
+            existing.lots = lots
+            existing.avg_price = avg_price
+        else:
+            pos = PortfolioPosition(ticker=ticker, lots=lots, avg_price=avg_price)
+            db.add(pos)
+        created += 1
+    db.commit()
+    return {'ok': True, 'created': created, 'errors': errors, 'message': f'{created} posisi diimport, {len(errors)} error'}
+
+
+@router.get('/api/portfolio/sample-csv')
+def download_sample_csv():
+    """Download sample CSV template for portfolio import."""
+    import csv, io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ticker', 'lots', 'avg_price', 'notes'])
+    writer.writerow(['BBCA', '2', '6225', 'Bank Central Asia'])
+    writer.writerow(['BBRI', '3', '4800', 'Bank Rakyat Indonesia'])
+    writer.writerow(['TLKM', '5', '3800', 'Telkom Indonesia'])
+    writer.writerow(['ASII', '3', '5100', 'Astra International'])
+    writer.writerow(['BMRI', '4', '7200', 'Bank Mandiri'])
+    output.seek(0)
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=retailbijak_portfolio_template.csv'}
+    )
+
+
 @router.get('/api/portfolio/summary')
 def portfolio_summary(db: Session = Depends(get_db)):
     """P&L calculation with sector breakdown for portfolio positions."""

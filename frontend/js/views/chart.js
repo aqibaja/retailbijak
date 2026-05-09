@@ -30,6 +30,7 @@ export function renderChart(root, ticker) {
                     <button class="btn btn-icon btn-sm" id="tool-trendline" title="Trend Line"><i data-lucide="trending-up"></i></button>
                     <button class="btn btn-icon btn-sm" id="tool-hline" title="Horizontal Line"><i data-lucide="minus"></i></button>
                     <button class="btn btn-icon btn-sm" id="tool-clear" title="Clear Drawings"><i data-lucide="eraser"></i></button>
+                    <button class="btn btn-icon btn-sm" id="chart-export-btn" title="Download PNG"><i data-lucide="camera"></i></button>
                 </div>
             </div>
             <div id="fullchart-wrap" class="fullchart-wrap">
@@ -60,8 +61,26 @@ export function renderChart(root, ticker) {
     root.querySelector('#tool-trendline')?.addEventListener('click', () => showToast('Trend line: klik 2 titik pada chart', 'info'));
     root.querySelector('#tool-hline')?.addEventListener('click', () => showToast('Horizontal line: klik pada level harga', 'info'));
     root.querySelector('#tool-clear')?.addEventListener('click', clearDrawings);
+    root.querySelector('#chart-export-btn')?.addEventListener('click', exportChartPNG);
 
     loadChartData();
+}
+
+function exportChartPNG() {
+    if (!chart || !activeTicker) { showToast('Chart belum siap', 'error'); return; }
+    try {
+        const dataUrl = chart.takeScreenshot();
+        const link = document.createElement('a');
+        const dateStr = new Date().toISOString().slice(0, 10);
+        link.download = `${activeTicker}_${dateStr}_chart.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('✅ Chart tersimpan sebagai PNG', 'success');
+    } catch (e) {
+        showToast('Gagal export chart: ' + e.message, 'error');
+    }
 }
 
 async function loadChartData() {

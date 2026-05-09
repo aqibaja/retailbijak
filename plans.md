@@ -1,6 +1,6 @@
 # 🇮🇩 RetailBijak — Fase 17: Platform Maturity, Mobile UX & Tooling
 
-> **Status:** 🟢 Fase 17 — 20% Complete (17.1 ✅ | 17.2-17.8 🆕)
+> **Status:** 🟢 Fase 17 — ~75% Complete (17.1 ✅ | 17.2 ✅ | 17.3 ✅ | 17.5 ✅ | 17.6 ✅ | 17.8 ✅)
 > **Tujuan:** Fix pipeline yang masih kosong (calendar_events), polish light theme, enhance mobile UX, tambah fitur export/import Docker, dan selesaikan i18n.
 > **Prinsip:** Maturity sebelum scaling — fix yang broken dulu, baru tambah fitur baru.
 > **Constraint:** yfinance masih rate-limited — semua scheduler harus punya synthetic fallback.
@@ -164,6 +164,11 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| — | — | 🆕 | Fase 17 dimulai |
 | 2026-05-10 | 17.1.1 | ✅ | Synthetic calendar seeder — 1,716 events (dividends, earnings, IPO, rights/split) |
 | 2026-05-10 | 17.1.2 | ✅ | `POST /api/admin/seed-calendar` — admin trigger endpoint |
+| 2026-05-10 | 17.2 | ✅ | Light Theme — comprehensive `[data-theme="light"]` component overrides (50+ selectors) di style.css |
+| 2026-05-10 | 17.3 | ✅ | Portfolio CSV Import — `POST /api/portfolio/import-csv` + `GET /api/portfolio/sample-csv` + frontend file picker dengan preview modal |
+| 2026-05-10 | 17.5 | ✅ | Chart Export — camera button di fullscreen chart toolbar, download PNG via `chart.takeScreenshot()` |
+| 2026-05-10 | 17.6 | ✅ | Docker Setup — Dockerfile (multi-stage, python:3.12-slim), docker-compose.yml (volume mount, healthcheck), nginx-friendly |
+| 2026-05-10 | 17.8 | ✅ | Mobile UX — Touch feedback CSS (active state scale), improved PWA install banner styling |
+| — | — | 🟡 | **17.4 Search** & **17.7 i18n** deferred — existing implementation sudah cukup mature |
