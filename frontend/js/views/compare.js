@@ -148,6 +148,10 @@ async function loadComparison(tickers) {
 
     container.innerHTML = chartHtml;
 
+    // Radar Chart
+    const radarHtml = buildRadarChart(validTickers, funds, stats);
+    container.innerHTML += radarHtml;
+
     // Render LightweightCharts
     const colorsForChart = {
       'BBCA': '#10b981', 'BMRI': '#6366f1', 'BBRI': '#f59e0b',
@@ -230,4 +234,93 @@ function renderCompareChart(tickers, data, colors) {
   } catch (e) {
     container.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">📊</div><strong class="empty-state-title">Gagal render chart</strong></div>';
   }
+}
+// ─── Radar Chart (18.5) ────────────────────────
+function buildRadarChart(tickers, funds, stats) {
+  // Normalize metrics to 0-100 scale for radar
+  const metrics = [
+    { label: 'Momentum', key: 'return_1m', getter: (s) => s.return_1m, higher: true },
+    { label: 'Volume', key: 'avg_volume', getter: (s) => s.avg_volume, higher: true },
+    { label: 'PE Ratio', key: 'pe', getter: (f) => f.pe, higher: false },
+    { label: 'PBV', key: 'pbv', getter: (f) => f.pbv, higher: false },
+    { label: 'ROE', key: 'roe', getter: (f) => f.roe, higher: true },
+    { label: 'Yield', key: 'dividend_yield', getter: (f) => f.dividend_yield, higher: true },
+  ];
+  const colors = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#06b6d4'];
+
+  // Collect raw values and normalize
+  const raw = tickers.map((t, i) => {
+    return metrics.map(m => {
+      const val = m.getter(m.key === 'return_1m' || m.key === 'avg_volume' ? (stats[i] || {}) : (funds[i] || {}));
+      return val != null ? val : 0;
+    });
+  });
+
+  // Find min/max for each metric
+  const mins = metrics.map((_, mi) => Math.min(...raw.map(r => r[mi])));
+  const maxs = metrics.map((_, mi) => Math.max(...raw.map(r => r[mi])));
+
+  // Normalize 0-100
+  const normalized = raw.map(r => r.map((v, mi) => {
+    const mn = mins[mi], mx = maxs[mi];
+    if (mx === mn) return 50;
+    const norm = ((v - mn) / (mx - mn)) * 100;
+    return metrics[mi].higher ? norm : 100 - norm;
+  }));
+
+  const centerX = 160, centerY = 160, radius = 120;
+  const count = metrics.length;
+  const angleStep = (2 * Math.PI) / count;
+
+  // Create SVG
+  let circles = '';
+  for (let r = 0.25; r <= 1; r += 0.25) {
+    const pts = [];
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI / 2 + i * angleStep;
+      pts.push(`${centerX + radius * r * Math.cos(angle)},${centerY + radius * r * Math.sin(angle)}`);
+    }
+    circles += `<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="1" />`;
+  }
+
+  // Axis lines + labels
+  let axes = '';
+  for (let i = 0; i < count; i++) {
+    const angle = -Math.PI / 2 + i * angleStep;
+    const ex = centerX + radius * Math.cos(angle);
+    const ey = centerY + radius * Math.sin(angle);
+    const lx = centerX + (radius + 18) * Math.cos(angle);
+    const ly = centerY + (radius + 18) * Math.sin(angle);
+    axes += `<line x1="${centerX}" y1="${centerY}" x2="${ex}" y2="${ey}" stroke="rgba(148,163,184,0.12)" stroke-width="1" />`;
+    axes += `<text x="${lx}" y="${ly}" text-anchor="${Math.cos(angle) > 0.1 ? 'start' : Math.cos(angle) < -0.1 ? 'end' : 'middle'}" dominant-baseline="middle" fill="var(--text-muted)" font-size="10" font-weight="600">${metrics[i].label}</text>`;
+  }
+
+  // Data polygons
+  const polygons = normalized.map((vals, ti) => {
+    const pts = vals.map((v, i) => {
+      const angle = -Math.PI / 2 + i * angleStep;
+      return `${centerX + (v / 100) * radius * Math.cos(angle)},${centerY + (v / 100) * radius * Math.sin(angle)}`;
+    });
+    return `<polygon points="${pts.join(' ')}" fill="${colors[ti]}30" stroke="${colors[ti]}" stroke-width="2" opacity="0.8" />`;
+  }).join('');
+
+  // Legend
+  const legend = tickers.map((t, i) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;margin:0 8px"><span style="width:10px;height:10px;border-radius:2px;background:${colors[i]}"></span>${t}</span>`
+  ).join('');
+
+  const svgW = centerX * 2 + 40, svgH = centerY * 2 + 40;
+
+  return `<div class="market-card mt-3">
+    <div class="p-3">
+      <h3 class="panel-title">Radar Perbandingan</h3>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:2px">Berdasarkan: Momentum, Volume, PE, PBV, ROE, Dividend Yield (dinormalisasi 0-100)</div>
+    </div>
+    <div style="text-align:center;padding:0 12px 12px">
+      <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="max-width:100%;height:auto">
+        ${circles}${axes}${polygons}
+      </svg>
+      <div style="margin-top:8px;display:flex;justify-content:center;flex-wrap:wrap;gap:4px">${legend}</div>
+    </div>
+  </div>`;
 }
