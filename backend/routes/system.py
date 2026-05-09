@@ -519,3 +519,23 @@ def get_data_health(db: Session = Depends(get_db)):
         'tables_empty': sum(1 for v in result.values() if v == 0),
         'generated_at': datetime.utcnow().isoformat(timespec='seconds'),
     }
+
+
+@router.get('/api/market/briefing')
+def get_market_briefing(force: bool = False, db: Session = Depends(get_db)):
+    """Get or generate AI market briefing."""
+    try:
+        from services.market_briefing import generate_briefing
+    except ModuleNotFoundError:
+        from backend.services.market_briefing import generate_briefing
+    return generate_briefing(db, force=force)
+
+
+@router.post('/api/market/briefing')
+def regenerate_market_briefing(db: Session = Depends(get_db)):
+    """Force regenerate market briefing."""
+    try:
+        from services.market_briefing import generate_briefing
+    except ModuleNotFoundError:
+        from backend.services.market_briefing import generate_briefing
+    return generate_briefing(db, force=True)

@@ -117,6 +117,21 @@ def init_scheduler():
         logger.info("Registered broker_summary_seed job (daily 05:30 WIB)")
     except Exception as e:
         logger.warning(f"Could not register broker_summary_seed: {e}")
+    # Market briefing — every trading day 16:30 WIB (after market close)
+    try:
+        from services.market_briefing import generate_briefing
+        from database import get_db
+        def run_briefing():
+            try:
+                db = next(get_db())
+                generate_briefing(db, force=True)
+                db.close()
+            except Exception as e:
+                logger.error(f"Market briefing failed: {e}")
+        scheduler.add_job(run_briefing, trigger=CronTrigger(day_of_week='mon-fri', hour=16, minute=30, timezone=jkt_tz), id='market_briefing', replace_existing=True)
+        logger.info("Registered market_briefing job (Mon-Fri 16:30 WIB)")
+    except Exception as e:
+        logger.warning(f"Could not register market_briefing: {e}")
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id="yfinance_daily_sync", replace_existing=True)
     if not scheduler.running:

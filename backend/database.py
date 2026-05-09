@@ -163,6 +163,24 @@ class DailyAIPickReport(Base):
     payload_json = Column(JSON)
 
 
+class MarketBriefing(Base):
+    """AI-generated daily market briefing — cached in DB."""
+    __tablename__ = "market_briefings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    trading_date = Column(String, index=True, nullable=False)
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    content = Column(String, default="")
+    summary = Column(String, default="")
+    model = Column(String, default="")
+    ihsg_change = Column(String, default="")
+    top_gainer = Column(String, default="")
+    top_loser = Column(String, default="")
+    sentiment = Column(String, default="neutral")
+    runtime_state = Column(String, default="ok")
+    runtime_message = Column(String, default="")
+
+
 class Alert(Base):
     __tablename__ = "alerts"
 
