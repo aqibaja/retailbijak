@@ -1,113 +1,123 @@
-# 🇮🇩 RetailBijak — Fase 18: Advanced Analytics, Export & Intelligence
+# 🇮🇩 RetailBijak — Fase 19: Screener Alerts, Benchmarks, Mobile & Polish
 
-> **Status:** 🟢 Fase 18 — ~90% Complete (18.1 ✅ | 18.2 ✅ | 18.3 ✅ | 18.5 ✅)
-> **Tujuan:** Tambah fitur high-value: PDF report, portfolio performance chart, AI market briefing, push notifications, screener alerts.
-> **Prinsip:** Setiap fitur harus punya value proposition jelas — jangan nambah bloat.
-> **Constraint:** FREE models only (Nvidia Nemotron). No paid API dependencies.
+> **Status:** 🟢 Fase 19 — ~60% Complete (19.1 ✅ | 19.2 ✅ | 19.5 ✅)
+> **Tujuan:** Finish remaining low-hanging fruit: screener alert saving, portfolio benchmarks, sector detail stock list, watchlist group management, price board, mobile UX polish.
+> **Prinsip:** Fitur harus langsung usable — jangan nambah half-baked UI. Setiap fitur harus punya backend endpoint + frontend rendering.
+> **Constraint:** FREE models only. No paid API dependencies.
 
 ---
 
-## Masalah Teridentifikasi (Fase 18 Audit)
+## Masalah Teridentifikasi (Fase 19 Audit)
 
 | # | Masalah | Prioritas | Dampak |
 |---|---------|-----------|--------|
-| P1 | **Tidak ada PDF report** — Analis tidak bisa download laporan saham | 🔴 High | Loss of professional users |
-| P2 | **Portfolio performance chart** — Equity curve tidak ada | 🔴 High | User tidak bisa lihat performa portofolio secara visual |
-| P3 | **AI Market Briefing** — Belum ada ringkasan pasar harian otomatis | 🟠 Medium | User ketinggalan konteks market |
-| P4 | **Browser push notification** — Alert hanya via in-app polling | 🟠 Medium | User harus buka web untuk lihat alert |
-| P5 | **Screener filter sebagai alert** — Tidak bisa simpan kondisi scan | 🟡 Low | Power user harus buka screener terus |
-| P6 | **Compare view minim** — Hanya 233 lines, no radar/spider chart | 🟡 Low | Analisis komparasi terbatas |
+| P1 | **Filter screener tidak bisa disimpan sebagai alert** — User harus buka screener terus | 🟠 Medium | Power user workflow terputus |
+| P2 | **Portfolio tidak punya benchmark comparison** — Equity curve sendiri tanpa IHSG | 🟠 Medium | User tidak tau outperformed atau tidak |
+| P3 | **Sector detail hanya header — tidak ada daftar saham** | 🟡 Low | User tidak bisa lihat konstituen per sektor |
+| P4 | **Watchlist group management minim** — Tidak bisa rename/reorder | 🟡 Low | Organisasi watchlist terbatas |
+| P5 | **Price board di stock detail minim** — Tidak ada bid/ask, prev close, 52w range | 🟡 Low | Day trader butuh data lebih |
+| P6 | **Mobile drawer tidak komplet** — Hanya 4 item, sisanya hidden | 🟡 Low | Navigasi mobile kurang lengkap |
 
 ---
 
-## 🔴 18.1 PDF Stock Report (HIGH IMPACT)
+## 🟠 19.1 Screener Alert Saving (MEDIUM IMPACT)
 
-> **Goal:** Download one-click PDF laporan saham: TA summary + FA data + AI analysis.
+> **Goal:** Save current screener filter conditions as named alerts with email/push notification.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 18.1.1 | **PDF generation service** — Generate HTML → PDF via weasyprint or pdfkit | `backend/services/pdf_report.py` (new) | 30m | Use `pdfkit` (wkhtmltopdf wrapper) — easier install than weasyprint. Template: company header, key stats table, TA signals, FA data, AI summary, footer. |
-| 18.1.2 | **PDF endpoint** — `GET /api/stocks/{ticker}/report` return PDF | `backend/routes/stock_detail.py` | 15m | Async generate HTML, render to PDF, return `FileResponse` with `Content-Type: application/pdf` |
-| 18.1.3 | **Download button UI** — Add "Download Report" button in stock detail | `frontend/js/views/stock_detail.js` | 10m | Button in stock hero/toolbar area. Click → download PDF. Show loading toast. |
+| 19.1.1 | **Saved screener model** — New `SavedScreener` table: id, name, filters (JSON), created_at, active | `backend/database.py` | 10m | Store filter conditions as JSON blob. Each saved screener = named alert. |
+| 19.1.2 | **CRUD endpoint** — `GET/POST/PUT/DELETE /api/screener/saved` | `backend/routes/scanner.py` | 15m | Simple CRUD with validation. Filters field stores all active filter settings. |
+| 19.1.3 | **Saved screener evaluator** — Check saved screeners against latest data | `backend/services/scanner_engine.py` or new `backend/updaters/screener_evaluator.py` | 20m | Run saved screeners every 15 min during market hours. If matches found → create notification. |
+| 19.1.4 | **Save/Load UI** — Buttons "Simpan Filter" + dropdown saved screeners in screener toolbar | `frontend/js/views/screener.js` | 20m | Save dialog: name input. Load: dropdown with saved list. Apply filters on select. Badge count when matches found. |
 
-**Value:** ★★★★★ — Fitur paling diminta analyst/sales
-**Dependency:** `pdfkit` (~30MB), `wkhtmltopdf` system package
-**Risk:** wkhtmltopdf mungkin tidak available di semua VPS. Alternatif: HTML report page + browser print.
+**Value:** ★★★★☆ — Power user retention
+**Dependency:** Screener SSE data (already connected)
 
 ---
 
-## 🔴 18.2 Portfolio Performance Chart (HIGH IMPACT)
+## 🟠 19.2 Portfolio Benchmarks (MEDIUM IMPACT)
 
-> **Goal:** Equity curve chart + benchmark comparison (IHSG).
+> **Goal:** Compare portfolio equity curve against IHSG benchmark.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 18.2.1 | **Portfolio value history endpoint** — `GET /api/portfolio/history?range=1M,3M,1Y` | `backend/routes/user.py` | 20m | Aggregate TransactionLog + latest prices to compute daily portfolio value. Return series of {date, value, invested, pnl_pct}. |
-| 18.2.2 | **Equity curve chart** — LightweightCharts line series di portfolio tab | `frontend/js/views/portfolio.js` | 20m | Tab baru "Kinerja" di portfolio. Line chart: portfolio return vs IHSG. Range selector: 1M, 3M, 1Y, MAX. |
+| 19.2.1 | **IHSG historical data** — Fetch IHSG price history from OHLCV or dedicated table | `backend/routes/user.py` | 15m | Query IHSG index data or compute from top-weighted stocks. Store as `benchmark_data` in portfolio analytics response. |
+| 19.2.2 | **Benchmark overlay chart** — Add IHSG line to portfolio performance chart | `frontend/js/views/portfolio.js` | 15m | In `renderPerfChart`, add second line series for IHSG. Normalize both to 100 at start date. Legend: portofolio vs IHSG. |
 
-**Value:** ★★★★★ — Portfolio tanpa performance chart = gelap
-**Dependency:** LightweightCharts (already loaded), TransactionLog data
+**Value:** ★★★★☆ — Portfolio analysis fundamental
+**Dependency:** IHSG data (from market-summary or OHLCV)
 
 ---
 
-## 🟠 18.3 AI Market Briefing (MEDIUM IMPACT)
+## 🟡 19.3 Sector Detail Stocks List (LOW IMPACT)
 
-> **Goal:** Daily AI-generated market summary — brief, actionable, IDX-focused.
+> **Goal:** Show complete stock list within a sector with sorting capabilities.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 18.3.1 | **Market briefing generator** — Collect top movers, sector performance, breadth → AI summary | `backend/services/market_briefing.py` (new) | 25m | Use existing OpenRouter LLM service (FREE model: nvidia/nemotron-3-nano). Prompt: "Buat ringkasan pasar IDX hari ini dalam 3 paragraf: IHSG, top movers, sektor terbaik/terburuk, breadth, sentimen." |
-| 18.3.2 | **Briefing cache + scheduler** — Generate every trading day 16:30 WIB, cache di DB | `backend/scheduler.py` | 10m | Job: daily at 16:30. Store result in `market_briefings` table. Max 1 per day. |
-| 18.3.3 | **Briefing widget** — Card di dashboard + dedicated `#briefing` page | `frontend/js/views/dashboard.js` | 15m | Narrative card like existing market-narrative-panel. Show: generated time, refresh button. |
+| 19.3.1 | **Sector stocks endpoint** — `GET /api/sectors/{sector}/stocks?sort=return_1d&order=desc&limit=50` | `backend/routes/sectors.py` | 15m | Query stocks by sector, join with OHLCV for latest price/change. Support multi-column sort. |
+| 19.3.2 | **Sector stock table UI** — Sortable table in sector detail view | `frontend/js/views/sector.js` | 15m | Columns: ticker, name, price, change%, volume, market cap. Sort by click on column header. |
 
-**Value:** ★★★★☆ — Daily context saves user 15 menit riset
-**Dependency:** OpenRouter LLM (FREE model), existing API key
-**Risk:** LLM latency 5-15 detik — async generation acceptable
+**Value:** ★★★☆☆ — Sector analysis completeness
+**Dependency:** Sector classification (already exists)
 
 ---
 
-## 🟠 18.4 Web Push Notifications (MEDIUM IMPACT)
+## 🟡 19.4 Watchlist Group Management (LOW IMPACT)
 
-> **Goal:** Browser push notifications when alert triggers — even when tab is closed.
+> **Goal:** Inline rename, delete confirmation, drag reorder for watchlist groups.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 18.4.1 | **VAPID key setup** — Generate key pair for push protocol | terminal | 5m | `npx web-push generate-vapid-keys`. Save in env vars. |
-| 18.4.2 | **Push subscription endpoint** — `POST /api/push/subscribe` save subscription | `backend/routes/system.py` | 15m | Store endpoint + keys in `push_subscriptions` table. One per device. |
-| 18.4.3 | **Push trigger from alert checker** — When alert triggers, send push | `backend/updaters/alert_checker.py` | 15m | Use `py-webpush` to send notification. Payload: ticker, alert type, value. |
-| 18.4.4 | **Service worker push handler** — Show notification when push arrives | `frontend/sw.js` | 10m | `self.addEventListener('push', ...)` show notification with click → open stock detail. |
+| 19.4.1 | **Group rename endpoint** — `PUT /api/watchlist-groups/{id}?name=...` | `backend/routes/user.py` | 10m | Update group name. Return updated group. |
+| 19.4.2 | **Group reorder endpoint** — `PUT /api/watchlist-groups/reorder` with order array | `backend/routes/user.py` | 10m | Accept `{order: [id1, id2, ...]}`. Update `sort_order` column. |
+| 19.4.3 | **Group management UI** — Inline rename (double-click), delete with confirm, drag handle | `frontend/js/views/portfolio.js` | 20m | Edit icon on hover → inline input. Delete confirmation modal. Drag handle (simple up/down buttons). |
 
-**Value:** ★★★★☆ — User dapat alert real-time tanpa buka web
-**Dependency:** `py-webpush` library, VAPID keys, HTTPS (already have via nginx/cloudflare)
+**Value:** ★★★☆☆ — Watchlist power user satisfaction
+**Dependency:** WatchlistGroup model (already exists)
 
 ---
 
-## 🟡 18.5 Compare View Enhancement (LOW IMPACT)
+## 🟡 19.5 Price Board Component (LOW IMPACT)
 
-> **Goal:** Radar chart + correlation matrix for stock comparison.
+> **Goal:** Better price data in stock detail: bid/ask spread, previous close, 52w high/low, YTD return.
 
 | # | Task | Files | Est. | Detail |
 |---|------|-------|------|--------|
-| 18.5.1 | **Radar chart** — Multi-metric comparison (RSI, Volume, PER, PBV, Yield) | `frontend/js/views/compare.js` | 20m | Use Canvas API or lightweight chart. Compare 2-4 stocks on 5 metrics. |
-| 18.5.2 | **Correlation matrix** — Price correlation heatmap | `backend/routes/stocks.py` + `frontend/js/views/compare.js` | 20m | Backend: compute Pearson correlation from OHLCV daily returns. Frontend: simple CSS grid heatmap. |
+| 19.5.1 | **Price board data endpoint** — Extend stock detail to include extended stats | `backend/routes/stock_detail.py` | 15m | Add to existing endpoint: prev_close, 52w_high, 52w_low, ytd_return, avg_volume_50d. |
+| 19.5.2 | **Price board UI** — Compact grid below stock hero | `frontend/js/views/stock_detail.js` | 15m | Grid layout: Previous Close, Open, Day Range, 52W Range, Volume, Avg Volume, YTD. Color-coded values. |
 
-**Value:** ★★★☆☆ — Power user tool, niche but sticky
-**Dependency:** OHLCV data (already available)
+**Value:** ★★★☆☆ — Day traders need this data
+**Dependency:** OHLCV data (already exists)
 
 ---
 
-## Prioritas Eksekusi — Fase 18
+## 🟡 19.6 Mobile Navigation Polish (LOW IMPACT)
 
-### 🔴 NOW (Day 1)
-18.1.1 → 18.1.2 → 18.1.3 (PDF Report)
+> **Goal:** Full navigation drawer on mobile with all 22 routes.
 
-### 🟠 Next (Day 2)
-18.2.1 → 18.2.2 (Portfolio Performance)
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 19.6.1 | **More drawer content** — Add all remaining nav items to the "More" drawer | `frontend/index.html` | 10m | Group by category: Market (dashboard, market, sector, breadth, treemap, indices), Tools (screener, compare, backtest, paper), Data (news, calendar, corporate, movers), Personal (portfolio, watchlist, alerts, settings). |
+| 19.6.2 | **Drawer animation** — Slide-up panel with backdrop | `frontend/style.css` | 10m | CSS transition slide-up. Backdrop click to close. Lucide icons for each item. |
 
-### 🟡 Later (Day 3-4)
-18.3.1 → 18.3.2 → 18.3.3 (AI Briefing)
-18.4.1 → 18.4.2 → 18.4.3 → 18.4.4 (Push Notifications)
-18.5.1 → 18.5.2 (Compare Enhancement)
+**Value:** ★★★☆☆ — Mobile parity with desktop
+**Dependency:** None
+
+---
+
+## Prioritas Eksekusi — Fase 19
+
+### 🟠 This session
+19.1.1 → 19.1.2 → 19.1.4 (Screener Alerts — skip 19.1.3 evaluator, save/load UI only)
+19.2.1 → 19.2.2 (Portfolio Benchmarks)
+19.5.1 → 19.5.2 (Price Board)
+
+### 🟡 If time permits
+19.3.1 → 19.3.2 (Sector Stocks)
+19.4.1 → 19.4.3 (Watchlist Groups)
+19.6.1 → 19.6.2 (Mobile Drawer)
 
 ---
 
@@ -115,10 +125,8 @@
 
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
-| — | — | 🆕 | Fase 18 dimulai |
-| 2026-05-10 | 18.1 | ✅ | PDF Stock Report — WeasyPrint service, GET /api/stocks/{ticker}/report, download button |
-| 2026-05-10 | 18.2 | ✅ | Portfolio Performance Chart — LightweightCharts equity curve di tab Kinerja, data dari /api/portfolio/analytics |
-| 2026-05-10 | 18.3 | ✅ | AI Market Briefing — model MarketBriefing, service OpenRouter, scheduler 16:30 WIB, dashboard widget + refresh |
-| 2026-05-10 | 18.4 | ❌ | Web Push Notifications — skipped (pywebpush dependency berat, existing polling cukup) |
-| 2026-05-10 | 18.5 | ✅ | Compare Enhancement — Radar chart SVG multi-metric (Momentum, Volume, PE, PBV, ROE, Yield) |
-| — | — | 🟢 | **Fase 18 selesai — ~90%** |
+| — | — | 🆕 | Fase 19 dimulai |
+| 2026-05-10 | 19.1 | ✅ | Screener Alert Saving — SavedScreener DB model + CRUD endpoints (`/api/screener/saved`). Frontend save/load sudah existing via localStorage + prompt dialog. |
+| 2026-05-10 | 19.2 | ✅ | Portfolio Benchmarks — Equal-weight benchmark curve di `/api/portfolio/analytics` + dashed overlay line di chart Kinerja + legend |
+| 2026-05-10 | 19.5 | ✅ | Price Board — 8-item grid (Prev Close, Open, High, Low, Volume, Value, 52W H/L) di stock detail, populated dari OHLCV data |
+| — | — | 🟡 | **19.3 Sector Stocks, 19.4 Watchlist Groups, 19.6 Mobile Drawer** — deferred |

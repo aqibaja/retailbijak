@@ -772,6 +772,37 @@ def portfolio_analytics(db: Session = Depends(get_db)):
             if total_value > 0:
                 equity_curve.append({'date': d, 'value': round(total_value, 2)})
 
+    # 2a. Benchmark: equal-weight composite of portfolio tickers
+    benchmark_curve = []
+    if unique_tickers:
+        bench_tickers = list(unique_tickers)
+        bench_prices = {t: [] for t in bench_tickers}
+        for row in db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker.in_(bench_tickers)
+        ).order_by(OHLCVDaily.date.asc()).all():
+            bench_prices[row.ticker].append({'date': row.date.isoformat(), 'close': float(row.close or 0)})
+
+        if bench_prices:
+            # Build date-merged series
+            bench_date_map = {}
+            for t, prices in bench_prices.items():
+                for p in prices:
+                    bench_date_map.setdefault(p['date'], []).append(p['close'])
+
+            # Normalize each to 100 at start, then average
+            first_prices = {}
+            for t, prices in bench_prices.items():
+                if prices:
+                    first_prices[t] = prices[0]['close']
+
+            if first_prices:
+                for d in sorted(bench_date_map.keys()):
+                    vals = bench_date_map[d]
+                    if vals and len(vals) >= 2:
+                        normalized = [v / first_prices.get(t, 1) * 100 for t, v in zip(bench_tickers, vals) if t in first_prices and first_prices[t] > 0]
+                        if normalized:
+                            benchmark_curve.append({'date': d, 'value': round(sum(normalized) / len(normalized), 2)})
+
     # 2. Sector allocation
     positions = db.query(PortfolioPosition).all()
     sector_value = defaultdict(float)
@@ -799,6 +830,7 @@ def portfolio_analytics(db: Session = Depends(get_db)):
 
     return {
         'equity_curve': equity_curve,
+        'benchmark_curve': benchmark_curve,
         'sectors': sectors,
         'total_value': round(total_portfolio_value, 2),
         'has_data': bool(equity_curve or sectors),

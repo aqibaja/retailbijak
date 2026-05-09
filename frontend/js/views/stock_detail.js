@@ -64,10 +64,21 @@ export async function renderStockDetail(root, ticker) {
           <div id="pattern-tags" class="stock-pattern-tags mt-2 flex gap-1 flex-wrap"></div>
           <div id="perf-chips" class="stock-perf-chips mt-1 flex gap-1 flex-wrap"></div>
         </div>
-        <button id="chat-toggle" class="btn btn-icon chat-toggle-btn" title="Tanya AI">
-          <i data-lucide="message-circle" style="width:18px;height:18px"></i>
-        </button>
       </div>
+      <!-- Price Board (19.5) -->
+      <div class="price-board-grid" id="price-board" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-top:8px;padding:0 2px">
+        <div class="price-board-item"><span class="price-board-label">Sebelumnya</span><span class="price-board-value" id="pb-prev-close">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">Pembukaan</span><span class="price-board-value" id="pb-open">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">Tertinggi</span><span class="price-board-value" id="pb-high">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">Terendah</span><span class="price-board-value" id="pb-low">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">Volume</span><span class="price-board-value" id="pb-volume">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">Nilai</span><span class="price-board-value" id="pb-value">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">52W Tertinggi</span><span class="price-board-value" id="pb-52w-high">—</span></div>
+        <div class="price-board-item"><span class="price-board-label">52W Terendah</span><span class="price-board-value" id="pb-52w-low">—</span></div>
+      </div>
+      <button id="chat-toggle" class="btn btn-icon chat-toggle-btn" title="Tanya AI">
+        <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+      </button>
       <div id="tv-symbol-profile" class="stock-side-panel hidden"></div>
       <div class="stock-layout">
         <div class="panel chart-card-v2">
@@ -812,6 +823,28 @@ function hydrateHeader(symbol, detail, fund, candles){
     badgesEl.innerHTML = `<span class="badge">IDX</span><span class="${stalenessClass}">${stalenessLabel || 'Memuat...'}</span>`;
     // Load index constituent badges (15.1.5)
     loadIndexBadges(badgesEl, symbol);
+  }
+  // Price Board (19.5)
+  const setPb = (id, val, suffix = '') => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.textContent = suffix ? `${suffix} ${Number(val).toLocaleString('id-ID', {maximumFractionDigits:0})}` : Number(val).toLocaleString('id-ID', {maximumFractionDigits:0});
+  };
+  if (candles.length >= 2) {
+    const last2 = candles[candles.length-1];
+    const prev2 = candles[candles.length-2] || last2;
+    setPb('pb-prev-close', prev2.close, 'Rp');
+    setPb('pb-open', last2.open, 'Rp');
+    setPb('pb-high', last2.high, 'Rp');
+    setPb('pb-low', last2.low, 'Rp');
+    setPb('pb-volume', last2.volume);
+    setPb('pb-value', (last2.close * (last2.volume || 0)), 'Rp');
+  }
+  // Compute 52w high/low from all candles
+  if (candles.length > 20) {
+    const highs = candles.map(c => c.high).filter(h => h > 0);
+    const lows = candles.map(c => c.low).filter(l => l > 0);
+    if (highs.length) setPb('pb-52w-high', Math.max(...highs), 'Rp');
+    if (lows.length) setPb('pb-52w-low', Math.min(...lows), 'Rp');
   }
 }
 /* ─── Theme-aware chart color helpers ─── */

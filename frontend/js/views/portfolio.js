@@ -984,6 +984,7 @@ async function renderPerfChart(el) {
   try {
     const res = await apiFetch('/portfolio/analytics');
     const equity = res?.equity_curve;
+    const benchmark = res?.benchmark_curve;
     if (!equity || !equity.length) {
       el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">📈</div><h3>Belum Ada Data Kinerja</h3><p>Tambah transaksi portofolio dulu untuk melihat grafik performa.</p><button class="btn btn-primary empty-state-action" onclick="window.location.hash='#portfolio'">➕ Tambah Posisi</button></div>`;
       return;
@@ -999,7 +1000,10 @@ async function renderPerfChart(el) {
       <div class="p-4">
         <div class="flex justify-between items-center mb-3">
           <h3 class="text-xs uppercase text-dim strong m-0">📈 Kinerja Portofolio</h3>
-          <span class="${retClass} mono strong">${retSign}${totalReturn.toFixed(2)}%</span>
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1 text-xs"><span style="width:10px;height:3px;border-radius:2px;background:#10b981;display:inline-block"></span> Portofolio <strong class="${retClass} mono">${retSign}${totalReturn.toFixed(2)}%</strong></span>
+            ${benchmark && benchmark.length >= 2 ? `<span class="flex items-center gap-1 text-xs"><span style="width:10px;height:2px;border-radius:1px;background:#6366f1;display:inline-block"></span> Rerata <strong class="mono text-muted">—</strong></span>` : ''}
+          </div>
         </div>
         <div id="perf-chart-container" style="height:300px;width:100%"></div>
         <div class="flex justify-between mt-2 text-xs text-dim">
@@ -1044,6 +1048,22 @@ async function renderPerfChart(el) {
       time: p.date,
       value: p.value,
     })));
+
+    // Benchmark overlay (19.2)
+    if (benchmark && benchmark.length >= 2) {
+      const benchSeries = chart.addLineSeries({
+        color: '#6366f1',
+        lineWidth: 1,
+        lineStyle: 2, // Dashed
+        crosshairMarkerVisible: false,
+        title: 'Rerata Portofolio',
+        priceFormat: { type: 'custom', formatter: (v) => v.toFixed(1) },
+      });
+      benchSeries.setData(benchmark.map(p => ({
+        time: p.date,
+        value: p.value,
+      })));
+    }
 
     chart.timeScale().fitContent();
   } catch (e) {

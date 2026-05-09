@@ -277,6 +277,19 @@ class CalendarEvent(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class SavedScreener(Base):
+    """Saved screener filter conditions — named, reusable."""
+    __tablename__ = "saved_screeners"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    filters_json = Column(String, default="{}")  # JSON blob of filter state
+    active = Column(Integer, default=1)  # 1 = active, 0 = disabled
+    match_count = Column(Integer, default=0)  # Last evaluation match count
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()
