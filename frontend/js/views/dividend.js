@@ -2,8 +2,8 @@
 // 26.1.2 — Dividend Dashboard & Kalkulator
 // API: GET /api/dividends, GET /api/dividends/aristocrats
 
-import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pct, money, fmt } from '../utils/format.js?v=20260510';
+import { apiFetch, showToast } from '../api.js?v=20260511';
+import { nf, pct, money, fmt } from '../utils/format.js?v=20260511';
 
 // ─── Module State ─────────────────────────────────────────────
 let dividendsData = [];

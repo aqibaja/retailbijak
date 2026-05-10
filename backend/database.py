@@ -349,6 +349,17 @@ class MacroIndicator(Base):
     )
 
 
+class ChartDrawing(Base):
+    __tablename__ = "chart_drawings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=False)
+    drawing_type = Column(String, nullable=False)  # 'trendline', 'hline', 'fibonacci'
+    data_json = Column(JSON, default={})  # coordinates, levels, etc.
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()

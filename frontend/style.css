@@ -95,6 +95,35 @@
 .sector-empty h3{font-size:18px;color:var(--text-main);margin:0}
 .sector-empty p{font-size:13px;max-width:320px}
 @media (max-width:767px){.sector-detail-grid{grid-template-columns:1fr}.sector-chip{padding:6px 12px;font-size:11px}.sector-chip-ret{font-size:10px}}
+/* ── Sector Rotation Heatmap ── */
+.sector-rotation-page{padding:0 0 24px}
+.sector-rotation-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.sector-rotation-controls .filter-input{flex:1;min-width:160px;padding:8px 12px;font-size:13px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--input-bg);color:var(--text-main);outline:none;transition:border-color .15s}
+.sector-rotation-controls .filter-input:focus{border-color:var(--primary-color)}
+.sector-rotation-controls .sort-btn{padding:8px 14px;font-size:12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-panel);color:var(--text-main);cursor:pointer;white-space:nowrap;transition:all .15s}
+.sector-rotation-controls .sort-btn:hover{border-color:var(--border-strong);background:var(--bg-panel-hover)}
+.sector-rotation-controls .sort-btn.active{border-color:var(--primary-color);color:var(--primary-color);font-weight:600}
+.sector-rotation-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated)}
+.sector-rotation-table{width:100%;border-collapse:collapse;font-size:13px;min-width:650px}
+.sector-rotation-table th{padding:12px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border-subtle);background:var(--bg-panel);position:sticky;top:0;z-index:2;white-space:nowrap}
+.sector-rotation-table th:first-child{text-align:left;padding-left:16px}
+.sector-rotation-table th:last-child{text-align:center}
+.sector-rotation-table td{padding:10px 10px;text-align:right;font-weight:600;font-size:12px;border-top:1px solid var(--border-subtle);transition:background .15s}
+.sector-rotation-table tr:first-child td{border-top:none}
+.sector-rotation-table td:first-child{text-align:left;padding-left:16px;font-weight:700;font-size:13px;color:var(--text-main);white-space:nowrap}
+.sector-rotation-table td:last-child{text-align:center;font-weight:500;color:var(--text-dim);font-size:11px}
+.sector-rotation-table tr:hover td{filter:brightness(1.05)}
+.sector-rotation-trophy{font-size:14px;margin-right:6px}
+.sector-rotation-stocks-count{font-size:11px;color:var(--text-dim);font-weight:500}
+@media (max-width:767px){
+  .sector-rotation-table{min-width:auto;font-size:12px}
+  .sector-rotation-table td{padding:8px 6px;font-size:11px}
+  .sector-rotation-table th{padding:8px 6px;font-size:9px}
+  .sector-rotation-table td:first-child{font-size:12px;padding-left:10px}
+  .sector-rotation-table td:last-child{font-size:10px}
+  .sector-rotation-controls .filter-input{font-size:12px}
+  .sector-rotation-controls .sort-btn{font-size:11px}
+}
 /* ── Search Filter Chips ── */
 .search-filter-bar{padding:8px 12px 4px;border-top:1px solid var(--border-subtle)}
 .search-filter-chips{display:flex;gap:6px;flex-wrap:wrap}

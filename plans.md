@@ -591,3 +591,9 @@ Sprint 4: Chart Drawings → Sector Rotation → Portfolio Dividends
 | 2026-05-11 | **Sprint 3 — Content & Education** | 🚀 | 2 tasks selesai. |
 | 2026-05-11 | 27.3.1 — News Inline + AI Summary | ✅ | `POST /api/news/{id}/summarize` endpoint (OpenRouter). Frontend expandable cards with "Baca Inline" + "Ringkas AI" + "Buka Asli" buttons. CSS transitions. |
 | 2026-05-11 | 27.3.2 — Portfolio What-If | ✅ | `POST /api/portfolio/what-if` endpoint (OHLCV-based CAGR/P&L). Frontend "🔮 What-If" tab with form and color-coded results. |
+| 2026-05-11 | **Sprint 4 — Power User & Polish** | 🚀 | 3 tasks selesai. |
+| 2026-05-11 | 27.4.1 — Chart Drawings + Fibonacci | ✅ | `ChartDrawing` DB model + CRUD API. Fibonacci retracement tool (7 levels). Save/load drawings to backend. 💾📂 buttons. |
+| 2026-05-11 | 27.4.2 — Sector Rotation Chart | ✅ | `GET /api/sectors/rotation` heatmap endpoint. Frontend `#sector-rotation` view with color-coded per-period returns, momentum score, filter/sort. |
+| 2026-05-11 | 27.4.3 — Portfolio Dividends | ✅ | `GET /api/portfolio/dividends` endpoint. "📋 Dividen" tab with KPI cards + table (yield, est. annual, income %). |
+| | | | |
+| **Fase 27 Total** | 10/10 tasks | ✅ | **Selesai!** Semua fitur Fase 27 deployed. |

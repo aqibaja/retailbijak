@@ -1,5 +1,5 @@
-import { clearViewTimers } from './main.js?v=20260510';
-import { setPageMeta } from './api.js?v=20260510';
+import { clearViewTimers } from './main.js?v=20260511';
+import { setPageMeta } from './api.js?v=20260511';
 
 // Route meta descriptions
 const ROUTE_META = {
@@ -28,35 +28,37 @@ const ROUTE_META = {
   macro: { title: 'RetailBijak — Macro & Ekonomi', desc: 'Indikator makroekonomi Indonesia: BI Rate, Inflasi, GDP, Neraca Dagang, dan Cadangan Devisa.' },
   indices: { title: 'RetailBijak — Indeks IDX', desc: 'Pantau konstituen dan performa indeks saham IDX: LQ45, IDX30, KOMPAS100, IDX80, IDXESGL.' },
   dividends: { title: 'RetailBijak — Dividend Dashboard & Kalkulator', desc: 'Pantau dividen saham IDX, hitung estimasi pendapatan dividen, dan temukan dividend aristocrats.' },
+  sector_rotation: { title: 'RetailBijak — Rotasi Sektor Heatmap', desc: 'Heatmap rotasi sektor IDX — lihat perbandingan performa 1d, 5d, 1m, 3m dan momentum score antar sektor.' },
 };
 
 // Dynamic view registry — lazy import per route (1.7.1)
 const viewModules = {
-  dashboard: () => import('./views/dashboard.js?v=20260510'),
-  stock_detail: () => import('./views/stock_detail.js?v=20260510'),
-  screener: () => import('./views/screener.js?v=20260510'),
-  portfolio: () => import('./views/portfolio.js?v=20260510'),
-  market: () => import('./views/market.js?v=20260510'),
-  treemap: () => import('./views/treemap.js?v=20260510'),
-  compare: () => import('./views/compare.js?v=20260510'),
-  backtest: () => import('./views/backtest.js?v=20260510'),
-  paper_trades: () => import('./views/paper_trades.js?v=20260510'),
-  news: () => import('./views/news.js?v=20260510'),
-  settings: () => import('./views/settings.js?v=20260510'),
-  help: () => import('./views/help.js?v=20260510'),
-  ai_picks: () => import('./views/ai_picks.js?v=20260510'),
-  sector: () => import('./views/sector.js?v=20260510'),
-  breadth: () => import('./views/breadth.js?v=20260510'),
-  signal_overview: () => import('./views/signal_overview.js?v=20260510'),
-  alerts: () => import('./views/alerts.js?v=20260510'),
-  movers: () => import('./views/movers.js?v=20260510'),
-  calendar: () => import('./views/calendar.js?v=20260510'),
-  corporate: () => import('./views/corporate.js?v=20260510'),
-  ipo: () => import('./views/ipo.js?v=20260510'),
-  chart: () => import('./views/chart.js?v=20260510'),
-  indices: () => import('./views/indices.js?v=20260510'),
-  dividends: () => import('./views/dividend.js?v=20260510'),
-  macro: () => import('./views/macro.js?v=20260510'),
+  dashboard: () => import('./views/dashboard.js?v=20260511'),
+  stock_detail: () => import('./views/stock_detail.js?v=20260511'),
+  screener: () => import('./views/screener.js?v=20260511'),
+  portfolio: () => import('./views/portfolio.js?v=20260511'),
+  market: () => import('./views/market.js?v=20260511'),
+  treemap: () => import('./views/treemap.js?v=20260511'),
+  compare: () => import('./views/compare.js?v=20260511'),
+  backtest: () => import('./views/backtest.js?v=20260511'),
+  paper_trades: () => import('./views/paper_trades.js?v=20260511'),
+  news: () => import('./views/news.js?v=20260511'),
+  settings: () => import('./views/settings.js?v=20260511'),
+  help: () => import('./views/help.js?v=20260511'),
+  ai_picks: () => import('./views/ai_picks.js?v=20260511'),
+  sector: () => import('./views/sector.js?v=20260511'),
+  breadth: () => import('./views/breadth.js?v=20260511'),
+  signal_overview: () => import('./views/signal_overview.js?v=20260511'),
+  alerts: () => import('./views/alerts.js?v=20260511'),
+  movers: () => import('./views/movers.js?v=20260511'),
+  calendar: () => import('./views/calendar.js?v=20260511'),
+  corporate: () => import('./views/corporate.js?v=20260511'),
+  ipo: () => import('./views/ipo.js?v=20260511'),
+  chart: () => import('./views/chart.js?v=20260511'),
+  indices: () => import('./views/indices.js?v=20260511'),
+  dividends: () => import('./views/dividend.js?v=20260511'),
+  macro: () => import('./views/macro.js?v=20260511'),
+  sector_rotation: () => import('./views/sector.js?v=20260511'),
 };
 const viewCache = {};
 

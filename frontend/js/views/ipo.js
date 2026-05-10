@@ -2,8 +2,8 @@
 // 26.4.1 — IPO Pipeline Tracker
 // API: GET /api/ipo
 
-import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf, money, fmt } from '../utils/format.js?v=20260510';
+import { apiFetch, showToast } from '../api.js?v=20260511';
+import { nf, pf, money, fmt } from '../utils/format.js?v=20260511';
 
 // ─── Module State ─────────────────────────────────────────────
 let ipoData = { upcoming: [], past: [] };

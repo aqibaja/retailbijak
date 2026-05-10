@@ -1,6 +1,6 @@
-import { handleRoute } from './router.js?v=20260510';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260510';
-import { initTheme } from './theme.js?v=20260510';
+import { handleRoute } from './router.js?v=20260511';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260511';
+import { initTheme } from './theme.js?v=20260511';
 
 // ================= GLOBAL ERROR BOUNDARY =================
 window.__hermesErrors = [];

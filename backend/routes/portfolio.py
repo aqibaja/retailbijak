@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from database import OHLCVDaily, get_db
+from database import OHLCVDaily, Fundamental, PortfolioPosition, get_db
 from routes.shared_stock_fallbacks import _ticker_base
 
 router = APIRouter()
@@ -170,3 +170,96 @@ def _format_date(dt: datetime | date) -> str:
     if isinstance(dt, datetime):
         return dt.strftime("%Y-%m-%d")
     return dt.isoformat()
+
+
+@router.get('/api/portfolio/dividends')
+def portfolio_dividend_projection(db: Session = Depends(get_db)):
+    """Project annual dividend income for all portfolio positions."""
+    positions = db.query(PortfolioPosition).order_by(PortfolioPosition.ticker.asc()).all()
+
+    if not positions:
+        return {
+            "total_projected_dividend": 0,
+            "total_invested": 0,
+            "total_current_value": 0,
+            "average_yield": 0.0,
+            "positions": [],
+        }
+
+    results = []
+    total_current_value = 0.0
+    total_invested = 0.0
+    total_dividend = 0.0
+
+    for pos in positions:
+        ticker = pos.ticker
+        base = _ticker_base(ticker)
+        lots = pos.lots or 0
+        avg_price = pos.avg_price or 0
+
+        shares = lots * 100
+
+        # Get current close price from OHLCV daily (most recent)
+        price_row = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == ticker,
+        ).order_by(OHLCVDaily.date.desc()).first()
+
+        if price_row is None:
+            # Try with .JK suffix
+            price_row = db.query(OHLCVDaily).filter(
+                OHLCVDaily.ticker == f"{base}.JK",
+            ).order_by(OHLCVDaily.date.desc()).first()
+
+        current_price = price_row.close if price_row else 0.0
+        current_value = shares * current_price
+
+        # Get Fundamental dividend yield
+        fund = db.query(Fundamental).filter(Fundamental.ticker == ticker).first()
+        if fund is None:
+            fund = db.query(Fundamental).filter(Fundamental.ticker == f"{base}.JK").first()
+
+        dividend_yield = 0.0
+        if fund and fund.dividend_yield is not None:
+            dividend_yield = fund.dividend_yield
+
+        # dividend_yield stored as percentage (e.g. 3.5 means 3.5%)
+        annual_dividend_est = current_value * (dividend_yield / 100.0)
+
+        total_current_value += current_value
+        total_invested += shares * avg_price
+        total_dividend += annual_dividend_est
+
+        results.append({
+            "ticker": base,
+            "lots": lots,
+            "shares": shares,
+            "avg_price": avg_price,
+            "current_price": round(current_price, 2),
+            "current_value": round(current_value, 2),
+            "dividend_yield": round(dividend_yield, 2),
+            "annual_dividend_est": round(annual_dividend_est, 2),
+            "income_pct": 0.0,  # placeholder, computed below
+        })
+
+    # Sort by annual_dividend_est descending
+    results.sort(key=lambda r: r["annual_dividend_est"], reverse=True)
+
+    # Compute income_pct for each position
+    for r in results:
+        if total_dividend > 0:
+            r["income_pct"] = round((r["annual_dividend_est"] / total_dividend) * 100, 2)
+        else:
+            r["income_pct"] = 0.0
+
+    # Weighted average yield
+    average_yield = 0.0
+    if total_current_value > 0:
+        average_yield = round((total_dividend / total_current_value) * 100, 2)
+
+    return {
+        "total_projected_dividend": round(total_dividend, 2),
+        "total_invested": round(total_invested, 2),
+        "total_current_value": round(total_current_value, 2),
+        "average_yield": average_yield,
+        "positions": results,
+    }

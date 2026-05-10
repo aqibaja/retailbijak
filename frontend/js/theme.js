@@ -1,4 +1,4 @@
-import { setLanguage, applyTranslations } from './i18n.js?v=20260510';
+import { setLanguage, applyTranslations } from './i18n.js?v=20260511';
 
 const THEMES = ['dark', 'light', 'amoled'];
 

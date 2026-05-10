@@ -756,3 +756,182 @@ window.sortSectorStocks = function(col) {
     renderSortableStockTable(_sortableState.sector);
   }
 };
+
+// ─── Sector Rotation Heatmap View (sector-rotation route) ────────
+
+const ROTATION_PERIODS = ['1d', '5d', '1m', '3m'];
+const ROTATION_MAX_ABS = { '1d': 5, '5d': 10, '1m': 15, '3m': 15 };
+
+function rotationHeatColor(value, maxAbs) {
+  const ratio = Math.min(Math.abs(value) / maxAbs, 1);
+  if (value >= 0) {
+    const r = Math.round(0x34 * ratio + 0xff * (1 - ratio));
+    const g = Math.round(0xd3 * ratio + 0xff * (1 - ratio));
+    const b = Math.round(0x99 * ratio + 0xff * (1 - ratio));
+    return { bg: `rgb(${r},${g},${b})`, text: ratio > 0.5 ? '#fff' : '#1f2937' };
+  } else {
+    const r = Math.round(0xf8 * ratio + 0xff * (1 - ratio));
+    const g = Math.round(0x71 * ratio + 0xff * (1 - ratio));
+    const b = Math.round(0x71 * ratio + 0xff * (1 - ratio));
+    return { bg: `rgb(${r},${g},${b})`, text: ratio > 0.5 ? '#fff' : '#1f2937' };
+  }
+}
+
+function formatRotationVal(val) {
+  if (val == null) return '—';
+  return val >= 0 ? `+${val.toFixed(1)}%` : `${val.toFixed(1)}%`;
+}
+
+let _rotationState = { data: [], filtered: [], sortBy: 'momentum' };
+
+export async function renderSectorRotation(root) {
+  const app = root || document.getElementById('app');
+  if (!app) return;
+
+  app.innerHTML = `
+    <div class="view-content sector-rotation-page">
+      <div class="page-header">
+        <div>
+          <h1>🔄 ${__('Rotasi Sektor', 'Rotasi Sektor')}</h1>
+          <p class="page-subtitle">${__('sector_rotation_subtitle', 'Heatmap performa sektor IDX — diurutkan berdasarkan momentum')}</p>
+        </div>
+        <div class="page-actions">
+          <a href="#sector" class="btn btn-sm btn-icon" title="Kembali ke Sektor">
+            <i data-lucide="arrow-left" class="icon-14"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="sector-rotation-controls">
+        <input type="text" class="filter-input" id="rotationFilter" placeholder="🔍 Cari sektor..." />
+        <button type="button" class="sort-btn active" id="sortMomentum" data-sort="momentum">📊 Momentum</button>
+        <button type="button" class="sort-btn" id="sortName" data-sort="name">📋 Nama</button>
+      </div>
+
+      <div id="rotationHeatmapContainer">
+        <div class="sector-loading">
+          <div class="loading-spinner"></div>
+          <span>${__('loading', 'Memuat data rotasi sektor...')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  lucide.createIcons();
+
+  try {
+    const data = await apiFetch('/sectors/rotation');
+    if (!data?.sectors?.length) {
+      document.getElementById('rotationHeatmapContainer').innerHTML = `
+        <div class="sector-empty">
+          <div class="sector-empty-icon">📊</div>
+          <h3>${__('rotation_empty', 'Belum ada data rotasi')}</h3>
+          <p>${__('rotation_empty_desc', 'Data rotasi sektor belum tersedia.')}</p>
+        </div>`;
+      return;
+    }
+
+    _rotationState.data = data.sectors;
+    _rotationState.filtered = [...data.sectors];
+    _rotationState.sortBy = 'momentum';
+
+    renderRotationHeatmap();
+
+    // Bind filter
+    const filterInput = document.getElementById('rotationFilter');
+    if (filterInput) {
+      filterInput.addEventListener('input', () => {
+        const q = filterInput.value.toLowerCase().trim();
+        if (!q) {
+          _rotationState.filtered = [..._rotationState.data];
+        } else {
+          _rotationState.filtered = _rotationState.data.filter(s =>
+            s.name.toLowerCase().includes(q)
+          );
+        }
+        renderRotationHeatmap();
+      });
+    }
+
+    // Bind sort buttons
+    document.getElementById('sortMomentum')?.addEventListener('click', () => {
+      _rotationState.sortBy = 'momentum';
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sortMomentum')?.classList.add('active');
+      renderRotationHeatmap();
+    });
+    document.getElementById('sortName')?.addEventListener('click', () => {
+      _rotationState.sortBy = 'name';
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sortName')?.classList.add('active');
+      renderRotationHeatmap();
+    });
+
+  } catch (e) {
+    document.getElementById('rotationHeatmapContainer').innerHTML = `
+      <div class="sector-error">
+        <span>⚠️ ${__('error', 'Gagal memuat data rotasi sektor')}</span>
+        <button class="btn btn-sm" onclick="location.reload()">${__('retry', 'Coba lagi')}</button>
+      </div>`;
+    showToast('Gagal memuat data rotasi sektor', 'error');
+  }
+}
+
+function renderRotationHeatmap() {
+  const container = document.getElementById('rotationHeatmapContainer');
+  if (!container) return;
+
+  let sectors = [..._rotationState.filtered];
+
+  if (_rotationState.sortBy === 'momentum') {
+    sectors.sort((a, b) => b.momentum_score - a.momentum_score);
+  } else {
+    sectors.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  const thead = `
+    <thead>
+      <tr>
+        <th>Sektor</th>
+        ${ROTATION_PERIODS.map(p => `<th>${p}</th>`).join('')}
+        <th>Momentum</th>
+        <th>Saham</th>
+      </tr>
+    </thead>`;
+
+  const tbody = sectors.map((s, idx) => {
+    const isTop3 = _rotationState.sortBy === 'momentum' && idx < 3;
+    const trophy = isTop3 ? `<span class="sector-rotation-trophy">${['🏆', '🥈', '🥉'][idx]}</span>` : '';
+
+    const periodCells = ROTATION_PERIODS.map(p => {
+      const val = s.returns?.[p];
+      if (val == null) return '<td>—</td>';
+      const { bg, text } = rotationHeatColor(val, ROTATION_MAX_ABS[p]);
+      return `<td style="background:${bg};color:${text};border-radius:4px">${formatRotationVal(val)}</td>`;
+    }).join('');
+
+    const momVal = s.momentum_score;
+    const momColor = rotationHeatColor(momVal, 10);
+    const momCell = `<td style="background:${momColor.bg};color:${momColor.text};border-radius:4px;font-weight:700">${momVal >= 0 ? '+' : ''}${momVal.toFixed(2)}</td>`;
+
+    const stocksCell = `<td>${s.stocks_count != null ? s.stocks_count : '—'}</td>`;
+
+    return `<tr>
+      <td>${trophy}${s.name}</td>
+      ${periodCells}
+      ${momCell}
+      ${stocksCell}
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="sector-rotation-wrap">
+      <table class="sector-rotation-table">
+        ${thead}
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>
+    ${_rotationState.filtered.length > 0
+      ? `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);text-align:right">${_rotationState.filtered.length} sektor</div>`
+      : ''}`;
+}

@@ -1,7 +1,7 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260510';
-import { money, nf, pf } from '../utils/format.js?v=20260510';
-import { observeElements, flashUpdate } from '../main.js?v=20260510';
-import { exportCSV as expCSV } from '../utils/export.js?v=20260510';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, fetchPortfolioDividends, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260511';
+import { money, nf, pf } from '../utils/format.js?v=20260511';
+import { observeElements, flashUpdate } from '../main.js?v=20260511';
+import { exportCSV as expCSV } from '../utils/export.js?v=20260511';
 
 // ─── SSE State ──────────────────────────────
 let _wlEventSource = null;   // Watchlist SSE connection
@@ -236,6 +236,7 @@ export async function renderPortfolio(root, activeTab) {
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="rebalance-tab-btn" style="font-size:11px">⚖️ Rebalance</button>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="perf-chart-btn" style="font-size:11px">📈 Kinerja</button>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="whatif-tab-btn" style="font-size:11px">🔮 What-If</button>
+              <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="dividend-tab-btn" style="font-size:11px">📋 Dividen</button>
               <span id="wl-news-badge" class="badge badge-warning hidden ml-1" style="font-size:9px;padding:1px 5px;align-self:center">0</span>
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
@@ -280,6 +281,16 @@ export async function renderPortfolio(root, activeTab) {
         stopWatchlistSSE();
         stopPortfolioSSE();
         renderWhatIfTab(root.querySelector('#tab-content'));
+      });
+    }
+
+    // Dividend tab handler
+    const dividendBtn = root.querySelector('#dividend-tab-btn');
+    if (dividendBtn) {
+      dividendBtn.addEventListener('click', () => {
+        stopWatchlistSSE();
+        stopPortfolioSSE();
+        renderDividendTab(root.querySelector('#tab-content'));
       });
     }
 
@@ -857,7 +868,7 @@ async function loadTransactionHistory(el) {
 }
 
 async function showTransactionForm(el) {
-  const { showModal } = await import('./portfolio.js?v=20260510');
+  const { showModal } = await import('./portfolio.js?v=20260511');
   showModal({
     title: 'Catat Transaksi',
     fields: [
@@ -1637,4 +1648,74 @@ export async function renderWhatIfTab(el) {
       resultsEl.classList.add('hidden');
     }
   });
+}
+
+// ─── Dividend Tracker ──────────────────────────
+export async function renderDividendTab(el) {
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton" style="height:200px;margin:1rem 0"></div>';
+
+  const data = await fetchPortfolioDividends();
+  if (!data) {
+    el.innerHTML = `
+      <div class="empty-state-card">
+        <div class="empty-state-icon">⚠️</div>
+        <strong class="empty-state-title">Gagal Memuat</strong>
+        <span class="empty-state-desc">Data dividen tidak dapat dimuat. Coba refresh halaman.</span>
+        <button type="button" class="empty-state-action" onclick="location.reload()"><i data-lucide="refresh-cw" class="lucide-md"></i> Muat Ulang</button>
+      </div>`;
+    return;
+  }
+
+  const positions = data.data || [];
+  const summary = data.summary || {};
+
+  if (!positions.length) {
+    el.innerHTML = `
+      <div class="empty-state-card">
+        <div class="empty-state-icon">📋</div>
+        <strong class="empty-state-title">Belum Ada Data Dividen</strong>
+        <span class="empty-state-desc">Tambah posisi portofolio terlebih dahulu untuk melihat proyeksi dividen.</span>
+      </div>`;
+    return;
+  }
+
+  // KPI cards
+  const totalAnnual = summary.total_annual_dividend ?? summary.totalAnnualDividend ?? 0;
+  const avgYield = summary.avg_yield ?? summary.avgYield ?? 0;
+  const totalInvested = summary.total_invested ?? summary.totalInvested ?? 0;
+
+  el.innerHTML = `
+    <h3 style="margin:16px 0 12px;font-size:1rem;font-weight:800">📋 Proyeksi Dividen Portofolio</h3>
+    <div class="portfolio-kpi-grid">
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Proyeksi Dividen/Tahun</span><strong class="portfolio-kpi-value text-up">${money(totalAnnual)}</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Rata-Rata Yield</span><strong class="portfolio-kpi-value text-up">${pf(avgYield)}</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Investasi</span><strong class="portfolio-kpi-value">${money(totalInvested)}</strong></div>
+    </div>
+    <div class="table-wrapper" style="margin-top:16px">
+      <table class="table">
+        <thead><tr><th>Ticker</th><th>Lot</th><th>Lembar</th><th>Harga Saat Ini</th><th>Yield %</th><th>Est. Dividen/Tahun</th><th>% dari Pendapatan</th></tr></thead>
+        <tbody>
+          ${positions.map(p => {
+            const ticker = p.ticker || p.symbol || '—';
+            const lots = p.lots ?? p.lot ?? 0;
+            const shares = p.shares ?? p.total_shares ?? 0;
+            const price = p.current_price ?? p.price ?? 0;
+            const yieldPct = p.dividend_yield ?? p.yield ?? p.yield_pct ?? 0;
+            const estAnnual = p.estimated_annual_dividend ?? p.annual_dividend ?? 0;
+            const incomePct = p.income_percentage ?? p.income_pct ?? p.pct_of_income ?? 0;
+
+            return `<tr>
+              <td><strong>${ticker}</strong></td>
+              <td>${typeof lots === 'number' ? nf(lots, 0) : lots}</td>
+              <td>${typeof shares === 'number' ? nf(shares, 0) : shares}</td>
+              <td class="mono">${money(price)}</td>
+              <td class="mono text-up">${pf(yieldPct)}</td>
+              <td class="mono text-up">${money(estAnnual)}</td>
+              <td class="mono text-up">${pf(incomePct)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }

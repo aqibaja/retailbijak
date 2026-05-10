@@ -2,7 +2,7 @@
  * Full-Screen Chart View — Dedicated chart page with drawing tools
  * Fase 15.5 — Full-Screen Chart & Drawing Tools
  */
-import { showToast, apiFetch } from '../api.js?v=20260510';
+import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=20260511';
 
 let activeTicker = null;
 let activeTf = '1M';
@@ -12,7 +12,9 @@ let volumeSeries = null;
 let candles = [];
 let trendLines = [];
 let hLines = [];
-let drawMode = null; // 'trendline' | 'hline' | null
+let fibLines = [];       // Array of {lines:[], data:{t1,p1,t2,p2}}
+let fibLabelsContainer = null;
+let drawMode = null; // 'trendline' | 'hline' | 'fibonacci' | null
 let drawPending = null; // {time, price} for first click
 
 const TF_OPTIONS = ['1D', '5D', '1M', '3M', '6M', '1Y', 'MAX'];
@@ -31,7 +33,10 @@ export function renderChart(root, ticker) {
                 <div class="fullchart-tools">
                     <button class="btn btn-icon btn-sm" id="tool-trendline" title="Trend Line"><i data-lucide="trending-up"></i></button>
                     <button class="btn btn-icon btn-sm" id="tool-hline" title="Horizontal Line"><i data-lucide="minus"></i></button>
+                    <button class="btn btn-icon btn-sm" id="tool-fib" title="Fibonacci Retracement">📐</button>
                     <button class="btn btn-icon btn-sm" id="tool-clear" title="Clear Drawings"><i data-lucide="eraser"></i></button>
+                    <button class="btn btn-icon btn-sm" id="tool-save" title="Save Drawings">💾</button>
+                    <button class="btn btn-icon btn-sm" id="tool-load" title="Load Drawings">📂</button>
                     <button class="btn btn-icon btn-sm" id="chart-export-btn" title="Download PNG"><i data-lucide="camera"></i></button>
                 </div>
             </div>
@@ -84,6 +89,24 @@ export function renderChart(root, ticker) {
     });
     root.querySelector('#tool-clear')?.addEventListener('click', clearDrawings);
     root.querySelector('#chart-export-btn')?.addEventListener('click', exportChartPNG);
+
+    // Fibonacci button
+    root.querySelector('#tool-fib')?.addEventListener('click', () => {
+        if (drawMode === 'fibonacci') {
+            drawMode = null;
+            drawPending = null;
+            showToast('✕ Mode Fibonacci dimatikan', 'info');
+        } else {
+            drawMode = 'fibonacci';
+            drawPending = null;
+            showToast('📐 Klik 2 titik untuk Fibonacci', 'info');
+        }
+    });
+
+    // Save button
+    root.querySelector('#tool-save')?.addEventListener('click', saveDrawingsToBackend);
+    // Load button
+    root.querySelector('#tool-load')?.addEventListener('click', loadDrawingsFromBackend);
 
     loadChartData();
 }
@@ -249,11 +272,33 @@ function renderFullChart(wrap) {
             drawPending = null;
             drawMode = null;
             showToast(`➖ Horizontal line @ ${price.toFixed(0)}`, 'success');
+        } else if (drawMode === 'fibonacci') {
+            if (!drawPending) {
+                drawPending = { time, price };
+                showToast(`📌 Titik 1: ${time} @ ${price.toFixed(0)} — klik titik kedua`, 'info');
+            } else {
+                drawFibonacci(drawPending.time, drawPending.price, time, price);
+                drawPending = null;
+                drawMode = null;
+                showToast('📐 Fibonacci selesai', 'success');
+            }
         }
     });
 
-    // Add previous trend lines (from localStorage)
+    // Create fib labels overlay container
+    const chartContainer = document.getElementById('tvchart-full');
+    if (chartContainer) {
+        chartContainer.style.position = 'relative';
+        fibLabelsContainer = document.createElement('div');
+        fibLabelsContainer.id = 'fib-labels-container';
+        fibLabelsContainer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden;z-index:5;';
+        chartContainer.appendChild(fibLabelsContainer);
+    }
+
+    // Add previous drawings (from localStorage cache)
     loadDrawings();
+    // Load from backend as source of truth
+    loadDrawingsFromBackend();
 }
 
 function drawTrendLine(t1, p1, t2, p2) {
@@ -326,6 +371,259 @@ function drawHorizontalLine(price) {
     }
 }
 
+/**
+ * Draw Fibonacci retracement levels between two points
+ */
+function drawFibonacci(t1, p1, t2, p2) {
+    if (!chart) return;
+    try {
+        const levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+        const high = Math.max(p1, p2);
+        const low = Math.min(p1, p2);
+        const range = high - low;
+        if (range === 0) {
+            showToast('⚠️ Harga sama, tidak bisa Fibonacci', 'warning');
+            return;
+        }
+        const timeScale = chart.timeScale();
+        const timeRange = timeScale.getVisibleRange();
+        if (!timeRange) return;
+        const fromTime = timeRange.from;
+        const toTime = timeRange.to;
+
+        const fibEntry = { lines: [], data: { t1, p1, t2, p2 } };
+
+        levels.forEach((ratio) => {
+            const price = low + ratio * range;
+            // Green gradient for lower levels, red for higher
+            const r = ratio; // 0..1
+            let color;
+            if (r <= 0.382) {
+                // Green: from bright green to lighter green
+                const intensity = Math.round(155 + r * 100);
+                color = `rgb(52,${intensity},153)`;
+            } else if (r <= 0.618) {
+                // Yellow/amber transition
+                color = `rgb(234,${Math.round(179 - (r - 0.382) * 100)},52)`;
+            } else {
+                // Red: from amber to red
+                const g = Math.round(179 - (r - 0.618) * 300);
+                color = `rgb(248,${Math.max(g, 50)},113)`;
+            }
+
+            const lineSeries = chart.addLineSeries({
+                color: color,
+                lineWidth: 1,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                lastValueVisible: false,
+                priceLineVisible: false,
+            });
+            lineSeries.setData([
+                { time: fromTime, value: price },
+                { time: toTime, value: price },
+            ]);
+
+            fibEntry.lines.push(lineSeries);
+        });
+
+        fibLines.push(fibEntry);
+        createFibLabels(levels, low, high, range, fromTime, toTime);
+        saveDrawings();
+        showToast('📐 Fibonacci retracement digambar', 'success');
+    } catch (e) {
+        console.warn('Fibonacci error:', e);
+    }
+}
+
+/**
+ * Create text labels for Fibonacci levels using div overlay
+ */
+function createFibLabels(levels, low, high, range, fromTime, toTime) {
+    if (!fibLabelsContainer) return;
+    const labelGroup = document.createElement('div');
+    labelGroup.className = 'fib-label-group';
+
+    levels.forEach((ratio) => {
+        const price = low + ratio * range;
+        const pct = (ratio * 100).toFixed(1);
+        const label = document.createElement('div');
+        label.className = 'fib-label';
+        label.textContent = `${pct}% (${price.toFixed(0)})`;
+        label.style.cssText = `
+            position: absolute;
+            right: 4px;
+            font-size: 10px;
+            font-family: monospace;
+            padding: 1px 4px;
+            border-radius: 2px;
+            background: rgba(0,0,0,0.5);
+            color: ${ratio <= 0.382 ? '#34d399' : ratio <= 0.618 ? '#facc15' : '#f87171'};
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 6;
+        `;
+        // Position will be set later via chart coordinate conversion
+        label.dataset.price = price;
+        label.dataset.ratio = ratio;
+        labelGroup.appendChild(label);
+    });
+
+    fibLabelsContainer.appendChild(labelGroup);
+
+    // Schedule position update after chart renders
+    requestAnimationFrame(() => updateFibLabelPositions(labelGroup));
+}
+
+/**
+ * Update Fibonacci label positions based on chart coordinates
+ */
+function updateFibLabelPositions(labelGroup) {
+    if (!chart || !labelGroup || !labelGroup.parentNode) return;
+    const timeScale = chart.timeScale();
+    const priceScale = chart.priceScale('right');
+    const labels = labelGroup.querySelectorAll('.fib-label');
+    const containerHeight = fibLabelsContainer ? fibLabelsContainer.clientHeight : 0;
+    if (containerHeight === 0) return;
+
+    labels.forEach((label) => {
+        const price = parseFloat(label.dataset.price);
+        if (isNaN(price)) return;
+        try {
+            const y = priceScale.priceToCoordinate(price);
+            if (y != null && !isNaN(y)) {
+                label.style.top = `${y - 6}px`;
+                label.style.display = 'block';
+            } else {
+                label.style.display = 'none';
+            }
+        } catch (e) {
+            label.style.display = 'none';
+        }
+    });
+
+    // Re-position on next animation frame for scroll/scale changes
+    // Store reference for continuous updates
+    if (labelGroup._updateRaf) cancelAnimationFrame(labelGroup._updateRaf);
+    labelGroup._updateRaf = requestAnimationFrame(() => updateFibLabelPositions(labelGroup));
+}
+
+/**
+ * Add a single SVG text label to the chart (alternative lightweight approach)
+ * Not used when div overlay is active
+ */
+/* function createSVGLabel(text, price, color) { ... } */
+
+// ─── Backend Persistence ────────────────────────────────
+
+/**
+ * Save all current drawings to backend API
+ */
+async function saveDrawingsToBackend() {
+    if (!activeTicker || !chart) {
+        showToast('⚠️ Chart belum siap', 'warning');
+        return;
+    }
+    try {
+        // Collect trendline data
+        const trendlineData = [];
+        trendLines.forEach((ls, idx) => {
+            try {
+                const d = ls.data();
+                if (d && d.length >= 2) {
+                    trendlineData.push({ t1: d[0].time, p1: d[0].value, t2: d[1].time, p2: d[1].value });
+                }
+            } catch(e) {}
+        });
+
+        // Collect hline data
+        const hlineData = [];
+        hLines.forEach((ls) => {
+            try {
+                const d = ls.data();
+                if (d && d.length > 0) {
+                    hlineData.push({ price: d[0].value });
+                }
+            } catch(e) {}
+        });
+
+        // Collect fib data
+        const fibData = fibLines.map(fib => fib.data);
+
+        // First clear existing backend drawings
+        await apiFetch(`/chart/${activeTicker}/drawings`, { method: 'DELETE' });
+
+        // Save each drawing individually
+        const allDrawings = [
+            ...trendlineData.map(d => ({ type: 'trendline', data: d })),
+            ...hlineData.map(d => ({ type: 'hline', data: d })),
+            ...fibData.map(d => ({ type: 'fibonacci', data: d })),
+        ];
+
+        for (const drawing of allDrawings) {
+            await saveDrawing(activeTicker, drawing.type, drawing.data);
+        }
+
+        showToast('💾 Drawings tersimpan', 'success');
+    } catch (e) {
+        console.warn('Save to backend error:', e);
+        showToast('⚠️ Gagal menyimpan drawings', 'error');
+    }
+}
+
+/**
+ * Load all drawings from backend API and re-draw them
+ */
+async function loadDrawingsFromBackend() {
+    if (!activeTicker || !chart) return;
+    try {
+        const res = await fetchDrawings(activeTicker);
+        if (!res || !res.data || !res.data.length) return;
+
+        // Clear existing drawings first
+        clearDrawingsInternal();
+
+        // Re-draw each drawing
+        res.data.forEach((drawing) => {
+            try {
+                if (drawing.type === 'trendline' && drawing.data) {
+                    drawTrendLine(drawing.data.t1, drawing.data.p1, drawing.data.t2, drawing.data.p2);
+                } else if (drawing.type === 'hline' && drawing.data) {
+                    drawHorizontalLine(drawing.data.price);
+                } else if (drawing.type === 'fibonacci' && drawing.data) {
+                    drawFibonacci(drawing.data.t1, drawing.data.p1, drawing.data.t2, drawing.data.p2);
+                }
+            } catch(e) {
+                console.warn('Re-draw error:', e);
+            }
+        });
+
+        showToast('📂 Drawings dimuat', 'success');
+    } catch (e) {
+        console.warn('Load from backend error:', e);
+        // Silently fall back to localStorage
+    }
+}
+
+/**
+ * Clear drawings without showing toast or saving (internal use)
+ */
+function clearDrawingsInternal() {
+    trendLines.forEach(l => { try { chart.removeSeries(l); } catch(e) {} });
+    hLines.forEach(l => { try { chart.removeSeries(l); } catch(e) {} });
+    fibLines.forEach(fib => {
+        fib.lines.forEach(l => { try { chart.removeSeries(l); } catch(e) {} });
+    });
+    // Remove fib label groups
+    if (fibLabelsContainer) {
+        fibLabelsContainer.querySelectorAll('.fib-label-group').forEach(g => g.remove());
+    }
+    trendLines = [];
+    hLines = [];
+    fibLines = [];
+    drawMode = null;
+    drawPending = null;
+}
+
 async function loadLightweightCharts() {
     return new Promise((resolve, reject) => {
         if (typeof LightweightCharts !== 'undefined') return resolve();
@@ -338,27 +636,15 @@ async function loadLightweightCharts() {
 }
 
 function clearDrawings() {
-    trendLines.forEach(l => { try { chart.removeSeries(l); } catch(e) {} });
-    hLines.forEach(l => { try { chart.removeSeries(l); } catch(e) {} });
-    trendLines = [];
-    hLines = [];
-    drawMode = null;
-    drawPending = null;
+    clearDrawingsInternal();
     localStorage.removeItem(`chart-drawings-${activeTicker}`);
     showToast('Drawing dihapus', 'success');
 }
 
 function saveDrawings() {
     if (!activeTicker) return;
-    const data = {
-        trendlines: trendLines.map(() => null), // Can't serialize series, store coords separately
-        hlines: hLines.map(() => null),
-    };
-    // We store drawing coordinates in a parallel array
-    // Actually, we need to get the data from each line series
-    // For simplicity, store just the hline prices
     const hlinePrices = [];
-    hLines.forEach((ls, idx) => {
+    hLines.forEach((ls) => {
         try {
             const d = ls.data();
             if (d && d.length > 0) {
@@ -366,11 +652,20 @@ function saveDrawings() {
             }
         } catch(e) {}
     });
-    // For trendlines, we'd need to store coordinates — complex
-    // For now, just persist hlines which are most useful
+    const trendlineData = [];
+    trendLines.forEach((ls) => {
+        try {
+            const d = ls.data();
+            if (d && d.length >= 2) {
+                trendlineData.push({ t1: d[0].time, p1: d[0].value, t2: d[1].time, p2: d[1].value });
+            }
+        } catch(e) {}
+    });
+    const fibData = fibLines.map(fib => fib.data);
     localStorage.setItem(`chart-drawings-${activeTicker}`, JSON.stringify({
         hlines: hlinePrices,
-        trendlines: [],
+        trendlines: trendlineData,
+        fibs: fibData,
     }));
 }
 
@@ -383,6 +678,16 @@ function loadDrawings() {
         if (data.hlines && Array.isArray(data.hlines)) {
             data.hlines.forEach(price => {
                 if (price != null) drawHorizontalLine(price);
+            });
+        }
+        if (data.trendlines && Array.isArray(data.trendlines)) {
+            data.trendlines.forEach(tl => {
+                if (tl && tl.t1) drawTrendLine(tl.t1, tl.p1, tl.t2, tl.p2);
+            });
+        }
+        if (data.fibs && Array.isArray(data.fibs)) {
+            data.fibs.forEach(fib => {
+                if (fib && fib.t1) drawFibonacci(fib.t1, fib.p1, fib.t2, fib.p2);
             });
         }
     } catch (e) {

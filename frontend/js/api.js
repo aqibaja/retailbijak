@@ -131,6 +131,10 @@ export async function fetchPortfolio() {
     return apiFetch('/portfolio') || { count: 0, data: [] };
 }
 
+export async function fetchPortfolioDividends() {
+    return apiFetch('/portfolio/dividends');
+}
+
 export async function fetchAiPicks(mode = 'swing', limit = 5) {
     const safeMode = encodeURIComponent(mode || 'swing');
     const safeLimit = Number(limit || 5);
@@ -159,6 +163,27 @@ export async function savePortfolioPosition(payload) {
 
 export async function deletePortfolioPosition(ticker) {
     return apiFetch(`/portfolio/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
+}
+
+// ─── Chart Drawings API ────────────────────────────
+export async function fetchDrawings(ticker) {
+    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings`);
+}
+
+export async function saveDrawing(ticker, type, data) {
+    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, data }),
+    });
+}
+
+export async function deleteDrawing(ticker, id) {
+    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings/${id}`, { method: 'DELETE' });
+}
+
+export async function clearBackendDrawings(ticker) {
+    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings`, { method: 'DELETE' });
 }
 
 // ─── SSE URL (relative for production) ─────────────────

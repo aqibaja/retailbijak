@@ -1,8 +1,8 @@
 // ─── Market Movers Page — Gainers / Losers / Most Active ────
 // Dedicated page with multi-timeframe performance columns (1W, 1M, 3M, 6M)
 
-import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf } from '../utils/format.js?v=20260510';
+import { apiFetch, showToast } from '../api.js?v=20260511';
+import { nf, pf } from '../utils/format.js?v=20260511';
 
 // ─── Module State ─────────────────────────────────────────────
 let cache = {};        // { gainers: [], losers: [] }

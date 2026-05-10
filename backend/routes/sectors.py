@@ -383,6 +383,112 @@ def industries_list(db: Session = Depends(get_db)):
     }
 
 
+# ─── Helper: shared sector performance computation ──
+
+
+def _compute_sector_aggregates(db: Session) -> tuple:
+    """Compute sector performance data (avg returns for 1d, 5d, 1m, 3m).
+    Returns (sectors_data, today) where sectors_data is a list of dicts
+    with keys: sector, count, industries, avg_returns.
+    Reused by sector_performance and sector_rotation endpoints.
+    """
+    # 1. Get all stocks with sector data
+    stocks_with_sector = db.query(
+        Stock.ticker, Stock.name, Stock.sector, Stock.industry
+    ).filter(
+        Stock.sector.isnot(None),
+        Stock.sector != '',
+    ).all()
+
+    # Build sector → stocks mapping
+    sector_map = {}
+    for s in stocks_with_sector:
+        sec = s.sector.strip() if s.sector else 'Unknown'
+        if sec not in sector_map:
+            sector_map[sec] = {'stocks': [], 'count': 0, 'industries': set()}
+        sector_map[sec]['stocks'].append(s.ticker)
+        sector_map[sec]['count'] += 1
+        if s.industry:
+            sector_map[sec]['industries'].add(s.industry.strip())
+
+    # 2. For each sector, calc average return
+    today = datetime.utcnow().date()
+
+    # Get latest close for each stock
+    latest_close_subq = db.query(
+        OHLCVDaily.ticker,
+        func.max(OHLCVDaily.date).label('max_date')
+    ).group_by(OHLCVDaily.ticker).subquery()
+
+    latest_closes = db.query(
+        OHLCVDaily.ticker,
+        OHLCVDaily.date,
+        OHLCVDaily.close,
+    ).join(
+        latest_close_subq,
+        (OHLCVDaily.ticker == latest_close_subq.c.ticker) &
+        (OHLCVDaily.date == latest_close_subq.c.max_date)
+    ).all()
+
+    latest_close_map = {r.ticker: {'date': r.date, 'close': r.close} for r in latest_closes}
+
+    # For historical closes: 1d, 5d, 1m, 3m ago
+    periods = {
+        '1d': today - timedelta(days=3),
+        '5d': today - timedelta(days=9),
+        '1m': today - timedelta(days=35),
+        '3m': today - timedelta(days=95),
+    }
+
+    result = []
+    for sector, info in sorted(sector_map.items()):
+        total_sector_return = {'1d': 0.0, '5d': 0.0, '1m': 0.0, '3m': 0.0}
+        stock_count = 0
+
+        for ticker in info['stocks']:
+            latest = latest_close_map.get(ticker)
+            if not latest or not latest['close'] or latest['close'] == 0:
+                continue
+
+            hist_closes = {}
+            for period_name, cutoff_date in periods.items():
+                hist = db.query(OHLCVDaily.close).filter(
+                    OHLCVDaily.ticker == ticker,
+                    OHLCVDaily.date <= cutoff_date,
+                    OHLCVDaily.close.isnot(None),
+                ).order_by(OHLCVDaily.date.desc()).first()
+                if hist and hist[0] and hist[0] > 0:
+                    hist_closes[period_name] = hist[0]
+
+            if not hist_closes:
+                continue
+
+            latest_close = latest['close']
+
+            for period_name, hist_close in hist_closes.items():
+                ret = ((latest_close - hist_close) / hist_close) * 100
+                total_sector_return[period_name] += ret
+
+            stock_count += 1
+
+        # Sector avg return
+        avg_returns = {}
+        for period_name in periods:
+            if stock_count > 0:
+                avg_returns[period_name] = round(total_sector_return[period_name] / stock_count, 2)
+            else:
+                avg_returns[period_name] = 0
+
+        result.append({
+            'sector': sector,
+            'count': stock_count,
+            'industries': list(info['industries']),
+            'avg_returns': avg_returns,
+        })
+
+    return result, today
+
+
 # ─── 16.5.1 — Sector Rotation Data ───────────────
 
 @router.get('/api/sectors-rotation')
@@ -454,3 +560,61 @@ def sector_rotation(weeks: int = 12, db: Session = Depends(get_db)):
         }
     except Exception as e:
         return {'status': 'error', 'error': str(e), 'dates': [], 'sectors': {}}
+
+
+# ─── Heatmap: Sector Rotation ────────────────────
+
+
+@router.get('/api/sectors/rotation')
+def sector_rotation_heatmap(db: Session = Depends(get_db)):
+    """Return sector rotation data optimized for heatmap visualization.
+
+    For each sector, provides returns across 1d, 5d, 1m, 3m periods,
+    ranks within each period, and a momentum score.
+    Sorted by momentum_score descending.
+    """
+    sectors_data, today = _compute_sector_aggregates(db)
+
+    periods = ['1d', '5d', '1m', '3m']
+
+    # Build the heatmap-formatted sector entries
+    sectors_heatmap = []
+    for sec in sectors_data:
+        returns = {}
+        for p in periods:
+            returns[p] = sec['avg_returns'].get(p, 0)
+
+        # Momentum score: weighted average of recent returns
+        momentum_score = (
+            returns.get('1d', 0) * 0.4
+            + returns.get('5d', 0) * 0.3
+            + returns.get('1m', 0) * 0.2
+            + returns.get('3m', 0) * 0.1
+        )
+
+        sectors_heatmap.append({
+            'name': sec['sector'],
+            'stocks_count': sec['count'],
+            'returns': returns,
+            'momentum_score': round(momentum_score, 2),
+        })
+
+    # Sort by momentum_score descending
+    sectors_heatmap.sort(key=lambda x: x['momentum_score'], reverse=True)
+
+    # Compute ranks within each period (1 = highest return)
+    for p in periods:
+        # Stable sort: higher return → better rank (1)
+        ranked = sorted(
+            enumerate(sectors_heatmap),
+            key=lambda x: x[1]['returns'].get(p, 0),
+            reverse=True,
+        )
+        for rank, (idx, _) in enumerate(ranked, start=1):
+            sectors_heatmap[idx][f'rank_{p}'] = rank
+
+    return {
+        'periods': periods,
+        'sectors': sectors_heatmap,
+        'generated_at': datetime.utcnow().isoformat(),
+    }
