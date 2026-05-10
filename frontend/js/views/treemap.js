@@ -1,6 +1,94 @@
 import { apiFetch } from '../api.js?v=20260510';
 import { fmt, pct, fmtRp, nf } from '../utils/format.js?v=20260510';
 
+// ─── Squarify Treemap Algorithm (Bruls/Huizing/van Wijk) ─────
+// Pure JS, zero deps. Produces optimal aspect ratio rectangles.
+
+function squarifyLayout(items, containerW, containerH) {
+  if (!items.length || !containerW || !containerH) return [];
+  const totalValue = items.reduce((s, it) => s + Math.max(0, it.value), 0);
+  if (totalValue <= 0) return items.map(it => ({ ...it, x: 0, y: 0, w: 0, h: 0 }));
+
+  // Normalize to area units
+  const area = items.map(it => ({ ...it, area: (Math.max(0, it.value) / totalValue) * containerW * containerH }));
+  const sorted = area.sort((a, b) => b.area - a.area);
+  const result = [];
+
+  function worstRatio(row, w) {
+    if (!row.length) return Infinity;
+    const sum = row.reduce((s, r) => s + r.area, 0);
+    const max = Math.max(...row.map(r => r.area));
+    const min = Math.min(...row.map(r => r.area));
+    return Math.max((w * w * max) / (sum * sum), (sum * sum) / (w * w * min));
+  }
+
+  function layoutRow(row, x, y, w, h) {
+    const sum = row.reduce((s, r) => s + r.area, 0);
+    if (w >= h) {
+      // Horizontal strip
+      let curY = y;
+      row.forEach((r, i) => {
+        const rh = (r.area / sum) * h;
+        result.push({ ...r, x, y: curY, w, h: rh });
+        curY += rh;
+      });
+      return { x: x + w, y };
+    } else {
+      // Vertical strip
+      let curX = x;
+      row.forEach((r, i) => {
+        const rw = (r.area / sum) * w;
+        result.push({ ...r, x: curX, y, w: rw, h });
+        curX += rw;
+      });
+      return { x, y: y + h };
+    }
+  }
+
+  function squarify(items, x, y, w, h) {
+    if (!items.length) return;
+    if (items.length === 1) {
+      result.push({ ...items[0], x, y, w, h });
+      return;
+    }
+    const row = [];
+    const remaining = [...items];
+    let isVertical = h > w;
+
+    while (remaining.length) {
+      const item = remaining.shift();
+      row.push(item);
+      const nextW = isVertical ? w : (row.reduce((s, r) => s + r.area, 0) / h);
+      const cur = worstRatio(row, isVertical ? h : w);
+      if (remaining.length > 0) {
+        const next = worstRatio([...row, remaining[0]], isVertical ? h : w);
+        if (next > cur) {
+          // Commit this row
+          row.pop();
+          remaining.unshift(item);
+          const sum = row.reduce((s, r) => s + r.area, 0);
+          if (isVertical) {
+            const rw = (sum / h);
+            squarify(row, x, y, rw, h);
+            x += rw; w -= rw;
+          } else {
+            const rh = (sum / w);
+            squarify(row, x, y, w, rh);
+            y += rh; h -= rh;
+          }
+          squarify(remaining, x, y, w, h);
+          return;
+        }
+      }
+    }
+    // Last row
+    squarify(row, x, y, w, h);
+  }
+
+  squarify(sorted, 0, 0, containerW, containerH);
+  return result;
+}
+
 // ─── Color helpers ────────────────────────────────────────────
 
 function changeColorClass(changePct) {
@@ -49,102 +137,92 @@ function ensureTooltip() {
     tooltipEl.style.display = 'none';
     document.body.appendChild(tooltipEl);
   }
-  return tooltipEl;
 }
 
 function showTooltip(e, stock) {
-  const tt = ensureTooltip();
-  const chg = stock.change;
-  const chgStr = chg != null ? (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%' : '--';
-  const mcStr = fmtRp(stock.market_cap || 0);
-  tt.innerHTML = `
-    <div class="treemap-tooltip-ticker">${stock.ticker}</div>
-    <div class="treemap-tooltip-name">${stock.name || ''}</div>
-    <div class="treemap-tooltip-row"><span>Price</span><span>${fmt(stock.price)}</span></div>
-    <div class="treemap-tooltip-row"><span>Change</span><span style="color:${changeTextColor(chg)}">${chgStr}</span></div>
-    <div class="treemap-tooltip-row"><span>Market Cap</span><span>${mcStr}</span></div>
-  `;
-  const rect = e.target.getBoundingClientRect();
-  tt.style.display = 'block';
-  let left = rect.left + rect.width / 2 - tt.offsetWidth / 2;
-  if (left < 8) left = 8;
-  if (left + tt.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tt.offsetWidth - 8;
-  tt.style.left = left + 'px';
-  tt.style.top = (rect.top - tt.offsetHeight - 8) + 'px';
-  if (rect.top - tt.offsetHeight < 0) {
-    tt.style.top = (rect.bottom + 8) + 'px';
-  }
+  ensureTooltip();
+  const pct = stock.change != null ? (stock.change >= 0 ? '+' : '') + stock.change.toFixed(2) + '%' : '—';
+  tooltipEl.innerHTML = `<strong>${stock.ticker}</strong><small>${stock.name || ''}</small><span>Harga: ${stock.price != null ? fmtRp(stock.price) : '—'}</span><span>Perubahan: ${pct}</span>${stock.market_cap ? `<span>Kap: ${fmtRp(stock.market_cap)}</span>` : ''}`;
+  tooltipEl.style.display = 'block';
 }
 
-function hideTooltip() {
-  if (tooltipEl) tooltipEl.style.display = 'none';
-}
+function hideTooltip() { if (tooltipEl) tooltipEl.style.display = 'none'; }
+document.addEventListener('mousemove', e => { if (tooltipEl && tooltipEl.style.display === 'block') { tooltipEl.style.left = (e.clientX + 14) + 'px'; tooltipEl.style.top = (e.clientY - 10) + 'px'; } });
 
-// ─── Treemap rendering ───────────────────────────────────────
+// ─── Desktop Squarify Render ──────────────────────────────────
 
-function renderTreemap(data) {
+function renderSquarifyTreemap(data) {
   if (!data || !data.sectors || !data.sectors.length) {
-    return `<div class="treemap-empty">
-      <div class="treemap-empty-icon">📊</div>
-      <h3>Data Treemap Belum Tersedia</h3>
-      <p>Data pasar IDX belum tersedia untuk ditampilkan dalam bentuk treemap. Coba refresh atau tunggu sesi perdagangan berikutnya.</p>
-    </div>`;
+    return `<div class="treemap-empty"><div class="treemap-empty-icon">📊</div><h3>Data Belum Tersedia</h3><p>Silakan coba lagi nanti.</p></div>`;
   }
 
-  const sectors = data.sectors;
+  // Prepare sector-level items for squarify
+  const sectorItems = data.sectors.filter(s => s.weight > 0).map(s => ({
+    sector: s.sector, weight: s.weight, change: s.return_1d,
+    stocks: s.stocks || [], value: s.weight,
+  }));
 
-  // Build sector rectangles
-  const sectorHtml = sectors.map(sec => {
-    const secChange = sec.return_1d;
-    const secColorClass = changeColorClass(secChange);
+  // Sector-level layout
+  const container = document.getElementById('treemap-squarify-container');
+  const cw = container ? container.clientWidth : window.innerWidth - 80;
+  const ch = Math.max(400, window.innerHeight * 0.6);
+  const sectorRects = squarifyLayout(sectorItems, cw, ch);
+
+  let html = '';
+  sectorRects.forEach((sec, si) => {
+    const secChange = sec.change ?? 0;
     const secBg = changeBgStyle(secChange);
 
-    // Sub-rectangles for stocks inside this sector
-    const stocks = sec.stocks || [];
-    const stockHtml = stocks.map(stk => {
-      const stkColorClass = changeColorClass(stk.change);
+    // Stock-level layout within this sector
+    const stockItems = (sec.stocks || []).filter(s => s.market_cap > 0 || s.price > 0).map(s => ({
+      ticker: s.ticker, name: s.name || '', price: s.price,
+      change: s.change, market_cap: s.market_cap, value: Math.max(1, s.market_cap || s.price || 1),
+    }));
+    if (!stockItems.length) {
+      html += `<a class="treemap-sector-sq" style="position:absolute;left:${sec.x}px;top:${sec.y}px;width:${sec.w}px;height:${sec.h}px;overflow:hidden;border-radius:6px;${secBg};display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;text-decoration:none;color:inherit" href="#stock/${sec.sector}">
+        <span style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80%">${sec.sector}</span>
+        <span style="font-size:10px;color:${changeTextColor(secChange)}">${secChange >= 0 ? '+' : ''}${secChange.toFixed(1)}%</span>
+      </a>`;
+      return;
+    }
+    const stockRects = squarifyLayout(stockItems, sec.w - 4, sec.h - 24);
+
+    const stocksHtml = stockRects.map(stk => {
       const stkBg = changeBgStyle(stk.change);
-      return `<a href="#stock/${stk.ticker}" class="treemap-stock ${stkColorClass}" style="${stkBg}"
-                 data-ticker="${stk.ticker}"
-                 data-price="${stk.price}"
-                 data-change="${stk.change ?? ''}"
-                 data-marketcap="${stk.market_cap ?? 0}"
-                 data-name="${(stk.name || '').replace(/"/g, '&quot;')}"
-                 onmouseenter="treemapStockHover(event)"
-                 onmouseleave="treemapStockLeave(event)">
-        <span class="treemap-label">${stk.ticker}</span>
+      const minDim = Math.min(stk.w, stk.h);
+      const showLabel = minDim > 30;
+      return `<a href="#stock/${stk.ticker}" class="treemap-stock-sq" style="position:absolute;left:${stk.x + 2}px;top:${stk.y + 22}px;width:${stk.w - 2}px;height:${stk.h - 2}px;border-radius:3px;${stkBg};display:flex;align-items:center;justify-content:center;overflow:hidden;text-decoration:none;color:inherit"
+          data-ticker="${stk.ticker}" data-price="${stk.price}" data-change="${stk.change ?? ''}" data-marketcap="${stk.market_cap || 0}" data-name="${(stk.name || '').replace(/"/g, '&quot;')}"
+          onmouseenter="treemapStockHover(event)" onmouseleave="treemapStockLeave(event)">
+        ${showLabel ? `<span style="font-size:${minDim > 50 ? 11 : 9}px;font-weight:700;font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)">${stk.ticker}</span>` : ''}
       </a>`;
     }).join('');
 
-    return `<div class="treemap-sector ${secColorClass}" style="--sector-weight:${sec.weight};${secBg.split('background:')[1] ? secBg : ''}" data-sector="${sec.sector}">
-      <div class="treemap-sector-header">
-        <span class="treemap-sector-name">${sec.sector}</span>
-        <span class="treemap-sector-ret" style="color:${changeTextColor(secChange)}">${secChange >= 0 ? '+' : ''}${secChange.toFixed(1)}%</span>
+    html += `<div class="treemap-sector-sq" style="position:absolute;left:${sec.x}px;top:${sec.y}px;width:${sec.w}px;height:${sec.h}px;overflow:hidden;border-radius:6px;${secBg}">
+      <div style="padding:3px 6px;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;justify-content:space-between;align-items:center">
+        <span>${sec.sector}</span>
+        <span style="color:${changeTextColor(secChange)}">${secChange >= 0 ? '+' : ''}${secChange.toFixed(1)}%</span>
       </div>
-      <div class="treemap-sector-stocks">
-        ${stockHtml}
-      </div>
+      ${stocksHtml}
     </div>`;
-  }).join('');
+  });
 
-  return `<div class="treemap-container" id="treemap-container">
-    <div class="treemap-meta">
-      <span class="treemap-date">📅 ${data.date || '—'}</span>
-      <span class="treemap-count">${data.total_stocks} saham</span>
-      <span class="treemap-legend">
-        <span class="legend-item"><span class="legend-swatch legend-up-1"></span> +0-1%</span>
-        <span class="legend-item"><span class="legend-swatch legend-up-2"></span> +1-3%</span>
-        <span class="legend-item"><span class="legend-swatch legend-up-3"></span> +3-5%</span>
-        <span class="legend-item"><span class="legend-swatch legend-up-4"></span> +5%+</span>
-        <span class="legend-item"><span class="legend-swatch legend-down-1"></span> -0-1%</span>
-        <span class="legend-item"><span class="legend-swatch legend-down-2"></span> -1-3%</span>
-        <span class="legend-item"><span class="legend-swatch legend-down-3"></span> -3-5%</span>
-        <span class="legend-item"><span class="legend-swatch legend-down-4"></span> -5%-</span>
-      </span>
-    </div>
-    <div class="treemap-grid">
-      ${sectorHtml}
-    </div>
+  return `<div class="treemap-meta" style="margin-bottom:10px">
+    <span class="treemap-date">📅 ${data.date || '—'}</span>
+    <span class="treemap-count">${data.total_stocks} saham</span>
+    <span class="treemap-legend" style="display:inline-flex;gap:8px;font-size:10px">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.2);vertical-align:middle;margin-right:4px"></span> +0-1%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.5);vertical-align:middle;margin-right:4px"></span> +1-3%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.8);vertical-align:middle;margin-right:4px"></span> +3-5%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,1);vertical-align:middle;margin-right:4px"></span> +5%+</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.2);vertical-align:middle;margin-right:4px"></span> -0-1%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.5);vertical-align:middle;margin-right:4px"></span> -1-3%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,0.8);vertical-align:middle;margin-right:4px"></span> -3-5%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(248,113,113,1);vertical-align:middle;margin-right:4px"></span> -5%-</span>
+    </span>
+  </div>
+  <div id="treemap-squarify-container" style="position:relative;width:100%;height:${ch}px;min-height:400px">
+    ${html}
   </div>`;
 }
 
@@ -206,7 +284,7 @@ function renderMobileList(data) {
   </div>`;
 }
 
-// ─── Global hover handler (attached via onmouseenter in template) ──
+// ─── Global hover handler ──
 window.treemapStockHover = function(e) {
   const el = e.currentTarget;
   const ticker = el.dataset.ticker;
@@ -216,10 +294,7 @@ window.treemapStockHover = function(e) {
   const marketCap = parseFloat(el.dataset.marketcap) || 0;
   showTooltip(e, { ticker, name, price, change, market_cap: marketCap });
 };
-
-window.treemapStockLeave = function(e) {
-  hideTooltip();
-};
+window.treemapStockLeave = function(e) { hideTooltip(); };
 
 // ─── Main render export ───────────────────────────────────────
 
@@ -246,62 +321,38 @@ export async function renderTreemap(root) {
   const loadData = async () => {
     if (loadingEl) loadingEl.style.display = '';
     if (contentEl) contentEl.innerHTML = '';
-
     try {
       const res = await apiFetch('/market/treemap', { timeout: 10000 });
       const isDesktop = window.innerWidth > 767;
-
       if (!res || !res.sectors || !res.sectors.length) {
-        contentEl.innerHTML = renderTreemap(null);
+        contentEl.innerHTML = `<div class="treemap-empty"><div class="treemap-empty-icon">📊</div><h3>Data Belum Tersedia</h3><p>Silakan coba lagi nanti.</p></div>`;
         return;
       }
-
-      if (isDesktop) {
-        contentEl.innerHTML = renderTreemap(res);
-      } else {
-        contentEl.innerHTML = renderMobileList(res);
-      }
+      contentEl.innerHTML = isDesktop ? renderSquarifyTreemap(res) : renderMobileList(res);
     } catch (e) {
       console.error('Treemap load error:', e);
-      contentEl.innerHTML = `<div class="treemap-empty">
-        <div class="treemap-empty-icon">⚠️</div>
-        <h3>Gagal Memuat Treemap</h3>
-        <p>${e.message || 'Terjadi kesalahan saat mengambil data pasar.'}</p>
-        <button class="market-empty-refresh" onclick="window.location.reload()">Coba Lagi</button>
-      </div>`;
+      contentEl.innerHTML = `<div class="treemap-empty"><div class="treemap-empty-icon">⚠️</div><h3>Gagal Memuat Treemap</h3><p>${e.message || 'Terjadi kesalahan saat mengambil data pasar.'}</p><button class="market-empty-refresh" onclick="window.location.reload()">Coba Lagi</button></div>`;
     } finally {
       if (loadingEl) loadingEl.style.display = 'none';
     }
   };
 
   await loadData();
+  if (refreshBtn) refreshBtn.addEventListener('click', loadData);
 
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', loadData);
-  }
-
-  // Re-layout on resize (switch between desktop grid and mobile list)
+  // Re-layout on resize
   const resizeHandler = () => {
     const content = document.getElementById('treemap-content');
     if (!content) return;
-    // Only re-render on significant width changes
     clearTimeout(window._treemapResizeTimer);
     window._treemapResizeTimer = setTimeout(async () => {
       try {
         const res = await apiFetch('/market/treemap', { timeout: 8000 });
         if (!res || !res.sectors) return;
         const isDesktop = window.innerWidth > 767;
-        content.innerHTML = isDesktop ? renderTreemap(res) : renderMobileList(res);
-      } catch (e) {
-        // silent fail on resize
-      }
+        content.innerHTML = isDesktop ? renderSquarifyTreemap(res) : renderMobileList(res);
+      } catch (e) { /* silent */ }
     }, 400);
   };
   window.addEventListener('resize', resizeHandler);
-
-  // Stagger animation
-  document.querySelectorAll('.treemap-sector').forEach((el, i) => {
-    el.style.setProperty('--stagger-delay', `${i * 60}ms`);
-    el.classList.add('stagger-item');
-  });
 };

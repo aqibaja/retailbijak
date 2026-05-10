@@ -15,11 +15,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-try:
-    from database import CalendarEvent, get_db
-except ModuleNotFoundError:
-    from backend.database import CalendarEvent, get_db
-
+from database import CalendarEvent, get_db
 router = APIRouter()
 
 VALID_EVENT_TYPES = {"dividend", "earnings", "corporate", "economic", "ipo", "rights", "all"}

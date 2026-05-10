@@ -9,15 +9,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-try:
-    from database import SessionLocal, Fundamental
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, Fundamental
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-
+from database import SessionLocal, Fundamental
+from stocks import get_all_tickers
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def fetch_and_store_fundamentals(db: Session, batch_size=50):

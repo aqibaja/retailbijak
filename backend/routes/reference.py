@@ -2,11 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-
+from stocks import get_all_tickers
 VALID_TIMEFRAMES = ["1d", "1h", "4h", "1wk", "1mo"]
 
 router = APIRouter()

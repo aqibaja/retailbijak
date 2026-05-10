@@ -14,17 +14,8 @@ logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3
 
-try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, News, get_db
-except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, get_db
-
-try:
-    from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
-except ModuleNotFoundError:
-    from backend.routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
-
-
+from database import Fundamental, OHLCVDaily, Signal, Stock, News, get_db
+from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
 def _get_fundamental_data(db, ticker: str) -> dict:
     """Fetch fundamental data for a ticker."""
     ticker_with_suffix = _ticker_with_suffix(ticker)
@@ -62,11 +53,7 @@ def _get_fundamental_data(db, ticker: str) -> dict:
 
 def _get_technical_data(db, ticker: str) -> dict:
     """Fetch technical indicators summary."""
-    try:
-        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
-    except ModuleNotFoundError:
-        from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
-
+from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators, get_technical_summary
     ticker = _ticker_with_suffix(ticker)
     df = get_ohlcv_dataframe(db, ticker, limit=300)
     if df.empty:

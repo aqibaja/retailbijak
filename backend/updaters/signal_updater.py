@@ -8,19 +8,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from database import SessionLocal, OHLCVDaily, Signal
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, OHLCVDaily, Signal
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-try:
-    from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-except ModuleNotFoundError:
-    from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
-
+from database import SessionLocal, OHLCVDaily, Signal
+from stocks import get_all_tickers
+from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
 logger = logging.getLogger(__name__)
 
 

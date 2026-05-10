@@ -10,11 +10,7 @@ import feedparser
 import requests
 from sqlalchemy.orm import Session
 
-try:
-    from database import UserSetting
-except ModuleNotFoundError:
-    from backend.database import UserSetting
-
+from database import UserSetting
 OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 DEFAULT_STOCK_ANALYSIS_MODEL = 'google/gemma-4-26b-a4b-it'
 DEFAULT_AI_PICKS_MODEL = 'google/gemma-4-26b-a4b-it'

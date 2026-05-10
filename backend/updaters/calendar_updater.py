@@ -16,16 +16,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-try:
-    from database import SessionLocal, CalendarEvent, Fundamental
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, CalendarEvent, Fundamental
-
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-
+from database import SessionLocal, CalendarEvent, Fundamental
+from stocks import get_all_tickers
 logger = logging.getLogger(__name__)
 
 

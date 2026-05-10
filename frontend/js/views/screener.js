@@ -135,6 +135,11 @@ let isPatternMode = false;
 let currentPatternFilter = '';
 let perfVisible = true;
 let sortChain = []; // [{column, dir}, ...]
+// Restore saved sort chain
+try {
+  const saved = localStorage.getItem('rbk_screener_sort');
+  if (saved) sortChain = JSON.parse(saved);
+} catch (e) { /* ignore */ }
 let activeFilterChips = new Set();
 let visibleColumns = null;
 const STORAGE_KEY_COLS = 'rbk_screener_cols';
@@ -335,7 +340,7 @@ export async function renderScreener(root) {
     // Clear sort button (delegated)
     root.querySelector('#screener-sort-bar')?.addEventListener('click', (e) => {
       const clearBtn = e.target.closest('#btn-clear-sort');
-      if (clearBtn) { sortChain = []; renderAll(); }
+      if (clearBtn) { sortChain = []; localStorage.setItem('rbk_screener_sort', '[]'); renderAll(); }
     });
 
     // TV Screener Widget — load after DOM ready
@@ -501,7 +506,10 @@ function renderList(results) {
               return `<span class="scanner-cell scanner-cell-ma mono" data-col="ma">${r.magic_line ?? '—'}</span>`;
             }
             if (c.key === 'volume') {
-              return `<span class="scanner-cell scanner-cell-vol mono" data-col="volume">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</span>`;
+              const vr = r.volume_spike || 0;
+              const isWhale = vr > 3;
+              const isHigh = vr > 1.5;
+              return `<span class="scanner-cell scanner-cell-vol mono" data-col="volume">${vr ? vr.toFixed(1) + 'x' : '—'}${isWhale ? ' <span class="badge" style="background:rgba(239,68,68,.15);color:#f87171;font-size:9px;padding:1px 5px;margin-left:4px">🐋</span>' : isHigh ? ' <span class="badge" style="background:rgba(251,191,36,.15);color:#fbbf24;font-size:9px;padding:1px 5px;margin-left:4px">⬆</span>' : ''}</span>`;
             }
             if (c.key.startsWith('perf_')) {
               return `<span class="scanner-cell scanner-cell-perf" data-col="${c.key}">${perfCell(r[c.key])}</span>`;
@@ -1283,6 +1291,8 @@ function handleSortClick(colKey) {
     // Add new with asc
     sortChain.push({ column: colKey, dir: 'asc' });
   }
+  // Persist sort chain to localStorage
+  localStorage.setItem('rbk_screener_sort', JSON.stringify(sortChain));
   renderList(currentResults);
 }
 

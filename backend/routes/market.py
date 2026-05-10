@@ -8,16 +8,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
-try:
-    from database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
-except ModuleNotFoundError:
-    from backend.database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
-
-try:
-    from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
-except ModuleNotFoundError:
-    from backend.routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
-
+from database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
+from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
 router = APIRouter()
 
 

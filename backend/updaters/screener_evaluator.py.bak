@@ -1,0 +1,26 @@
+"""
+Screener Evaluator — evaluate saved screeners against latest OHLCV data.
+
+Runs every 15 minutes during market hours via APScheduler.
+Loads active SavedScreener records, runs filter conditions against all stocks,
+counts matches, creates AlertTrigger records when match count changes.
+"""
+import json
+import logging
+from datetime import datetime, timedelta
+
+from database import
+logger = logging.getLogger(__name__)
+
+# Prevent re-triggering the same screener within this window (minutes)
+COOLDOWN_MINUTES = 30
+
+
+def evaluate_saved_screeners() -> dict:
+    """Evaluate all active saved screeners against current OHLCV data."""
+    db = SessionLocal()
+    checked = 0
+    matched_total = 0
+    triggered = 0
+    errors = 0
+from sqlalchemy import

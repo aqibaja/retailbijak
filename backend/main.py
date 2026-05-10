@@ -5,7 +5,10 @@ Entry point. Serves API endpoints + frontend static files.
 Referensi: planning/API_SPEC.md
 """
 
+import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.resolve()))
+
 from typing import Any
 from collections import defaultdict
 from datetime import datetime, date, timedelta
@@ -82,6 +85,7 @@ try:
     from backend.routes.signals import router as signals_router
     from backend.routes.calendar import router as calendar_router
     from backend.routes.index_constituents import router as index_constituents_router
+    from backend.routes.comments import router as comments_router
 except ModuleNotFoundError:
     from routes.user import router as user_router
     from routes.system import router as system_router
@@ -96,6 +100,7 @@ except ModuleNotFoundError:
     from routes.sectors import router as sectors_router
     from routes.calendar import router as calendar_router
     from routes.index_constituents import router as index_constituents_router
+    from routes.comments import router as comments_router
 
 
 @asynccontextmanager
@@ -124,6 +129,7 @@ app.include_router(signals_router)
 app.include_router(sectors_router)
 app.include_router(calendar_router)
 app.include_router(index_constituents_router)
+app.include_router(comments_router)
 
 app.add_middleware(
     CORSMiddleware,

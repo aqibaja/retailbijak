@@ -16,11 +16,7 @@ from sqlalchemy.orm import Session
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-try:
-    from database import StockIndex, SessionLocal
-except ModuleNotFoundError:
-    from backend.database import StockIndex, SessionLocal
-
+from database import StockIndex, SessionLocal
 logger = logging.getLogger(__name__)
 
 # ─── IDX Index Constituents — Periode Feb–Jul 2026 (H1-2026) ─────────────

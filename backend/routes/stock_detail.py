@@ -5,7 +5,7 @@ from typing import Any
 import json
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Body, Depends, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -606,6 +606,22 @@ def create_alert(payload: AlertPayload, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(alert)
     return {'ok': True, 'id': alert.id, 'message': f'Alert {payload.alert_type} untuk {alert.ticker} pada {payload.value} dibuat.'}
+
+
+@router.put('/api/alerts/{alert_id}')
+def update_alert(alert_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
+    """Update alert — toggle active/inactive or change value."""
+    alert = db.query(Alert).filter(Alert.id == alert_id).first()
+    if not alert:
+        raise HTTPException(404, 'Alert not found')
+    if 'active' in payload:
+        alert.active = 1 if payload['active'] else 0
+    if 'value' in payload:
+        alert.value = float(payload['value'])
+    if 'alert_type' in payload:
+        alert.alert_type = payload['alert_type']
+    db.commit()
+    return {'ok': True, 'message': 'Alert diperbarui'}
 
 
 @router.delete('/api/alerts/{alert_id}')

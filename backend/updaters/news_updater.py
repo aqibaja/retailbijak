@@ -10,20 +10,15 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from database import SessionLocal, News, Stock, OHLCVDaily
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, News, Stock, OHLCVDaily
-from sqlalchemy.dialects.sqlite import insert
-from sqlalchemy import func, text
-
+from database import SessionLocal, News, Stock, OHLCVDaily
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy import func
 logger = logging.getLogger(__name__)
 
 RSS_FEEDS = {
     "CNBC Indonesia": "https://www.cnbcindonesia.com/market/rss",
-    "Kontan": "https://investasi.kontan.co.id/rss",
-    "Bisnis.com": "https://markets.bisnis.com/rss",
-    "Katadata": "https://katadata.co.id/feed.xml"
+    "IDX Channel": "https://www.idxchannel.com/rss",
+    "CNN Indonesia": "https://www.cnnindonesia.com/rss",
 }
 
 # IDX ticker pattern — 2-4 uppercase letters, optionally followed by a period
@@ -393,7 +388,7 @@ def seed_synthetic_news(db=None, limit: int = 20) -> list[dict]:
             })
 
         if news_items:
-            stmt = insert(News).values(news_items)
+            stmt = sqlite_insert(News).values(news_items)
             stmt = stmt.on_conflict_do_nothing(index_elements=['id'])
             db.execute(stmt)
             db.commit()
@@ -437,7 +432,7 @@ def update_news():
         for source_name, url in RSS_FEEDS.items():
             logger.info(f"Fetching RSS feed from {source_name}: {url}")
             try:
-                feed = feedparser.parse(url)
+                feed = feedparser.parse(url, agent='Mozilla/5.0 (compatible; RetailBijak/1.0; +https://retailbijak.rich27.my.id)')
             except Exception as e:
                 logger.warning(f"Failed to parse RSS feed {source_name}: {e}")
                 continue
@@ -487,7 +482,7 @@ def update_news():
 
         if all_news:
             # Upsert into DB
-            stmt = insert(News).values(all_news)
+            stmt = sqlite_insert(News).values(all_news)
             stmt = stmt.on_conflict_do_update(
                 index_elements=['id'],
                 set_={

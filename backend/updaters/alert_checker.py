@@ -7,11 +7,7 @@ Stores triggered alerts in the alert_triggers table.
 import logging
 from datetime import datetime, timedelta
 
-try:
-    from database import Alert, AlertTrigger, OHLCVDaily, SessionLocal
-except ModuleNotFoundError:
-    from backend.database import Alert, AlertTrigger, OHLCVDaily, SessionLocal
-
+from database import Alert, AlertTrigger, OHLCVDaily, SessionLocal
 logger = logging.getLogger(__name__)
 
 # Prevent re-triggering the same alert within this window

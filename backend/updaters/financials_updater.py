@@ -23,11 +23,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-try:
-    from database import SessionLocal, Financial, Stock
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, Financial, Stock
-
+from database import SessionLocal, Financial, Stock
 logger = logging.getLogger(__name__)
 
 FINANCIAL_TYPES_ANNUAL = {

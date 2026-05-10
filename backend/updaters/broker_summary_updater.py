@@ -17,11 +17,7 @@ import logging
 import random
 from datetime import datetime, timezone
 
-try:
-    from database import BrokerSummary, OHLCVDaily, Stock, SessionLocal
-except ModuleNotFoundError:
-    from backend.database import BrokerSummary, OHLCVDaily, Stock, SessionLocal
-
+from database import BrokerSummary, OHLCVDaily, Stock, SessionLocal
 logger = logging.getLogger(__name__)
 
 # Broker definitions

@@ -23,6 +23,7 @@ let currentMonth = null;
 let currentYear = null;
 let calendarData = null;
 let selectedDate = null;
+let activeFilter = 'all';
 
 // ─── Render Entry Point ─────────────────────────────────
 export async function renderCalendar(root) {
@@ -45,6 +46,15 @@ export async function renderCalendar(root) {
           <button class="btn btn-sm" id="cal-next" aria-label="Bulan berikutnya">&rarr;</button>
           <button class="btn btn-sm btn-primary" id="cal-today" aria-label="Kembali ke hari ini">Hari Ini</button>
         </div>
+        <div class="calendar-filter-bar" id="cal-filter-bar">
+          <button class="cal-filter-btn active" data-filter="all">Semua</button>
+          <button class="cal-filter-btn" data-filter="dividend">🔵 Dividen</button>
+          <button class="cal-filter-btn" data-filter="earnings">🟢 Laba</button>
+          <button class="cal-filter-btn" data-filter="corporate">🟠 Korporasi</button>
+          <button class="cal-filter-btn" data-filter="ipo">IPO</button>
+          <button class="cal-filter-btn" data-filter="rights">HMETD</button>
+          <button class="cal-filter-btn" data-filter="split">Split</button>
+        </div>
         <div class="calendar-grid" id="cal-grid" aria-live="polite">
           ${renderSkeleton()}
         </div>
@@ -61,6 +71,17 @@ export async function renderCalendar(root) {
         </div>
       </div>
     </section>`;
+
+  // Wire filter buttons
+  document.querySelectorAll('.cal-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      renderGrid();
+      renderEventList();
+    });
+  });
 
   // Wire navigation
   document.getElementById('cal-prev').addEventListener('click', () => navigateMonth(-1));
@@ -125,6 +146,8 @@ function renderGrid() {
     calendarData.forEach(ev => {
       const ds = ev.date || ev.event_date;
       if (!ds) return;
+      // Filter by type
+      if (activeFilter !== 'all' && ev.type !== activeFilter) return;
       if (!eventsByDate[ds]) eventsByDate[ds] = [];
       eventsByDate[ds].push(ev);
     });
@@ -216,7 +239,12 @@ function renderEventList() {
   const displayDate = `${d} ${MONTH_NAMES[mIdx]} ${parts[0]}`;
 
   const events = Array.isArray(calendarData)
-    ? calendarData.filter(ev => (ev.date || ev.event_date) === selectedDate)
+    ? calendarData.filter(ev => {
+        const match = (ev.date || ev.event_date) === selectedDate;
+        if (!match) return false;
+        if (activeFilter !== 'all' && ev.type !== activeFilter) return false;
+        return true;
+      })
     : [];
 
   if (titleEl) titleEl.textContent = `Event — ${displayDate}`;

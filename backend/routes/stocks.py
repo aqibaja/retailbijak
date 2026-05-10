@@ -4,21 +4,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-try:
-    from database import Stock, OHLCVDaily, get_db
-except ModuleNotFoundError:
-    from backend.database import Stock, OHLCVDaily, get_db
-
-try:
-    from routes.shared_stocks_helpers import _display_ticker, _company_name, _stock_row_from_static, _search_rank, _search_bucket, SECTOR_HINTS
-except ModuleNotFoundError:
-    from backend.routes.shared_stocks_helpers import _display_ticker, _company_name, _stock_row_from_static, _search_rank, _search_bucket, SECTOR_HINTS
-
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-
+from database import Stock, OHLCVDaily, get_db
+from routes.shared_stocks_helpers import _display_ticker, _company_name, _stock_row_from_static, _search_rank, _search_bucket, SECTOR_HINTS
+from stocks import get_all_tickers
 router = APIRouter()
 
 

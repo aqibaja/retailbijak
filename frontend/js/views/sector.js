@@ -84,7 +84,7 @@ async function loadSectors() {
     grid.innerHTML = '';
 
     try {
-        const data = await apiFetch('/api/sectors/performance');
+        const data = await apiFetch('/sectors/performance');
         sectorData = data;
 
         if (!data.sectors || data.sectors.length === 0) {
@@ -366,6 +366,18 @@ function renderSectorDetail(app, sectorName, breakdown, sectorReturn, totalStock
             <div class="industry-accordion" id="industryAccordion">
                 ${breakdown.map((ind, idx) => renderIndustryItem(ind, idx)).join('')}
             </div>
+
+            <!-- 19.3: Sortable All-Stocks Table -->
+            <div style="margin-top:20px">
+                <button type="button" class="btn btn-sm scanner-control-btn" id="toggle-sortable-stocks" style="font-size:11px;width:100%;justify-content:center;gap:8px;padding:10px" onclick="toggleSortableStocks(this, '${sectorName}')">
+                    📋 Tampilkan Semua Saham (${totalStocks}) — Urutkan & Filter
+                </button>
+                <div id="sortable-stocks-container" style="height:0;overflow:hidden;transition:height .3s ease;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle);margin-top:8px">
+                    <div id="sortable-stocks-content" style="padding:12px">
+                        <div class="skeleton" style="height:300px"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -526,7 +538,7 @@ async function loadRotationChart() {
   const chartEl = document.getElementById('rotation-chart');
   if (!chartEl) return;
   try {
-    const data = await apiFetch('/api/sectors-rotation?weeks=12');
+    const data = await apiFetch('/sectors-rotation?weeks=12');
     if (!data?.dates?.length || !data?.sectors) {
       chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Data rotasi belum tersedia</p></div>';
       return;
@@ -603,3 +615,144 @@ async function loadRotationChart() {
     chartEl.innerHTML = `<div class="empty-state-v2"><p class="text-xs text-dim">Gagal: ${e.message || ''}</p></div>`;
   }
 }
+
+// ─── 19.3.2 — Sortable Sector Stock Table ────────
+window.toggleSortableStocks = function(btn, sectorName) {
+  const container = document.getElementById('sortable-stocks-container');
+  if (!container) return;
+  if (container.style.height === '0px' || !container.style.height || container.style.height === '0') {
+    container.style.height = '400px';
+    btn.textContent = '✕ Tutup Tabel Saham';
+    renderSortableStockTable(sectorName);
+  } else {
+    container.style.height = '0';
+    btn.textContent = `📋 Tampilkan Semua Saham — Urutkan & Filter`;
+  }
+};
+
+let _sortableState = { sector: '', sort: 'return_1d', order: 'desc', stocks: [], filtered: [] };
+
+async function renderSortableStockTable(sectorName) {
+  const el = document.getElementById('sortable-stocks-content');
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton" style="height:300px"></div>';
+
+  try {
+    const data = await apiFetch(`/api/sectors/${encodeURIComponent(sectorName)}/stocks?sort=${_sortableState.sort}&order=${_sortableState.order}&limit=200`);
+    if (!data?.stocks?.length) {
+      el.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Tidak ada data saham untuk sektor ini.</p></div>';
+      return;
+    }
+    _sortableState.sector = sectorName;
+    _sortableState.stocks = data.stocks;
+    _sortableState.filtered = [...data.stocks];
+    renderSortableTable(el, data.stocks);
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state-v2"><p class="text-xs text-dim">Gagal: ${e.message || ''}</p></div>`;
+  }
+}
+
+function renderSortableTable(el, stocks) {
+  const sort = _sortableState.sort;
+  const order = _sortableState.order;
+
+  const cols = [
+    { key: 'ticker', label: 'Kode', width: '70px' },
+    { key: 'name', label: 'Nama', width: '' },
+    { key: 'industry', label: 'Industri', width: '120px' },
+    { key: 'close', label: 'Harga', width: '80px', cls: 'text-right' },
+    { key: 'return_1d', label: '1D', width: '60px', cls: 'text-right' },
+    { key: 'return_5d', label: '5D', width: '60px', cls: 'text-right' },
+    { key: 'return_1m', label: '1M', width: '60px', cls: 'text-right' },
+    { key: 'return_3m', label: '3M', width: '60px', cls: 'text-right' },
+  ];
+
+  const nextOrder = (col) => sort === col && order === 'desc' ? 'asc' : 'desc';
+  const sortIcon = (col) => sort === col ? (order === 'desc' ? ' ▼' : ' ▲') : '';
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:11px;color:var(--text-dim)">${stocks.length} saham · Klik header untuk urutkan</span>
+      <input type="text" id="sector-stock-filter" placeholder="🔍 Cari kode/nama..." style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--input-bg);color:var(--text-main);width:200px;outline:none" />
+    </div>
+    <div style="overflow-x:auto;max-height:320px;overflow-y:auto;border-radius:8px;border:1px solid var(--border-subtle)">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:600px">
+        <thead>
+          <tr style="position:sticky;top:0;background:var(--bg-panel);z-index:2">
+            ${cols.map(c => `<th onclick="sortSectorStocks('${c.key}')" style="padding:8px 6px;text-align:${c.cls === 'text-right' ? 'right' : 'left'};border-bottom:1px solid var(--border-subtle);cursor:pointer;white-space:nowrap;user-select:none;color:var(--text-dim);font-weight:600;font-size:10px;text-transform:uppercase;width:${c.width || 'auto'}">${c.label}${sortIcon(c.key)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody id="sector-stock-tbody">
+          ${stocks.map(st => {
+            const ticker = (st.ticker || '').replace('.JK', '');
+            const chg1d = st.returns?.['1d'];
+            const chg5d = st.returns?.['5d'];
+            const chg1m = st.returns?.['1m'];
+            const chg3m = st.returns?.['3m'];
+            return `<tr style="border-bottom:1px solid var(--border-subtle);transition:background .1s" onmouseover="this.style.background='var(--bg-panel-hover)'" onmouseout="this.style.background=''">
+              <td style="padding:6px"><a href="#/stock/${ticker}" class="mono strong" style="color:var(--primary-color);text-decoration:none">${ticker}</a></td>
+              <td style="padding:6px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${st.name || ''}">${st.name || ticker}</td>
+              <td style="padding:6px;color:var(--text-dim);font-size:10px">${st.industry || '-'}</td>
+              <td style="padding:6px;text-align:right" class="mono">${st.close != null ? nf(st.close, 0) : '—'}</td>
+              <td style="padding:6px;text-align:right;color:${chg1d >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg1d != null ? pf(chg1d, 2) : '—'}</td>
+              <td style="padding:6px;text-align:right;color:${chg5d >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg5d != null ? pf(chg5d, 2) : '—'}</td>
+              <td style="padding:6px;text-align:right;color:${chg1m >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg1m != null ? pf(chg1m, 2) : '—'}</td>
+              <td style="padding:6px;text-align:right;color:${chg3m >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg3m != null ? pf(chg3m, 2) : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Filter input handler
+  const filterInput = document.getElementById('sector-stock-filter');
+  if (filterInput) {
+    filterInput.addEventListener('input', () => {
+      const q = filterInput.value.toLowerCase().trim();
+      if (!q) {
+        _sortableState.filtered = [..._sortableState.stocks];
+      } else {
+        _sortableState.filtered = _sortableState.stocks.filter(st =>
+          (st.ticker || '').toLowerCase().includes(q) ||
+          (st.name || '').toLowerCase().includes(q)
+        );
+      }
+      const tbody = document.getElementById('sector-stock-tbody');
+      if (tbody) {
+        tbody.innerHTML = _sortableState.filtered.map(st => {
+          const ticker = (st.ticker || '').replace('.JK', '');
+          const chg1d = st.returns?.['1d'];
+          const chg5d = st.returns?.['5d'];
+          const chg1m = st.returns?.['1m'];
+          const chg3m = st.returns?.['3m'];
+          return `<tr style="border-bottom:1px solid var(--border-subtle);transition:background .1s" onmouseover="this.style.background='var(--bg-panel-hover)'" onmouseout="this.style.background=''">
+            <td style="padding:6px"><a href="#/stock/${ticker}" class="mono strong" style="color:var(--primary-color);text-decoration:none">${ticker}</a></td>
+            <td style="padding:6px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${st.name || ''}">${st.name || ticker}</td>
+            <td style="padding:6px;color:var(--text-dim);font-size:10px">${st.industry || '-'}</td>
+            <td style="padding:6px;text-align:right" class="mono">${st.close != null ? nf(st.close, 0) : '—'}</td>
+            <td style="padding:6px;text-align:right;color:${chg1d >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg1d != null ? pf(chg1d, 2) : '—'}</td>
+            <td style="padding:6px;text-align:right;color:${chg5d >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg5d != null ? pf(chg5d, 2) : '—'}</td>
+            <td style="padding:6px;text-align:right;color:${chg1m >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg1m != null ? pf(chg1m, 2) : '—'}</td>
+            <td style="padding:6px;text-align:right;color:${chg3m >= 0 ? '#22c55e' : '#ef4444'}" class="mono">${chg3m != null ? pf(chg3m, 2) : '—'}</td>
+          </tr>`;
+        }).join('');
+      }
+    });
+  }
+}
+
+// Global sort handler
+window.sortSectorStocks = function(col) {
+  if (_sortableState.sort === col) {
+    _sortableState.order = _sortableState.order === 'desc' ? 'asc' : 'desc';
+  } else {
+    _sortableState.sort = col;
+    _sortableState.order = 'desc';
+  }
+  const el = document.getElementById('sortable-stocks-content');
+  if (el) {
+    el.innerHTML = '<div class="skeleton" style="height:300px"></div>';
+    renderSortableStockTable(_sortableState.sector);
+  }
+};

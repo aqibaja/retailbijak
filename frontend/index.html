@@ -27,6 +27,7 @@
   <meta name="twitter:title" content="RetailBijak — IDX Stock Intelligence">
   <meta name="twitter:description" content="Analisis saham IDX, scanner real-time, portfolio tracker, dan market intelligence.">
   <meta name="twitter:image" content="https://retailbijak.rich27.my.id/assets/og-image.png">
+  <link rel="manifest" href="/manifest.json">
   <link rel="canonical" href="https://retailbijak.rich27.my.id">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/site-logo.png">
@@ -36,6 +37,8 @@
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.14.0/dist/umd/lucide.min.js" defer crossorigin="anonymous"></script>
   <title>RetailBijak — IDX Stock Intelligence</title>
+  <script src="js/version.js?v=20260510"></script>
+  <script src="js/skeleton.js?v=20260510"></script>
   <script type="module" src="js/main.js?v=20260510"></script>
 </head>
 <body>
@@ -72,7 +75,7 @@
      <a href="#settings" class="btn btn-icon" aria-label="Pengaturan" data-i18n-aria="nav.settings"><i data-lucide="settings" style="width:18px;"></i></a>
    </div>
  </header>
- <button id="scroll-to-top" class="scroll-to-top-btn" aria-label="Scroll ke atas" style="position:fixed;bottom:80px;right:16px;z-index:999;width:40px;height:40px;border-radius:50%;background:var(--accent-indigo, #6366f1);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);display:none;align-items:center;justify-content:center;transition:opacity .2s,transform .2s;opacity:0" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">↑</button>
+ <button id="scroll-to-top" class="scroll-to-top-btn" aria-label="Scroll ke atas" style="position:fixed;bottom:calc(var(--bottom-nav-h, 64px) + env(safe-area-inset-bottom) + 24px);right:16px;z-index:999;width:40px;height:40px;border-radius:50%;background:var(--accent-indigo, #6366f1);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);display:none;align-items:center;justify-content:center;transition:opacity .2s,transform .2s;opacity:0" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">↑</button>
 <aside class="sidebar" role="navigation" aria-label="Navigasi utama" data-i18n-aria="sidebar.main">
   <nav class="flex-col items-center gap-2" style="width:100%;">
     <a href="#dashboard" class="nav-item active" data-view="dashboard" data-tooltip="Dashboard" data-i18n-aria="sidebar.dashboard" aria-current="page"><i data-lucide="layout-grid" style="width:20px;" aria-hidden="true"></i></a>
@@ -102,6 +105,7 @@
     <a href="#screener" class="nav-item" data-view="screener"><i data-lucide="radar" style="width:22px;"></i><span data-i18n="bottom.screener">Screener</span></a>
     <a href="#portfolio" class="nav-item" data-view="portfolio"><i data-lucide="briefcase" style="width:22px;"></i><span data-i18n="bottom.portfolio">Portfolio</span></a>
     <a href="#settings" class="nav-item" data-view="settings"><i data-lucide="settings" style="width:22px;"></i><span data-i18n="bottom.settings">Setting</span></a>
+    <a href="#more" class="nav-item" data-view="more" onclick="event.preventDefault();openMoreDrawer()"><i data-lucide="more-horizontal" style="width:22px;"></i><span>Lainnya</span></a>
 </nav>
 <div class="network-status hidden" id="network-status" role="status" aria-live="polite"></div>
 <div class="ptr-indicator" id="ptr-indicator"><div class="ptr-spinner"></div><span data-i18n="ptr.pull">Segarkan</span></div>
@@ -153,6 +157,34 @@
         <div class="shortcuts-row"><kbd>g</kbd> <kbd>p</kbd><span>Portfolio</span></div>
         <div class="shortcuts-row"><kbd>Esc</kbd><span>Tutup modal / Tutup search</span></div>
       </div>
+    </div>
+  </div>
+</div>
+<!-- More Drawer (Mobile) -->
+<div id="more-drawer" class="more-drawer-overlay" hidden onclick="if(event.target===this||event.target.classList.contains('more-drawer-backdrop'))closeMoreDrawer()">
+  <div class="more-drawer-backdrop"></div>
+  <div class="more-drawer-panel">
+    <div class="more-drawer-header">
+      <span class="more-drawer-title">Menu Lainnya</span>
+      <button class="btn-icon" onclick="closeMoreDrawer()" title="Tutup"><i data-lucide="x" style="width:20px"></i></button>
+    </div>
+    <div class="more-drawer-body">
+      <a href="#market" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="globe"></i><span>Pasar <small>Overview market IDX</small></span></a>
+      <a href="#sector" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="pie-chart"></i><span>Sektor <small>Performa sektor & industri</small></span></a>
+      <a href="#news" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="newspaper"></i><span>Berita <small>News feed & watchlist news</small></span></a>
+      <a href="#signal_overview" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="activity"></i><span>Sinyal <small>Signal overview & TA</small></span></a>
+      <a href="#alerts" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bell"></i><span>Alert <small>Harga & indikator</small></span></a>
+      <a href="#breadth" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bar-chart-3"></i><span>Breadth <small>Market breadth analysis</small></span></a>
+      <a href="#movers" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="trending-up"></i><span>Movers <small>Top gainers & losers</small></span></a>
+      <a href="#treemap" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="grid-3x3"></i><span>Treemap <small>Peta pasar interaktif</small></span></a>
+      <a href="#calendar" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="calendar"></i><span>Kalender <small>Dividen, RUPS, IPO</small></span></a>
+      <a href="#corporate" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="building-2"></i><span>Aksi Korporasi <small>Corporate actions</small></span></a>
+      <a href="#indices" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="layers"></i><span>Indeks <small>IHSG, LQ45, IDX30</small></span></a>
+      <a href="#compare" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bar-chart-4"></i><span>Bandingkan <small>Side-by-side stocks</small></span></a>
+      <a href="#backtest" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="line-chart"></i><span>Backtest <small>Uji strategi trading</small></span></a>
+      <a href="#paper_trades" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="wallet"></i><span>Paper Trading <small>Simulasi portfolio</small></span></a>
+      <a href="#ai-picks" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="sparkles"></i><span>AI Picks <small>Rekomendasi AI harian</small></span></a>
+      <a href="#help" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="help-circle"></i><span>Bantuan <small>Panduan & FAQ</small></span></a>
     </div>
   </div>
 </div>

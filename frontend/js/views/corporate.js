@@ -71,7 +71,7 @@ async function loadData() {
         
         // Fetch from IDX API if tab matches
         if (activeTab === 'all' || activeTab === 'listing' || activeTab === 'dividend') {
-            const res = await apiFetch('/api/corporate-actions?limit=50');
+            const res = await apiFetch('/corporate-actions?limit=50');
             if (res && res.data) {
                 allItems = allItems.concat(res.data.map(d => ({ ...d, source: 'idx' })));
             }

@@ -17,11 +17,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from database import SessionLocal, Stock
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, Stock
-
+from database import SessionLocal, Stock
 logger = logging.getLogger(__name__)
 
 # ─── Keyword-based sector classification ──────────────

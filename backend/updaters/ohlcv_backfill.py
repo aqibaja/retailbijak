@@ -19,11 +19,7 @@ import random
 import math
 from datetime import datetime, timedelta, date, timezone
 
-try:
-    from database import OHLCVDaily, Stock, SessionLocal
-except ModuleNotFoundError:
-    from backend.database import OHLCVDaily, Stock, SessionLocal
-
+from database import OHLCVDaily, Stock, SessionLocal
 logger = logging.getLogger(__name__)
 
 # Sector → daily volatility

@@ -1,6 +1,9 @@
 import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf, money } from '../utils/format.js?v=20260508B';
-import { observeElements } from '../main.js?v=20260508B';
+import { nf, pf, money } from '../utils/format.js?v=20260510';
+import { observeElements } from '../main.js?v=20260510';
+import { showSkeleton, hideSkeleton } from '../skeleton.js?v=20260510';
+
+const INITIAL_CAPITAL = 100_000_000; // 100M virtual cash
 
 export async function renderPaperTrades(root) {
   document.title = 'RetailBijak — Paper Trading';
@@ -10,10 +13,16 @@ export async function renderPaperTrades(root) {
         <div class="market-head-copy">
           <div class="market-row-kicker">Virtual Trading</div>
           <h1 class="news-hero-title">Paper Trading</h1>
-          <p class="news-hero-sub">Simulasi trading tanpa risiko. Buka posisi virtual, pantau P&L real-time berdasarkan harga pasar terbaru.</p>
+          <p class="news-hero-sub">Simulasi trading tanpa risiko. Mulai dengan modal virtual Rp100.000.000. Buka posisi, pantau P&L, ukur kemampuan trading-mu!</p>
         </div>
       </div>
       <div id="pt-summary" class="market-section-group"><div class="skeleton skeleton-card skeleton-h-100"></div></div>
+      <div id="pt-equity-chart" class="market-section-group" style="display:none">
+        <div class="market-card p-4">
+          <h3 class="panel-title mb-3">Equity Curve</h3>
+          <div id="pt-chart-container" style="height:220px;width:100%"></div>
+        </div>
+      </div>
       <div class="market-section-group">
         <div class="market-card">
           <div class="flex justify-between items-center p-4 border-bottom-subtle">
@@ -75,15 +84,80 @@ async function loadSummary() {
     const res = await apiFetch('/paper-trades/summary');
     if (!res) return;
     const pnlCls = res.total_pnl >= 0 ? 'text-up' : 'text-down';
+    const portfolioValue = INITIAL_CAPITAL + (res.total_pnl || 0);
+    const pctReturn = ((portfolioValue - INITIAL_CAPITAL) / INITIAL_CAPITAL * 100);
     el.innerHTML = `<div class="market-card p-4">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bt-kpi"><span class="bt-kpi-label">Total Trade</span><strong class="bt-kpi-value">${res.total}</strong></div>
-        <div class="bt-kpi"><span class="bt-kpi-label">Terbuka</span><strong class="bt-kpi-value">${res.open}</strong></div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="bt-kpi"><span class="bt-kpi-label">Modal Virtual</span><strong class="bt-kpi-value">${money(INITIAL_CAPITAL)}</strong></div>
+        <div class="bt-kpi"><span class="bt-kpi-label">Nilai Portfolio</span><strong class="bt-kpi-value ${pnlCls}">${money(portfolioValue)}</strong></div>
+        <div class="bt-kpi"><span class="bt-kpi-label">Return</span><strong class="bt-kpi-value ${pnlCls}">${pctReturn > 0 ? '+' : ''}${pf(pctReturn)}</strong></div>
         <div class="bt-kpi"><span class="bt-kpi-label">Total P&L</span><strong class="bt-kpi-value ${pnlCls}">${res.total_pnl > 0 ? '+' : ''}${money(res.total_pnl)}</strong></div>
         <div class="bt-kpi"><span class="bt-kpi-label">Win Rate</span><strong class="bt-kpi-value">${res.win_rate || 0}%</strong></div>
       </div>
     </div>`;
+    // Load equity curve if there are trades
+    if (res.total > 0) renderEquityCurve();
   } catch (e) { el.innerHTML = ''; }
+}
+
+async function renderEquityCurve() {
+  const chartContainer = document.getElementById('pt-chart-container');
+  const section = document.getElementById('pt-equity-chart');
+  if (!chartContainer || !section) return;
+  if (typeof LightweightCharts === 'undefined') return;
+
+  try {
+    const res = await apiFetch('/paper-trades');
+    const trades = res?.data || [];
+    if (trades.length < 1) return;
+
+    section.style.display = '';
+
+    // Build equity curve: accumulate P&L over time
+    let runningEquity = INITIAL_CAPITAL;
+    const points = [{ time: trades[trades.length - 1]?.entry_date?.slice(0,10) || '2026-01-01', value: runningEquity }];
+    // Sort by entry date
+    const sorted = [...trades].sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+    for (const t of sorted) {
+      const pnl = t.pnl || 0;
+      runningEquity += pnl;
+      points.push({ time: t.exit_date?.slice(0,10) || t.entry_date?.slice(0,10), value: Math.round(runningEquity) });
+    }
+
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const isLight = theme === 'light';
+    const textColor = isLight ? '#64748b' : '#94a3b8';
+    const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
+    const container = chartContainer;
+
+    if (container._chart) { container._chart.remove(); }
+
+    const chart = LightweightCharts.createChart(container, {
+      width: container.clientWidth, height: 200,
+      layout: { textColor, background: { type: 'solid', color: 'transparent' } },
+      grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false, timeVisible: false },
+      crosshair: { mode: 0 },
+    });
+    container._chart = chart;
+
+    const isUp = runningEquity >= INITIAL_CAPITAL;
+    const line = chart.addLineSeries({
+      color: isUp ? '#10b981' : '#f87171', lineWidth: 2, priceLineVisible: false,
+      lastValueVisible: true, crosshairMarkerVisible: true,
+    });
+    line.setData(points);
+
+    const baseLine = chart.addLineSeries({
+      color: isLight ? 'rgba(100,116,139,0.4)' : 'rgba(148,163,184,0.3)',
+      lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false,
+    });
+    baseLine.setData([{ time: points[0].time, value: INITIAL_CAPITAL }, { time: points[points.length - 1].time, value: INITIAL_CAPITAL }]);
+
+    chart.timeScale().fitContent();
+    new ResizeObserver(() => { if (container.clientWidth > 0) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+  } catch (e) { /* silent */ }
 }
 
 async function loadTrades(filter) {

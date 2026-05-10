@@ -6,16 +6,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-try:
-    from database import Signal, Stock, get_db
-except ModuleNotFoundError:
-    from backend.database import Signal, Stock, get_db
-
-try:
-    from routes.shared_stock_fallbacks import _ticker_base
-except ModuleNotFoundError:
-    from backend.routes.shared_stock_fallbacks import _ticker_base
-
+from database import Signal, Stock, get_db
+from routes.shared_stock_fallbacks import _ticker_base
 router = APIRouter()
 
 

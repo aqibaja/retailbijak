@@ -4,13 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-try:
-    from database import SavedScreener, get_db
-except ModuleNotFoundError:
-    from backend.database import SavedScreener, get_db
-
-from backend.services.scanner_engine import scan_universe
-
+from database import SavedScreener, get_db
 router = APIRouter(prefix="/api", tags=["scanner"])
 
 

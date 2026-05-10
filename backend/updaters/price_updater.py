@@ -9,16 +9,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from database import SessionLocal, OHLCVDaily
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, OHLCVDaily
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-from scanner import TIMEFRAME_CONFIG
-
+from database import SessionLocal, OHLCVDaily
+from stocks import get_all_tickers
 logger = logging.getLogger(__name__)
 
 def update_daily_ohlcv():

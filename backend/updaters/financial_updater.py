@@ -16,15 +16,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-try:
-    from database import SessionLocal, Financial
-except ModuleNotFoundError:
-    from backend.database import SessionLocal, Financial
-try:
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.stocks import get_all_tickers
-
+from database import SessionLocal, Financial
+from stocks import get_all_tickers
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 

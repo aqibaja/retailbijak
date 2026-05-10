@@ -1,6 +1,7 @@
 import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260510';
 import { money, nf, pf } from '../utils/format.js?v=20260510';
 import { observeElements } from '../main.js?v=20260510';
+import { exportCSV as expCSV } from '../utils/export.js?v=20260510';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -230,6 +231,7 @@ async function renderPortfolioTab(el) {
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
         <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+        <button id="export-portfolio-csv" type="button" class="btn portfolio-action-btn" style="margin-left:6px"><i data-lucide="download" class="lucide-sm"></i> CSV</button>
       </div>
       ${kpiHtml}
       ${analyticsHtml}
@@ -315,6 +317,23 @@ async function renderPortfolioTab(el) {
             seedBtn.disabled = false;
             seedBtn.innerHTML = '<i data-lucide="test-tube" class="lucide-md"></i> Contoh Data';
         }
+    });
+
+    // Export CSV
+    const exportBtn = el.querySelector('#export-portfolio-csv');
+    if (exportBtn) exportBtn.addEventListener('click', () => {
+        const exportRows = rows.map(r => [
+            r.ticker || '',
+            (r.lots || 0).toString(),
+            (r.avg_price || 0).toString(),
+            (r.current_price || 0).toString(),
+            (r.value || 0).toString(),
+            (r.pnl || 0).toString(),
+            (r.pnl_pct || 0).toString() + '%',
+        ]);
+        const headers = ['Ticker', 'Lot', 'Avg Price', 'Current Price', 'Value', 'P&L', 'Return'];
+        expCSV(`retailbijak-portfolio-${new Date().toISOString().slice(0,10)}.csv`, headers, exportRows);
+        showToast(`${rows.length} posisi diekspor ke CSV`, 'success');
     });
 
     // Delete
@@ -775,11 +794,15 @@ async function renderWatchlistTab(el, activeGroupId) {
       <div class="table-wrapper">
         <table class="table">
           <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
-          <tbody>${rows.map(r => `
-            <tr>
+          <tbody>${rows.map(r => `\n            <tr class="watchlist-row" data-ticker="${r.ticker}" role="button" tabindex="0">
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="text-muted text-sm">${r.notes || '-'}</td>
-              <td class="text-right"><button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
+              <td class="text-right" style="white-space:nowrap">
+                <button type="button" class="btn-icon wl-alert-toggle" data-ticker="${r.ticker}" title="Buat Alert" style="color:var(--text-dim)">
+                  <i data-lucide="bell" class="lucide-md"></i>
+                </button>
+                <button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button>
+              </td>
             </tr>`).join('')}</tbody>
         </table>
       </div>
@@ -835,6 +858,107 @@ async function renderWatchlistTab(el, activeGroupId) {
         });
     });
 
+    // ─── Watchlist Inline Alert Toggle ───
+    el.querySelectorAll('.wl-alert-toggle').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const ticker = btn.dataset.ticker;
+        if (!ticker) return;
+
+        try {
+          // Check if alert already exists
+          const alertsRes = await apiFetch('/alerts');
+          const existing = alertsRes?.data?.find(a => a.ticker === ticker);
+
+          if (existing) {
+            // Toggle active/inactive via PUT
+            const newActive = existing.active ? 0 : 1;
+            const res = await apiFetch(`/alerts/${existing.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ active: newActive }),
+            });
+            if (res?.ok) {
+              showToast(`${ticker}: Alert ${newActive ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
+              btn.style.color = newActive ? 'var(--up-color)' : 'var(--text-dim)';
+              btn.querySelector('i')?.setAttribute('data-lucide', newActive ? 'bell-plus' : 'bell');
+              if (window.lucide) lucide.createIcons();
+            }
+          } else {
+            // Create new alert at 5% above current price
+            const stockRes = await apiFetch(`/stocks/${ticker}`);
+            const price = stockRes?.close || stockRes?.price || 0;
+            const alertValue = price > 0 ? Math.round(price * 1.05) : 5000;
+            const res = await apiFetch('/alerts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ticker, alert_type: 'price_above', value: alertValue }),
+            });
+            if (res?.ok) {
+              showToast(`🔔 Alert ${ticker} > Rp${alertValue.toLocaleString('id-ID')}`, 'success');
+              btn.style.color = 'var(--up-color)';
+              btn.querySelector('i')?.setAttribute('data-lucide', 'bell-plus');
+              if (window.lucide) lucide.createIcons();
+            }
+          }
+        } catch (e) {
+          showToast('Gagal memproses alert', 'error');
+        }
+      });
+    });
+
+    // ─── Watchlist Context Menu (right-click) ─────
+    const CONTEXT_ITEMS = [
+      { label: '🔔 Buat Alert', icon: 'bell-plus', action: (ticker) => { window.location.hash = `#alerts?ticker=${ticker}`; } },
+      { label: '📊 Bandingkan', icon: 'bar-chart-3', action: (ticker) => { window.location.hash = `#compare/${ticker}`; } },
+      { label: '📈 Buka Detail', icon: 'chart-candlestick', action: (ticker) => { window.location.hash = `#stock/${ticker}`; } },
+      { label: '🗑️ Hapus', icon: 'trash-2', action: async (ticker, el) => {
+        const ok = await showConfirm({ title: 'Hapus dari Pantauan?', message: `Yakin ingin menghapus ${ticker}?`, confirmText: 'Hapus', danger: true });
+        if (ok) { await deleteWatchlistItem(ticker); showToast(`${ticker} dihapus`, 'success'); await renderWatchlistTab(el); }
+      }},
+    ];
+
+    el.querySelectorAll('.watchlist-row').forEach(row => {
+      row.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const ticker = row.dataset.ticker;
+        if (!ticker) return;
+
+        // Remove any existing context menu
+        document.querySelectorAll('.wl-context-menu').forEach(m => m.remove());
+
+        const menu = document.createElement('div');
+        menu.className = 'wl-context-menu';
+        menu.innerHTML = CONTEXT_ITEMS.map(item =>
+          `<button type="button" class="wl-context-item" data-action="${item.label}">
+            ${item.label}
+          </button>`
+        ).join('');
+        menu.style.position = 'fixed';
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+        menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+        document.body.appendChild(menu);
+
+        // Close menu on click outside
+        const closeMenu = (ev) => {
+          if (!menu.contains(ev.target) && !row.contains(ev.target)) {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+          }
+        };
+        setTimeout(() => document.addEventListener('click', closeMenu), 0);
+
+        // Wire actions
+        menu.querySelectorAll('.wl-context-item').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const item = CONTEXT_ITEMS.find(i => i.label === btn.dataset.action);
+            if (item) await item.action(ticker, el);
+            menu.remove();
+          });
+        });
+      });
+    });
+
     // TV mini charts
     const miniGrid = document.getElementById('watchlist-mini-charts');
     if (miniGrid && rows.length) {
@@ -852,55 +976,193 @@ async function renderWatchlistTab(el, activeGroupId) {
     }
 }
 
-// ─── Manage Watchlist Groups ──────────
+// ─── Manage Watchlist Groups (19.4) ──────────
 async function showManageGroupsDialog(el) {
   try {
     const grpRes = await apiFetch('/watchlist-groups');
-    const groups = Array.isArray(grpRes?.data) ? grpRes.data : [];
-    const list = groups.map(g => `<div class="flex items-center gap-2 p-2 border-bottom-subtle">
-      <span class="mono strong text-sm text-main" style="flex:1">${g.name}</span>
-      <span class="text-xs text-dim">${g.count} item</span>
-      <button class="btn-icon delete-group" data-gid="${g.id}" style="flex-shrink:0"><i data-lucide="trash-2" class="lucide-sm"></i></button>
-    </div>`).join('');
+    let groups = Array.isArray(grpRes?.data) ? grpRes.data : [];
+
+    const renderList = () => groups.map((g, i) => `
+      <div class="flex items-center gap-1 p-2 border-bottom-subtle group-row" data-gid="${g.id}" data-idx="${i}">
+        <div class="flex flex-col gap-0" style="flex-shrink:0">
+          <button class="btn-icon group-move-up" data-gid="${g.id}" ${i === 0 ? 'disabled style="opacity:0.3"' : ''}><i data-lucide="chevron-up" class="lucide-xs"></i></button>
+          <button class="btn-icon group-move-down" data-gid="${g.id}" ${i === groups.length - 1 ? 'disabled style="opacity:0.3"' : ''}><i data-lucide="chevron-down" class="lucide-xs"></i></button>
+        </div>
+        <span class="mono strong text-sm text-main group-name-display" style="flex:1;cursor:pointer" title="Klik untuk rename">${g.name}</span>
+        <span class="text-xs text-dim">${g.count} item</span>
+        <button class="btn-icon group-rename-btn" data-gid="${g.id}" title="Rename"><i data-lucide="edit-3" class="lucide-sm"></i></button>
+        <button class="btn-icon delete-group" data-gid="${g.id}" title="Hapus" ${g.count > 0 ? `onclick="showToast('Pindahkan item dulu sebelum hapus grup', 'warning')"` : ''}><i data-lucide="trash-2" class="lucide-sm"></i></button>
+      </div>
+    `).join('');
+
+    const buildOverlay = () => {
+      const listHtml = renderList();
+      return `<div class="modal-backdrop"></div>
+        <div class="modal-panel" style="width:min(420px,90vw)">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm strong m-0">Kelola Grup Pantauan</h3>
+            <button class="btn-icon modal-close-btn"><i data-lucide="x"></i></button>
+          </div>
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="new-group-name" class="form-input" placeholder="Nama grup baru" style="flex:1" />
+            <button class="btn btn-primary btn-sm" id="btn-create-group">Buat</button>
+          </div>
+          <div id="group-list" class="flex flex-col" style="max-height:300px;overflow-y:auto">${listHtml || '<div class="text-xs text-dim p-3">Belum ada grup</div>'}</div>
+          <div class="flex gap-2 mt-3 pt-3" style="border-top:1px solid var(--border-subtle)">
+            <button class="btn btn-sm scanner-control-btn" id="btn-save-order" style="flex:1">💾 Simpan Urutan</button>
+          </div>
+        </div>`;
+    };
 
     const overlay = document.createElement('div');
     overlay.id = 'stock-modal-overlay';
-    overlay.innerHTML = `<div class="modal-backdrop"></div>
-      <div class="modal-panel" style="width:min(400px,90vw)">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-sm strong m-0">Kelola Grup Pantauan</h3>
-          <button class="btn-icon modal-close-btn"><i data-lucide="x"></i></button>
-        </div>
-        <div class="flex gap-2 mb-3">
-          <input type="text" id="new-group-name" class="form-input" placeholder="Nama grup baru" style="flex:1" />
-          <button class="btn btn-primary btn-sm" id="btn-create-group">Buat</button>
-        </div>
-        <div id="group-list" class="flex flex-col" style="max-height:300px;overflow-y:auto">${list || '<div class="text-xs text-dim p-3">Belum ada grup</div>'}</div>
-      </div>`;
+    overlay.innerHTML = buildOverlay();
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
-    overlay.querySelector('.modal-backdrop').addEventListener('click', () => overlay.remove());
-    overlay.querySelector('.modal-close-btn').addEventListener('click', () => overlay.remove());
+    const close = () => { overlay.remove(); document.body.style.overflow = ''; };
+    overlay.querySelector('.modal-backdrop').addEventListener('click', close);
+    overlay.querySelector('.modal-close-btn').addEventListener('click', close);
 
     // Create group
     overlay.querySelector('#btn-create-group').addEventListener('click', async () => {
       const name = overlay.querySelector('#new-group-name').value.trim();
       if (!name) return;
       await apiFetch('/watchlist-groups', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name}) });
-      overlay.remove();
+      close();
       await renderWatchlistTab(el);
     });
 
-    // Delete groups
+    // Rename inline
+    overlay.querySelectorAll('.group-rename-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = btn.closest('.group-row');
+        if (!row) return;
+        const display = row.querySelector('.group-name-display');
+        const gid = btn.dataset.gid;
+        const currentName = display.textContent.trim();
+        // Replace display with input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-input';
+        input.style.cssText = 'flex:1;font-size:12px;padding:2px 6px';
+        input.value = currentName;
+        display.replaceWith(input);
+        input.focus();
+        input.select();
+        const saveRename = async () => {
+          const newName = input.value.trim();
+          if (newName && newName !== currentName) {
+            await apiFetch(`/watchlist-groups/${gid}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: newName}) });
+            showToast(`Grup diganti jadi "${newName}"`, 'success');
+          }
+          close();
+          await renderWatchlistTab(el);
+        };
+        input.addEventListener('blur', saveRename);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+      });
+    });
+
+    // Delete groups — only if empty
     overlay.querySelectorAll('.delete-group').forEach(btn => {
       btn.addEventListener('click', async () => {
         const gid = btn.dataset.gid;
         if (gid === '1') { showToast('Tidak bisa hapus grup default', 'warning'); return; }
+        const row = btn.closest('.group-row');
+        const countEl = row?.querySelector('.text-dim');
+        const count = countEl ? parseInt(countEl.textContent) || 0 : 0;
+        if (count > 0) {
+          showToast('Pindahkan item dulu sebelum hapus grup', 'warning');
+          return;
+        }
         await apiFetch(`/watchlist-groups/${gid}`, { method: 'DELETE' });
-        overlay.remove();
+        close();
         await renderWatchlistTab(el);
       });
     });
+
+    // Move up/down (client-side reorder only)
+    const doMove = (gid, direction) => {
+      const idx = groups.findIndex(g => g.id == gid);
+      if (idx < 0) return;
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= groups.length) return;
+      [groups[idx], groups[newIdx]] = [groups[newIdx], groups[idx]];
+      const listEl = overlay.querySelector('#group-list');
+      if (listEl) listEl.innerHTML = renderList();
+      // Re-bind events
+      bindGroupEvents();
+    };
+
+    overlay.querySelectorAll('.group-move-up').forEach(btn => {
+      btn.addEventListener('click', () => doMove(btn.dataset.gid, -1));
+    });
+    overlay.querySelectorAll('.group-move-down').forEach(btn => {
+      btn.addEventListener('click', () => doMove(btn.dataset.gid, 1));
+    });
+
+    // Save order
+    overlay.querySelector('#btn-save-order').addEventListener('click', async () => {
+      const order = groups.map(g => g.id);
+      await apiFetch('/watchlist-groups/reorder', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({order}) });
+      showToast('Urutan grup disimpan', 'success');
+      close();
+      await renderWatchlistTab(el);
+    });
+
+    function bindGroupEvents() {
+      // Re-bind rename
+      overlay.querySelectorAll('.group-rename-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = btn.closest('.group-row');
+          if (!row) return;
+          const display = row.querySelector('.group-name-display');
+          const gid = btn.dataset.gid;
+          const currentName = display.textContent.trim();
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'form-input';
+          input.style.cssText = 'flex:1;font-size:12px;padding:2px 6px';
+          input.value = currentName;
+          display.replaceWith(input);
+          input.focus();
+          input.select();
+          const saveRename = async () => {
+            const newName = input.value.trim();
+            if (newName && newName !== currentName) {
+              await apiFetch(`/watchlist-groups/${gid}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: newName}) });
+              showToast(`Grup diganti jadi "${newName}"`, 'success');
+            }
+            close();
+            await renderWatchlistTab(el);
+          };
+          input.addEventListener('blur', saveRename);
+          input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+        });
+      });
+      // Re-bind delete
+      overlay.querySelectorAll('.delete-group').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const gid = btn.dataset.gid;
+          if (gid === '1') { showToast('Tidak bisa hapus grup default', 'warning'); return; }
+          const row = btn.closest('.group-row');
+          const countEl = row?.querySelector('.text-dim');
+          const count = countEl ? parseInt(countEl.textContent) || 0 : 0;
+          if (count > 0) { showToast('Pindahkan item dulu sebelum hapus grup', 'warning'); return; }
+          await apiFetch(`/watchlist-groups/${gid}`, { method: 'DELETE' });
+          close();
+          await renderWatchlistTab(el);
+        });
+      });
+      // Re-bind move up/down
+      overlay.querySelectorAll('.group-move-up').forEach(btn => {
+        btn.addEventListener('click', () => doMove(btn.dataset.gid, -1));
+      });
+      overlay.querySelectorAll('.group-move-down').forEach(btn => {
+        btn.addEventListener('click', () => doMove(btn.dataset.gid, 1));
+      });
+    }
+
   } catch (e) {
     showToast('Gagal memuat grup', 'error');
   }

@@ -6,17 +6,10 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from sqlalchemy.dialects.sqlite import insert
 
-try:
-    from database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
-    from services.idx_api_client import get_idx_client, parse_idx_number
-    from services.idx_normalizer import normalize_stock_payload
-    from stocks import get_all_tickers
-except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
-    from backend.services.idx_api_client import get_idx_client, parse_idx_number
-    from backend.services.idx_normalizer import normalize_stock_payload
-    from backend.stocks import get_all_tickers
-
+from database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
+from services.idx_api_client import get_idx_client, parse_idx_number
+from services.idx_normalizer import normalize_stock_payload
+from stocks import get_all_tickers
 logger = logging.getLogger(__name__)
 
 

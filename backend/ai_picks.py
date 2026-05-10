@@ -8,13 +8,8 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
-try:
-    from backend.database import DailyAIPickReport, SessionLocal
-    from backend.services.openrouter_llm import build_ai_picks_llm_payload
-except ModuleNotFoundError:
-    from database import DailyAIPickReport, SessionLocal
-    from services.openrouter_llm import build_ai_picks_llm_payload
-
+from database import DailyAIPickReport, SessionLocal
+from services.openrouter_llm import build_ai_picks_llm_payload
 VALID_AI_PICK_MODES = {"swing", "defensive", "catalyst"}
 MODE_WEIGHTS = {
     "swing": {

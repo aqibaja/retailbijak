@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, Date, Text, create_engine
+from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, Date, Text, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:////opt/swingaq/backend/swingaq.db")
@@ -288,6 +288,50 @@ class SavedScreener(Base):
     match_count = Column(Integer, default=0)  # Last evaluation match count
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class StockComment(Base):
+    """Stock social feed comments — per ticker discussion thread."""
+    __tablename__ = "stock_comments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, index=True, nullable=False)
+    user_id = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    parent_id = Column(Integer, ForeignKey("stock_comments.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class CommentVote(Base):
+    """Upvote/downvote on stock comments."""
+    __tablename__ = "comment_votes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    comment_id = Column(Integer, ForeignKey("stock_comments.id"), nullable=False)
+    user_id = Column(String, nullable=False)
+    vote = Column(Integer, nullable=False)  # 1 = upvote, -1 = downvote
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("comment_id", "user_id", name="uq_comment_votes"),
+    )
+
+
+class PortfolioSnapshot(Base):
+    """
+    Daily portfolio snapshot — computed value, P&L, and benchmark comparison.
+    Populated on-demand when user views portfolio performance chart.
+    """
+    __tablename__ = "portfolio_snapshots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    snapshot_date = Column(Date, nullable=False, index=True)
+    total_value = Column(Float, default=0.0)  # Total portfolio value (Rp)
+    total_cost = Column(Float, default=0.0)   # Total cost basis (Rp)
+    pnl = Column(Float, default=0.0)          # P&L (Rp)
+    pnl_pct = Column(Float, default=0.0)      # P&L percentage
+    ihsg_value = Column(Float, nullable=True) # IHSG close on this date (for benchmark)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 # Dependency for FastAPI

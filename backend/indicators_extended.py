@@ -2,12 +2,7 @@ import pandas as pd
 import numpy as np
 import ta
 from sqlalchemy.orm import Session
-try:
-    from database import OHLCVDaily
-except ModuleNotFoundError:
-    from backend.database import OHLCVDaily
-
-
+from database import OHLCVDaily
 STATUS_LOCALIZATION = {
     "Insufficient": "data belum cukup",
     "Overbought": "jenuh beli",

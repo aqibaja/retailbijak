@@ -3,12 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-try:
-    from database import UserSetting
-except ModuleNotFoundError:
-    from backend.database import UserSetting
-
-
+from database import UserSetting
 def _load_period_for_ihsg(db, period_key: str):
     setting = db.query(UserSetting).filter(UserSetting.key == period_key).first()
     if not (setting and setting.value):

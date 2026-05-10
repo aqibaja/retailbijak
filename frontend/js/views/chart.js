@@ -12,6 +12,8 @@ let volumeSeries = null;
 let candles = [];
 let trendLines = [];
 let hLines = [];
+let drawMode = null; // 'trendline' | 'hline' | null
+let drawPending = null; // {time, price} for first click
 
 const TF_OPTIONS = ['1D', '5D', '1M', '3M', '6M', '1Y', 'MAX'];
 
@@ -58,8 +60,28 @@ export function renderChart(root, ticker) {
     });
 
     // Drawing tools
-    root.querySelector('#tool-trendline')?.addEventListener('click', () => showToast('Trend line: klik 2 titik pada chart', 'info'));
-    root.querySelector('#tool-hline')?.addEventListener('click', () => showToast('Horizontal line: klik pada level harga', 'info'));
+    root.querySelector('#tool-trendline')?.addEventListener('click', () => {
+        if (drawMode === 'trendline') {
+            drawMode = null;
+            drawPending = null;
+            showToast('✕ Mode trendline dimatikan', 'info');
+        } else {
+            drawMode = 'trendline';
+            drawPending = null;
+            showToast('📏 Klik 2 titik pada chart untuk trendline', 'info');
+        }
+    });
+    root.querySelector('#tool-hline')?.addEventListener('click', () => {
+        if (drawMode === 'hline') {
+            drawMode = null;
+            drawPending = null;
+            showToast('✕ Mode horizontal line dimatikan', 'info');
+        } else {
+            drawMode = 'hline';
+            drawPending = null;
+            showToast('➖ Klik pada level harga untuk horizontal line', 'info');
+        }
+    });
     root.querySelector('#tool-clear')?.addEventListener('click', clearDrawings);
     root.querySelector('#chart-export-btn')?.addEventListener('click', exportChartPNG);
 
@@ -204,8 +226,104 @@ function renderFullChart(wrap) {
 
     chart.timeScale().fitContent();
 
+    // Subscribe to chart clicks for drawing
+    chart.subscribeClick((param) => {
+        if (!drawMode || !param || !param.time) return;
+        const time = param.time;
+        const price = param.price;
+        if (!time || !price) return;
+
+        if (drawMode === 'trendline') {
+            if (!drawPending) {
+                drawPending = { time, price };
+                showToast(`📌 Titik 1: ${time} @ ${price.toFixed(0)} — klik titik kedua`, 'info');
+            } else {
+                // Draw trendline from drawPending to (time, price)
+                drawTrendLine(drawPending.time, drawPending.price, time, price);
+                drawPending = null;
+                drawMode = null;
+                showToast('✅ Trendline selesai', 'success');
+            }
+        } else if (drawMode === 'hline') {
+            drawHorizontalLine(price);
+            drawPending = null;
+            drawMode = null;
+            showToast(`➖ Horizontal line @ ${price.toFixed(0)}`, 'success');
+        }
+    });
+
     // Add previous trend lines (from localStorage)
     loadDrawings();
+}
+
+function drawTrendLine(t1, p1, t2, p2) {
+    if (!chart) return;
+    try {
+        const lineSeries = chart.addLineSeries({
+            color: '#6366f1',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            lastValueVisible: false,
+            priceLineVisible: false,
+        });
+        lineSeries.setData([
+            { time: t1, value: p1 },
+            { time: t2, value: p2 },
+        ]);
+        trendLines.push(lineSeries);
+        saveDrawings();
+    } catch (e) {
+        console.warn('Trendline error:', e);
+    }
+}
+
+function drawHorizontalLine(price) {
+    if (!chart) return;
+    try {
+        const lineSeries = chart.addLineSeries({
+            color: '#f59e0b',
+            lineWidth: 1,
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+            lastValueVisible: true,
+            priceLineVisible: false,
+        });
+        // Draw across visible range using current time bounds
+        const timeScale = chart.timeScale();
+        const visibleRange = timeScale.getVisibleLogicalRange();
+        if (visibleRange) {
+            const from = timeScale.logicalToCoordinate(visibleRange.from);
+            const to = timeScale.logicalToCoordinate(visibleRange.to);
+            // Use visible time range
+            const timeRange = timeScale.getVisibleRange();
+            if (timeRange) {
+                lineSeries.setData([
+                    { time: timeRange.from, value: price },
+                    { time: timeRange.to, value: price },
+                ]);
+            } else {
+                // Fallback: just show at center
+                const lastCandle = candles[candles.length - 1];
+                if (lastCandle) {
+                    lineSeries.setData([
+                        { time: candles[0].time, value: price },
+                        { time: lastCandle.time, value: price },
+                    ]);
+                }
+            }
+        } else {
+            const lastCandle = candles[candles.length - 1];
+            if (lastCandle) {
+                lineSeries.setData([
+                    { time: candles[0].time, value: price },
+                    { time: lastCandle.time, value: price },
+                ]);
+            }
+        }
+        hLines.push(lineSeries);
+        saveDrawings();
+    } catch (e) {
+        console.warn('Horizontal line error:', e);
+    }
 }
 
 async function loadLightweightCharts() {
@@ -224,10 +342,50 @@ function clearDrawings() {
     hLines.forEach(l => { try { chart.removeSeries(l); } catch(e) {} });
     trendLines = [];
     hLines = [];
+    drawMode = null;
+    drawPending = null;
     localStorage.removeItem(`chart-drawings-${activeTicker}`);
     showToast('Drawing dihapus', 'success');
 }
 
 function saveDrawings() {
-    // Save as empty for now — full drawing persistence is complex
+    if (!activeTicker) return;
+    const data = {
+        trendlines: trendLines.map(() => null), // Can't serialize series, store coords separately
+        hlines: hLines.map(() => null),
+    };
+    // We store drawing coordinates in a parallel array
+    // Actually, we need to get the data from each line series
+    // For simplicity, store just the hline prices
+    const hlinePrices = [];
+    hLines.forEach((ls, idx) => {
+        try {
+            const d = ls.data();
+            if (d && d.length > 0) {
+                hlinePrices.push(d[0].value);
+            }
+        } catch(e) {}
+    });
+    // For trendlines, we'd need to store coordinates — complex
+    // For now, just persist hlines which are most useful
+    localStorage.setItem(`chart-drawings-${activeTicker}`, JSON.stringify({
+        hlines: hlinePrices,
+        trendlines: [],
+    }));
+}
+
+function loadDrawings() {
+    if (!activeTicker || !chart) return;
+    try {
+        const saved = localStorage.getItem(`chart-drawings-${activeTicker}`);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        if (data.hlines && Array.isArray(data.hlines)) {
+            data.hlines.forEach(price => {
+                if (price != null) drawHorizontalLine(price);
+            });
+        }
+    } catch (e) {
+        console.warn('Load drawings error:', e);
+    }
 }

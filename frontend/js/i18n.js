@@ -199,6 +199,161 @@ export const translations = {
         'ptr.pull': 'Pull to refresh',
         'ptr.release': 'Release to refresh',
         'ptr.refreshing': 'Refreshing...',
+
+        // Sector
+        'sektor_title': 'Sectors',
+        'sektor_subtitle': 'IDX sector performance based on price data',
+        'sektor_empty': 'No sector data',
+        'sektor_empty_desc': 'Sector data is only available for classified stocks.',
+        'sektor_today': "Today's Performance",
+        'sektor_count': 'sectors',
+        'saham': 'stocks',
+        'top': 'Top',
+        'bottom': 'Bottom',
+        'back_to_sectors': 'Back to sectors',
+        'sector_label': 'Sector',
+        'industries': 'industries',
+        'expand_industry': 'Expand industry',
+        'stocks_count': 'stocks',
+        'ticker': 'Ticker',
+        'company': 'Company',
+        'price': 'Price',
+        'change': 'Change',
+        'loading': 'Loading sector data...',
+        'unknown': 'Unknown',
+        'no_stocks': 'No stock data for this industry.',
+        'sector_not_found': 'Sector not found',
+        'sector_not_found_desc': 'Sector does not exist or has no data.',
+        'unknown_error': 'An unknown error occurred.',
+
+        // Alerts
+        'alerts.title': 'Price Alerts',
+        'alerts.desc': 'Set price and indicator alerts for your watchlist stocks',
+        'alerts.create': 'Create Alert',
+        'alerts.price_above': 'Price Above',
+        'alerts.price_below': 'Price Below',
+        'alerts.rsi_above': 'RSI Above',
+        'alerts.rsi_below': 'RSI Below',
+        'alerts.triggered': 'Triggered',
+        'alerts.active': 'Active',
+        'alerts.empty': 'No alerts yet',
+        'alerts.empty_desc': 'Create an alert to get notified when price targets are hit.',
+        'alerts.delete_confirm': 'Delete this alert?',
+
+        // Calendar
+        'calendar.title': 'Market Calendar',
+        'calendar.dividend': 'Dividend',
+        'calendar.rumor': 'Rumor/News',
+        'calendar.corporate': 'Corporate Action',
+        'calendar.ipo': 'IPO',
+        'calendar.general': 'General',
+        'calendar.today': "Today's Events",
+        'calendar.upcoming': 'Upcoming Events',
+        'calendar.empty': 'No events for this date',
+        'calendar.no_events': 'No upcoming events found.',
+
+        // Breadth
+        'breadth.title': 'Market Breadth',
+        'breadth.advancers': 'Advancers',
+        'breadth.decliners': 'Decliners',
+        'breadth.unchanged': 'Unchanged',
+        'breadth.ratio': 'A/D Ratio',
+
+        // Treemap
+        'treemap.title': 'Market Treemap',
+        'treemap.by_sector': 'By Sector',
+        'treemap.by_industry': 'By Industry',
+
+        // Corporate Actions
+        'corporate.title': 'Corporate Actions',
+        'corporate.desc': 'Latest corporate actions for all IDX stocks',
+
+        // Backtest
+        'backtest.title': 'Strategy Backtest',
+        'backtest.desc': 'Backtest trading strategies on historical data',
+        'backtest.run': 'Run Backtest',
+        'backtest.strategy': 'Strategy',
+        'backtest.period': 'Period',
+        'backtest.total_return': 'Total Return',
+        'backtest.sharpe': 'Sharpe Ratio',
+        'backtest.max_dd': 'Max Drawdown',
+        'backtest.win_rate': 'Win Rate',
+        'backtest.trades': 'Total Trades',
+
+        // Paper Trading
+        'paper.title': 'Paper Trading',
+        'paper.desc': 'Simulate trading without real money',
+        'paper.open': 'Open Positions',
+        'paper.closed': 'Closed',
+        'paper.pnl': 'P&L',
+        'paper.return': 'Return',
+        'paper.add_trade': 'Add Trade',
+        'paper.close_trade': 'Close Trade',
+        'paper.edit_trade': 'Edit Trade',
+
+        // Compare
+        'compare.title': 'Stock Comparison',
+        'compare.desc': 'Compare multiple stocks side by side',
+        'compare.add': 'Add Stock',
+        'compare.remove': 'Remove',
+
+        // Movers
+        'movers.title': 'Top Movers',
+        'movers.gainers': 'Top Gainers',
+        'movers.losers': 'Top Losers',
+        'movers.active': 'Most Active',
+        'movers.volume_leader': 'Volume Leaders',
+
+        // Indices
+        'indices.title': 'IDX Indices',
+        'indices.desc': 'Performance of all IDX indices',
+
+        // Help
+        'help.title': 'Help & Guide',
+        'help.desc': 'Learn how to use RetailBijak features',
+
+        // More Drawer (Mobile)
+        'more.title': 'More Menu',
+        'more.market': 'Market',
+        'more.sector': 'Sectors',
+        'more.news': 'News',
+        'more.signals': 'Signals',
+        'more.alerts': 'Alerts',
+        'more.breadth': 'Breadth',
+        'more.movers': 'Movers',
+        'more.treemap': 'Treemap',
+        'more.calendar': 'Calendar',
+        'more.corporate': 'Corporate',
+        'more.indices': 'Indices',
+        'more.compare': 'Compare',
+        'more.backtest': 'Backtest',
+        'more.paper_trades': 'Paper Trading',
+        'more.ai_picks': 'AI Picks',
+        'more.help': 'Help',
+        'more.market_desc': 'IDX market overview',
+        'more.sector_desc': 'Sector & industry performance',
+        'more.news_desc': 'News feed & watchlist news',
+        'more.signals_desc': 'Signal overview & TA',
+        'more.alerts_desc': 'Price & indicator alerts',
+        'more.breadth_desc': 'Market breadth analysis',
+        'more.movers_desc': 'Top gainers & losers',
+        'more.treemap_desc': 'Interactive market map',
+        'more.calendar_desc': 'Dividends, RUPS, IPO',
+        'more.corporate_desc': 'Corporate actions',
+        'more.indices_desc': 'IHSG, LQ45, IDX30',
+        'more.compare_desc': 'Side-by-side stocks',
+        'more.backtest_desc': 'Test trading strategies',
+        'more.paper_desc': 'Simulated portfolio',
+        'more.ai_picks_desc': 'Daily AI recommendations',
+        'more.help_desc': 'Guide & FAQ',
+
+        // Bottom nav
+        'bottom.more': 'More',
+
+        // Settings extra
+        'settings.amoled': 'AMOLED',
+        'settings.about': 'About',
+        'settings.version': 'Version',
     },
     id: {
         // Navigation
@@ -400,6 +555,161 @@ export const translations = {
         'ptr.pull': 'Tarik untuk segarkan',
         'ptr.release': 'Lepas untuk segarkan',
         'ptr.refreshing': 'Menyegarkan...',
+
+        // Sector
+        'sektor_title': 'Sektor',
+        'sektor_subtitle': 'Performa sektor IDX berdasarkan data harga',
+        'sektor_empty': 'Belum ada data sektor',
+        'sektor_empty_desc': 'Data sektor hanya tersedia untuk saham yang terklasifikasi.',
+        'sektor_today': 'Performa Hari Ini',
+        'sektor_count': 'sektor',
+        'saham': 'saham',
+        'top': 'Teratas',
+        'bottom': 'Terbawah',
+        'back_to_sectors': 'Kembali ke daftar sektor',
+        'sector_label': 'Sektor',
+        'industries': 'industri',
+        'expand_industry': 'Buka industri',
+        'stocks_count': 'saham',
+        'ticker': 'Kode',
+        'company': 'Perusahaan',
+        'price': 'Harga',
+        'change': 'Perubahan',
+        'loading': 'Memuat data sektor...',
+        'unknown': 'Tidak diketahui',
+        'no_stocks': 'Tidak ada data saham untuk industri ini.',
+        'sector_not_found': 'Sektor tidak ditemukan',
+        'sector_not_found_desc': 'Sektor tidak memiliki data atau tidak ditemukan.',
+        'unknown_error': 'Terjadi kesalahan yang tidak diketahui.',
+
+        // Alerts
+        'alerts.title': 'Peringatan Harga',
+        'alerts.desc': 'Atur peringatan harga dan indikator untuk saham pantauan',
+        'alerts.create': 'Buat Alert',
+        'alerts.price_above': 'Harga di Atas',
+        'alerts.price_below': 'Harga di Bawah',
+        'alerts.rsi_above': 'RSI di Atas',
+        'alerts.rsi_below': 'RSI di Bawah',
+        'alerts.triggered': 'Terpicu',
+        'alerts.active': 'Aktif',
+        'alerts.empty': 'Belum ada alert',
+        'alerts.empty_desc': 'Buat alert untuk mendapat notifikasi saat target harga tercapai.',
+        'alerts.delete_confirm': 'Hapus alert ini?',
+
+        // Calendar
+        'calendar.title': 'Kalender Pasar',
+        'calendar.dividend': 'Dividen',
+        'calendar.rumor': 'Rumor/Berita',
+        'calendar.corporate': 'Aksi Korporasi',
+        'calendar.ipo': 'IPO',
+        'calendar.general': 'Umum',
+        'calendar.today': 'Acara Hari Ini',
+        'calendar.upcoming': 'Acara Mendatang',
+        'calendar.empty': 'Tidak ada acara untuk tanggal ini',
+        'calendar.no_events': 'Tidak ada acara mendatang.',
+
+        // Breadth
+        'breadth.title': 'Breadth Pasar',
+        'breadth.advancers': 'Penguat',
+        'breadth.decliners': 'Pelemah',
+        'breadth.unchanged': 'Stagnan',
+        'breadth.ratio': 'Rasio A/D',
+
+        // Treemap
+        'treemap.title': 'Treemap Pasar',
+        'treemap.by_sector': 'Berdasarkan Sektor',
+        'treemap.by_industry': 'Berdasarkan Industri',
+
+        // Corporate Actions
+        'corporate.title': 'Aksi Korporasi',
+        'corporate.desc': 'Aksi korporasi terbaru untuk semua saham IDX',
+
+        // Backtest
+        'backtest.title': 'Uji Strategi',
+        'backtest.desc': 'Uji strategi trading pada data historis',
+        'backtest.run': 'Jalankan',
+        'backtest.strategy': 'Strategi',
+        'backtest.period': 'Periode',
+        'backtest.total_return': 'Total Return',
+        'backtest.sharpe': 'Rasio Sharpe',
+        'backtest.max_dd': 'Max Drawdown',
+        'backtest.win_rate': 'Win Rate',
+        'backtest.trades': 'Total Transaksi',
+
+        // Paper Trading
+        'paper.title': 'Paper Trading',
+        'paper.desc': 'Simulasi trading tanpa uang sungguhan',
+        'paper.open': 'Posisi Terbuka',
+        'paper.closed': 'Tertutup',
+        'paper.pnl': 'L/R',
+        'paper.return': 'Return',
+        'paper.add_trade': 'Tambah Transaksi',
+        'paper.close_trade': 'Tutup Posisi',
+        'paper.edit_trade': 'Edit Transaksi',
+
+        // Compare
+        'compare.title': 'Bandingkan Saham',
+        'compare.desc': 'Bandingkan beberapa saham secara side-by-side',
+        'compare.add': 'Tambah Saham',
+        'compare.remove': 'Hapus',
+
+        // Movers
+        'movers.title': 'Penggerak Utama',
+        'movers.gainers': 'Top Gainers',
+        'movers.losers': 'Top Losers',
+        'movers.active': 'Paling Aktif',
+        'movers.volume_leader': 'Pemimpin Volume',
+
+        // Indices
+        'indices.title': 'Indeks IDX',
+        'indices.desc': 'Performa semua indeks IDX',
+
+        // Help
+        'help.title': 'Bantuan & Panduan',
+        'help.desc': 'Pelajari cara menggunakan fitur RetailBijak',
+
+        // More Drawer (Mobile)
+        'more.title': 'Menu Lainnya',
+        'more.market': 'Pasar',
+        'more.sector': 'Sektor',
+        'more.news': 'Berita',
+        'more.signals': 'Sinyal',
+        'more.alerts': 'Alert',
+        'more.breadth': 'Breadth',
+        'more.movers': 'Movers',
+        'more.treemap': 'Treemap',
+        'more.calendar': 'Kalender',
+        'more.corporate': 'Korporasi',
+        'more.indices': 'Indeks',
+        'more.compare': 'Bandingkan',
+        'more.backtest': 'Backtest',
+        'more.paper_trades': 'Paper Trading',
+        'more.ai_picks': 'AI Picks',
+        'more.help': 'Bantuan',
+        'more.market_desc': 'Overview market IDX',
+        'more.sector_desc': 'Performa sektor & industri',
+        'more.news_desc': 'News feed & watchlist news',
+        'more.signals_desc': 'Signal overview & TA',
+        'more.alerts_desc': 'Harga & indikator',
+        'more.breadth_desc': 'Market breadth analysis',
+        'more.movers_desc': 'Top gainers & losers',
+        'more.treemap_desc': 'Peta pasar interaktif',
+        'more.calendar_desc': 'Dividen, RUPS, IPO',
+        'more.corporate_desc': 'Aksi korporasi',
+        'more.indices_desc': 'IHSG, LQ45, IDX30',
+        'more.compare_desc': 'Side-by-side stocks',
+        'more.backtest_desc': 'Uji strategi trading',
+        'more.paper_desc': 'Simulasi portfolio',
+        'more.ai_picks_desc': 'Rekomendasi AI harian',
+        'more.help_desc': 'Panduan & FAQ',
+
+        // Bottom nav
+        'bottom.more': 'Lainnya',
+
+        // Settings extra
+        'settings.amoled': 'AMOLED',
+        'settings.about': 'Tentang',
+        'settings.version': 'Versi',
     }
 };
 

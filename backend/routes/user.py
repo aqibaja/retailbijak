@@ -7,31 +7,14 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-try:
-    from database import UserSetting, WatchlistItem, WatchlistGroup, PortfolioPosition, TransactionLog, get_db
-except ModuleNotFoundError:
-    from backend.database import UserSetting, WatchlistItem, WatchlistGroup, PortfolioPosition, TransactionLog, get_db
-
-try:
-    from database import Stock, OHLCVDaily
-except ModuleNotFoundError:
-    from backend.database import Stock, OHLCVDaily
-
-try:
-    from services.openrouter_llm import (
-        DEFAULT_AI_PICKS_MODEL,
-        DEFAULT_STOCK_ANALYSIS_MODEL,
-        get_openrouter_config,
-        get_openrouter_runtime_status,
-    )
-except ModuleNotFoundError:
-    from backend.services.openrouter_llm import (
-        DEFAULT_AI_PICKS_MODEL,
-        DEFAULT_STOCK_ANALYSIS_MODEL,
-        get_openrouter_config,
-        get_openrouter_runtime_status,
-    )
-
+from database import UserSetting, WatchlistItem, WatchlistGroup, PortfolioPosition, TransactionLog, get_db
+from database import Stock, OHLCVDaily
+from services.openrouter_llm import (
+    DEFAULT_AI_PICKS_MODEL,
+    DEFAULT_STOCK_ANALYSIS_MODEL,
+    get_openrouter_config,
+    get_openrouter_runtime_status,
+)
 router = APIRouter()
 
 

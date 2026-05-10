@@ -7,16 +7,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-try:
-    from database import OHLCVDaily, Stock, UserSetting, get_db
-except ModuleNotFoundError:
-    from backend.database import OHLCVDaily, Stock, UserSetting, get_db
-
-try:
-    from routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
-except ModuleNotFoundError:
-    from backend.routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
-
+from database import OHLCVDaily, Stock, UserSetting, get_db
+from routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
 router = APIRouter()
 
 

@@ -36,6 +36,15 @@ function renderAiPickContextBanner(symbol) {
 }
 
 export async function renderStockDetail(root, ticker) {
+  // Clean up any previous multi-chart instances (cross-stock navigation)
+  try {
+    multiChartInstances.forEach(inst => { try { inst.chart.remove(); } catch(e) {} });
+    multiChartInstances = [];
+    multiChartActive = false;
+    cachedMultiChartCandles = {};
+    cachedMultiChartTechnical = {};
+    if (multiChartResizeObserver) { multiChartResizeObserver.disconnect(); multiChartResizeObserver = null; }
+  } catch(e) {}
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
   currentSymbol = symbol;
   document.title = `RetailBijak — ${symbol}`;
@@ -89,6 +98,8 @@ export async function renderStockDetail(root, ticker) {
           <div class="chart-toolbar" id="chart-toolbar">
             <span class="timeframe-group">
               <label class="indicator-toggle active" data-tf="1D"><span>1D</span></label>
+              <label class="indicator-toggle" data-tf="1W"><span>1W</span></label>
+              <label class="indicator-toggle" data-tf="1M"><span>1M</span></label>
               <label class="indicator-toggle" data-tf="1H"><span>1H</span></label>
               <label class="indicator-toggle" data-tf="4H"><span>4H</span></label>
             </span>
@@ -102,7 +113,16 @@ export async function renderStockDetail(root, ticker) {
             </span>
           </div>
           <div class="chart-top-spacing"></div>
+          <div class="multi-chart-layout-bar" id="multi-chart-layout-bar">
+            <span class="layout-btn active" data-layout="1x1">1×1</span>
+            <span class="layout-btn" data-layout="2x1">2×1</span>
+            <span class="layout-btn" data-layout="2x2">2×2</span>
+            <span class="layout-btn" data-layout="3x2">3×2</span>
+            <span class="multi-chart-layout-separator"></span>
+            <span class="text-xs text-dim" id="chart-layout-label">Layout</span>
+          </div>
           <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
+          <div id="multi-chart-container" class="multi-chart-grid" style="display:none"></div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <div id="trade-plan" class="trade-plan-grid mt-4"></div>
@@ -115,6 +135,7 @@ export async function renderStockDetail(root, ticker) {
             <button type="button" class="stock-tab" data-tab="analisis">Analisis</button>
             <button type="button" class="stock-tab" data-tab="berita">Berita</button>
             <button type="button" class="stock-tab" data-tab="fundamental">Fundamental</button>
+            <button type="button" class="stock-tab" data-tab="diskusi">Diskusi</button>
           </div>
           <div class="stock-tab-content active" data-tab-content="chat">
             <div class="stock-chat-card">
@@ -168,6 +189,18 @@ export async function renderStockDetail(root, ticker) {
           </div>
           <div class="stock-tab-content" data-tab-content="fundamental">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Fundamental Metrics</h3><div id="fundamental-grid" class="fundamental-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+          </div>
+          <div class="stock-tab-content" data-tab-content="diskusi">
+            <div class="stock-side-panel">
+              <h3 class="stock-side-panel-title">Diskusi Saham</h3>
+              <div id="comments-container">
+                <div class="comments-input-area">
+                  <textarea id="comment-input" class="form-input" placeholder="Tulis komentar..." rows="2" style="resize:vertical;width:100%"></textarea>
+                  <button id="comment-submit" type="button" class="btn btn-primary mt-2" style="width:100%">Kirim Komentar</button>
+                </div>
+                <div id="comments-list" class="mt-3 flex-col gap-2"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -316,6 +349,147 @@ export async function renderStockDetail(root, ticker) {
       if (savedBtn) savedBtn.click();
     }
   } catch {}
+
+  // ─── Diskusi / Comments ────────────────────
+  async function loadComments(sym) {
+    const list = document.getElementById('comments-list');
+    if (!list) return;
+    list.innerHTML = '<div class="text-xs text-dim">Memuat diskusi...</div>';
+    try {
+      const res = await apiFetch(`/comments/${encodeURIComponent(sym || symbol)}`);
+      const items = Array.isArray(res?.data) ? res.data : [];
+      if (!items.length) {
+        list.innerHTML = '<div class="text-xs text-dim">Belum ada diskusi. Jadilah yang pertama berkomentar!</div>';
+        return;
+      }
+      list.innerHTML = items.map(c => renderCommentItem(c, sym || symbol)).join('');
+      list.querySelectorAll('.comment-vote-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const cid = parseInt(btn.dataset.commentId);
+          const vote = parseInt(btn.dataset.vote);
+          await voteComment(cid, vote, sym || symbol);
+        });
+      });
+      list.querySelectorAll('.comment-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const cid = parseInt(btn.dataset.commentId);
+          await deleteComment(cid, sym || symbol);
+        });
+      });
+    } catch (e) {
+      console.warn('loadComments failed', e);
+      list.innerHTML = '<div class="text-xs text-dim">Gagal memuat diskusi.</div>';
+    }
+  }
+
+  function renderCommentItem(c, sym) {
+    const ts = c.created_at ? new Date(c.created_at).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' }) : '';
+    const username = c.username || 'Trader';
+    const score = c.score || 0;
+    const userVote = c.user_vote || 0;
+    const isOwn = c.user_id === 'user1';
+    const upActive = userVote === 1 ? 'active' : '';
+    const dnActive = userVote === -1 ? 'active' : '';
+    const deleteBtn = isOwn ? `<button type="button" class="btn btn-mini text-down comment-delete-btn" data-comment-id="${c.id}">Hapus</button>` : '';
+    return `<div class="comment-item" data-comment-id="${c.id}">
+      <div class="comment-header flex justify-between items-center">
+        <span class="comment-username text-xs strong">${username}</span>
+        <span class="text-xs text-dim">${ts}</span>
+      </div>
+      <div class="comment-body text-sm mt-1">${escapeHtml(c.content)}</div>
+      <div class="comment-actions flex items-center gap-2 mt-1">
+        <button type="button" class="btn btn-mini comment-vote-btn ${upActive}" data-comment-id="${c.id}" data-vote="1">▲ ${score > 0 ? score : ''}</button>
+        <button type="button" class="btn btn-mini comment-vote-btn ${dnActive}" data-comment-id="${c.id}" data-vote="-1">▼</button>
+        ${deleteBtn}
+      </div>
+    </div>`;
+  }
+
+  async function voteComment(commentId, vote, sym) {
+    try {
+      const res = await apiFetch(`/comments/${commentId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote }),
+      });
+      if (res?.data) {
+        loadComments(sym);
+      }
+    } catch (e) {
+      console.warn('voteComment failed', e);
+      showToast('Gagal memberikan vote', 'error');
+    }
+  }
+
+  async function deleteComment(commentId, sym) {
+    try {
+      const res = await apiFetch(`/comments/${commentId}`, { method: 'DELETE' });
+      if (res?.ok) {
+        showToast('Komentar dihapus', 'success');
+        loadComments(sym);
+      } else {
+        showToast('Gagal menghapus komentar', 'error');
+      }
+    } catch (e) {
+      console.warn('deleteComment failed', e);
+      showToast('Gagal menghapus komentar', 'error');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // Wire up comment submit
+  const commentSubmit = document.getElementById('comment-submit');
+  const commentInput = document.getElementById('comment-input');
+  if (commentSubmit && commentInput) {
+    commentSubmit.addEventListener('click', async () => {
+      const content = commentInput.value.trim();
+      if (!content) return showToast('Tulis komentar terlebih dahulu', 'error');
+      commentSubmit.disabled = true;
+      commentSubmit.textContent = 'Mengirim...';
+      try {
+        const res = await apiFetch(`/comments/${encodeURIComponent(symbol)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        });
+        if (res?.data) {
+          commentInput.value = '';
+          showToast('Komentar terkirim', 'success');
+          loadComments(symbol);
+        }
+      } catch (e) {
+        console.warn('comment submit failed', e);
+        showToast('Gagal mengirim komentar', 'error');
+      } finally {
+        commentSubmit.disabled = false;
+        commentSubmit.textContent = 'Kirim Komentar';
+      }
+    });
+    // Allow Ctrl+Enter to submit
+    commentInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        commentSubmit.click();
+      }
+    });
+  }
+
+  // Load comments when tab is shown
+  const diskusiTab = document.querySelector('[data-stock-tabs] .stock-tab[data-tab="diskusi"]');
+  if (diskusiTab) {
+    diskusiTab.addEventListener('click', () => {
+      setTimeout(() => loadComments(symbol), 50);
+    });
+  }
+  // Also load if tab is already active on page load
+  if (diskusiTab && diskusiTab.classList.contains('active')) {
+    setTimeout(() => loadComments(symbol), 100);
+  }
 
   // AI Chat — send handler
   const chatInput = document.getElementById('stock-chat-input');
@@ -554,11 +728,26 @@ export async function renderStockDetail(root, ticker) {
     });
   }
 
+  // Phase 0: Try full-detail composite endpoint (reduces 8+ calls to 1)
+  let fullDetail = null;
+  try {
+    const fdRes = await fetch(`/api/stocks/${encodeURIComponent(symbol)}/full-detail`);
+    if (fdRes.ok) fullDetail = await fdRes.json();
+  } catch (e) { /* fall through to phased loading */ }
+
   // Phase 1: Load critical data FIRST (price + chart) — show immediately
-  const [detail, chart] = await Promise.all([
-    fetchStockDetail(symbol).catch(()=>null),
-    fetchChartData(symbol, 160).catch(()=>null),
-  ]);
+  let detail, chart;
+  if (fullDetail) {
+    detail = fullDetail.info ? {data: fullDetail.info} : null;
+    chart = fullDetail.chart_data ? {data: fullDetail.chart_data} : null;
+  } else {
+    const p1 = await Promise.all([
+      fetchStockDetail(symbol).catch(()=>null),
+      fetchChartData(symbol, 160).catch(()=>null),
+    ]);
+    detail = p1[0];
+    chart = p1[1];
+  }
   const candles = normalizeCandles(chart?.data?.length ? chart.data : makeFallbackCandles(symbol));
   // Partial failure check: jika semua critical endpoint gagal, tampilkan warning
   const allFailed = !detail && candles.length === 0;
@@ -580,31 +769,64 @@ export async function renderStockDetail(root, ticker) {
   hydrateHeader(symbol, detail, null, candles);
   loadPerfChips(candles);
 
-  // Phase 2: Load remaining data in background (fundamental, technical, analysis, news)
-  const [fund, tech, analysis, news, announcements] = await Promise.all([
-    fetchFundamental(symbol).catch(()=>null),
-    fetchTechnical(symbol).catch(()=>null),
-    fetchAnalysis(symbol, { llm: true }).catch(()=>null),
-    fetchNews(6, symbol).catch(()=>null),
-    apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
-  ]);
-  const technical = tech?.technical || {};
+  // Phase 2: Load remaining data (skip individual calls if full-detail was successful)
+  let fund, techRes, analysis, news, announcements;
+  if (fullDetail) {
+    fund = fullDetail.fundamental ? {data: fullDetail.fundamental} : null;
+    techRes = fullDetail.technical ? {technical: fullDetail.technical} : null;
+    analysis = fullDetail.analysis ? {data: fullDetail.analysis.data, llm: fullDetail.analysis.llm} : null;
+    const p2 = await Promise.all([
+      fetchNews(6, symbol).catch(()=>null),
+      apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
+    ]);
+    news = p2[0];
+    announcements = p2[1];
+    // Load broker/peers from fullDetail
+    if (fullDetail.broker_activity?.length) renderBrokerActivity(fullDetail.broker_activity);
+    if (fullDetail.peers?.length) renderPeers(fullDetail.peers);
+    if (fullDetail.indices?.length) renderIndices(fullDetail.indices);
+  } else {
+    const p2 = await Promise.all([
+      fetchFundamental(symbol).catch(()=>null),
+      fetchTechnical(symbol).catch(()=>null),
+      fetchAnalysis(symbol, { llm: true }).catch(()=>null),
+      fetchNews(6, symbol).catch(()=>null),
+      apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=4`).catch(()=>null)
+    ]);
+    fund = p2[0];
+    techRes = p2[1];
+    analysis = p2[2];
+    news = p2[3];
+    announcements = p2[4];
+  }
+  const technical = techRes?.technical || {};
   // TradingView chart (or fallback to LightweightCharts)
   try { renderStockChart(symbol, candles, technical); } catch (e) { console.warn('chart error', e); renderFallbackSvgChart(candles.slice(-30)); }
+  // Init multi-chart layout system (after chart container exists)
+  try {
+    cachedMultiChartCandles = { '1D': candles };
+    cachedMultiChartTechnical = technical;
+    initMultiChartLayoutToggle(symbol);
+  } catch (e) { console.warn('multi-chart init error', e); }
   // Indicator toggle (only relevant for LightweightCharts fallback)
   document.querySelectorAll('.indicator-toggle').forEach(el => {
     if (el.dataset.tf) return; // timeframe handled separately
     el.addEventListener('click', () => {
       el.classList.toggle('active');
-      renderStockChart(symbol, candles, technical);
+      if (!multiChartActive) renderStockChart(symbol, candles, technical);
     });
   });
   // Timeframe toggle
   document.querySelectorAll('[data-tf]').forEach(el => {
     el.addEventListener('click', () => {
+      if (multiChartActive) {
+        showToast('Ganti ke layout 1×1 untuk mengubah timeframe', 'info');
+        return;
+      }
       const tf = el.dataset.tf;
       if (tf === '1H' || tf === '4H') {
         showToast('Data intraday akan tersedia setelah integrasi data real-time IDX', 'info');
+        return;
       }
       document.querySelectorAll('[data-tf]').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
@@ -771,12 +993,13 @@ let currentTimeframe = '1D';
 function normalizeCandles(rows){ return rows.map(r => ({ date: r.date || r.time, open:Number(r.open ?? r.close), high:Number(r.high ?? r.close), low:Number(r.low ?? r.close), close:Number(r.close), volume:Number(r.volume || 0), st_value: r.st_value, st_trend: r.st_trend, vwap: r.vwap })).filter(r => r.date && r.close); }
 
 async function loadStockChart(symbol) {
+  if (multiChartActive) return; // multi-chart manages its own timeframes
   const container = document.getElementById('tvchart');
   if (!container) return;
   container.innerHTML = '<div class="skeleton skeleton-chart stock-chart-skeleton"></div>';
   document.getElementById('chart-subtitle').textContent = `Memuat data ${currentTimeframe}...`;
   try {
-    const chart = await fetchChartData(symbol, currentTimeframe === '1D' ? 160 : 400, currentTimeframe).catch(() => null);
+    const chart = await fetchChartData(symbol, currentTimeframe === '1D' ? 160 : currentTimeframe === '1W' ? 300 : currentTimeframe === '1M' ? 400 : 400, currentTimeframe).catch(() => null);
     const candles = normalizeCandles(chart?.data?.length ? chart.data : []);
     if (!candles.length) throw new Error('No data');
     renderStockChart(symbol, candles, {});
@@ -896,6 +1119,7 @@ function hexWithAlpha(hex, alpha) {
   return hex + a;
 }
 function renderStockChart(symbol, candles, technical){
+  if (multiChartActive) return; // multi-chart handles its own rendering
   const container = document.getElementById('tvchart'); if (!container) return;
 
   // Read current theme for chart colors
@@ -1658,3 +1882,219 @@ function renderPeerComparison(symbol) {
 
 function fallbackIssuerName(ticker){ const names={GOTO:'GoTo Gojek Tokopedia Tbk.',BBCA:'Bank Central Asia Tbk.',BMRI:'Bank Mandiri Tbk.',BBRI:'Bank Rakyat Indonesia Tbk.',TLKM:'Telkom Indonesia Tbk.'}; return names[ticker] || `${ticker} — Ekuitas IDX`; }
 function makeFallbackCandles(ticker){ const baseMap={GOTO:96,BBCA:9800,BMRI:5850,BBRI:4100,TLKM:3420}; const base=baseMap[ticker]||1000; const out=[]; for(let i=59;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const wave=Math.sin(i/3)*0.025; const close=Math.round(base*(1+wave+(60-i)*0.0008)); out.push({date:d.toISOString().slice(0,10),open:close-2,high:close+4,low:close-5,close,volume:10000000+i*123456}); } return out; }
+/* ─── Multi-Chart Layout System (25.3.4) ─── */
+const MULTI_CHART_LAYOUT_KEY = 'retailbijak.multichart_layout';
+const MULTI_CHART_LAYOUTS = {
+  '1x1': { cols: 1, rows: 1, panes: [{tf:'1D', label:'1D'}] },
+  '2x1': { cols: 2, rows: 1, panes: [{tf:'1D', label:'1D'},{tf:'1W', label:'1W'}] },
+  '2x2': { cols: 2, rows: 2, panes: [{tf:'1D', label:'1D'},{tf:'4H', label:'4H'},{tf:'1W', label:'1W'},{tf:'1M', label:'1M'}] },
+  '3x2': { cols: 3, rows: 2, panes: [{tf:'1D', label:'1D'},{tf:'4H', label:'4H'},{tf:'1H', label:'1H'},{tf:'1W', label:'1W'},{tf:'1M', label:'1M'},{tf:'5m', label:'5M'}] },
+};
+const MULTI_CHART_TF_LIMITS = {
+  '1D': 160, '4H': 240, '1H': 240, '1W': 300, '1M': 400, '5m': 300,
+};
+let multiChartInstances = [];
+let multiChartActive = false;
+let multiChartResizeObserver = null;
+
+function getSavedMultiChartLayout() {
+  try { return localStorage.getItem(MULTI_CHART_LAYOUT_KEY) || '1x1'; } catch { return '1x1'; }
+}
+function saveMultiChartLayout(layout) {
+  try { localStorage.setItem(MULTI_CHART_LAYOUT_KEY, layout); } catch {}
+}
+
+function initMultiChartLayoutToggle(symbol) {
+  const bar = document.getElementById('multi-chart-layout-bar');
+  if (!bar) return;
+  const saved = getSavedMultiChartLayout();
+  bar.querySelectorAll('.layout-btn').forEach(btn => {
+    const layout = btn.dataset.layout;
+    btn.classList.toggle('active', layout === saved);
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saveMultiChartLayout(layout);
+      switchChartLayout(symbol, layout);
+    });
+  });
+  // Apply saved layout on init (if not 1x1)
+  if (saved !== '1x1') {
+    switchChartLayout(symbol, saved);
+  }
+}
+
+function switchChartLayout(symbol, layout) {
+  const singleChart = document.getElementById('tvchart');
+  const multiContainer = document.getElementById('multi-chart-container');
+  const toolbar = document.getElementById('chart-toolbar');
+  if (!multiContainer || !singleChart) return;
+
+  multiChartActive = layout !== '1x1';
+
+  if (!multiChartActive) {
+    // Single chart mode: show single, hide multi
+    singleChart.style.display = '';
+    multiContainer.style.display = 'none';
+    multiContainer.innerHTML = '';
+    multiChartInstances.forEach(inst => {
+      try { inst.chart.remove(); } catch(e) {}
+    });
+    multiChartInstances = [];
+    if (multiChartResizeObserver) { multiChartResizeObserver.disconnect(); multiChartResizeObserver = null; }
+    // Re-render single chart
+    renderStockChart(symbol, cachedMultiChartCandles?.['1D'] || [], cachedMultiChartTechnical || {});
+    return;
+  }
+
+  // Multi-chart mode: hide single, show multi grid
+  singleChart.style.display = 'none';
+  const cfg = MULTI_CHART_LAYOUTS[layout];
+  if (!cfg) return;
+
+  multiContainer.style.display = 'grid';
+  multiContainer.style.gridTemplateColumns = `repeat(${cfg.cols}, 1fr)`;
+  multiContainer.innerHTML = cfg.panes.map((p, i) =>
+    `<div class="chart-pane" data-pane-idx="${i}" data-pane-tf="${p.tf}">
+      <span class="chart-pane-label">${p.label}</span>
+      <div class="skeleton skeleton-chart"></div>
+    </div>`
+  ).join('');
+
+  // Destroy old instances
+  multiChartInstances.forEach(inst => {
+    try { inst.chart.remove(); } catch(e) {}
+  });
+  multiChartInstances = [];
+
+  // Load data for each pane and create charts
+  cfg.panes.forEach((pane, idx) => {
+    const container = multiContainer.querySelector(`.chart-pane[data-pane-idx="${idx}"]`);
+    if (!container) return;
+    loadMultiChartPane(symbol, pane.tf, idx, container, cfg.panes);
+  });
+
+  // Resize observer for the multi-chart container
+  if (multiChartResizeObserver) multiChartResizeObserver.disconnect();
+  multiChartResizeObserver = new ResizeObserver(() => {
+    multiChartInstances.forEach(inst => {
+      const el = document.querySelector(`.chart-pane[data-pane-idx="${inst.idx}"]`);
+      if (el && inst.chart) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          inst.chart.applyOptions({ width: rect.width, height: rect.height });
+        }
+      }
+    });
+  });
+  multiChartResizeObserver.observe(multiContainer);
+}
+
+let cachedMultiChartCandles = {};
+let cachedMultiChartTechnical = {};
+
+async function loadMultiChartPane(symbol, timeframe, idx, container, allPanes) {
+  try {
+    const limit = MULTI_CHART_TF_LIMITS[timeframe] || 160;
+    let chartData = cachedMultiChartCandles[timeframe];
+    if (!chartData || !chartData.length) {
+      const res = await fetchChartData(symbol, limit, timeframe).catch(() => null);
+      chartData = normalizeCandles(res?.data?.length ? res.data : []);
+      cachedMultiChartCandles[timeframe] = chartData;
+    }
+    if (!chartData.length) {
+      container.innerHTML = `<div class="empty-state-v2" style="padding:20px"><h3>Tidak ada data</h3><p>Data ${timeframe} tidak tersedia</p></div>`;
+      return;
+    }
+    // Clear skeleton
+    container.innerHTML = '';
+    const paneDiv = document.createElement('div');
+    paneDiv.style.width = '100%';
+    paneDiv.style.height = '100%';
+    paneDiv.style.minHeight = '120px';
+    container.appendChild(paneDiv);
+    // Add label back
+    const label = document.createElement('span');
+    label.className = 'chart-pane-label';
+    label.textContent = allPanes.find(p => p.tf === timeframe)?.label || timeframe;
+    container.appendChild(label);
+
+    createMultiChartInstance(symbol, timeframe, idx, paneDiv, chartData);
+  } catch (e) {
+    console.warn(`Failed to load multi-chart pane ${timeframe}:`, e);
+    container.innerHTML = `<div class="empty-state-v2" style="padding:20px"><h3>Gagal</h3><p>${timeframe}</p></div>`;
+  }
+}
+
+function createMultiChartInstance(symbol, timeframe, idx, container, chartData) {
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const isLight = theme === 'light';
+  const cs = getComputedStyle(document.documentElement);
+  const textDim = cs.getPropertyValue('--text-dim').trim() || (isLight ? '#64748b' : '#94a3b8');
+  const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
+  const c = getThemeColors();
+
+  const rect = container.getBoundingClientRect();
+  const width = rect.width || 300;
+  const height = rect.height || 200;
+
+  if (typeof LightweightCharts === 'undefined') {
+    container.innerHTML = '<div class="empty-state-v2" style="padding:20px"><p>Chart library tidak tersedia</p></div>';
+    return;
+  }
+
+  const chart = LightweightCharts.createChart(container, {
+    width, height,
+    layout: { textColor: textDim, background: { type: 'solid', color: 'transparent' } },
+    grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
+    rightPriceScale: { borderVisible: false },
+    timeScale: { borderVisible: false, timeVisible: timeframe === '1H' || timeframe === '4H' || timeframe === '5m' },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+  });
+
+  const series = chart.addCandlestickSeries({
+    upColor: c.primary, downColor: c.down,
+    borderVisible: false, wickUpColor: c.primary, wickDownColor: c.down,
+  });
+
+  const data = chartData.map(d => ({
+    time: String(d.date).slice(0, 10),
+    open: d.open, high: d.high, low: d.low, close: d.close,
+  }));
+  series.setData(data);
+
+  // Volume overlay
+  const vol = chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',
+    color: 'rgba(148,163,184,0.2)',
+  });
+  vol.setData(data.map(d => ({
+    time: String(d.date).slice(0, 10),
+    value: d.volume || 0,
+    color: d.close >= d.open ? 'rgba(16,185,129,0.25)' : 'rgba(248,113,113,0.25)',
+  })));
+  chart.priceScale('').applyOptions({ scaleMargins: { top: .82, bottom: 0 } });
+
+  chart.timeScale().fitContent();
+
+  const inst = { chart, series, idx, timeframe, container, _syncing: false };
+  multiChartInstances.push(inst);
+
+  // Crosshair sync
+  chart.subscribeCrosshairMove(param => {
+    if (!param.time || param.price == null) return;
+    if (inst._syncing) return;
+    inst._syncing = true;
+    multiChartInstances.forEach(other => {
+      if (other.idx === idx) return;
+      try {
+        other.chart.setCrosshairPosition(param.price, param.time, other.series);
+      } catch (e) { /* ignore sync errors */ }
+    });
+    setTimeout(() => { inst._syncing = false; }, 50);
+  });
+
+  // Handle unsubscription on dispose
+  chart.subscribeCrosshairMove(() => {}); // placeholder to keep handler ref
+}

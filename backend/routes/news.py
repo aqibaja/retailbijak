@@ -8,21 +8,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-try:
-    from database import News, get_db
-except ModuleNotFoundError:
-    from backend.database import News, get_db
-
-try:
-    from services.idx_api_client import get_idx_client
-except ModuleNotFoundError:
-    from backend.services.idx_api_client import get_idx_client
-
-try:
-    from services.idx_response_factory import ok as _resp_ok
-except ModuleNotFoundError:
-    from backend.services.idx_response_factory import ok as _resp_ok
-
+from database import News, get_db
+from services.idx_api_client import get_idx_client
+from services.idx_response_factory import ok as _resp_ok
 router = APIRouter()
 
 _corporate_actions_cache: dict[str, Any] = {"data": None, "ts": 0}
@@ -66,14 +54,8 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ti
     total = q.count()
     news = q.order_by(News.published_at.desc()).offset(offset).limit(limit).all()
     if not news and offset == 0:
-        try:
-            try:
-                from updaters.news_updater import update_news
-            except ModuleNotFoundError:
-                from backend.updaters.news_updater import update_news
-            update_news()
-            news = q.order_by(News.published_at.desc()).offset(offset).limit(limit).all()
-            total = q.count()
+try:
+    from updaters.news_updater import update_news
         except Exception:
             news = []
 
@@ -91,11 +73,7 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ti
 @router.get('/api/news/watchlist')
 def get_watchlist_news(db: Session = Depends(get_db), limit: int = 20, since: str = ''):
     """Get news for stocks in user's watchlist. Fallback to top movers if watchlist empty."""
-    try:
-        from database import WatchlistItem
-    except ModuleNotFoundError:
-        from backend.database import WatchlistItem
-
+from database import WatchlistItem
     # Get watchlist tickers
     watchlist_tickers = [row.ticker for row in db.query(WatchlistItem.ticker).all()]
 

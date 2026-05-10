@@ -1,6 +1,7 @@
 import { apiFetch, showToast } from '../api.js?v=20260510';
 import { nf, pf, money } from '../utils/format.js?v=20260510';
 import { observeElements } from '../main.js?v=20260510';
+import { exportCSV } from '../utils/export.js?v=20260510';
 
 export async function renderBacktest(root) {
   document.title = 'RetailBijak — Backtesting';
@@ -102,8 +103,12 @@ async function runBacktest() {
 
     // Trades table
     if (data.trades?.length) {
+      const trades = data.trades;
       html += `<div class="market-card mt-3 p-4">
-        <h3 class="panel-title mb-3">Riwayat Trade (${data.trades.length})</h3>
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="panel-title m-0">Riwayat Trade (${trades.length})</h3>
+          <button type="button" class="btn btn-sm" id="bt-export-csv" style="font-size:11px"><i data-lucide="download" style="width:14px"></i> CSV</button>
+        </div>
         <div style="overflow-x:auto">
           <table class="bt-table">
             <thead><tr><th>#</th><th>Beli</th><th>Harga</th><th>Jual</th><th>Harga</th><th>Saham</th><th>P&L</th><th>Return</th></tr></thead>
@@ -134,6 +139,26 @@ async function runBacktest() {
     // Render equity curve
     if (data.equity_curve?.length) {
       renderEquityCurve(data.equity_curve, data.initial_capital);
+    }
+
+    // Export backtest trades
+    const exportBtn = document.getElementById('bt-export-csv');
+    if (exportBtn && data.trades?.length) {
+      exportBtn.addEventListener('click', () => {
+        const headers = ['#', 'Buy Date', 'Buy Price', 'Sell Date', 'Sell Price', 'Shares', 'P&L', 'Return%'];
+        const rows = data.trades.map((t, i) => [
+          (i+1).toString(),
+          t.date || '',
+          (t.price || 0).toString(),
+          t.sell_date || '',
+          (t.sell_price || 0).toString(),
+          (t.shares || 0).toString(),
+          (t.pnl || 0).toString(),
+          t.pnl_pct != null ? t.pnl_pct.toString() : '',
+        ]);
+        exportCSV(`retailbijak-backtest-${data.ticker}-${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
+        showToast(`${rows.length} trade diekspor ke CSV`, 'success');
+      });
     }
 
   } catch (e) {

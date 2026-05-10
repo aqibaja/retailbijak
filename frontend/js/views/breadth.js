@@ -51,7 +51,7 @@ export async function renderBreadth(root) {
 
 async function loadBreadth() {
     try {
-        const res = await apiFetch('/api/market/breadth?days=50');
+        const res = await apiFetch('/market/breadth?days=50');
         const data = await res.json();
         if (!data.data || !data.data.length) throw new Error('No data');
 

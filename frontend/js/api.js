@@ -167,10 +167,16 @@ const MAX_TOASTS = 3;
 
 // Track active messages to prevent duplicates
 const activeToastMessages = new Set();
+let _toastLastTs = 0;
 
 export function showToast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
+
+    // Rate limit: max 1 toast per 1.5s
+    const now = Date.now();
+    if (now - _toastLastTs < 1500) return;
+    _toastLastTs = now;
 
     // Prevent duplicate messages
     const dedupKey = `${type}:${message}`;

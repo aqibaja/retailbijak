@@ -5,16 +5,8 @@ import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock
-except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock
-
-try:
-    from updaters.sector_classifier import classify_by_keywords
-except ModuleNotFoundError:
-    from backend.updaters.sector_classifier import classify_by_keywords
-
+from database import Fundamental, OHLCVDaily, Signal, Stock
+from updaters.sector_classifier import classify_by_keywords
 logger = logging.getLogger(__name__)
 
 

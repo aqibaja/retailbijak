@@ -13,23 +13,11 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-try:
-    from database import MarketBriefing, get_db, Stock, OHLCVDaily
-except ModuleNotFoundError:
-    from backend.database import MarketBriefing, get_db, Stock, OHLCVDaily
-
-try:
-    from services.openrouter_llm import (
-        get_openrouter_config,
-        get_openrouter_runtime_status,
-    )
-except ModuleNotFoundError:
-    from backend.services.openrouter_llm import (
-        get_openrouter_config,
-        get_openrouter_runtime_status,
-    )
-
-
+from database import MarketBriefing, get_db, Stock, OHLCVDaily
+from services.openrouter_llm import (
+    get_openrouter_config,
+    get_openrouter_runtime_status,
+)
 def _get_market_context(db) -> dict:
     """Collect market data for briefing context."""
     from sqlalchemy import func

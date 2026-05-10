@@ -6,11 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-try:
-    from database import Stock, OHLCVDaily, get_db
-except ModuleNotFoundError:
-    from backend.database import Stock, OHLCVDaily, get_db
-
+from database import Stock, OHLCVDaily, get_db
 router = APIRouter()
 
 

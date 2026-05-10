@@ -3,6 +3,7 @@ import { observeElements, animateValue } from '../main.js?v=20260510';
 import { nf, pf } from '../utils/format.js?v=20260510';
 import { ssSet } from '../utils/storage.js?v=20260510';
 import { loadTodayEvents } from './calendar.js?v=20260510';
+import { showSkeleton, hideSkeleton } from '../skeleton.js?v=20260510';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -161,6 +162,20 @@ export async function renderDashboard(root) {
     <div class="panel" id="dash-calendar-widget" style="margin-top:14px;display:none"></div>
   </section>`;
   observeElements();
+  // Skeleton loading — replace widget-state with content-aware skeletons
+  const skContainers = [
+    { id: 'dash-breadth-content', type: 'kpi' },
+    { id: 'market-intel', type: 'list' },
+    { id: 'foreign-flow-card', type: 'list' },
+    { id: 'dash-ai-pick-widget', type: 'card' },
+    { id: 'news-container', type: 'list' },
+    { id: 'signal-widget-content', type: 'kpi' },
+    { id: 'movers-list', type: 'list' },
+  ];
+  skContainers.forEach(({ id, type }) => {
+    const el = document.getElementById(id);
+    if (el) showSkeleton(el, type, 3);
+  });
   const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
   loadMarketNarrative();
   loadPnlWidget();  // P&L widget (async)
@@ -187,6 +202,16 @@ export async function renderDashboard(root) {
   loadFreshnessStats(); // Data freshness stats card
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 
+  // ─── Auto-Refresh Dashboard (24.3.1) ──────
+  let _dashRefreshTimer = setInterval(() => {
+    if (document.hidden) return;
+    loadForeignFlow();
+    loadBreadthWidget();
+    loadSignalWidget();
+    loadMiniHeatmapWidget();
+  }, 120000);
+  window.__viewTimers.push('i_' + _dashRefreshTimer);
+}
 // ─── Breadth Widget ────────────────────────────
 async function loadBreadthWidget() {
   const el = document.getElementById('dash-breadth-content');
@@ -523,8 +548,26 @@ async function loadAiPickWidget() {
   }
 
   if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter.`;
+  // Compute AI Track Record from current picks
+  const returns = picks.map(p => Number(p.change_pct) || 0).filter(v => v !== 0);
+  const wins = returns.filter(r => r > 0).length;
+  const avgRet = returns.length ? (returns.reduce((a, b) => a + b, 0) / returns.length) : 0;
+  const best = returns.length ? Math.max(...returns) : 0;
+  const worst = returns.length ? Math.min(...returns) : 0;
+  const winRate = returns.length ? (wins / returns.length * 100) : 0;
   mount.innerHTML = `
-    <div class="dash-ai-picks-mini">
+    <!-- AI Track Record Mini Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;padding:10px 14px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:12px">
+      <div class="flex-col items-center"><span class="text-xs text-dim">Win Rate</span><strong class="mono ${winRate >= 50 ? 'text-up' : 'text-down'}" style="font-size:16px">${winRate.toFixed(0)}%</strong></div>
+      <div class="flex-col items-center"><span class="text-xs text-dim">Rata-rata</span><strong class="mono ${avgRet >= 0 ? 'text-up' : 'text-down'}" style="font-size:16px">${avgRet > 0 ? '+' : ''}${avgRet.toFixed(1)}%</strong></div>
+      <div class="flex-col items-center"><span class="text-xs text-dim">Best</span><strong class="mono text-up" style="font-size:16px">+${best.toFixed(1)}%</strong></div>
+      <div class="flex-col items-center"><span class="text-xs text-dim">Worst</span><strong class="mono text-down" style="font-size:16px">${worst.toFixed(1)}%</strong></div>
+    </div>
+    <div class="dash-ai-picks-mini"></div>`;
+  // Re-render card grid inside the .dash-ai-picks-mini container
+  const miniContainer = mount.querySelector('.dash-ai-picks-mini');
+  if (miniContainer) {
+    miniContainer.innerHTML = `
       <div class="dash-ai-picks-mini-row" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
         ${picks.slice(0, 3).map(item => {
           const signal = getSignal(item.score);
@@ -535,14 +578,17 @@ async function loadAiPickWidget() {
               <span class="mono strong ${sClass}" style="font-size:13px;padding:2px 10px;border-radius:6px;background:${signal === 'BUY' ? 'rgba(16,185,129,.12)' : signal === 'SELL' ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)'}">${signal}</span>
             </div>
             <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name || item.ticker}</div>
-            <div style="font-size:11px;color:var(--text-dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${item.reason_labels?.[0] || item.fit_label || 'Likuiditas dan teknikal mendukung.'}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="mono strong ${Number(item.change_pct) >= 0 ? 'text-up' : 'text-down'}">${item.change_pct > 0 ? '+' : ''}${pf(item.change_pct)}</span>
+              <span style="font-size:10px;color:var(--text-dim)">${item.fit_label || ''}</span>
+            </div>
           </div>`;
         }).join('')}
       </div>
       <div style="text-align:right;margin-top:10px">
         <a href="#ai-picks" class="text-xs text-primary strong">Lihat Semua →</a>
-      </div>
-    </div>`;
+      </div>`;
+  }
 }
 
 async function loadNews(){
@@ -700,11 +746,50 @@ async function loadForeignFlow() {
         </div>
       </a>`;
     }).join('');
-    el.innerHTML = `<div class="text-xs text-dim mb-2">${netCount} net buy · ${otherCount} net sell</div><div class="flex-col gap-1">${html}</div>`;
+    el.innerHTML = `<div class="text-xs text-dim mb-2">${netCount} net buy · ${otherCount} net sell</div><div id="foreign-flow-chart" style="height:140px;margin-bottom:8px"></div><div class="flex-col gap-1">${html}</div>`;
+    // Render Chart.js bar chart if available
+    renderForeignFlowChart(items);
   } catch (e) {
     console.warn('loadForeignFlow failed', e);
     el.innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat</strong><span class="dashboard-widget-state-note">Data foreign flow tidak tersedia.</span></div>`;
   }
+}
+
+function renderForeignFlowChart(items) {
+  const canvas = document.getElementById('foreign-flow-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  // Destroy existing chart if any
+  if (canvas._chart) { canvas._chart.destroy(); }
+  const labels = items.map(r => r.ticker);
+  const ctx = document.createElement('canvas');
+  ctx.id = 'ff-chart-canvas';
+  canvas.innerHTML = '';
+  canvas.appendChild(ctx);
+  const colors = items.map(r => Number(r.net_value) >= 0 ? '#10b98180' : '#f8717180');
+  const borderColors = items.map(r => Number(r.net_value) >= 0 ? '#10b981' : '#f87171');
+  canvas._chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Net Foreign (Rp)',
+        data: items.map(r => Number(r.net_value) / 1e9),
+        backgroundColor: colors,
+        borderColor: borderColors,
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toFixed(1)}M` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => `${v.toFixed(0)}M` } },
+      },
+    },
+  });
 }
 // ─── Signal Widget ────────────────────────────
 async function loadSignalWidget() {

@@ -1116,8 +1116,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (badge) { badge.textContent = total > 99 ? '99+' : total; badge.style.display = 'flex'; }
             if (unseen.length && res.data[0] && (!window._lastAlertTs || res.data[0].id > window._lastAlertTs)) {
               unseen.slice(0, 3).forEach(a => {
-                const label = a.alert_type.replace('_', ' ');
-                showToast(`${a.ticker}: ${label} ${a.trigger_value} (${a.current_value})`, 'info', 8000);
+                if (a.alert_type && a.alert_type.startsWith('screener_match_')) {
+                  showToast(`🔍 Screener: ${Math.round(a.current_value)} saham cocok!`, 'info', 8000);
+                  // Refresh saved screener badges
+                  updateScreenerMatchBadges();
+                } else {
+                  const label = (a.alert_type || '').replace(/_/g, ' ');
+                  showToast(`${a.ticker}: ${label} ${a.trigger_value} (${a.current_value})`, 'info', 8000);
+                }
               });
               window._lastAlertTs = res.data[0].id;
               // Acknowledge all
@@ -1131,6 +1137,20 @@ document.addEventListener('DOMContentLoaded', () => {
       // Initial check after 10s, then every 120s
       setTimeout(checkTriggeredAlerts, 10000);
       setInterval(checkTriggeredAlerts, 120000);
+
+      // ─── Screener match badge updater ───────
+      window.updateScreenerMatchBadges = async function() {
+        try {
+          const res = await apiFetch('/screener/saved');
+          if (res?.data?.length) {
+            const matching = res.data.filter(s => s.match_count > 0);
+            if (matching.length > 0) {
+              const totalMatches = matching.reduce((sum, s) => sum + s.match_count, 0);
+              showToast(`🔍 ${matching.length} screener: ${totalMatches} total saham cocok`, 'info', 6000);
+            }
+          }
+        } catch (e) { /* silent */ }
+      };
 
       // More Drawer button
       const moreBtn = document.getElementById('bottom-more-btn');

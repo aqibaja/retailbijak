@@ -12,16 +12,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-try:
-    from database import StockIndex, Stock, get_db
-except ModuleNotFoundError:
-    from backend.database import StockIndex, Stock, get_db
-
-try:
-    from updaters.idx_index_updater import INDEX_META
-except ModuleNotFoundError:
-    from backend.updaters.idx_index_updater import INDEX_META
-
+from database import StockIndex, Stock, get_db
+from updaters.idx_index_updater import INDEX_META
 router = APIRouter()
 
 

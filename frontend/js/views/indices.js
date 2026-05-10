@@ -69,7 +69,7 @@ export function renderIndices(root) {
 
 async function loadIndices() {
     try {
-        const res = await apiFetch('/api/index-constituents');
+        const res = await apiFetch('/index-constituents');
         indicesData = res.data || [];
         document.getElementById('indices-skeleton').style.display = 'none';
         document.getElementById('indices-content').style.display = 'block';

@@ -6,22 +6,9 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-try:
-    from database import BrokerSummary, OHLCVDaily, Stock, UserSetting
-except ModuleNotFoundError:
-    from backend.database import BrokerSummary, OHLCVDaily, Stock, UserSetting
-
-try:
-    from routes.shared_stocks_helpers import _company_name, _display_ticker
-except ModuleNotFoundError:
-    from backend.routes.shared_stocks_helpers import _company_name, _display_ticker
-
-try:
-    from routes.shared_sqlite_helpers import _sqlite_datetime_literal
-except ModuleNotFoundError:
-    from backend.routes.shared_sqlite_helpers import _sqlite_datetime_literal
-
-
+from database import BrokerSummary, OHLCVDaily, Stock, UserSetting
+from routes.shared_stocks_helpers import _company_name, _display_ticker
+from routes.shared_sqlite_helpers import _sqlite_datetime_literal
 def _latest_ohlcv_snapshot(db: Session) -> tuple[Any, list[OHLCVDaily]]:
     latest_date_row = db.query(OHLCVDaily.date).order_by(OHLCVDaily.date.desc()).first()
     if not latest_date_row or not latest_date_row[0]:

@@ -18,11 +18,7 @@ import random
 import math
 from datetime import datetime, timezone
 
-try:
-    from database import Fundamental, OHLCVDaily, Stock, SessionLocal
-except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Stock, SessionLocal
-
+from database import Fundamental, OHLCVDaily, Stock, SessionLocal
 logger = logging.getLogger(__name__)
 
 # Sector → fundamental characteristics

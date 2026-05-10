@@ -50,6 +50,14 @@ export async function renderSettings(root) {
             </div>
 
             <div class="settings-section-head mt-8">
+              <h2>🏆 Pencapaian & Progres</h2>
+              <span>Streak login, XP, dan badge — makin aktif makin tinggi!</span>
+            </div>
+            <div id="gamification-card" class="settings-health-grid">
+              <div class="text-xs text-dim p-3">Memuat pencapaian...</div>
+            </div>
+
+            <div class="settings-section-head mt-8">
               <h2>🗄️ Kesehatan Data</h2>
               <span>Status pipeline dan ketersediaan data di database</span>
             </div>
@@ -172,9 +180,10 @@ export async function renderSettings(root) {
 
     if (!settings) showToast('Sedang memakai pengaturan cadangan', 'info');
     
-    // ─── 15.10.3 — Data Health Card ──────────────
-    loadDataHealth();
-    
+  lucide.createIcons();
+  loadDataHealth();
+  loadGamification();
+
     document.getElementById('save-settings').addEventListener('click', async () => {
         const btn = document.getElementById('save-settings');
         btn.disabled = true;
@@ -262,5 +271,17 @@ async function loadDataHealth() {
   } catch (e) {
     card.innerHTML = `<div class="text-xs text-dim p-3">⚠️ Gagal memuat: ${e.message || ''}</div>`;
   }
+}
+
+// ─── Gamification Card ──────────────────────────
+function loadGamification() {
+  const card = document.getElementById('gamification-card');
+  if (!card) return;
+  import('../gamification.js?v=20260510').then(mod => {
+    mod.trackLogin();
+    mod.renderGamificationCard(card);
+  }).catch(() => {
+    card.innerHTML = '<div class="text-xs text-dim p-3">⚠️ Gagal memuat pencapaian</div>';
+  });
 }
 
