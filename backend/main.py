@@ -87,6 +87,7 @@ try:
     from backend.routes.calendar import router as calendar_router
     from backend.routes.index_constituents import router as index_constituents_router
     from backend.routes.comments import router as comments_router
+    from backend.routes.auth import router as auth_router
 except ModuleNotFoundError:
     from routes.user import router as user_router
     from routes.system import router as system_router
@@ -103,6 +104,7 @@ except ModuleNotFoundError:
     from routes.calendar import router as calendar_router
     from routes.index_constituents import router as index_constituents_router
     from routes.comments import router as comments_router
+    from routes.auth import router as auth_router
 try:
     from backend.routes.macro import router as macro_router
 except ModuleNotFoundError:
@@ -147,6 +149,7 @@ app.include_router(sectors_router)
 app.include_router(calendar_router)
 app.include_router(index_constituents_router)
 app.include_router(comments_router)
+app.include_router(auth_router)
 app.include_router(macro_router)
 app.include_router(portfolio_router)
 app.include_router(drawings_router)

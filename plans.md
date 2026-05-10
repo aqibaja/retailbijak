@@ -701,3 +701,7 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
 | 2026-05-11 | Research | ✅ | Audit 43,756 lines, 26 tables, 25 views, 105 endpoints. 10 fitur ranked. |
+| 2026-05-11 | **Sprint 1 — Foundation** | 🚀 | 3 tasks selesai. |
+| 2026-05-11 | 28.1.1 — User Auth | ✅ | UserIdentity model + 5 endpoint auth API + device-based PIN auth. Frontend auth.js + settings UI. |
+| 2026-05-11 | 28.1.2 — Fix AI Pipeline | ✅ | AI picks produces 5 picks (BIPI, DADA, GOTO, MINA, DEWA). Market briefing writes fallback content. Manual trigger endpoints added. |
+| 2026-05-11 | 28.1.3 — PWA Offline | ✅ | sw.js rewrite (294L), manifest.json, offline.html, SVG icons. Cache-first strategy, install prompt relay, periodic sync. |

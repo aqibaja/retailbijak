@@ -1,5 +1,6 @@
 import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260511';
 import { observeElements } from '../main.js?v=20260511';
+import { getDeviceId, getMyIdentity, setPin, updateNickname } from '../auth.js?v=20260511';
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
 const DEFAULT_PICKS_MODEL = 'google/gemma-4-26b-a4b-it';
@@ -174,6 +175,53 @@ export async function renderSettings(root) {
               <div class="settings-actions-row">
                 <button id="test-smtp" type="button" class="btn btn-secondary settings-save-btn" disabled>Test Connection</button>
                 <button id="save-smtp" type="button" class="btn btn-primary settings-save-btn">Simpan Email</button>
+              </div>
+            </div>
+
+            <div class="settings-section-head mt-8">
+              <h2>🔐 Keamanan Akun</h2>
+              <span>Identitas perangkat, PIN akses, dan nickname akun.</span>
+            </div>
+
+            <div class="settings-openrouter-stack">
+              <label class="settings-field-card" for="setting-device-id">
+                <span class="settings-field-label">Device ID</span>
+                <input id="setting-device-id" class="settings-text-input" type="text" readonly />
+              </label>
+
+              <label class="settings-field-card" for="setting-pin-status">
+                <span class="settings-field-label">Status PIN</span>
+                <input id="setting-pin-status" class="settings-text-input" type="text" readonly value="Memuat..." />
+              </label>
+
+              <div class="settings-section-head" style="margin-top:12px;margin-bottom:8px">
+                <span class="settings-field-label">Atur / Ubah PIN</span>
+              </div>
+              <label class="settings-field-card" for="setting-pin-new">
+                <span class="settings-field-label">PIN Baru</span>
+                <input id="setting-pin-new" class="settings-text-input" type="password" placeholder="Masukkan 6 digit PIN" maxlength="6" inputmode="numeric" />
+              </label>
+              <label class="settings-field-card" for="setting-pin-confirm">
+                <span class="settings-field-label">Konfirmasi PIN</span>
+                <input id="setting-pin-confirm" class="settings-text-input" type="password" placeholder="Ulangi PIN" maxlength="6" inputmode="numeric" />
+              </label>
+
+              <div class="settings-actions-row">
+                <span id="pin-status-text" class="text-xs text-dim mono strong settings-status-text"></span>
+                <button id="save-pin" type="button" class="btn btn-primary settings-save-btn">Simpan PIN</button>
+              </div>
+
+              <div class="settings-section-head" style="margin-top:12px;margin-bottom:8px">
+                <span class="settings-field-label">Nickname</span>
+              </div>
+              <label class="settings-field-card" for="setting-nickname">
+                <span class="settings-field-label">Nama Panggilan</span>
+                <input id="setting-nickname" class="settings-text-input" type="text" placeholder="Nama kamu" />
+              </label>
+
+              <div class="settings-actions-row">
+                <span id="nickname-status-text" class="text-xs text-dim mono strong settings-status-text"></span>
+                <button id="save-nickname" type="button" class="btn btn-primary settings-save-btn">Simpan Nickname</button>
               </div>
             </div>
           </div>
@@ -527,6 +575,113 @@ export async function renderSettings(root) {
       } finally {
         testSmtpBtn.disabled = false;
         testSmtpBtn.textContent = 'Test Connection';
+      }
+    });
+
+    // ─── 🔐 Keamanan Akun ──────────────────────────
+    const deviceIdInput = document.getElementById('setting-device-id');
+    const pinStatusInput = document.getElementById('setting-pin-status');
+    const pinNewInput = document.getElementById('setting-pin-new');
+    const pinConfirmInput = document.getElementById('setting-pin-confirm');
+    const savePinBtn = document.getElementById('save-pin');
+    const pinStatusText = document.getElementById('pin-status-text');
+    const nicknameInput = document.getElementById('setting-nickname');
+    const saveNicknameBtn = document.getElementById('save-nickname');
+    const nicknameStatusText = document.getElementById('nickname-status-text');
+
+    // Load device ID
+    const rawDeviceId = getDeviceId();
+    deviceIdInput.value = rawDeviceId.length > 12
+      ? rawDeviceId.slice(0, 6) + '••••' + rawDeviceId.slice(-4)
+      : '••••' + rawDeviceId.slice(-4);
+
+    // Load identity data
+    getMyIdentity().then(identity => {
+      if (identity) {
+        // PIN status
+        const pinActive = identity.has_pin;
+        pinStatusInput.value = pinActive ? '✅ Aktif' : '❌ Tidak aktif';
+
+        // Nickname
+        nicknameInput.value = identity.nickname || '';
+      } else {
+        pinStatusInput.value = '⚠️ Gagal memuat';
+      }
+    }).catch(() => {
+      pinStatusInput.value = '⚠️ Gagal memuat';
+    });
+
+    // Save PIN
+    savePinBtn.addEventListener('click', async () => {
+      const newPin = pinNewInput.value.trim();
+      const confirmPin = pinConfirmInput.value.trim();
+
+      if (!newPin || !confirmPin) {
+        pinStatusText.textContent = '❌ Isi kedua field PIN';
+        return;
+      }
+      if (newPin !== confirmPin) {
+        pinStatusText.textContent = '❌ PIN tidak cocok';
+        return;
+      }
+      if (newPin.length < 4 || newPin.length > 6) {
+        pinStatusText.textContent = '❌ PIN harus 4–6 digit';
+        return;
+      }
+
+      savePinBtn.disabled = true;
+      savePinBtn.textContent = 'Menyimpan...';
+
+      try {
+        const res = await setPin(newPin);
+        if (res?.ok) {
+          pinStatusText.textContent = '✅ PIN berhasil disimpan';
+          pinStatusInput.value = '✅ Aktif';
+          pinNewInput.value = '';
+          pinConfirmInput.value = '';
+          showToast('PIN berhasil disimpan', 'success');
+        } else {
+          pinStatusText.textContent = '❌ ' + (res?.error || 'Gagal menyimpan PIN');
+          showToast('Gagal menyimpan PIN', 'error');
+        }
+      } catch (e) {
+        console.warn('setPin failed', e);
+        pinStatusText.textContent = '❌ Gagal menyimpan PIN';
+        showToast('Gagal menyimpan PIN', 'error');
+      } finally {
+        savePinBtn.disabled = false;
+        savePinBtn.textContent = 'Simpan PIN';
+      }
+    });
+
+    // Save Nickname
+    saveNicknameBtn.addEventListener('click', async () => {
+      const name = nicknameInput.value.trim();
+
+      if (!name) {
+        nicknameStatusText.textContent = '❌ Nickname tidak boleh kosong';
+        return;
+      }
+
+      saveNicknameBtn.disabled = true;
+      saveNicknameBtn.textContent = 'Menyimpan...';
+
+      try {
+        const res = await updateNickname(name);
+        if (res?.ok) {
+          nicknameStatusText.textContent = '✅ Nickname berhasil disimpan';
+          showToast('Nickname berhasil disimpan', 'success');
+        } else {
+          nicknameStatusText.textContent = '❌ ' + (res?.error || 'Gagal menyimpan nickname');
+          showToast('Gagal menyimpan nickname', 'error');
+        }
+      } catch (e) {
+        console.warn('updateNickname failed', e);
+        nicknameStatusText.textContent = '❌ Gagal menyimpan nickname';
+        showToast('Gagal menyimpan nickname', 'error');
+      } finally {
+        saveNicknameBtn.disabled = false;
+        saveNicknameBtn.textContent = 'Simpan Nickname';
       }
     });
 }

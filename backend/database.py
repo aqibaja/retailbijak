@@ -349,6 +349,17 @@ class MacroIndicator(Base):
     )
 
 
+class UserIdentity(Base):
+    """Device-based identity for auth — no password, just device_id + optional PIN."""
+    __tablename__ = "user_identities"
+    device_id = Column(String, primary_key=True, index=True)  # UUID v4
+    pin_hash = Column(String, nullable=True)  # SHA-256(salt + pin), None = no PIN
+    pin_salt = Column(String, nullable=True)  # Random salt for PIN hashing
+    nickname = Column(String, default="Trader")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_seen = Column(DateTime, default=datetime.utcnow)
+
+
 class ChartDrawing(Base):
     __tablename__ = "chart_drawings"
 

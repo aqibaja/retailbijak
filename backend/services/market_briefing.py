@@ -25,19 +25,25 @@ def _get_market_context(db) -> dict:
     # Latest OHLCV for IHSG (approximate from top stocks)
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
-    # Top gainers/losers today
-    top_rows = (
+    # Get all rows for today sorted by ticker
+    all_rows = (
         db.query(OHLCVDaily)
         .filter(OHLCVDaily.date == today)
-        .order_by(OHLCVDaily.change_pct.desc())
-        .limit(5)
         .all()
     )
+
+    # Compute change_pct on the fly (not a column)
+    def get_change_pct(r):
+        if r.open and r.open > 0 and r.close:
+            return round(((r.close - r.open) / r.open) * 100, 2)
+        return 0.0
+
+    sorted_rows = sorted(all_rows, key=lambda r: abs(get_change_pct(r)), reverse=True)
     gainers = []
     losers = []
-    for r in top_rows:
+    for r in sorted_rows[:5]:
         name = r.ticker
-        chg = round(float(r.change_pct or 0), 2)
+        chg = get_change_pct(r)
         if chg > 0:
             gainers.append(f'{name}({chg:+.2f}%)')
         elif chg < 0:
@@ -59,8 +65,9 @@ def _get_market_context(db) -> dict:
     )
     for row in latest_ohlcv:
         sec = sector_map.get(row.ticker, 'Other')
-        if row.change_pct is not None:
-            sectors.setdefault(sec, []).append(float(row.change_pct))
+        chg = get_change_pct(row)
+        if abs(chg) > 0.01:
+            sectors.setdefault(sec, []).append(chg)
 
     sector_avg = {}
     for sec, changes in sectors.items():
@@ -149,6 +156,49 @@ Buat ringkasan pasar IDX hari ini."""
     }
 
 
+def _build_fallback_briefing(context: dict) -> dict[str, Any]:
+    """Build a text briefing from market data without LLM."""
+    date_str = context.get('date', 'hari ini')
+    gainers = context.get('gainers', 'tidak tersedia')
+    losers = context.get('losers', 'tidak tersedia')
+    sectors = context.get('sectors', 'tidak tersedia')
+    total = context.get('total_stocks', 0)
+
+    content_parts = [
+        f"Ringkasan Pasar IDX — {date_str}",
+        f"",
+        f"Data {total} saham tercatat menunjukkan pergerakan sebagai berikut:",
+    ]
+    gainer_items: list[str] = []
+    loser_items: list[str] = []
+    if gainers and gainers != 'tidak tersedia':
+        content_parts.append(f"Top gainers: {gainers}")
+        gainer_items = [g.strip() for g in gainers.split(',') if g.strip()]
+    if losers and losers != 'tidak tersedia':
+        content_parts.append(f"Top losers: {losers}")
+        loser_items = [l.strip() for l in losers.split(',') if l.strip()]
+    if sectors and sectors != 'tidak tersedia':
+        content_parts.append(f"Performa sektor: {sectors}")
+
+    content_parts.append(f"")
+    content_parts.append("Ringkasan ini dihasilkan secara otomatis dari data pasar (tanpa LLM).")
+
+    # Determine sentiment from gainers vs losers info
+    sentiment = 'neutral'
+    if len(gainer_items) > len(loser_items) and gainer_items:
+        sentiment = 'bullish'
+    elif len(loser_items) > len(gainer_items) and loser_items:
+        sentiment = 'bearish'
+
+    content = '\n'.join(content_parts)
+    summary = f"Pasar {date_str}: {len(gainer_items)} gainers, {len(loser_items)} losers teratas."
+    return {
+        'content': content,
+        'summary': summary,
+        'sentiment': sentiment,
+    }
+
+
 def generate_briefing(db, force: bool = False) -> dict[str, Any]:
     """Generate daily market briefing. If force=False, skip if already exists today."""
     from datetime import datetime, timezone
@@ -176,12 +226,33 @@ def generate_briefing(db, force: bool = False) -> dict[str, Any]:
     # Get config
     config = get_openrouter_config(db)
     if not config.get('enabled'):
+        # Fallback: generate briefing from market data without LLM
+        context = _get_market_context(db)
+        fallback = _build_fallback_briefing(context)
+        briefing = MarketBriefing(
+            trading_date=today,
+            content=fallback['content'],
+            summary=fallback['summary'],
+            model='fallback',
+            ihsg_change=context.get('gainers', ''),
+            top_gainer=context.get('gainers', ''),
+            top_loser=context.get('losers', ''),
+            sentiment=fallback.get('sentiment', 'neutral'),
+            runtime_state='ok',
+            runtime_message='LLM tidak dikonfigurasi — fallback ke ringkasan data pasar',
+        )
+        db.add(briefing)
+        db.commit()
+        logger.info('Market briefing fallback generated for %s (no LLM)', today)
         return {
-            'ok': False,
+            'ok': True,
             'date': today,
-            'source': 'llm',
-            'state': 'disabled',
-            'message': 'OpenRouter API key tidak dikonfigurasi. Atur di Settings > AI.',
+            'source': 'fallback',
+            'state': 'ok',
+            'content': fallback['content'],
+            'summary': fallback['summary'],
+            'sentiment': fallback['sentiment'],
+            'model': 'fallback',
         }
 
     api_key = config['api_key']
@@ -197,17 +268,19 @@ def generate_briefing(db, force: bool = False) -> dict[str, Any]:
     except RuntimeError as e:
         msg = str(e)
         is_rate = 'RATE_LIMIT' in msg
+        # Build a fallback briefing when LLM fails
+        fallback = _build_fallback_briefing(context)
         db.add(MarketBriefing(
             trading_date=today,
-            content='',
+            content=fallback['content'],
             summary=f'Gagal: {msg[:200]}',
             model=model,
             runtime_state='rate_limited' if is_rate else 'error',
             runtime_message=msg[:300],
-            sentiment='neutral',
+            sentiment=fallback.get('sentiment', 'neutral'),
         ))
         db.commit()
-        return {'ok': False, 'date': today, 'state': 'error', 'message': msg}
+        return {'ok': False, 'date': today, 'state': 'error', 'message': msg, 'content': fallback['content']}
 
     # Save to DB
     briefing = MarketBriefing(

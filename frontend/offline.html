@@ -63,11 +63,10 @@
 <body>
   <div class="offline-icon">📡</div>
   <h1>Kamu sedang offline</h1>
-  <p>RetailBijak membutuhkan koneksi internet untuk menampilkan data pasar terbaru. Data yang tersimpan di cache masih bisa diakses.</p>
+  <p>Kamu sedang offline. Beberapa fitur mungkin tidak tersedia.</p>
   <button class="btn" onclick="window.location.reload()" id="retry-btn">🔄 Coba Lagi</button>
   <p class="sub-text">Halaman ini akan otomatis dimuat ulang saat koneksi tersambung kembali.</p>
   <script>
-    // Auto-reload when back online
     window.addEventListener('online', () => window.location.reload());
     document.getElementById('retry-btn').addEventListener('click', () => window.location.reload());
   </script>

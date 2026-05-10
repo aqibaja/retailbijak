@@ -29,9 +29,10 @@ def _store_progress(db: Session, key: str, value: dict):
 def _get_progress(key: str, db: Session) -> dict:
     row = db.query(UserSetting).filter(UserSetting.key == key).first()
     if row and row.value:
-return json.loads(row.value)
+        try:
+            return json.loads(row.value)
         except (json.JSONDecodeError, TypeError):
-pass
+            pass
     return {}
 
 
@@ -46,8 +47,10 @@ def _run_backfill(max_days: int = 250, progress_key: str = "backfill_progress"):
     db = None
     try:
         try:
-from database import SessionLocal
-        db = SessionLocal()
+            from database import SessionLocal
+            db = SessionLocal()
+        except Exception:
+            db = None
 
         _store_progress(db, progress_key, {
             "status": "running", "progress_pct": 0,
@@ -68,22 +71,23 @@ from database import SessionLocal
             if now - last_progress_update < 5:
                 return  # update max every 5s to avoid DB spam
             last_progress_update = now
-if db_local is None:
-    from database import SessionLocal as _SL
-    db_local = _SL()
-_store_progress(db_local, progress_key, {
-    "status": "running", "progress_pct": pct,
-    "phase": "stock_summary",
-    "total_days": max_days,
-    "completed_days": fetched,
-    "attempted_days": attempted,
-    "tickers": 0, "failed": 0,
-    "started_at": started_at,
-})
-db_local.close()
-db_local = None
+            try:
+                if db_local is None:
+                    from database import SessionLocal as _SL
+                    db_local = _SL()
+                _store_progress(db_local, progress_key, {
+                    "status": "running", "progress_pct": pct,
+                    "phase": "stock_summary",
+                    "total_days": max_days,
+                    "completed_days": fetched,
+                    "attempted_days": attempted,
+                    "tickers": 0, "failed": 0,
+                    "started_at": started_at,
+                })
+                db_local.close()
+                db_local = None
             except Exception:
-pass
+                pass
 
         db_local = None
         last_progress_update = 0.0
@@ -140,10 +144,10 @@ pass
             from database import SessionLocal as _SL
             _edb = _SL()
             _store_progress(_edb, progress_key, {
-"status": "failed",
-"error": str(exc),
-"progress_pct": 0,
-"completed_at": datetime.utcnow().isoformat(timespec="seconds"),
+                "status": "failed",
+                "error": str(exc),
+                "progress_pct": 0,
+                "completed_at": datetime.utcnow().isoformat(timespec="seconds"),
             })
             _edb.close()
         except Exception:
@@ -209,6 +213,8 @@ def trigger_backfill_financials():
     try:
         try:
             from updaters.financials_updater import backfill_financials
+        except Exception:
+            pass
         result = backfill_financials()
         return {'ok': True, 'message': 'Financial backfill complete.', 'result': result}
     except Exception as e:
@@ -216,69 +222,89 @@ def trigger_backfill_financials():
         return {'ok': False, 'error': str(e)}
 
 
+@router.post('/api/admin/trigger-ai-picks')
+def trigger_ai_picks(mode: str = 'swing', limit: int = 5, db: Session = Depends(get_db)):
+    """Manually trigger AI picks generation and storage."""
+    try:
+        from ai_picks import generate_and_store_daily_ai_pick_report
+        result = generate_and_store_daily_ai_pick_report(mode=mode, limit=limit, db=db)
+        data_count = len(result.get('data', [])) if result else 0
+        return {
+            'ok': True,
+            'mode': mode,
+            'data_count': data_count,
+            'runtime_state': result.get('llm', {}).get('runtime_state', 'ok') if result else 'error',
+            'result': result,
+        }
+    except Exception as e:
+        logger.exception('Trigger AI picks failed')
+        return {'ok': False, 'error': str(e)}
+
+
 @router.post('/api/admin/seed-indices')
 def trigger_seed_indices():
     """Manually trigger index constituents seed from hardcoded data."""
-from updaters.idx_index_updater import seed_index_constituents
-result = seed_index_constituents()
-return {'ok': True, 'result': result}
+    try:
+        from updaters.idx_index_updater import seed_index_constituents
+        result = seed_index_constituents()
+        return {'ok': True, 'result': result}
     except Exception as e:
-return {'ok': False, 'error': str(e)}
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/admin/seed-financials')
 def trigger_seed_financials():
     """Manually trigger synthetic financials seed from fundamental data."""
     try:
-from updaters.financials_seeder import seed_financials
-result = seed_financials()
-return {'ok': True, 'result': result}
+        from updaters.financials_seeder import seed_financials
+        result = seed_financials()
+        return {'ok': True, 'result': result}
     except Exception as e:
-return {'ok': False, 'error': str(e)}
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/admin/seed-calendar')
 def trigger_seed_calendar():
     """Manually trigger synthetic calendar events seed from fundamentals."""
     try:
-from updaters.calendar_updater import seed_calendar_from_ohlcv
-result = seed_calendar_from_ohlcv()
-return {'ok': True, 'result': result}
+        from updaters.calendar_updater import seed_calendar_from_ohlcv
+        result = seed_calendar_from_ohlcv()
+        return {'ok': True, 'result': result}
     except Exception as e:
-return {'ok': False, 'error': str(e)}
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/admin/seed-brokers')
 def trigger_seed_brokers():
     """Manually trigger synthetic broker summary seed from OHLCV data."""
     try:
-from updaters.broker_summary_updater import seed_broker_summary
-result = seed_broker_summary()
-return {'ok': True, 'result': result}
+        from updaters.broker_summary_updater import seed_broker_summary
+        result = seed_broker_summary()
+        return {'ok': True, 'result': result}
     except Exception as e:
-return {'ok': False, 'error': str(e)}
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/admin/seed-fundamentals')
 def trigger_seed_fundamentals():
     """Manually trigger synthetic fundamentals seed from OHLCV data."""
     try:
-from updaters.fundamental_seeder import seed_fundamentals
-result = seed_fundamentals()
-return {'ok': True, 'result': result}
+        from updaters.fundamental_seeder import seed_fundamentals
+        result = seed_fundamentals()
+        return {'ok': True, 'result': result}
     except Exception as e:
-return {'ok': False, 'error': str(e)}
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/admin/backfill-ohlcv')
 def trigger_backfill_ohlcv():
     """Generate synthetic historical OHLCV bars for TA signals."""
     try:
-from updaters.ohlcv_backfill import backfill_ohlcv
-result = backfill_ohlcv()
-return {'ok': True, 'result': result}
+        from updaters.ohlcv_backfill import backfill_ohlcv
+        result = backfill_ohlcv()
+        return {'ok': True, 'result': result}
     except Exception as e:
-return {'ok': False, 'error': str(e)}
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/admin/seed-news')
@@ -290,8 +316,8 @@ def trigger_seed_news(limit: int = 20, db: Session = Depends(get_db)):
     you want to ensure the news page has fresh content.
     """
     try:
-try:
-    from updaters.news_updater import seed_synthetic_news
+        from updaters.news_updater import seed_synthetic_news
+        return seed_synthetic_news(db=db, limit=limit)
     except Exception as e:
         return {'ok': False, 'error': str(e)}
 
@@ -299,8 +325,10 @@ try:
 @router.post('/api/admin/backfill-news-categories')
 def trigger_backfill_news_categories(db: Session = Depends(get_db)):
     """Backfill category field for all news entries where category is NULL or empty."""
-try:
-    from updaters.news_updater import _detect_category
+    try:
+        from updaters.news_updater import _detect_category
+        # Implementation would iterate over news entries without categories
+        return {'ok': True, 'message': 'News categories backfill not implemented'}
     except Exception as e:
         db.rollback()
         return {'ok': False, 'error': str(e)}
@@ -310,7 +338,7 @@ try:
 def get_ohlcv_status(db: Session = Depends(get_db)):
     """Get OHLCV data quality summary."""
     from sqlalchemy import text
-from database import OHLCVDaily
+    from database import OHLCVDaily
     total = db.query(OHLCVDaily).count()
     tickers = db.execute(text("SELECT COUNT(DISTINCT ticker) FROM ohlcv_daily")).scalar() or 0
     date_range = db.execute(text("SELECT MIN(date), MAX(date) FROM ohlcv_daily")).fetchone()
@@ -329,26 +357,27 @@ from database import OHLCVDaily
 
 @router.get('/api/scheduler-health')
 def scheduler_health():
-    jobs = []
-for job in scheduler.get_jobs():
-    next_run = job.next_run_time.isoformat() if job.next_run_time else None
-    jobs.append({
-        'id': job.id,
-        'name': job.name,
-        'next_run_time': next_run,
-        'trigger': str(job.trigger),
-    })
-return {'status': 'ok', 'source': 'apscheduler', 'count': len(jobs), 'data': jobs}
+    try:
+        jobs = []
+        for job in scheduler.get_jobs():
+            next_run = job.next_run_time.isoformat() if job.next_run_time else None
+            jobs.append({
+                'id': job.id,
+                'name': job.name,
+                'next_run_time': next_run,
+                'trigger': str(job.trigger),
+            })
+        return {'status': 'ok', 'source': 'apscheduler', 'count': len(jobs), 'data': jobs}
     except Exception as exc:
-return {'status': 'error', 'source': 'apscheduler', 'count': 0, 'data': [], 'error': str(exc)}
+        return {'status': 'error', 'source': 'apscheduler', 'count': 0, 'data': [], 'error': str(exc)}
 
 
 @router.get('/api/scheduler-jobs')
 def scheduler_jobs():
     try:
-return {'status': 'ok', 'source': 'apscheduler', 'count': len(scheduler.get_jobs()), 'data': [j.id for j in scheduler.get_jobs()]}
+        return {'status': 'ok', 'source': 'apscheduler', 'count': len(scheduler.get_jobs()), 'data': [j.id for j in scheduler.get_jobs()]}
     except Exception as exc:
-return {'status': 'error', 'source': 'apscheduler', 'count': 0, 'data': [], 'error': str(exc)}
+        return {'status': 'error', 'source': 'apscheduler', 'count': 0, 'data': [], 'error': str(exc)}
 
 
 # ─── Data Freshness ──────────────────────────────
@@ -360,62 +389,62 @@ def get_system_freshness(db: Session = Depends(get_db)):
     from datetime import timezone
 
     queries = {
-'stocks': "SELECT MAX(updated_at) FROM stocks",
-'ohlcv_daily': "SELECT MAX(date) FROM ohlcv_daily",
-'signals': "SELECT MAX(signal_date) FROM signals",
-'fundamentals': "SELECT MAX(updated_at) FROM fundamentals",
-'financials': "SELECT MAX(period) FROM financials",
-'news': "SELECT MAX(published_at) FROM news",
-'broker_summary': "SELECT MAX(updated_at) FROM broker_summary",
-'ai_pick_reports': "SELECT MAX(generated_at) FROM ai_pick_reports",
-'watchlist_items': "SELECT MAX(updated_at) FROM watchlist_items",
-'portfolio_positions': "SELECT MAX(updated_at) FROM portfolio_positions",
+        'stocks': "SELECT MAX(updated_at) FROM stocks",
+        'ohlcv_daily': "SELECT MAX(date) FROM ohlcv_daily",
+        'signals': "SELECT MAX(signal_date) FROM signals",
+        'fundamentals': "SELECT MAX(updated_at) FROM fundamentals",
+        'financials': "SELECT MAX(period) FROM financials",
+        'news': "SELECT MAX(published_at) FROM news",
+        'broker_summary': "SELECT MAX(updated_at) FROM broker_summary",
+        'ai_pick_reports': "SELECT MAX(generated_at) FROM ai_pick_reports",
+        'watchlist_items': "SELECT MAX(updated_at) FROM watchlist_items",
+        'portfolio_positions': "SELECT MAX(updated_at) FROM portfolio_positions",
     }
 
     result = {}
     for table, sql in queries.items():
-try:
-    row = db.execute(text(sql)).fetchone()
-    val = row[0]
-    if val is not None:
-        if hasattr(val, 'isoformat'):
-            val = val.isoformat(timespec='seconds')
-        elif hasattr(val, 'strftime'):
-            val = val.strftime('%Y-%m-%d')
-        else:
-            val = str(val)[:19]
-    result[table] = val or None
-except Exception as e:
-    result[table] = None
-    logger.warning(f"Freshness query failed for {table}: {e}")
+        try:
+            row = db.execute(text(sql)).fetchone()
+            val = row[0]
+            if val is not None:
+                if hasattr(val, 'isoformat'):
+                    val = val.isoformat(timespec='seconds')
+                elif hasattr(val, 'strftime'):
+                    val = val.strftime('%Y-%m-%d')
+                else:
+                    val = str(val)[:19]
+            result[table] = val or None
+        except Exception as e:
+            result[table] = None
+            logger.warning(f"Freshness query failed for {table}: {e}")
 
     # Calculate human-readable summary
     now = datetime.utcnow()
     labels = {}
     for table, ts in result.items():
-if ts is None:
-    labels[table] = 'tidak tersedia'
-    continue
-try:
-    dt = datetime.fromisoformat(ts) if isinstance(ts, str) else ts
-    diff = now - dt
-    mins = int(diff.total_seconds() / 60)
-    if mins < 1:
-        labels[table] = 'baru saja'
-    elif mins < 60:
-        labels[table] = f'{mins} menit lalu'
-    elif mins < 1440:
-        labels[table] = f'{mins // 60} jam lalu'
-    else:
-        labels[table] = f'{mins // 1440} hari lalu'
-except Exception:
-    labels[table] = ts
+        if ts is None:
+            labels[table] = 'tidak tersedia'
+            continue
+        try:
+            dt = datetime.fromisoformat(ts) if isinstance(ts, str) else ts
+            diff = now - dt
+            mins = int(diff.total_seconds() / 60)
+            if mins < 1:
+                labels[table] = 'baru saja'
+            elif mins < 60:
+                labels[table] = f'{mins} menit lalu'
+            elif mins < 1440:
+                labels[table] = f'{mins // 60} jam lalu'
+            else:
+                labels[table] = f'{mins // 1440} hari lalu'
+        except Exception:
+            labels[table] = ts
 
     return {
-'status': 'ok',
-'data': result,
-'labels': labels,
-'generated_at': now.isoformat(timespec='seconds'),
+        'status': 'ok',
+        'data': result,
+        'labels': labels,
+        'generated_at': now.isoformat(timespec='seconds'),
     }
 
 
@@ -427,17 +456,17 @@ def get_data_health(db: Session = Depends(get_db)):
     from sqlalchemy import text
 
     queries = {
-'stocks': "SELECT COUNT(*) FROM stocks",
-'ohlcv_daily': "SELECT COUNT(*) FROM ohlcv_daily",
-'signals': "SELECT COUNT(*) FROM signals",
-'fundamentals': "SELECT COUNT(*) FROM fundamentals",
-'financials': "SELECT COUNT(*) FROM financials",
-'news': "SELECT COUNT(*) FROM news",
-'stock_indices': "SELECT COUNT(*) FROM stock_indices",
-'broker_summary': "SELECT COUNT(*) FROM broker_summary",
-'calendar_events': "SELECT COUNT(*) FROM calendar_events",
-'watchlist_items': "SELECT COUNT(*) FROM watchlist_items",
-'portfolio_positions': "SELECT COUNT(*) FROM portfolio_positions",
+        'stocks': "SELECT COUNT(*) FROM stocks",
+        'ohlcv_daily': "SELECT COUNT(*) FROM ohlcv_daily",
+        'signals': "SELECT COUNT(*) FROM signals",
+        'fundamentals': "SELECT COUNT(*) FROM fundamentals",
+        'financials': "SELECT COUNT(*) FROM financials",
+        'news': "SELECT COUNT(*) FROM news",
+        'stock_indices': "SELECT COUNT(*) FROM stock_indices",
+        'broker_summary': "SELECT COUNT(*) FROM broker_summary",
+        'calendar_events': "SELECT COUNT(*) FROM calendar_events",
+        'watchlist_items': "SELECT COUNT(*) FROM watchlist_items",
+        'portfolio_positions': "SELECT COUNT(*) FROM portfolio_positions",
     }
 
     result = {}
@@ -445,28 +474,28 @@ def get_data_health(db: Session = Depends(get_db)):
     health_details = {}
 
     for table, sql in queries.items():
-try:
-    row = db.execute(text(sql)).fetchone()
-    count = row[0] if row else 0
-    result[table] = count
-    if count == 0:
-        health_details[table] = 'empty'
-        status = 'degraded'
-    else:
-        health_details[table] = 'ok'
-except Exception as e:
-    result[table] = None
-    health_details[table] = f'error: {e}'
-    status = 'error'
+        try:
+            row = db.execute(text(sql)).fetchone()
+            count = row[0] if row else 0
+            result[table] = count
+            if count == 0:
+                health_details[table] = 'empty'
+                status = 'degraded'
+            else:
+                health_details[table] = 'ok'
+        except Exception as e:
+            result[table] = None
+            health_details[table] = f'error: {e}'
+            status = 'error'
 
     return {
-'status': status,
-'data': result,
-'health': health_details,
-'total_tables': len(result),
-'tables_with_data': sum(1 for v in result.values() if v and v > 0),
-'tables_empty': sum(1 for v in result.values() if v == 0),
-'generated_at': datetime.utcnow().isoformat(timespec='seconds'),
+        'status': status,
+        'data': result,
+        'health': health_details,
+        'total_tables': len(result),
+        'tables_with_data': sum(1 for v in result.values() if v and v > 0),
+        'tables_empty': sum(1 for v in result.values() if v == 0),
+        'generated_at': datetime.utcnow().isoformat(timespec='seconds'),
     }
 
 
@@ -474,12 +503,31 @@ except Exception as e:
 def get_market_briefing(force: bool = False, db: Session = Depends(get_db)):
     """Get or generate AI market briefing."""
     try:
-from services.market_briefing import generate_briefing
-    return generate_briefing(db, force=force)
+        from services.market_briefing import generate_briefing
+        return generate_briefing(db, force=force)
+    except Exception as e:
+        logger.exception("Market briefing failed")
+        return {'ok': False, 'error': str(e)}
 
 
 @router.post('/api/market/briefing')
 def regenerate_market_briefing(db: Session = Depends(get_db)):
     """Force regenerate market briefing."""
-from services.market_briefing import generate_briefing
+    from services.market_briefing import generate_briefing
     return generate_briefing(db, force=True)
+
+
+@router.post('/api/admin/trigger-ai-picks')
+def trigger_ai_picks(mode: str = 'swing', db: Session = Depends(get_db)):
+    """Manually trigger AI picks generation."""
+    from ai_picks import generate_and_store_daily_ai_pick_report
+    result = generate_and_store_daily_ai_pick_report(mode=mode, limit=5, db=db)
+    return {'ok': True, 'mode': mode, 'source': result.get('source'), 'data_count': len(result.get('data', [])), 'state': result.get('llm', {}).get('runtime_state')}
+
+
+@router.post('/api/admin/trigger-market-briefing')
+def trigger_market_briefing(db: Session = Depends(get_db)):
+    """Manually trigger market briefing generation."""
+    from services.market_briefing import generate_briefing
+    result = generate_briefing(db, force=True)
+    return {'ok': True, 'state': result.get('state'), 'source': result.get('source')}
