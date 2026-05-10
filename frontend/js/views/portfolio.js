@@ -235,6 +235,7 @@ export async function renderPortfolio(root, activeTab) {
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="wl-news-tab-btn" style="font-size:11px">📰 News</button>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="rebalance-tab-btn" style="font-size:11px">⚖️ Rebalance</button>
               <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="perf-chart-btn" style="font-size:11px">📈 Kinerja</button>
+              <button type="button" class="btn portfolio-tab-btn ${isPort ? '' : ''}" id="whatif-tab-btn" style="font-size:11px">🔮 What-If</button>
               <span id="wl-news-badge" class="badge badge-warning hidden ml-1" style="font-size:9px;padding:1px 5px;align-self:center">0</span>
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
@@ -269,6 +270,16 @@ export async function renderPortfolio(root, activeTab) {
         stopWatchlistSSE();
         stopPortfolioSSE();
         renderPerfChart(root.querySelector('#tab-content'));
+      });
+    }
+
+    // What-If Simulator tab handler
+    const whatifBtn = root.querySelector('#whatif-tab-btn');
+    if (whatifBtn) {
+      whatifBtn.addEventListener('click', () => {
+        stopWatchlistSSE();
+        stopPortfolioSSE();
+        renderWhatIfTab(root.querySelector('#tab-content'));
       });
     }
 
@@ -1522,4 +1533,108 @@ async function renderPerfChart(el) {
   } catch (e) {
     el.innerHTML = `<div class="empty-state-card"><div class="empty-icon">⚠️</div><h3>Gagal Memuat Grafik</h3><p>${e.message || 'Coba refresh halaman.'}</p></div>`;
   }
+}
+
+// ─── What-If Simulator ──────────────────────────
+export async function renderWhatIfTab(el) {
+  if (!el) return;
+  const today = new Date().toISOString().slice(0, 10);
+  el.innerHTML = `
+    <div class="whatif-wrap" style="padding:16px;max-width:640px;margin:0 auto">
+      <h3 style="margin:0 0 4px;font-size:1rem;font-weight:800">🔮 What-If Simulator</h3>
+      <p class="text-sm text-dim" style="margin:0 0 16px">Simulasikan hypothetical buy/sell untuk lihat potensi return.</p>
+      <form id="whatif-form" class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs text-dim strong">Ticker</span>
+          <input type="text" name="ticker" class="input" placeholder="BBCA" required autocomplete="off" />
+        </label>
+        <div class="flex gap-3">
+          <label class="flex flex-col gap-1 flex-1">
+            <span class="text-xs text-dim strong">Buy Price (Rp)</span>
+            <input type="number" name="buy_price" class="input" placeholder="10000" min="0" step="1" required />
+          </label>
+          <label class="flex flex-col gap-1 flex-1">
+            <span class="text-xs text-dim strong">Shares</span>
+            <input type="number" name="shares" class="input" placeholder="100" min="1" step="1" required />
+          </label>
+        </div>
+        <div class="flex gap-3">
+          <label class="flex flex-col gap-1 flex-1">
+            <span class="text-xs text-dim strong">Buy Date <span class="text-dim">(opsional)</span></span>
+            <input type="date" name="buy_date" class="input" />
+          </label>
+          <label class="flex flex-col gap-1 flex-1">
+            <span class="text-xs text-dim strong">Sell Date <span class="text-dim">(opsional)</span></span>
+            <input type="date" name="sell_date" class="input" value="${today}" />
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-start">🔮 Hitung</button>
+      </form>
+      <div id="whatif-results" class="hidden" style="margin-top:20px"></div>
+    </div>
+  `;
+
+  const form = el.querySelector('#whatif-form');
+  const resultsEl = el.querySelector('#whatif-results');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = {};
+    for (const [k, v] of fd.entries()) {
+      if (v) payload[k] = k === 'buy_price' || k === 'shares' ? Number(v) : v;
+    }
+
+    resultsEl.innerHTML = '<div class="skeleton" style="height:120px;margin:0.5rem 0"></div>';
+    resultsEl.classList.remove('hidden');
+
+    try {
+      const res = await fetch('/api/portfolio/what-if', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        showToast(errBody?.message || `HTTP ${res.status}`, 'error');
+        resultsEl.innerHTML = '';
+        resultsEl.classList.add('hidden');
+        return;
+      }
+      const data = await res.json();
+
+      if (!data || data.error) {
+        showToast(data?.message || data?.error || 'Gagal menghitung simulasi', 'error');
+        resultsEl.innerHTML = '';
+        resultsEl.classList.add('hidden');
+        return;
+      }
+
+      const r = data.data || data;
+      const totalInvest = r.total_invested ?? r.totalInvest;
+      const finalValue = r.final_value ?? r.finalValue;
+      const pnl = r.pnl ?? r.profit_loss ?? 0;
+      const pnlPct = r.pnl_pct ?? r.pnlPct ?? 0;
+      const cagr = r.cagr ?? 0;
+      const period = r.period ?? r.period_days ?? '—';
+
+      const pnlCls = pnl >= 0 ? 'text-up' : 'text-down';
+      const pnlSign = pnl >= 0 ? '+' : '';
+
+      resultsEl.innerHTML = `
+        <div class="portfolio-kpi-grid">
+          <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Investasi</span><strong class="portfolio-kpi-value">${money(totalInvest)}</strong></div>
+          <div class="portfolio-kpi"><span class="portfolio-kpi-label">Nilai Akhir</span><strong class="portfolio-kpi-value">${money(finalValue)}</strong></div>
+          <div class="portfolio-kpi"><span class="portfolio-kpi-label">P&L Rp</span><strong class="portfolio-kpi-value ${pnlCls}">${pnlSign}${money(pnl)}</strong></div>
+          <div class="portfolio-kpi"><span class="portfolio-kpi-label">P&L %</span><strong class="portfolio-kpi-value ${pnlCls}">${pnlSign}${pf(pnlPct)}</strong></div>
+          <div class="portfolio-kpi"><span class="portfolio-kpi-label">CAGR</span><strong class="portfolio-kpi-value ${cagr >= 0 ? 'text-up' : 'text-down'}">${cagr >= 0 ? '+' : ''}${pf(cagr)}</strong></div>
+          <div class="portfolio-kpi"><span class="portfolio-kpi-label">Periode</span><strong class="portfolio-kpi-value">${period}</strong></div>
+        </div>
+      `;
+    } catch (e) {
+      showToast('Gagal menghubungi server: ' + (e.message || 'unknown'), 'error');
+      resultsEl.innerHTML = '';
+      resultsEl.classList.add('hidden');
+    }
+  });
 }

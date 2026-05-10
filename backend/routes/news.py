@@ -4,13 +4,17 @@ from datetime import datetime
 from time import time
 from typing import Any
 
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from database import News, get_db
 from services.idx_api_client import get_idx_client
 from services.idx_response_factory import ok as _resp_ok
+from services.openrouter_llm import get_openrouter_config
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _corporate_actions_cache: dict[str, Any] = {"data": None, "ts": 0}
@@ -54,8 +58,8 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ti
     total = q.count()
     news = q.order_by(News.published_at.desc()).offset(offset).limit(limit).all()
     if not news and offset == 0:
-try:
-    from updaters.news_updater import update_news
+        try:
+            from updaters.news_updater import update_news
         except Exception:
             news = []
 
@@ -70,10 +74,117 @@ try:
     return {"count": len(data), "total": total, "data": data, "sources": sources, "categories": categories, "source": "db" if news else "no_data"}
 
 
+@router.post('/api/news/{news_id}/summarize')
+def summarize_news(news_id: str, db: Session = Depends(get_db)):
+    """Generate an AI-powered concise 2-3 paragraph summary in Indonesian for a news item using OpenRouter LLM."""
+    news = db.query(News).filter(News.id == news_id).first()
+    if not news:
+        raise HTTPException(status_code=404, detail='Berita tidak ditemukan')
+
+    if not news.title:
+        raise HTTPException(status_code=400, detail='Berita tidak memiliki judul untuk diringkas')
+
+    config = get_openrouter_config(db)
+    if not config.get('enabled'):
+        raise HTTPException(status_code=503, detail='OpenRouter API tidak dikonfigurasi. Atur di Settings > AI.')
+
+    api_key = config['api_key']
+    model = config.get('ai_picks_model') or config.get('stock_analysis_model') or 'google/gemma-4-26b-a4b-it'
+    site_url = config.get('site_url')
+    app_name = config.get('app_name', 'RetailBijak')
+
+    existing = (news.summary or '').strip()
+    title = news.title.strip()
+
+    system_prompt = (
+        "Anda adalah asisten ringkasan berita pasar modal Indonesia. "
+        "Buat ringkasan berita yang jelas, faktual, dan informatif dalam Bahasa Indonesia.\n"
+        "Output: JSON dengan key 'summary' berisi 2-3 paragraf pendek (maks 200 kata)."
+    )
+
+    if existing:
+        user_prompt = (
+            f"Judul: {title}\n\n"
+            f"Ringkasan saat ini: {existing}\n\n"
+            "Buat ringkasan yang lebih baik dari berita di atas dalam 2-3 paragraf pendek "
+            "dalam Bahasa Indonesia. Output JSON: {\"summary\":\"ringkasan baru\"}"
+        )
+    else:
+        user_prompt = (
+            f"Judul: {title}\n\n"
+            "Buat ringkasan berita di atas dalam 2-3 paragraf pendek "
+            "dalam Bahasa Indonesia. Output JSON: {\"summary\":\"ringkasan berita\"}"
+        )
+
+    import requests
+
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json',
+        'HTTP-Referer': site_url or 'https://retailbijak.rich27.my.id',
+        'X-Title': app_name,
+    }
+    payload = {
+        'model': model,
+        'temperature': 0.3,
+        'max_tokens': 600,
+        'response_format': {'type': 'json_object'},
+        'messages': [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt},
+        ],
+    }
+
+    try:
+        response = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+    except requests.RequestException as e:
+        logger.error('OpenRouter request failed for news %s: %s', news_id, e)
+        raise HTTPException(status_code=502, detail=f'Gagal menghubungi OpenRouter: {e}')
+
+    if response.status_code >= 400:
+        error_data = {}
+        try:
+            error_data = response.json().get('error', {})
+        except Exception:
+            pass
+        msg = error_data.get('message', f'HTTP {response.status_code}')
+        logger.error('OpenRouter API error for news %s: %s', news_id, msg)
+        if response.status_code == 429:
+            raise HTTPException(status_code=429, detail='Rate limit OpenRouter tercapai. Coba lagi nanti.')
+        raise HTTPException(status_code=502, detail=f'Gagal dari OpenRouter: {msg}')
+
+    data = response.json()
+    choices = data.get('choices', [])
+    if not choices:
+        raise HTTPException(status_code=502, detail='Tidak ada respons dari OpenRouter')
+
+    content = choices[0]['message']['content']
+    if isinstance(content, list):
+        content = ''.join(p.get('text', '') if isinstance(p, dict) else str(p) for p in content)
+
+    try:
+        import json
+        parsed = json.loads(content.strip())
+        new_summary = parsed.get('summary', content)
+    except (json.JSONDecodeError, ValueError):
+        new_summary = content.strip()
+
+    news.summary = new_summary
+    db.commit()
+
+    logger.info('Summary updated for news %s (model=%s)', news_id, model)
+    return {'summary': new_summary, 'news_id': news_id, 'model': model}
+
+
 @router.get('/api/news/watchlist')
 def get_watchlist_news(db: Session = Depends(get_db), limit: int = 20, since: str = ''):
     """Get news for stocks in user's watchlist. Fallback to top movers if watchlist empty."""
-from database import WatchlistItem
+    from database import WatchlistItem
     # Get watchlist tickers
     watchlist_tickers = [row.ticker for row in db.query(WatchlistItem.ticker).all()]
 

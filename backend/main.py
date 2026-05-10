@@ -108,6 +108,11 @@ try:
 except ModuleNotFoundError:
     from routes.macro import router as macro_router
 
+try:
+    from backend.routes.portfolio import router as portfolio_router
+except ModuleNotFoundError:
+    from routes.portfolio import router as portfolio_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -138,6 +143,7 @@ app.include_router(calendar_router)
 app.include_router(index_constituents_router)
 app.include_router(comments_router)
 app.include_router(macro_router)
+app.include_router(portfolio_router)
 
 app.add_middleware(
     CORSMiddleware,

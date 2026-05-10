@@ -588,3 +588,6 @@ Sprint 4: Chart Drawings → Sector Rotation → Portfolio Dividends
 | 2026-05-11 | 27.2.1 — Email Briefing | ✅ | `services/email_briefing.py` — SMTP email delivery, HTML+plain format, frontend SMTP settings (server/port/email/password), test/save endpoints. Mon-Fri 17:05 WIB. |
 | 2026-05-11 | 27.2.2 — Telegram Briefing | ✅ | `services/telegram_briefing.py` — reads MarketBriefing from DB, sends formatted HTML via Telegram Bot API. Reuses existing telegram_bot.py. Mon-Fri 17:00 WIB. |
 | 2026-05-11 | 27.2.3 — Screener Auto-Run | ✅ | `services/screener_auto_run.py` — evaluates SavedScreener filters against current OHLCV/Fundamental data. Notifies via Telegram when conditions match. Mon-Fri 9-15 hourly. |
+| 2026-05-11 | **Sprint 3 — Content & Education** | 🚀 | 2 tasks selesai. |
+| 2026-05-11 | 27.3.1 — News Inline + AI Summary | ✅ | `POST /api/news/{id}/summarize` endpoint (OpenRouter). Frontend expandable cards with "Baca Inline" + "Ringkas AI" + "Buka Asli" buttons. CSS transitions. |
+| 2026-05-11 | 27.3.2 — Portfolio What-If | ✅ | `POST /api/portfolio/what-if` endpoint (OHLCV-based CAGR/P&L). Frontend "🔮 What-If" tab with form and color-coded results. |

@@ -31,6 +31,10 @@ export async function fetchNews(limit = 6, ticker = '', offset = 0, source = '',
     return apiFetch(q) || { count: 0, total: 0, data: [] };
 }
 
+export async function summarizeNews(id) {
+    return apiFetch(`/news/${id}/summarize`, { method: 'POST' });
+}
+
 export async function fetchFundamental(ticker) {
     return apiFetch(`/stocks/${ticker}/fundamental`);
 }

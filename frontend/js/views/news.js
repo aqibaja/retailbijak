@@ -1,4 +1,4 @@
-import { fetchNews, showToast } from '../api.js?v=20260510';
+import { fetchNews, showToast, apiFetch } from '../api.js?v=20260510';
 import { observeElements } from '../main.js?v=20260510';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
@@ -223,6 +223,7 @@ export async function renderNews(root) {
         // Render stream (2-column grid)
         document.getElementById("news-stream").innerHTML = stream.map((n, i) => streamCardHtml(n, i)).join("") +
           '<div id="news-loader-wrap" class="grid-full flex justify-center mt-3 mb-3"><button id="btn-load-more-news" type="button" class="btn btn-outline">Muat Lainnya <span id="news-load-count">(+30)</span></button></div>';
+        setupNewsCardEvents();
 
         // Store state for infinite scroll
         window.__newsOffset = 30;
@@ -358,7 +359,7 @@ export async function renderNews(root) {
                 title: card.querySelector('.news-stream-title')?.textContent?.trim() || '',
                 source: card.querySelector('.news-stream-source')?.textContent?.trim() || '',
                 time: card.querySelector('.news-stream-time')?.textContent?.trim() || '',
-                link: card.href || '',
+                link: card.querySelector('.btn-open-original')?.href || '',
                 type: 'Stream',
               });
             });
@@ -426,6 +427,7 @@ function renderNewsItems(items, res) {
   }).join('');
 
   document.getElementById('news-stream').innerHTML = stream.map((n, i) => streamCardHtml(n, i)).join('');
+  setupNewsCardEvents();
 }
 
 function streamCardHtml(n, i) {
@@ -434,12 +436,108 @@ function streamCardHtml(n, i) {
   const thumbHtml = hasImage
     ? `<span class="news-stream-thumb"><img src="${n.image_url}" alt="" loading="lazy" onerror="this.style.display='none'" /><span class="news-stream-thumb" style="display:none;background:linear-gradient(135deg,${c1},${c2})">${initials}</span></span>`
     : `<span class="news-stream-thumb" style="background:linear-gradient(135deg,${c1},${c2})">${initials}</span>`;
-    return `<a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="news-card-stream" style="border-left-color:${c1}">
+  const itemId = n.id || `news-${i}`;
+  const cleanSummary = (n.summary || '').replace(/<[^>]*>/g, '');
+  const summaryHtml = cleanSummary
+    ? `<div class="news-stream-summary">${cleanSummary}</div>`
+    : '';
+  return `<div class="news-card-stream" style="border-left-color:${c1}" data-id="${itemId}">
     ${thumbHtml}
     <div class="news-stream-body">
       <div class="news-stream-head"><span class="news-stream-source">${sourceCategory(n.source)}</span><span class="news-stream-time">${relativeTime(n.published_at)}</span>${n.sentiment ? `<span class="sentiment-badge ${n.sentiment}">${n.sentiment}</span>` : ''}</div>
       <strong class="news-stream-title">${n.title || 'Intel Pasar'}</strong>
-      ${n.summary ? `<div class="news-stream-summary">${n.summary.replace(/<[^>]*>/g,'')}</div>` : ''}
+      ${summaryHtml}
+      <div class="news-inline-content">
+        <div class="news-inline-scroll">
+          <div class="news-inline-summary">${cleanSummary || 'Tidak ada ringkasan.'}</div>
+          <div class="news-inline-ai" style="display:none"></div>
+        </div>
+      </div>
+      <div class="news-stream-actions">
+        <button type="button" class="btn-inline-expand" data-action="expand">📖 Baca Inline</button>
+        <button type="button" class="btn-ringkas-ai" data-action="summarize" data-id="${itemId}">✨ Ringkas AI</button>
+        <a href="${n.link}" ${String(n.link||'').startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="btn-open-original">🔗 Buka Asli</a>
+      </div>
     </div>
-  </a>`;
+  </div>`;
+}
+
+// ─── Expandable Inline Cards & AI Summary ────────────────
+
+function toggleExpand(card) {
+  const inlineEl = card.querySelector('.news-inline-content');
+  if (!inlineEl) return;
+  const isExpanded = card.classList.contains('expanded');
+  if (isExpanded) {
+    card.classList.remove('expanded');
+  } else {
+    card.classList.add('expanded');
+  }
+}
+
+async function handleSummarize(card, btn) {
+  const id = btn.dataset.id;
+  const inlineContent = card.querySelector('.news-inline-content');
+  const aiContent = card.querySelector('.news-inline-ai');
+  const summaryContent = card.querySelector('.news-inline-summary');
+
+  // Expand card first if not already
+  if (!card.classList.contains('expanded')) {
+    toggleExpand(card);
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-ringkas"></span> Merangkum...';
+
+  try {
+    const res = await apiFetch(`/news/${id}/summarize`, { method: 'POST' });
+    if (res && (res.summary || res.result)) {
+      const aiText = res.summary || res.result;
+      if (summaryContent) summaryContent.style.display = 'none';
+      if (aiContent) {
+        aiContent.innerHTML = aiText;
+        aiContent.style.display = 'block';
+      }
+      btn.innerHTML = '✅ Selesai';
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Ringkas AI';
+      }, 3000);
+    } else {
+      btn.innerHTML = '✨ Ringkas AI';
+      btn.disabled = false;
+      showToast('Gagal merangkum berita', 'error');
+    }
+  } catch (e) {
+    btn.innerHTML = '✨ Ringkas AI';
+    btn.disabled = false;
+    showToast('Gagal merangkum berita', 'error');
+  }
+}
+
+function setupNewsCardEvents() {
+  const stream = document.getElementById('news-stream');
+  if (!stream) return;
+
+  // Prevent duplicate listener registration
+  if (stream._newsEventsSetup) return;
+  stream._newsEventsSetup = true;
+
+  stream.addEventListener('click', async function(e) {
+    const expandBtn = e.target.closest('.btn-inline-expand');
+    if (expandBtn) {
+      e.preventDefault();
+      const card = expandBtn.closest('.news-card-stream');
+      if (card) toggleExpand(card);
+      return;
+    }
+
+    const summarizeBtn = e.target.closest('.btn-ringkas-ai');
+    if (summarizeBtn) {
+      e.preventDefault();
+      const card = summarizeBtn.closest('.news-card-stream');
+      if (card) await handleSummarize(card, summarizeBtn);
+      return;
+    }
+  });
 }
