@@ -105,6 +105,37 @@ export async function renderSettings(root) {
                 <span id="settings-status" class="text-xs text-dim mono strong settings-status-text">TERSAMBUNG KE LAYANAN LOKAL</span>
                 <button id="save-settings" type="button" class="btn btn-primary settings-save-btn">Simpan Konfigurasi</button>
             </div>
+
+            <div class="settings-section-head mt-8">
+              <h2>🤖 Telegram Alert</h2>
+              <span>Dapatkan notifikasi alert saham langsung ke Telegram kamu.</span>
+            </div>
+
+            <div class="settings-openrouter-stack">
+              <label class="settings-field-card" for="setting-telegram-token">
+                <span class="settings-field-label">Bot Token</span>
+                <div class="pos-relative">
+                  <input id="setting-telegram-token" class="settings-text-input" type="password" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" autocomplete="off" />
+                  <button id="toggle-telegram-token-visibility" type="button" class="btn btn-icon settings-key-toggle" title="Tampilkan/sembunyikan token">T</button>
+                </div>
+                <small class="text-xs text-dim">Dapatkan token dari <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> di Telegram.</small>
+              </label>
+
+              <label class="settings-field-card" for="setting-telegram-chat-id">
+                <span class="settings-field-label">Chat ID</span>
+                <input id="setting-telegram-chat-id" class="settings-text-input" type="text" placeholder="123456789 atau @username" autocomplete="off" />
+                <small class="text-xs text-dim">Kirim <code>/start</code> ke bot kamu, lalu buka <code>https://api.telegram.org/bot&lt;token&gt;/getUpdates</code> untuk cari chat ID.</small>
+              </label>
+
+              <div class="settings-telegram-status-row" style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                <span id="telegram-status-indicator" class="text-xs text-dim">⏺️ Telegram tidak dikonfigurasi</span>
+              </div>
+
+              <div class="settings-actions-row">
+                <button id="test-telegram" type="button" class="btn btn-secondary settings-save-btn" disabled>Test Connection</button>
+                <button id="save-telegram" type="button" class="btn btn-primary settings-save-btn">Simpan Telegram</button>
+              </div>
+            </div>
           </div>
 
           <div class="settings-note-rail panel flex-col gap-4">
@@ -225,6 +256,119 @@ export async function renderSettings(root) {
           status.title = saved?.openrouter_runtime_message || '';
         }
         showToast('Konfigurasi berhasil disinkronkan', 'success');
+    });
+
+    // ─── Telegram Integration ──────────────────────────
+    const telegramToken = document.getElementById('setting-telegram-token');
+    const telegramChatId = document.getElementById('setting-telegram-chat-id');
+    const telegramStatus = document.getElementById('telegram-status-indicator');
+    const testTelegramBtn = document.getElementById('test-telegram');
+    const saveTelegramBtn = document.getElementById('save-telegram');
+
+    // Token visibility toggle
+    const toggleTelegramTokenBtn = document.getElementById('toggle-telegram-token-visibility');
+    if (toggleTelegramTokenBtn) {
+      toggleTelegramTokenBtn.addEventListener('click', () => {
+        const isPassword = telegramToken.type === 'password';
+        telegramToken.type = isPassword ? 'text' : 'password';
+        toggleTelegramTokenBtn.textContent = isPassword ? 'S' : 'T';
+        toggleTelegramTokenBtn.title = isPassword ? 'Sembunyikan token' : 'Tampilkan token';
+      });
+    }
+
+    // Load Telegram config from settings
+    if (settings) {
+      telegramToken.value = normalizeMaskedKey(settings?.telegram_bot_token_masked);
+      telegramChatId.value = settings?.telegram_chat_id_masked || '';
+      updateTelegramStatus(settings);
+    }
+
+    function updateTelegramStatus(config) {
+      if (!config) {
+        telegramStatus.textContent = '⏺️ Telegram tidak dikonfigurasi';
+        telegramStatus.style.color = '';
+        testTelegramBtn.disabled = true;
+        return;
+      }
+      if (config.telegram_configured) {
+        telegramStatus.innerHTML = '🟢 <strong>Telegram terhubung</strong> — notifikasi alert aktif';
+        telegramStatus.style.color = 'var(--green, #22c55e)';
+        testTelegramBtn.disabled = false;
+      } else if (config.telegram_has_bot_token && config.telegram_has_chat_id) {
+        telegramStatus.textContent = '🟡 Token dan Chat ID terisi — tekan Test untuk verifikasi';
+        telegramStatus.style.color = '';
+        testTelegramBtn.disabled = false;
+      } else {
+        telegramStatus.textContent = '⏺️ Isi Bot Token dan Chat ID untuk mengaktifkan Telegram';
+        telegramStatus.style.color = '';
+        testTelegramBtn.disabled = true;
+      }
+    }
+
+    // Save Telegram settings
+    saveTelegramBtn.addEventListener('click', async () => {
+      saveTelegramBtn.disabled = true;
+      saveTelegramBtn.textContent = 'Menyimpan...';
+
+      const payload = {
+        bot_token: telegramToken.value.trim(),
+        chat_id: telegramChatId.value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/settings/telegram/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data?.ok) {
+          telegramToken.value = normalizeMaskedKey(data?.telegram_bot_token_masked || payload.bot_token);
+          telegramChatId.value = data?.telegram_chat_id_masked || payload.chat_id;
+          updateTelegramStatus(data);
+          showToast('Pengaturan Telegram berhasil disimpan', 'success');
+        } else {
+          showToast('Gagal menyimpan pengaturan Telegram', 'error');
+        }
+      } catch (e) {
+        console.warn('saveTelegram failed', e);
+        showToast('Gagal menyimpan pengaturan Telegram', 'error');
+      } finally {
+        saveTelegramBtn.disabled = false;
+        saveTelegramBtn.textContent = 'Simpan Telegram';
+      }
+    });
+
+    // Test Telegram connection
+    testTelegramBtn.addEventListener('click', async () => {
+      testTelegramBtn.disabled = true;
+      testTelegramBtn.textContent = 'Menguji...';
+
+      const payload = {
+        bot_token: telegramToken.value.trim(),
+        chat_id: telegramChatId.value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/settings/telegram/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data?.ok) {
+          showToast('✅ Telegram terhubung! Pesan uji telah dikirim.', 'success');
+          updateTelegramStatus({ telegram_configured: true, telegram_has_bot_token: true, telegram_has_chat_id: true });
+        } else {
+          showToast('❌ ' + (data?.error || 'Gagal terhubung ke Telegram'), 'error');
+        }
+      } catch (e) {
+        console.warn('testTelegram failed', e);
+        showToast('Gagal menguji koneksi Telegram', 'error');
+      } finally {
+        testTelegramBtn.disabled = false;
+        testTelegramBtn.textContent = 'Test Connection';
+      }
     });
 }
 

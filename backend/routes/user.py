@@ -15,6 +15,10 @@ from services.openrouter_llm import (
     get_openrouter_config,
     get_openrouter_runtime_status,
 )
+try:
+    from services.telegram_bot import get_telegram_config, send_telegram_message, test_telegram_connection
+except ModuleNotFoundError:
+    from backend.services.telegram_bot import get_telegram_config, send_telegram_message, test_telegram_connection
 router = APIRouter()
 
 
@@ -62,6 +66,7 @@ def get_settings(db: Session = Depends(get_db)):
     auto_refresh = db.query(UserSetting).filter(UserSetting.key == 'auto_refresh_screener').first()
     openrouter = get_openrouter_config(db)
     openrouter_runtime = get_openrouter_runtime_status(openrouter)
+    telegram = get_telegram_config(db)
     return {
         'compact_table_rows': compact.value == 'true' if compact else False,
         'auto_refresh_screener': auto_refresh.value == 'true' if auto_refresh else False,
@@ -74,6 +79,12 @@ def get_settings(db: Session = Depends(get_db)):
         'openrouter_app_name': openrouter['app_name'] or 'RetailBijak',
         'openrouter_stock_analysis_model': openrouter['stock_analysis_model'] or DEFAULT_STOCK_ANALYSIS_MODEL,
         'openrouter_ai_picks_model': openrouter['ai_picks_model'] or DEFAULT_AI_PICKS_MODEL,
+        # Telegram config
+        'telegram_configured': telegram['telegram_configured'],
+        'telegram_has_bot_token': telegram['telegram_has_bot_token'],
+        'telegram_has_chat_id': telegram['telegram_has_chat_id'],
+        'telegram_bot_token_masked': telegram['telegram_bot_token_masked'],
+        'telegram_chat_id_masked': telegram['telegram_chat_id_masked'],
     }
 
 
@@ -112,6 +123,59 @@ def update_settings(payload: SettingsPayload, db: Session = Depends(get_db)):
         'openrouter_stock_analysis_model': config['stock_analysis_model'] or DEFAULT_STOCK_ANALYSIS_MODEL,
         'openrouter_ai_picks_model': config['ai_picks_model'] or DEFAULT_AI_PICKS_MODEL,
     }
+
+
+class TelegramSavePayload(BaseModel):
+    bot_token: str = ''
+    chat_id: str = ''
+
+
+@router.post('/api/settings/telegram/save')
+def save_telegram_settings(payload: TelegramSavePayload, db: Session = Depends(get_db)):
+    """Save Telegram bot token and/or chat ID to UserSetting."""
+    bot_token = payload.bot_token.strip()
+    chat_id = payload.chat_id.strip()
+
+    if bot_token:
+        _upsert_setting(db, 'telegram_bot_token', bot_token)
+    if chat_id:
+        _upsert_setting(db, 'telegram_chat_id', chat_id)
+
+    db.commit()
+    telegram = get_telegram_config(db)
+    return {
+        'ok': True,
+        'telegram_configured': telegram['telegram_configured'],
+        'telegram_has_bot_token': telegram['telegram_has_bot_token'],
+        'telegram_has_chat_id': telegram['telegram_has_chat_id'],
+        'telegram_bot_token_masked': telegram['telegram_bot_token_masked'],
+        'telegram_chat_id_masked': telegram['telegram_chat_id_masked'],
+    }
+
+
+@router.post('/api/settings/telegram/test')
+def test_telegram_settings(payload: TelegramSavePayload, db: Session = Depends(get_db)):
+    """Test Telegram connection by sending a test message."""
+    bot_token = payload.bot_token.strip() or None
+    chat_id = payload.chat_id.strip() or None
+
+    # If not provided in payload, try from DB
+    if not bot_token or not chat_id:
+        config = get_telegram_config(db)
+        if not bot_token:
+            bot_token = db.query(UserSetting).filter(UserSetting.key == 'telegram_bot_token').first()
+            bot_token = bot_token.value.strip() if bot_token and bot_token.value else None
+        if not chat_id:
+            chat_id = db.query(UserSetting).filter(UserSetting.key == 'telegram_chat_id').first()
+            chat_id = chat_id.value.strip() if chat_id and chat_id.value else None
+
+    if not bot_token:
+        return {'ok': False, 'error': 'Bot token not configured. Please enter a bot token first.'}
+    if not chat_id:
+        return {'ok': False, 'error': 'Chat ID not configured. Please enter a chat ID first.'}
+
+    result = test_telegram_connection(chat_id=chat_id, bot_token=bot_token)
+    return result
 
 
 @router.get('/api/watchlist')

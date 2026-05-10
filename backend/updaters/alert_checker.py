@@ -3,15 +3,55 @@ Alert Checker — evaluate active alerts against current OHLCV data.
 
 Runs every 15 minutes during market hours via APScheduler.
 Stores triggered alerts in the alert_triggers table.
+Also sends Telegram notifications if configured.
 """
 import logging
 from datetime import datetime, timedelta
 
-from database import Alert, AlertTrigger, OHLCVDaily, SessionLocal
+from database import Alert, AlertTrigger, OHLCVDaily, SessionLocal, UserSetting
 logger = logging.getLogger(__name__)
 
 # Prevent re-triggering the same alert within this window
 COOLDOWN_MINUTES = 60
+
+
+def _send_telegram_notification(ticker: str, alert_type: str, alert_value: float, current_value: float) -> None:
+    """Send a Telegram alert notification if configured. Silently skip on failure."""
+    try:
+        try:
+            from services.telegram_bot import send_telegram_message
+        except ModuleNotFoundError:
+            from backend.services.telegram_bot import send_telegram_message
+
+        db = SessionLocal()
+        try:
+            chat_id = db.query(UserSetting).filter(UserSetting.key == 'telegram_chat_id').first()
+            bot_token = db.query(UserSetting).filter(UserSetting.key == 'telegram_bot_token').first()
+            if not chat_id or not chat_id.value or not bot_token or not bot_token.value:
+                return  # Telegram not configured — silently skip
+            chat_id_val = chat_id.value.strip()
+            bot_token_val = bot_token.value.strip()
+
+            # Build human-readable alert type
+            type_labels = {
+                'price_above': 'price_above',
+                'price_below': 'price_below',
+                'rsi_above': 'rsi_above',
+                'rsi_below': 'rsi_below',
+            }
+            label = type_labels.get(alert_type, alert_type)
+
+            text = (
+                f"🔔 <b>ALERT: {ticker}</b>\n"
+                f"Harga mencapai Rp {current_value:,.0f}\n"
+                f"Target: Rp {alert_value:,.0f} ({label})\n"
+                f"https://retailbijak.rich27.my.id/stock/{ticker}"
+            )
+            send_telegram_message(chat_id_val, text, bot_token=bot_token_val)
+        finally:
+            db.close()
+    except Exception:
+        logger.exception("Failed to send Telegram notification for %s alert", ticker)
 
 
 def check_alerts() -> dict:
@@ -113,6 +153,14 @@ def check_alerts() -> dict:
                         )
                         db.add(trigger)
                         triggered += 1
+
+                        # Send Telegram notification
+                        _send_telegram_notification(
+                            ticker=ticker,
+                            alert_type=alert.alert_type,
+                            alert_value=alert.value,
+                            current_value=current_value,
+                        )
 
             except Exception as exc:
                 logger.warning("Alert check failed for %s: %s", ticker, exc)

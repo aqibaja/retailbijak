@@ -1,5 +1,5 @@
 import { apiFetch, showToast } from '../api.js?v=20260510';
-import { nf, pf, money } from '../utils/format.js?v=20260510';
+import { nf, pf, fmtRp } from '../utils/format.js?v=20260510';
 import { observeElements } from '../main.js?v=20260510';
 
 let _compareTickers = [];
@@ -112,41 +112,132 @@ async function loadComparison(tickers) {
     const d = res.data;
     const validTickers = d.tickers;
 
-    // Price chart (LightweightCharts)
-    let chartHtml = '<div class="market-card"><div class="p-3"><h3 class="panel-title">Perbandingan Harga (Normalized 100)</h3></div><div id="compare-chart-container" style="height:400px;width:100%"></div></div>';
-
-    // Stats table
+    // ─── Color palette ──────────────────────────────
     const colors = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#06b6d4'];
     const legendColors = validTickers.map((t, i) => colors[i % colors.length]);
-    chartHtml += `<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Ringkasan Performa</h3></div><div style="overflow-x:auto"><table class="compare-table"><thead><tr><th>Metrik</th>${validTickers.map((t, i) => `<th style="color:${legendColors[i]}">${t}</th>`).join('')}</tr></thead><tbody>`;
-
-    // Row helper
-    function row(label, values) {
-      return `<tr><td class="compare-label">${label}</td>${values.map((v, i) => `<td class="${v?.startsWith('+') ? 'text-up' : v?.startsWith('-') ? 'text-down' : ''}">${v || '—'}</td>`).join('')}</tr>`;
-    }
-
     const funds = validTickers.map(t => d.fundamentals[t] || {});
     const stats = validTickers.map(t => d.stats[t] || {});
 
-    chartHtml += row('Nama', funds.map(f => f.name || '—'));
-    chartHtml += row('Sektor', funds.map(f => f.sector || '—'));
-    chartHtml += row('Market Cap', funds.map(f => f.market_cap != null ? money(f.market_cap) : '—'));
-    chartHtml += row('Harga', stats.map(s => s.current_price != null ? money(s.current_price) : '—'));
-    chartHtml += row('Return 1B', stats.map(s => s.return_1m != null ? `${s.return_1m > 0 ? '+' : ''}${pf(s.return_1m)}` : '—'));
-    chartHtml += row('Return 3B', stats.map(s => s.return_3m != null ? `${s.return_3m > 0 ? '+' : ''}${pf(s.return_3m)}` : '—'));
-    chartHtml += row('Return Total', stats.map(s => s.return_total != null ? `${s.return_total > 0 ? '+' : ''}${pf(s.return_total)}` : '—'));
-    chartHtml += row('High 90H', stats.map(s => s.high_90d != null ? money(s.high_90d) : '—'));
-    chartHtml += row('Low 90H', stats.map(s => s.low_90d != null ? money(s.low_90d) : '—'));
-    chartHtml += row('Rata Volume', stats.map(s => s.avg_volume != null ? nf(s.avg_volume, 0) : '—'));
-    chartHtml += row('PE', funds.map(f => f.pe != null ? nf(f.pe, 2) : '—'));
-    chartHtml += row('PBV', funds.map(f => f.pbv != null ? nf(f.pbv, 2) : '—'));
-    chartHtml += row('ROE', funds.map(f => f.roe != null ? pf(f.roe) : '—'));
-    chartHtml += row('DER', funds.map(f => f.der != null ? nf(f.der, 2) : '—'));
-    chartHtml += row('Dividend Yield', funds.map(f => f.dividend_yield != null ? pf(f.dividend_yield) : '—'));
+    // ─── Helper: best-value highlighting ────────────
+    function bestColor(values, higherIsBetter) {
+      // Returns index of best value, or -1 if all same/null
+      const nums = values.map(v => v == null || v === '—' ? null : Number(v));
+      if (nums.every(n => n == null)) return -1;
+      const best = higherIsBetter ? Math.max(...nums.filter(n => n != null)) : Math.min(...nums.filter(n => n != null));
+      return nums.indexOf(best);
+    }
 
-    chartHtml += '</tbody></table></div></div>';
+    // ─── Build all sections ──────────────────────────
+    let html = '';
 
-    container.innerHTML = chartHtml;
+    // 1. Price Chart (existing)
+    html += '<div class="market-card"><div class="p-3"><h3 class="panel-title">Perbandingan Harga (Normalized 100)</h3></div><div id="compare-chart-container" style="height:400px;width:100%"></div></div>';
+
+    // 2. Sector + Market Cap Badges per ticker
+    html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Informasi Emiten</h3></div><div class="compare-badges-wrap">';
+    validTickers.forEach((t, i) => {
+      const f = funds[i] || {};
+      const name = f.name || t;
+      const sector = f.sector || '—';
+      const industry = f.industry || '';
+      const mcap = f.market_cap != null ? fmtRp(f.market_cap) : '—';
+      html += `<div class="compare-badge-card" style="border-left:3px solid ${legendColors[i]}">
+        <div class="compare-badge-ticker">${t}</div>
+        <div class="compare-badge-name">${name}</div>
+        <div class="compare-badge-meta"><span class="compare-badge-pill">${sector}</span>${industry ? `<span class="compare-badge-pill">${industry}</span>` : ''}<span class="compare-badge-pill">${mcap}</span></div>
+      </div>`;
+    });
+    html += '</div></div>';
+
+    // 3. Fundamental Comparison Table (color-coded)
+    const fundaMetrics = [
+      { label: 'PE', key: 'pe', higherIsBetter: false, fmt: (v) => nf(v, 2) },
+      { label: 'PBV', key: 'pbv', higherIsBetter: false, fmt: (v) => nf(v, 2) },
+      { label: 'ROE', key: 'roe', higherIsBetter: true, fmt: (v) => pf(v) },
+      { label: 'ROA', key: 'roa', higherIsBetter: true, fmt: (v) => pf(v) },
+      { label: 'DER', key: 'der', higherIsBetter: false, fmt: (v) => nf(v, 2) },
+      { label: 'Dividend Yield', key: 'dividend_yield', higherIsBetter: true, fmt: (v) => pf(v) },
+    ];
+    html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Perbandingan Fundamental</h3></div><div style="overflow-x:auto"><table class="compare-table"><thead><tr><th>Metrik</th>';
+    validTickers.forEach((t, i) => { html += `<th style="color:${legendColors[i]}">${t}</th>`; });
+    html += '</tr></thead><tbody>';
+    fundaMetrics.forEach(m => {
+      const vals = funds.map(f => m.fmt(f[m.key] != null ? f[m.key] : null));
+      const rawVals = funds.map(f => f[m.key] != null ? Number(f[m.key]) : null);
+      const bestIdx = bestColor(rawVals, m.higherIsBetter);
+      html += `<tr><td class="compare-label">${m.label}</td>`;
+      vals.forEach((v, i) => {
+        let cls = '';
+        if (rawVals[i] != null) {
+          cls = m.higherIsBetter ? 'text-up' : 'text-down';
+        }
+        if (i === bestIdx && bestIdx >= 0) cls += ' compare-best';
+        html += `<td class="${cls}">${v}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    // 4. Performance Comparison Table
+    html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Perbandingan Performa</h3></div><div style="overflow-x:auto"><table class="compare-table"><thead><tr><th>Periode</th>';
+    validTickers.forEach((t, i) => { html += `<th style="color:${legendColors[i]}">${t}</th>`; });
+    html += '</tr></thead><tbody>';
+    const perfMetrics = [
+      { label: 'YTD', key: 'return_ytd' },
+      { label: '1 Bulan', key: 'return_1m' },
+      { label: '3 Bulan', key: 'return_3m' },
+      { label: '1 Tahun', key: 'return_1y' },
+      { label: 'Total (Periode)', key: 'return_total' },
+    ];
+    perfMetrics.forEach(m => {
+      const vals = stats.map(s => s[m.key] != null ? pf(s[m.key]) : '—');
+      const rawVals = stats.map(s => s[m.key] != null ? Number(s[m.key]) : null);
+      const bestIdx = bestColor(rawVals, true);
+      html += `<tr><td class="compare-label">${m.label}</td>`;
+      vals.forEach((v, i) => {
+        const rv = rawVals[i];
+        let cls = '';
+        if (rv != null) cls = rv >= 0 ? 'text-up' : 'text-down';
+        if (i === bestIdx && bestIdx >= 0) cls += ' compare-best';
+        html += `<td class="${cls}">${v}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    // 5. Price Correlation Section
+    function pearsonCorr(a, b) {
+      const n = Math.min(a.length, b.length);
+      if (n < 5) return null;
+      let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
+      for (let i = 0; i < n; i++) {
+        sumA += a[i]; sumB += b[i];
+        sumAB += a[i] * b[i];
+        sumA2 += a[i] * a[i]; sumB2 += b[i] * b[i];
+      }
+      const num = n * sumAB - sumA * sumB;
+      const den = Math.sqrt((n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB));
+      return den === 0 ? null : num / den;
+    }
+    html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Korelasi Harga</h3></div><div class="correlation-grid">';
+    const firstNorm = d.prices[`${validTickers[0]}_norm`] || [];
+    const firstVals = firstNorm.map(p => p.value);
+    validTickers.forEach((t, i) => {
+      if (i === 0) {
+        html += `<div class="correlation-card"><div class="correlation-ticker" style="color:${legendColors[i]}">${t}</div><div class="correlation-value" style="color:${legendColors[i]}">1.00</div><div class="correlation-label">Referensi</div></div>`;
+      } else {
+        const normData = d.prices[`${t}_norm`] || [];
+        const vals = normData.map(p => p.value);
+        const r = pearsonCorr(firstVals, vals);
+        const rDisplay = r != null ? r.toFixed(4) : '—';
+        const strength = r != null ? (Math.abs(r) >= 0.8 ? 'Sangat Kuat' : Math.abs(r) >= 0.5 ? 'Kuat' : Math.abs(r) >= 0.3 ? 'Sedang' : 'Lemah') : '';
+        const barWidth = r != null ? Math.abs(r) * 100 : 0;
+        html += `<div class="correlation-card"><div class="correlation-ticker" style="color:${legendColors[i]}">${t}</div><div class="correlation-value">${rDisplay}</div><div class="correlation-bar-wrap"><div class="correlation-bar" style="width:${barWidth}%"></div></div><div class="correlation-label">${strength}</div></div>`;
+      }
+    });
+    html += '</div></div>';
+
+    container.innerHTML = html;
 
     // Radar Chart
     const radarHtml = buildRadarChart(validTickers, funds, stats);

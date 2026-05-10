@@ -705,6 +705,9 @@ async def stream_watchlist(tickers: str = ''):
 | 2026-05-10 | 26.2.1 — Chart Technical Overlays | ✅ | EMA(12,26), RSI(14) sub-pane, MACD(12,26,9) sub-pane — kalkulasi client-side. Toggle buttons di chart toolbar. |
 | 2026-05-10 | 26.2.2 — Portfolio Analytics 2.0 | ✅ | Risk metrics (Sharpe, Drawdown, Win Rate, Total Return), monthly returns heatmap, concentration tracker. Backend + frontend. |
 | 2026-05-10 | 26.2.3 — Saved Screeners | ✅ | Save/load filter config via backend CRUD + frontend UI. Backend already had full CRUD (`/api/screener/saved`), frontend save/load/delete buttons + dropdown. Registered scanner router in main.py. |
+| 2026-05-10 | 26.3.1 — Telegram Alert Integration | ✅ | Backend `telegram_bot.py` service + settings page UI (bot token, chat ID, test connection). Auto-send alert notification to Telegram when alert triggers. httpx installed. |
+| 2026-05-10 | 26.3.2 — Stock Comparison 2.0 | ✅ | Fundamental side-by-side (PE/PB/ROE/ROA/DER/DivYield), performance table (YTD/1M/3M/1Y), correlation coefficient, sector badges. Enhanced backend with return_ytd/return_1y. |
+| 2026-05-10 | 26.3.3 — Pattern Backtest View | ✅ | Backend endpoint `/api/backtest/patterns` scans 200 stocks, returns win_rate/avg_return per pattern (5d/10d/20d horizon). Frontend tab with sortable table + recent accuracy + top pattern. |
 
 ---
 

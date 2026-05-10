@@ -760,10 +760,10 @@ def compare_stocks(tickers: str = '', db: Session = Depends(get_db)):
     result = {'tickers': [], 'prices': {}, 'fundamentals': {}, 'stats': {}}
     for ticker in parts:
         try:
-            # Fetch OHLCV (last 90 trading days)
+            # Fetch OHLCV (last 365 trading days for 1Y/YTD calculations)
             candles = db.query(OHLCVDaily).filter(
                 OHLCVDaily.ticker == ticker
-            ).order_by(OHLCVDaily.date.desc()).limit(90).all()
+            ).order_by(OHLCVDaily.date.desc()).limit(365).all()
             candles = list(reversed(candles))
             prices = [{'date': c.date.isoformat()[:10] if c.date else '', 'close': float(c.close)} for c in candles if c.close]
             result['prices'][ticker] = prices
@@ -774,18 +774,27 @@ def compare_stocks(tickers: str = '', db: Session = Depends(get_db)):
                 for p in prices
             ] if base_price else []
             # Performance
-            if len(prices) >= 2:
+            n = len(prices)
+            if n >= 2:
                 last = prices[-1]['close']
                 first = prices[0]['close']
-                p1m = prices[-21]['close'] if len(prices) >= 21 else prices[0]['close']
-                p3m = prices[-63]['close'] if len(prices) >= 63 else prices[0]['close']
+                p1m = prices[-21]['close'] if n >= 21 else prices[0]['close']
+                p3m = prices[-63]['close'] if n >= 63 else prices[0]['close']
+                p1y = prices[0]['close']  # use earliest available as 1Y proxy
+                # YTD: find first trading day of current year
+                import datetime as _dt
+                now = _dt.date.today()
+                ytd_start_idx = next((i for i, p in enumerate(prices) if p['date'] >= f'{now.year}-01-01'), 0)
+                p_ytd = prices[ytd_start_idx]['close'] if ytd_start_idx < n else first
                 result['stats'][ticker] = {
                     'return_1m': round(((last / p1m) - 1) * 100, 2) if p1m else None,
                     'return_3m': round(((last / p3m) - 1) * 100, 2) if p3m else None,
+                    'return_ytd': round(((last / p_ytd) - 1) * 100, 2),
+                    'return_1y': round(((last / p1y) - 1) * 100, 2) if p1y else None,
                     'return_total': round(((last / first) - 1) * 100, 2) if first else None,
                     'current_price': last,
-                    'high_90d': max(p['close'] for p in prices),
-                    'low_90d': min(p['close'] for p in prices),
+                    'high_90d': max(p['close'] for p in prices[-90:]),
+                    'low_90d': min(p['close'] for p in prices[-90:]),
                     'avg_volume': round(sum(c.volume or 0 for c in candles) / len(candles), 0) if candles else 0,
                 }
             # Fundamental
@@ -794,10 +803,12 @@ def compare_stocks(tickers: str = '', db: Session = Depends(get_db)):
             result['fundamentals'][ticker] = {
                 'name': stock.name if stock else ticker,
                 'sector': stock.sector if stock else '',
+                'industry': stock.industry if stock else '',
                 'market_cap': stock.market_cap if stock else None,
                 'pe': round(fund.trailing_pe, 2) if fund and fund.trailing_pe else None,
                 'pbv': round(fund.price_to_book, 2) if fund and fund.price_to_book else None,
                 'roe': round(fund.roe, 2) if fund and fund.roe else None,
+                'roa': round(fund.roa, 2) if fund and fund.roa else None,
                 'der': round(fund.debt_to_equity, 2) if fund and fund.debt_to_equity else None,
                 'dividend_yield': round(fund.dividend_yield, 2) if fund and fund.dividend_yield else None,
             }
