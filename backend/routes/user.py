@@ -85,6 +85,13 @@ def get_settings(db: Session = Depends(get_db)):
         'telegram_has_chat_id': telegram['telegram_has_chat_id'],
         'telegram_bot_token_masked': telegram['telegram_bot_token_masked'],
         'telegram_chat_id_masked': telegram['telegram_chat_id_masked'],
+        'smtp_configured': bool(
+            db.query(UserSetting).filter(UserSetting.key == 'smtp_server').first() and
+            db.query(UserSetting).filter(UserSetting.key == 'smtp_email').first()
+        ),
+        'smtp_server': _get_setting_value(db, 'smtp_server'),
+        'smtp_port': _get_setting_value(db, 'smtp_port') or '587',
+        'smtp_email': _get_setting_value(db, 'smtp_email') or '',
     }
 
 
@@ -176,6 +183,80 @@ def test_telegram_settings(payload: TelegramSavePayload, db: Session = Depends(g
 
     result = test_telegram_connection(chat_id=chat_id, bot_token=bot_token)
     return result
+
+
+# ─── SMTP / Email Briefing Settings ──────────────────────
+
+
+class SmtpSavePayload(BaseModel):
+    smtp_server: str = ''
+    smtp_port: str = '587'
+    smtp_email: str = ''
+    smtp_password: str = ''
+
+
+@router.post('/api/settings/smtp/save')
+def save_smtp_settings(payload: SmtpSavePayload, db: Session = Depends(get_db)):
+    """Save SMTP email briefing settings."""
+    from services.email_briefing import save_smtp_config, get_smtp_config
+
+    server = payload.smtp_server.strip()
+    port = payload.smtp_port.strip() or '587'
+    email = payload.smtp_email.strip()
+    password = payload.smtp_password.strip()
+
+    if server:
+        _upsert_setting(db, 'smtp_server', server)
+    if port:
+        _upsert_setting(db, 'smtp_port', port)
+    if email:
+        _upsert_setting(db, 'smtp_email', email)
+    if password:
+        _upsert_setting(db, 'smtp_password', password)
+
+    db.commit()
+    config = get_smtp_config(db)
+    return {
+        'ok': True,
+        'smtp_configured': config['smtp_configured'],
+        'smtp_server': config['smtp_server'] or '',
+        'smtp_port': config['smtp_port'] or '587',
+        'smtp_email': config['smtp_email'] or '',
+    }
+
+
+@router.post('/api/settings/smtp/test')
+def test_smtp_settings(payload: SmtpSavePayload, db: Session = Depends(get_db)):
+    """Test SMTP connection."""
+    from services.email_briefing import test_smtp_connection
+
+    # Save first then test
+    server = payload.smtp_server.strip()
+    port = payload.smtp_port.strip() or '587'
+    email = payload.smtp_email.strip()
+    password = payload.smtp_password.strip()
+
+    if server:
+        _upsert_setting(db, 'smtp_server', server)
+    if port:
+        _upsert_setting(db, 'smtp_port', port)
+    if email:
+        _upsert_setting(db, 'smtp_email', email)
+    if password:
+        _upsert_setting(db, 'smtp_password', password)
+    db.commit()
+
+    result = test_smtp_connection(db_session=db)
+
+    # Mask password in return
+    if result.get('ok'):
+        result['smtp_email'] = email or _get_setting_value(db, 'smtp_email')
+    return result
+
+
+def _get_setting_value(db: Session, key: str) -> str:
+    row = db.query(UserSetting).filter(UserSetting.key == key).first()
+    return row.value if row else ''
 
 
 @router.get('/api/watchlist')

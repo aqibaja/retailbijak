@@ -136,6 +136,46 @@ export async function renderSettings(root) {
                 <button id="save-telegram" type="button" class="btn btn-primary settings-save-btn">Simpan Telegram</button>
               </div>
             </div>
+
+            <div class="settings-section-head mt-8">
+              <h2>📧 Email Briefing</h2>
+              <span>Terima ringkasan pasar harian via email setelah bursa tutup.</span>
+            </div>
+
+            <div class="settings-openrouter-stack">
+              <label class="settings-field-card" for="setting-smtp-server">
+                <span class="settings-field-label">SMTP Server</span>
+                <input id="setting-smtp-server" class="settings-text-input" type="text" placeholder="smtp.gmail.com" autocomplete="off" />
+              </label>
+
+              <label class="settings-field-card" for="setting-smtp-port">
+                <span class="settings-field-label">Port</span>
+                <input id="setting-smtp-port" class="settings-text-input" type="text" placeholder="587" autocomplete="off" />
+              </label>
+
+              <label class="settings-field-card" for="setting-smtp-email">
+                <span class="settings-field-label">Email</span>
+                <input id="setting-smtp-email" class="settings-text-input" type="email" placeholder="email@example.com" autocomplete="off" />
+              </label>
+
+              <label class="settings-field-card" for="setting-smtp-password">
+                <span class="settings-field-label">Password / App Password</span>
+                <div class="pos-relative">
+                  <input id="setting-smtp-password" class="settings-text-input" type="password" placeholder="••••••••" autocomplete="off" />
+                  <button id="toggle-smtp-password-visibility" type="button" class="btn btn-icon settings-key-toggle" title="Tampilkan/sembunyikan password">T</button>
+                </div>
+                <small class="text-xs text-dim">Gunakan App Password jika 2FA aktif (Gmail: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">buat di sini</a>).</small>
+              </label>
+
+              <div class="settings-telegram-status-row" style="display:flex;align-items:center;gap:10px;margin-top:4px">
+                <span id="smtp-status-indicator" class="text-xs text-dim">⏺️ Email belum dikonfigurasi</span>
+              </div>
+
+              <div class="settings-actions-row">
+                <button id="test-smtp" type="button" class="btn btn-secondary settings-save-btn" disabled>Test Connection</button>
+                <button id="save-smtp" type="button" class="btn btn-primary settings-save-btn">Simpan Email</button>
+              </div>
+            </div>
           </div>
 
           <div class="settings-note-rail panel flex-col gap-4">
@@ -368,6 +408,125 @@ export async function renderSettings(root) {
       } finally {
         testTelegramBtn.disabled = false;
         testTelegramBtn.textContent = 'Test Connection';
+      }
+    });
+
+    // ─── SMTP / Email Briefing ──────────────────────────
+    const smtpServer = document.getElementById('setting-smtp-server');
+    const smtpPort = document.getElementById('setting-smtp-port');
+    const smtpEmail = document.getElementById('setting-smtp-email');
+    const smtpPassword = document.getElementById('setting-smtp-password');
+    const smtpStatus = document.getElementById('smtp-status-indicator');
+    const testSmtpBtn = document.getElementById('test-smtp');
+    const saveSmtpBtn = document.getElementById('save-smtp');
+
+    // Password visibility toggle
+    const toggleSmtpPasswordBtn = document.getElementById('toggle-smtp-password-visibility');
+    if (toggleSmtpPasswordBtn) {
+      toggleSmtpPasswordBtn.addEventListener('click', () => {
+        const isPassword = smtpPassword.type === 'password';
+        smtpPassword.type = isPassword ? 'text' : 'password';
+        toggleSmtpPasswordBtn.textContent = isPassword ? 'S' : 'T';
+        toggleSmtpPasswordBtn.title = isPassword ? 'Sembunyikan password' : 'Tampilkan password';
+      });
+    }
+
+    function updateSmtpStatus(config) {
+      if (!config) {
+        smtpStatus.textContent = '⏺️ Email belum dikonfigurasi';
+        smtpStatus.style.color = '';
+        testSmtpBtn.disabled = true;
+        return;
+      }
+      if (config.smtp_configured) {
+        smtpStatus.innerHTML = '🟢 <strong>Email terkonfigurasi</strong> — briefing otomatis aktif';
+        smtpStatus.style.color = 'var(--green, #22c55e)';
+        testSmtpBtn.disabled = false;
+      } else if (config.smtp_server && config.smtp_email) {
+        smtpStatus.textContent = '🟡 Server dan email terisi — tekan Test untuk verifikasi';
+        smtpStatus.style.color = '';
+        testSmtpBtn.disabled = false;
+      } else {
+        smtpStatus.textContent = '⏺️ Isi SMTP Server dan Email untuk mengaktifkan Email Briefing';
+        smtpStatus.style.color = '';
+        testSmtpBtn.disabled = true;
+      }
+    }
+
+    // Load SMTP config
+    if (settings) {
+      smtpServer.value = settings?.smtp_server || '';
+      smtpPort.value = settings?.smtp_port || '587';
+      smtpEmail.value = settings?.smtp_email || '';
+      updateSmtpStatus(settings);
+    }
+
+    // Save SMTP settings
+    saveSmtpBtn.addEventListener('click', async () => {
+      saveSmtpBtn.disabled = true;
+      saveSmtpBtn.textContent = 'Menyimpan...';
+
+      const payload = {
+        smtp_server: smtpServer.value.trim(),
+        smtp_port: smtpPort.value.trim() || '587',
+        smtp_email: smtpEmail.value.trim(),
+        smtp_password: smtpPassword.value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/settings/smtp/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data?.ok) {
+          updateSmtpStatus(data);
+          smtpPassword.value = '';
+          showToast('Pengaturan email berhasil disimpan', 'success');
+        } else {
+          showToast('Gagal menyimpan pengaturan email', 'error');
+        }
+      } catch (e) {
+        console.warn('saveSmtp failed', e);
+        showToast('Gagal menyimpan pengaturan email', 'error');
+      } finally {
+        saveSmtpBtn.disabled = false;
+        saveSmtpBtn.textContent = 'Simpan Email';
+      }
+    });
+
+    // Test SMTP connection
+    testSmtpBtn.addEventListener('click', async () => {
+      testSmtpBtn.disabled = true;
+      testSmtpBtn.textContent = 'Menguji...';
+
+      const payload = {
+        smtp_server: smtpServer.value.trim(),
+        smtp_port: smtpPort.value.trim() || '587',
+        smtp_email: smtpEmail.value.trim(),
+        smtp_password: smtpPassword.value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/settings/smtp/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data?.ok) {
+          showToast('✅ SMTP terhubung! Email server siap digunakan.', 'success');
+          updateSmtpStatus({ smtp_configured: true, smtp_server: smtpServer.value, smtp_email: smtpEmail.value });
+        } else {
+          showToast('❌ ' + (data?.error || 'Gagal terhubung ke SMTP'), 'error');
+        }
+      } catch (e) {
+        console.warn('testSmtp failed', e);
+        showToast('Gagal menguji koneksi SMTP', 'error');
+      } finally {
+        testSmtpBtn.disabled = false;
+        testSmtpBtn.textContent = 'Test Connection';
       }
     });
 }

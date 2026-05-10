@@ -149,6 +149,27 @@ def init_scheduler():
         logger.warning(f"Could not register market_briefing: {e}")
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id="yfinance_daily_sync", replace_existing=True)
+    # Telegram daily briefing — Mon-Fri 17:00 WIB (after market briefing at 16:30)
+    try:
+        from services.telegram_briefing import run_briefing_job as _tg_briefing
+        scheduler.add_job(_tg_briefing, trigger=CronTrigger(day_of_week='mon-fri', hour=17, minute=0, timezone=jkt_tz), id='telegram_daily_briefing', replace_existing=True)
+        logger.info("Registered telegram_daily_briefing job (Mon-Fri 17:00 WIB)")
+    except Exception as e:
+        logger.warning("Could not register telegram_daily_briefing: %s", e)
+    # Email daily briefing — Mon-Fri 17:05 WIB (after Telegram briefing)
+    try:
+        from services.email_briefing import run_email_briefing_job as _email_briefing
+        scheduler.add_job(_email_briefing, trigger=CronTrigger(day_of_week='mon-fri', hour=17, minute=5, timezone=jkt_tz), id='email_daily_briefing', replace_existing=True)
+        logger.info("Registered email_daily_briefing job (Mon-Fri 17:05 WIB)")
+    except Exception as e:
+        logger.warning("Could not register email_daily_briefing: %s", e)
+    # Screener auto-run — Mon-Fri 9:00-15:00 every 60 min
+    try:
+        from services.screener_auto_run import run_screener_auto_check as _screener_auto
+        scheduler.add_job(_screener_auto, trigger=CronTrigger(day_of_week='mon-fri', hour='9-15', minute=0, timezone=jkt_tz), id='screener_auto_run', replace_existing=True)
+        logger.info("Registered screener_auto_run job (Mon-Fri 9:00-15:00 hourly)")
+    except Exception as e:
+        logger.warning("Could not register screener_auto_run: %s", e)
     if not scheduler.running:
         scheduler.start()
     logger.info("APScheduler started successfully.")

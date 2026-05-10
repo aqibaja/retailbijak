@@ -584,3 +584,7 @@ Sprint 4: Chart Drawings → Sector Rotation → Portfolio Dividends
 | 2026-05-11 | Research | ✅ | Audit 40,876 lines + competitor gap analysis. |
 | 2026-05-11 | 27.1.1 — Fundamental Charts | ✅ | Backend endpoint `/api/stocks/{ticker}/fundamentals/history` — PE/PBV/ROE trend + price/SMA/volume data. Frontend Chart.js charts in stock detail. 30 tickers with financial data. |
 | 2026-05-11 | 27.1.2 — Corporate Actions Timeline | ✅ | Backend endpoint `/api/stocks/{ticker}/corporate-actions` + frontend timeline widget in stock detail sidebar. Dividends, earnings, IPO events per ticker. |
+| 2026-05-11 | **Sprint 2 — Engagement Loop** | 🚀 | 3 tasks selesai. |
+| 2026-05-11 | 27.2.1 — Email Briefing | ✅ | `services/email_briefing.py` — SMTP email delivery, HTML+plain format, frontend SMTP settings (server/port/email/password), test/save endpoints. Mon-Fri 17:05 WIB. |
+| 2026-05-11 | 27.2.2 — Telegram Briefing | ✅ | `services/telegram_briefing.py` — reads MarketBriefing from DB, sends formatted HTML via Telegram Bot API. Reuses existing telegram_bot.py. Mon-Fri 17:00 WIB. |
+| 2026-05-11 | 27.2.3 — Screener Auto-Run | ✅ | `services/screener_auto_run.py` — evaluates SavedScreener filters against current OHLCV/Fundamental data. Notifies via Telegram when conditions match. Mon-Fri 9-15 hourly. |
