@@ -103,6 +103,10 @@ except ModuleNotFoundError:
     from routes.calendar import router as calendar_router
     from routes.index_constituents import router as index_constituents_router
     from routes.comments import router as comments_router
+try:
+    from backend.routes.macro import router as macro_router
+except ModuleNotFoundError:
+    from routes.macro import router as macro_router
 
 
 @asynccontextmanager
@@ -133,6 +137,7 @@ app.include_router(sectors_router)
 app.include_router(calendar_router)
 app.include_router(index_constituents_router)
 app.include_router(comments_router)
+app.include_router(macro_router)
 
 app.add_middleware(
     CORSMiddleware,

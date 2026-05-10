@@ -6,6 +6,8 @@ Endpoints for viewing calendar events (dividend dates, earnings, corporate actio
 Endpoints:
     GET /api/calendar          — events filtered by month & type
     GET /api/calendar/today    — events happening today
+    GET /api/calendar/upcoming — upcoming events within N days
+    GET /api/ipo               — IPO pipeline tracker
 """
 
 from datetime import datetime, date, timedelta
@@ -15,7 +17,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from database import CalendarEvent, Fundamental, Stock, get_db
+from database import CalendarEvent, Fundamental, Stock, OHLCVDaily, get_db
 router = APIRouter()
 
 VALID_EVENT_TYPES = {"dividend", "earnings", "corporate", "economic", "ipo", "rights", "all"}
@@ -287,4 +289,122 @@ def get_dividend_aristocrats(
     return {
         "count": len(aristocrats),
         "data": aristocrats,
+    }
+
+
+# ─── IPO Pipeline Tracker ────────────────────────────────────
+# 26.4.1 — IPO Pipeline Tracker
+
+
+@router.get("/api/ipo")
+def get_ipo_pipeline(
+    db: Session = Depends(get_db),
+):
+    """Return IPO events grouped into upcoming and past.
+    
+    For past IPOs, compute performance since listing (current close vs
+    close on listing date). Joins with Stock table for sector/name.
+    """
+    today = date.today()
+
+    # Fetch all IPO events with stock info
+    rows = (
+        db.query(
+            CalendarEvent.ticker,
+            CalendarEvent.title,
+            CalendarEvent.event_date,
+            CalendarEvent.description,
+            Stock.name,
+            Stock.sector,
+        )
+        .outerjoin(Stock, CalendarEvent.ticker == Stock.ticker)
+        .filter(CalendarEvent.event_type == "ipo")
+        .order_by(CalendarEvent.event_date.desc())
+        .all()
+    )
+
+    upcoming = []
+    past = []
+
+    for row in rows:
+        ticker = row.ticker or ""
+        event_date = row.event_date
+        # Parse description for additional info like price range
+        description = row.description or ""
+
+        item = {
+            "ticker": ticker,
+            "company_name": row.name or "",
+            "sector": row.sector or "",
+            "title": row.title or "",
+            "description": description,
+            "event_date": event_date.isoformat() if hasattr(event_date, "isoformat") else str(event_date),
+        }
+
+        if event_date and event_date >= today:
+            upcoming.append(item)
+        else:
+            # For past IPOs, compute performance since listing
+            if ticker:
+                # Get close on listing date (or nearest trading day after)
+                listing_close = (
+                    db.query(OHLCVDaily.close)
+                    .filter(
+                        OHLCVDaily.ticker == ticker,
+                        OHLCVDaily.date >= event_date,
+                    )
+                    .order_by(OHLCVDaily.date.asc())
+                    .first()
+                )
+                # Get latest close
+                latest_close = (
+                    db.query(OHLCVDaily.close)
+                    .filter(OHLCVDaily.ticker == ticker)
+                    .order_by(OHLCVDaily.date.desc())
+                    .first()
+                )
+                # Get latest volume and volume on listing date for volume trend
+                latest_volume = (
+                    db.query(OHLCVDaily.volume)
+                    .filter(OHLCVDaily.ticker == ticker)
+                    .order_by(OHLCVDaily.date.desc())
+                    .first()
+                )
+                listing_volume = (
+                    db.query(OHLCVDaily.volume)
+                    .filter(
+                        OHLCVDaily.ticker == ticker,
+                        OHLCVDaily.date >= event_date,
+                    )
+                    .order_by(OHLCVDaily.date.asc())
+                    .first()
+                )
+
+                if listing_close and latest_close and listing_close[0] and latest_close[0]:
+                    lp = float(listing_close[0])
+                    lc = float(latest_close[0])
+                    item["listing_price"] = lp
+                    item["latest_price"] = lc
+                    item["performance_pct"] = round(((lc - lp) / lp) * 100, 2)
+                else:
+                    item["listing_price"] = None
+                    item["latest_price"] = None
+                    item["performance_pct"] = None
+
+                item["latest_volume"] = int(latest_volume[0]) if latest_volume and latest_volume[0] else 0
+                item["listing_volume"] = int(listing_volume[0]) if listing_volume and listing_volume[0] else 0
+            else:
+                item["listing_price"] = None
+                item["latest_price"] = None
+                item["performance_pct"] = None
+                item["latest_volume"] = 0
+                item["listing_volume"] = 0
+
+            past.append(item)
+
+    return {
+        "count_upcoming": len(upcoming),
+        "count_past": len(past),
+        "upcoming": upcoming,
+        "past": past,
     }

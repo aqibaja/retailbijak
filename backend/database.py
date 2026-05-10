@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, Date, Text, UniqueConstraint, create_engine
+from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, ForeignKey, Date, Text, UniqueConstraint, Index, create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:////opt/swingaq/backend/swingaq.db")
@@ -332,6 +332,21 @@ class PortfolioSnapshot(Base):
     pnl_pct = Column(Float, default=0.0)      # P&L percentage
     ihsg_value = Column(Float, nullable=True) # IHSG close on this date (for benchmark)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class MacroIndicator(Base):
+    """Macroeconomic indicators — BI Rate, CPI, GDP, Trade Balance, FX Reserves."""
+    __tablename__ = "macro_indicators"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    indicator_name = Column(String, nullable=False, index=True)
+    year = Column(Integer, nullable=False)
+    value = Column(Float, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("indicator_name", "year", name="uq_indicator_year"),
+    )
 
 
 # Dependency for FastAPI

@@ -406,7 +406,7 @@ function renderWidget(data) {
 
 # 🇮🇩 RetailBijak — Fase 26: Retention & Intelligence Layer
 
-> **Status:** 🆕 **Research Complete — Ready to Execute**
+> **Status:** ✅ **Complete — 10/10 tasks (Fase 26 Selesai)**
 > **Tujuan:** Fitur daily retention, trading intel, dan power-user tools
 > **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
 > **Prinsip:** Data existing → visualisasi baru. Infra existing → fitur baru.
@@ -708,6 +708,9 @@ async def stream_watchlist(tickers: str = ''):
 | 2026-05-10 | 26.3.1 — Telegram Alert Integration | ✅ | Backend `telegram_bot.py` service + settings page UI (bot token, chat ID, test connection). Auto-send alert notification to Telegram when alert triggers. httpx installed. |
 | 2026-05-10 | 26.3.2 — Stock Comparison 2.0 | ✅ | Fundamental side-by-side (PE/PB/ROE/ROA/DER/DivYield), performance table (YTD/1M/3M/1Y), correlation coefficient, sector badges. Enhanced backend with return_ytd/return_1y. |
 | 2026-05-10 | 26.3.3 — Pattern Backtest View | ✅ | Backend endpoint `/api/backtest/patterns` scans 200 stocks, returns win_rate/avg_return per pattern (5d/10d/20d horizon). Frontend tab with sortable table + recent accuracy + top pattern. |
+| 2026-05-10 | 26.4.1 — IPO Pipeline Tracker | ✅ | New `#ipo` view: upcoming vs past IPOs, performance since listing, sector badges, CSV export. Backend `/api/ipo` endpoint. 5 past IPO events. |
+| 2026-05-10 | 26.4.2 — Macro Dashboard | ✅ | New `#macro` view: BI Rate, CPI, GDP, Trade Balance, FX Reserves. Chart.js line charts, yearly data 2020-2026. `MacroIndicator` table + `macro_updater.py` + `/api/macro` endpoint. |
+| 2026-05-10 | 26.4.3 — Performance Optimization | ✅ | SQLite WAL mode + 64MB cache + memory temp_store + 256MB mmap. Composite indexes: `idx_ohlcv_ticker_date`, `idx_signal_ticker_date_type`. |
 
 ---
 

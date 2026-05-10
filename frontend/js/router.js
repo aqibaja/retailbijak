@@ -23,7 +23,9 @@ const ROUTE_META = {
   movers: { title: 'RetailBijak — Market Movers', desc: 'Lihat saham IDX dengan pergerakan terbesar: gainers, losers, dan most active dengan multi-timeframe performance.' },
   calendar: { title: 'RetailBijak — Kalender Pasar', desc: 'Kalender dividen, laba, dan aksi korporasi saham IDX.' },
   corporate: { title: 'RetailBijak — Aksi Korporasi', desc: 'IPO, rights issue, stock split, dividen, dan aksi korporasi saham IDX.' },
+  ipo: { title: 'RetailBijak — IPO Pipeline Tracker', desc: 'Pantau IPO saham IDX — listing mendatang dan performa pasca-listing.' },
   chart: { title: 'RetailBijak — Chart', desc: 'Full-screen chart saham IDX dengan drawing tools dan multiple timeframe.' },
+  macro: { title: 'RetailBijak — Macro & Ekonomi', desc: 'Indikator makroekonomi Indonesia: BI Rate, Inflasi, GDP, Neraca Dagang, dan Cadangan Devisa.' },
   indices: { title: 'RetailBijak — Indeks IDX', desc: 'Pantau konstituen dan performa indeks saham IDX: LQ45, IDX30, KOMPAS100, IDX80, IDXESGL.' },
   dividends: { title: 'RetailBijak — Dividend Dashboard & Kalkulator', desc: 'Pantau dividen saham IDX, hitung estimasi pendapatan dividen, dan temukan dividend aristocrats.' },
 };
@@ -50,9 +52,11 @@ const viewModules = {
   movers: () => import('./views/movers.js?v=20260510'),
   calendar: () => import('./views/calendar.js?v=20260510'),
   corporate: () => import('./views/corporate.js?v=20260510'),
+  ipo: () => import('./views/ipo.js?v=20260510'),
   chart: () => import('./views/chart.js?v=20260510'),
   indices: () => import('./views/indices.js?v=20260510'),
   dividends: () => import('./views/dividend.js?v=20260510'),
+  macro: () => import('./views/macro.js?v=20260510'),
 };
 const viewCache = {};
 

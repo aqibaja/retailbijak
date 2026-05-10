@@ -96,6 +96,21 @@ def init_scheduler():
     except Exception as e:
         logger.warning(f"Could not register sector_classifier: {e}")
     scheduler.add_job(update_calendar_events, trigger=CronTrigger(hour=4, minute=0, timezone=jkt_tz), id="calendar_update", replace_existing=True)
+    # Macro data seed — daily 04:05 (only seeds if empty)
+    try:
+        from updaters.macro_updater import seed_macro_data
+        from database import get_db as _get_db
+        def _seed_macro_job():
+            try:
+                db = next(_get_db())
+                seed_macro_data(db)
+                db.close()
+            except Exception as e:
+                logger.error(f"Macro data seed failed: {e}")
+        scheduler.add_job(_seed_macro_job, trigger=CronTrigger(hour=4, minute=5, timezone=jkt_tz), id='macro_data_seed', replace_existing=True)
+        logger.info("Registered macro_data_seed job (daily 04:05 WIB)")
+    except Exception as e:
+        logger.warning(f"Could not register macro_data_seed: {e}")
     # Index constituent seed — weekly refresh (Sunday 04:30)
     try:
         from updaters.idx_index_updater import seed_index_constituents
