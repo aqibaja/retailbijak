@@ -239,6 +239,20 @@ export async function renderScreener(root) {
                 <button type="button" class="btn btn-sm btn-primary preset-btn" data-preset="volume_spike">📊 Volume Spike</button>
               </div>
             </div>
+            <div class="scanner-form-section mt-4">
+              <div class="text-xs text-dim uppercase strong mb-2">Simpan Filter ⭐</div>
+              <div class="flex gap-2">
+                <input type="text" id="screener-save-name" class="form-input" placeholder="Nama filter..." style="flex:1;padding:6px 10px;font-size:12px">
+                <button type="button" id="btn-save-screener" class="btn btn-sm btn-primary" style="white-space:nowrap">💾 Simpan</button>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <select id="screener-load-select" class="form-input" style="flex:1;padding:6px 10px;font-size:12px">
+                  <option value="">— Muat filter tersimpan —</option>
+                </select>
+                <button type="button" id="btn-load-screener" class="btn btn-sm btn-primary" style="white-space:nowrap">📂 Muat</button>
+                <button type="button" id="btn-delete-screener" class="btn btn-sm" style="white-space:nowrap">🗑️</button>
+              </div>
+            </div>
             <div id="screener-progress" class="hidden panel-lite p-4 scanner-progress">
               <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
               <div class="screener-progress-track"><div id="sp-fill" class="screener-progress-fill"></div></div>
@@ -305,6 +319,56 @@ export async function renderScreener(root) {
     root.querySelector('#btn-manage-scans')?.addEventListener('click', manageScansDialog);
     root.querySelector('#btn-auto-refresh')?.addEventListener('click', toggleAutoRefresh);
     root.querySelector('#btn-sound')?.addEventListener('click', toggleScanSound);
+
+    // Saved Screener handlers
+    root.querySelector('#btn-save-screener')?.addEventListener('click', async () => {
+      const name = document.getElementById('screener-save-name')?.value?.trim();
+      if (!name) { showToast('Masukkan nama filter', 'warning'); return; }
+      try {
+        const filters = {
+          activeChips: [...activeFilterChips],
+          isPatternMode,
+          patternFilter: currentPatternFilter,
+          sortChain,
+        };
+        await apiFetch('/screener/saved', {
+          method: 'POST',
+          body: JSON.stringify({ name, filters_json: JSON.stringify(filters), active: 1 }),
+        });
+        showToast(`Filter "${name}" disimpan`, 'success');
+        document.getElementById('screener-save-name').value = '';
+        refreshScreenerList();
+      } catch (e) { showToast('Gagal menyimpan', 'error'); }
+    });
+
+    root.querySelector('#btn-load-screener')?.addEventListener('click', async () => {
+      const sel = document.getElementById('screener-load-select');
+      if (!sel || !sel.value) { showToast('Pilih filter yang akan dimuat', 'warning'); return; }
+      try {
+        const res = await apiFetch(`/screener/saved/${sel.value}`);
+        if (!res?.data) { showToast('Data tidak ditemukan', 'error'); return; }
+        const filters = JSON.parse(res.data.filters_json || '{}');
+        if (filters.activeChips) activeFilterChips = new Set(filters.activeChips);
+        if (filters.isPatternMode != null) isPatternMode = filters.isPatternMode;
+        if (filters.patternFilter) currentPatternFilter = filters.patternFilter;
+        if (filters.sortChain) sortChain = filters.sortChain;
+        showToast(`Filter "${res.data.name}" dimuat`, 'success');
+        refreshScreenerList();
+      } catch (e) { showToast('Gagal memuat', 'error'); }
+    });
+
+    root.querySelector('#btn-delete-screener')?.addEventListener('click', async () => {
+      const sel = document.getElementById('screener-load-select');
+      if (!sel || !sel.value) { showToast('Pilih filter yang akan dihapus', 'warning'); return; }
+      try {
+        await apiFetch(`/screener/saved/${sel.value}`, { method: 'DELETE' });
+        showToast('Filter dihapus', 'success');
+        refreshScreenerList();
+      } catch (e) { showToast('Gagal menghapus', 'error'); }
+    });
+
+    // Load saved filter list
+    refreshScreenerList();
 
     // Perf column toggle
     perfVisible = window.innerWidth >= 768;
@@ -698,7 +762,19 @@ function toggleAutoRefresh() {
     }
 }
 
-// ─── Export CSV ────────────────────────
+// ─── Refresh saved screener list ─────────────────────────
+async function refreshScreenerList() {
+  const sel = document.getElementById('screener-load-select');
+  if (!sel) return;
+  try {
+    const res = await apiFetch('/screener/saved');
+    const items = Array.isArray(res?.data) ? res.data : [];
+    sel.innerHTML = '<option value="">— Muat filter tersimpan —</option>' +
+      items.map(s => `<option value="${s.id}">${s.name}${s.match_count != null ? ` (${s.match_count})` : ''}</option>`).join('');
+  } catch (e) { /* ignore */ }
+}
+
+// ─── Export CSV ───────────────────────────────────────────
 function exportCSV() {
     const data = currentResults;
     if (!data.length) {

@@ -82,6 +82,7 @@ try:
     from backend.routes.market_summary import router as market_summary_router
     from backend.routes.news import router as news_router
     from backend.routes.scanner_stream import router as scanner_stream_router
+    from backend.routes.scanner import router as scanner_router
     from backend.routes.signals import router as signals_router
     from backend.routes.calendar import router as calendar_router
     from backend.routes.index_constituents import router as index_constituents_router
@@ -96,6 +97,7 @@ except ModuleNotFoundError:
     from routes.market_summary import router as market_summary_router
     from routes.news import router as news_router
     from routes.scanner_stream import router as scanner_stream_router
+    from routes.scanner import router as scanner_router
     from routes.signals import router as signals_router
     from routes.sectors import router as sectors_router
     from routes.calendar import router as calendar_router
@@ -125,6 +127,7 @@ app.include_router(market_router)
 app.include_router(market_summary_router)
 app.include_router(news_router)
 app.include_router(scanner_stream_router)
+app.include_router(scanner_router)
 app.include_router(signals_router)
 app.include_router(sectors_router)
 app.include_router(calendar_router)

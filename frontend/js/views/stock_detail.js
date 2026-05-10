@@ -105,7 +105,10 @@ export async function renderStockDetail(root, ticker) {
             </span>
             <span class="indicator-group">
             <label class="indicator-toggle active" data-indicator="sma"><span>SMA</span></label>
+            <label class="indicator-toggle" data-indicator="ema"><span>EMA</span></label>
             <label class="indicator-toggle" data-indicator="boll"><span>Boll</span></label>
+            <label class="indicator-toggle" data-indicator="rsi"><span>RSI</span></label>
+            <label class="indicator-toggle" data-indicator="macd"><span>MACD</span></label>
             <label class="indicator-toggle" data-indicator="sr"><span>S/R</span></label>
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
             <label class="indicator-toggle" data-indicator="st"><span>ST</span></label>
@@ -1209,6 +1212,14 @@ function renderStockChart(symbol, candles, technical){
         .setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.sma_50 })).filter(d => d.value != null));
     }
 
+    // EMA overlay (client-side)
+    if (active.includes('ema')) {
+      const ema12 = calcEMA(data, 12);
+      const ema26 = calcEMA(data, 26);
+      if (ema12.length) chart.addLineSeries({ color:'#f59e0b', lineWidth:1, priceLineVisible:false, lastValueVisible:false, title:'EMA 12' }).setData(ema12);
+      if (ema26.length) chart.addLineSeries({ color:'#ef4444', lineWidth:1, priceLineVisible:false, lastValueVisible:false, title:'EMA 26' }).setData(ema26);
+    }
+
     const ind = technical?.indicators || {};
     const bb = ind.bollinger_bands || {};
     if (active.includes('boll') && bb.upper != null && bb.lower != null && data.length) {
@@ -1241,6 +1252,35 @@ function renderStockChart(symbol, candles, technical){
       }
     }
 
+    // RSI sub-pane (client-side)
+    if (active.includes('rsi')) {
+      const rsiData = calcRSI(data, 14);
+      if (rsiData.length) {
+        const rsiPane = chart.addLineSeries({ color:'#a78bfa', lineWidth:1, priceLineVisible:false, lastValueVisible:true, title:'RSI 14', priceScaleId:'rsi' });
+        rsiPane.setData(rsiData);
+        chart.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.7, bottom:0 }, visible:true });
+        // Overbought/oversold lines
+        const obLine = chart.addLineSeries({ color:'rgba(239,68,68,0.3)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false, priceScaleId:'rsi' });
+        obLine.setData(rsiData.map(d => ({ time:d.time, value:70 })));
+        const osLine = chart.addLineSeries({ color:'rgba(34,197,94,0.3)', lineWidth:1, lineStyle:2, priceLineVisible:false, lastValueVisible:false, priceScaleId:'rsi' });
+        osLine.setData(rsiData.map(d => ({ time:d.time, value:30 })));
+      }
+    }
+
+    // MACD sub-pane (client-side)
+    if (active.includes('macd')) {
+      const macd = calcMACD(data, 12, 26, 9);
+      if (macd.macd.length) {
+        const macdPane = chart.addLineSeries({ color:'#60a5fa', lineWidth:1, priceLineVisible:false, lastValueVisible:true, title:'MACD', priceScaleId:'macd' });
+        macdPane.setData(macd.macd);
+        const sigPane = chart.addLineSeries({ color:'#f97316', lineWidth:1, priceLineVisible:false, lastValueVisible:true, title:'Signal', priceScaleId:'macd' });
+        sigPane.setData(macd.signal);
+        const histPane = chart.addHistogramSeries({ color:'rgba(96,165,250,0.3)', priceFormat:{type:'volume'}, priceScaleId:'macd' });
+        histPane.setData(macd.histogram.map(d => ({ time:d.time, value:Math.abs(d.value), color:d.value >= 0 ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)' })));
+        chart.priceScale('macd').applyOptions({ scaleMargins:{ top:0.7, bottom:0 }, visible:true });
+      }
+    }
+
     // VWAP line
     if (active.includes('vwap') && data.some(d => d.vwap != null)) {
       chart.addLineSeries({ color:hexWithAlpha(c.accentAmber,0.7), lineWidth:1, priceLineVisible:false, lastValueVisible:true })
@@ -1258,7 +1298,10 @@ function renderStockChart(symbol, candles, technical){
           .setData([{ time:data[0].date.slice(0,10), value:sr.resistance_20d }, { time:lastTime, value:sr.resistance_20d }]);
     }
 
-    if (!vol) chart.priceScale('').applyOptions({ scaleMargins:{ top:.1, bottom:.1 }});
+    // Adjust scale margins: if sub-panes are active, main chart gets less space
+    const hasSubPanes = active.includes('rsi') || active.includes('macd');
+    if (!vol && !hasSubPanes) chart.priceScale('').applyOptions({ scaleMargins:{ top:.1, bottom:.1 }});
+    if (hasSubPanes) chart.priceScale('').applyOptions({ scaleMargins:{ top:.05, bottom:.3 }});
     chart.timeScale().fitContent();
     new ResizeObserver(() => chart.applyOptions({ width: container.clientWidth, height: container.clientHeight })).observe(container);
   } else renderFallbackSvgChart(data);
@@ -2097,4 +2140,85 @@ function createMultiChartInstance(symbol, timeframe, idx, container, chartData) 
 
   // Handle unsubscription on dispose
   chart.subscribeCrosshairMove(() => {}); // placeholder to keep handler ref
+}
+
+// ─── Client-side Indicator Calculations ────────────────────────
+function calcEMA(data, period) {
+  if (!data || data.length < period) return [];
+  const multiplier = 2 / (period + 1);
+  const result = [];
+  // SMA for first value
+  let sum = 0;
+  for (let i = 0; i < period; i++) sum += data[i].close;
+  let ema = sum / period;
+  for (let i = 0; i < data.length; i++) {
+    if (i >= period - 1) {
+      if (i === period - 1) {
+        ema = sum / period;
+      } else {
+        ema = (data[i].close - ema) * multiplier + ema;
+      }
+      result.push({ time: String(data[i].date).slice(0,10), value: Math.round(ema * 100) / 100 });
+    }
+  }
+  return result;
+}
+
+function calcRSI(data, period = 14) {
+  if (!data || data.length < period + 1) return [];
+  const result = [];
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+  let rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+  result.push({ time: String(data[period].date).slice(0,10), value: Math.round(rsi * 100) / 100 });
+  for (let i = period + 1; i < data.length; i++) {
+    const diff = data[i].close - data[i-1].close;
+    const gain = diff >= 0 ? diff : 0;
+    const loss = diff < 0 ? -diff : 0;
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+    result.push({ time: String(data[i].date).slice(0,10), value: Math.round(rsi * 100) / 100 });
+  }
+  return result;
+}
+
+function calcMACD(data, fast = 12, slow = 26, signal = 9) {
+  const emaFast = calcEMA(data, fast);
+  const emaSlow = calcEMA(data, slow);
+  // MACD line = EMA(fast) - EMA(slow), aligned by time
+  const macdLine = [];
+  const slowMap = {};
+  emaSlow.forEach(e => { slowMap[e.time] = e.value; });
+  emaFast.forEach(e => {
+    if (slowMap[e.time] != null) {
+      macdLine.push({ time: e.time, value: Math.round((e.value - slowMap[e.time]) * 100) / 100 });
+    }
+  });
+  if (macdLine.length < signal + 1) return { macd: macdLine, signal: [], histogram: [] };
+  // Signal line = EMA of MACD
+  const signalLine = [];
+  const sm = 2 / (signal + 1);
+  let sig = 0;
+  for (let i = 0; i < signal; i++) sig += macdLine[i].value;
+  sig /= signal;
+  signalLine.push({ time: macdLine[signal - 1].time, value: Math.round(sig * 100) / 100 });
+  for (let i = signal; i < macdLine.length; i++) {
+    sig = (macdLine[i].value - sig) * sm + sig;
+    signalLine.push({ time: macdLine[i].time, value: Math.round(sig * 100) / 100 });
+  }
+  // Histogram = MACD - Signal
+  const histogram = [];
+  for (let i = 0; i < signalLine.length; i++) {
+    const mac = macdLine[i + signal - 1];
+    if (mac) {
+      histogram.push({ time: mac.time, value: Math.round((mac.value - signalLine[i].value) * 100) / 100 });
+    }
+  }
+  return { macd: macdLine, signal: signalLine, histogram };
 }

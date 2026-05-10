@@ -26,6 +26,23 @@ class SavedScreenerPayload(BaseModel):
     active: bool = True
 
 
+@router.get("/screener/saved/{screener_id}")
+def get_saved_screener(screener_id: int, db: Session = Depends(get_db)):
+    row = db.query(SavedScreener).filter(SavedScreener.id == screener_id).first()
+    if not row:
+        raise HTTPException(404, 'Saved screener not found')
+    return {
+        'data': {
+            'id': row.id,
+            'name': row.name,
+            'filters_json': row.filters_json,
+            'active': bool(row.active),
+            'match_count': row.match_count,
+            'created_at': row.created_at.isoformat() if row.created_at else None,
+        }
+    }
+
+
 @router.get("/screener/saved")
 def list_saved_screeners(db: Session = Depends(get_db)):
     rows = db.query(SavedScreener).order_by(SavedScreener.created_at.desc()).all()

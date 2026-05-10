@@ -702,6 +702,9 @@ async def stream_watchlist(tickers: str = ''):
 | 2026-05-10 | Research | ✅ | Audit codebase + competitor analysis + 10 fitur ranking. |
 | 2026-05-10 | 26.1.1 — Live Watchlist Streaming | ✅ | SSE endpoint `/api/watchlist/stream` + frontend auto-update portfolio & watchlist price cells with flash animation. |
 | 2026-05-10 | 26.1.2 — Dividend Dashboard | ✅ | New `#dividends` view: 149 saham, kalkulator dividen (input saham → net), filter sektor, CSV export, aristocrats section. Backend endpoints `/api/dividends` and `/api/dividends/aristocrats`. |
+| 2026-05-10 | 26.2.1 — Chart Technical Overlays | ✅ | EMA(12,26), RSI(14) sub-pane, MACD(12,26,9) sub-pane — kalkulasi client-side. Toggle buttons di chart toolbar. |
+| 2026-05-10 | 26.2.2 — Portfolio Analytics 2.0 | ✅ | Risk metrics (Sharpe, Drawdown, Win Rate, Total Return), monthly returns heatmap, concentration tracker. Backend + frontend. |
+| 2026-05-10 | 26.2.3 — Saved Screeners | ✅ | Save/load filter config via backend CRUD + frontend UI. Backend already had full CRUD (`/api/screener/saved`), frontend save/load/delete buttons + dropdown. Registered scanner router in main.py. |
 
 ---
 

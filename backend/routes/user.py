@@ -811,13 +811,75 @@ def portfolio_analytics(db: Session = Depends(get_db)):
         'pct': round((val / total_portfolio_value) * 100, 1) if total_portfolio_value > 0 else 0
     } for name, val in sorted(sector_value.items(), key=lambda x: -x[1])]
 
+
+    # 4. Risk metrics
+    risk_metrics = {}
+    if len(equity_curve) >= 20:
+        values = [e['value'] for e in equity_curve]
+        returns = [(values[i] - values[i-1]) / values[i-1] * 100 for i in range(1, len(values))]
+
+        # Max Drawdown
+        peak = values[0]
+        max_dd = 0
+        for v in values:
+            if v > peak: peak = v
+            dd = (peak - v) / peak * 100
+            if dd > max_dd: max_dd = dd
+
+        # Win Rate
+        wins = sum(1 for r in returns if r > 0)
+        win_rate = round(wins / len(returns) * 100, 1) if returns else 0
+
+        # Sharpe Ratio (assuming 0% risk-free rate)
+        avg_return = sum(returns) / len(returns) if returns else 0
+        std_return = (sum((r - avg_return) ** 2 for r in returns) / len(returns)) ** 0.5 if returns else 1
+        sharpe = round((avg_return / std_return) * (252 ** 0.5), 2) if std_return > 0 else 0
+
+        risk_metrics = {
+            'sharpe_ratio': sharpe,
+            'max_drawdown': round(max_dd, 2),
+            'win_rate': win_rate,
+            'total_returns': round((values[-1] - values[0]) / values[0] * 100, 2) if values[0] > 0 else 0,
+            'avg_return': round(avg_return, 2),
+            'total_trades': len(txns),
+        }
+
+    # 5. Monthly returns heatmap
+    monthly_returns = {}
+    if equity_curve:
+        for e in equity_curve:
+            try:
+                ym = e['date'][:7]
+                monthly_returns.setdefault(ym, []).append(e['value'])
+            except: pass
+    monthly_heatmap = []
+    for ym, vals in sorted(monthly_returns.items()):
+        if len(vals) >= 2:
+            ret = round((vals[-1] - vals[0]) / vals[0] * 100, 2) if vals[0] > 0 else 0
+            monthly_heatmap.append({'month': ym, 'return': ret})
+
+    # 6. Concentration
+    if sectors:
+        sorted_sectors = sorted(sectors, key=lambda x: -x['pct'])
+        concentration = {
+            'top_1_pct': sorted_sectors[0]['pct'] if sorted_sectors else 0,
+            'top_3_pct': sum(s['pct'] for s in sorted_sectors[:3]) if len(sorted_sectors) >= 3 else sum(s['pct'] for s in sorted_sectors),
+            'num_sectors': len(sorted_sectors),
+        }
+    else:
+        concentration = {}
+
     return {
         'equity_curve': equity_curve,
         'benchmark_curve': benchmark_curve,
         'sectors': sectors,
         'total_value': round(total_portfolio_value, 2),
         'has_data': bool(equity_curve or sectors),
+        'risk_metrics': risk_metrics,
+        'monthly_returns': monthly_heatmap,
+        'concentration': concentration,
     }
+
 
 
 @router.get('/api/watchlist-groups')

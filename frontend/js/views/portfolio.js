@@ -314,6 +314,19 @@ async function renderPortfolioTab(el) {
         <div class="portfolio-kpi"><span class="portfolio-kpi-label">Return %</span><strong class="portfolio-kpi-value ${pnlClass(summary.pnl_pct)}">${summary.pnl_pct > 0 ? '+' : ''}${pf(summary.pnl_pct)}</strong></div>
       </div>` : '';
 
+    // Risk metrics card
+    const riskHtml = `<div id="risk-metrics-section" class="portfolio-kpi-grid" style="margin-top:12px;display:none">
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Sharpe Ratio</span><strong class="portfolio-kpi-value" id="risk-sharpe">—</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Max Drawdown</span><strong class="portfolio-kpi-value text-down" id="risk-drawdown">—</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Win Rate</span><strong class="portfolio-kpi-value text-up" id="risk-winrate">—</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Return</span><strong class="portfolio-kpi-value" id="risk-totalreturn">—</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Posisi</span><strong class="portfolio-kpi-value" id="risk-positions">—</strong></div>
+      <div class="portfolio-kpi"><span class="portfolio-kpi-label">Sektor</span><strong class="portfolio-kpi-value" id="risk-sectors">—</strong></div>
+    </div>
+    <div id="monthly-heatmap-section" style="margin-top:12px;display:none">
+      <h4 class="text-xs uppercase text-dim strong mb-2">Return Bulanan (%)</h4>
+      <div id="monthly-heatmap-grid" class="flex flex-wrap gap-1"></div>
+    </div>
     // Analytics charts container
     const analyticsHtml = `<div id="portfolio-analytics-section" class="portfolio-analytics-grid">
       <div class="portfolio-chart-card" id="equity-curve-card">
@@ -604,9 +617,51 @@ async function loadPortfolioAnalytics() {
     renderEquityCurve(data.equity_curve || []);
     // ─── Sector Pie ───
     renderSectorPie(data.sectors || []);
+    // ─── Risk Metrics ───
+    renderRiskMetrics(data.risk_metrics || {});
+    // ─── Monthly Returns ───
+    renderMonthlyHeatmap(data.monthly_returns || []);
+    // ─── Concentration ───
+    if (data.concentration) {
+      const sektorEl = document.getElementById('risk-sectors');
+      if (sektorEl) sektorEl.textContent = data.concentration.num_sectors + ' (' + data.concentration.top_1_pct + '% terbesar)';
+    }
   } catch (e) {
     section.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Gagal memuat grafik</p></div>';
   }
+}
+
+// ─── Risk Metrics & Monthly Returns ───────────────────────────
+function renderRiskMetrics(metrics) {
+  const section = document.getElementById('risk-metrics-section');
+  if (!section) return;
+  if (!metrics || !metrics.sharpe_ratio) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  document.getElementById('risk-sharpe').textContent = metrics.sharpe_ratio > 0 ? metrics.sharpe_ratio : '—';
+  document.getElementById('risk-drawdown').textContent = metrics.max_drawdown ? '-' + metrics.max_drawdown + '%' : '—';
+  document.getElementById('risk-winrate').textContent = metrics.win_rate ? metrics.win_rate + '%' : '—';
+  document.getElementById('risk-totalreturn').textContent = metrics.total_returns ? (metrics.total_returns > 0 ? '+' : '') + metrics.total_returns + '%' : '—';
+  document.getElementById('risk-positions').textContent = metrics.total_trades || '—';
+  document.getElementById('risk-sectors').textContent = metrics.num_sectors || '—';
+  // Colorize
+  const sharpe = document.getElementById('risk-sharpe');
+  if (metrics.sharpe_ratio > 1) sharpe.className = 'portfolio-kpi-value text-up';
+  else if (metrics.sharpe_ratio > 0) sharpe.className = 'portfolio-kpi-value text-warn';
+  else sharpe.className = 'portfolio-kpi-value text-down';
+}
+
+function renderMonthlyHeatmap(monthly) {
+  const grid = document.getElementById('monthly-heatmap-grid');
+  const section = document.getElementById('monthly-heatmap-section');
+  if (!grid || !section) return;
+  if (!monthly || !monthly.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  grid.innerHTML = monthly.map(m => {
+    const ret = m['return'];
+    const cls = ret > 2 ? 'bg-green-600' : ret > 0.5 ? 'bg-green-400' : ret > -0.5 ? 'bg-neutral' : ret > -2 ? 'bg-red-400' : 'bg-red-600';
+    const txt = ret > 0 ? '+' + ret.toFixed(1) : ret.toFixed(1);
+    return `<div class="monthly-cell ${cls}" title="${m.month}: ${txt}%" style="width:48px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white">${txt}</div>`;
+  }).join('');
 }
 
 // ─── Sector Pie Chart (CSS conic-gradient, zero dependency) ───
