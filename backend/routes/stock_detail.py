@@ -11,9 +11,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 try:
-    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, Financial, get_db
+    from database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, Financial, CalendarEvent, get_db
 except ModuleNotFoundError:
-    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, Financial, get_db
+    from backend.database import Fundamental, OHLCVDaily, Signal, Stock, News, BrokerSummary, Alert, AlertTrigger, PaperTrade, ChatHistory, Financial, CalendarEvent, get_db
 
 try:
     from routes.shared_stock_fallbacks import _ticker_base, _ticker_with_suffix, _fallback_row_for_ticker
@@ -716,6 +716,250 @@ async def stream_alerts(poll_interval: float = 5.0):
         media_type='text/event-stream',
         headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )
+
+
+# ─── 27.1.1 — Fundamental History ────────────────────
+
+
+@router.get('/api/stocks/{ticker}/fundamentals/history')
+def get_fundamentals_history(ticker: str, db: Session = Depends(get_db)):
+    """Return historical PE, PBV, ROE trends + price time-series for charting."""
+    import json as _json
+    import math
+    from datetime import datetime
+
+    base = _ticker_base(ticker)
+    ticker_with_suffix = _ticker_with_suffix(ticker)
+    logger = logging.getLogger(__name__)
+
+    has_financial_data = False
+    ratios = {'pe': [], 'pbv': [], 'roe': []}
+    price_data = []
+
+    # Fetch OHLCV data (last 400 bars for SMA computation)
+    ohlcv_rows = (
+        db.query(OHLCVDaily)
+        .filter(OHLCVDaily.ticker == base)
+        .order_by(OHLCVDaily.date.asc())
+        .limit(400)
+        .all()
+    )
+    if not ohlcv_rows:
+        # Try with .JK suffix
+        ohlcv_rows = (
+            db.query(OHLCVDaily)
+            .filter(OHLCVDaily.ticker == ticker_with_suffix)
+            .order_by(OHLCVDaily.date.asc())
+            .limit(400)
+            .all()
+        )
+
+    # Compute SMA20 and SMA50 from OHLCV
+    closes = []
+    dates = []
+    volumes = []
+    for r in ohlcv_rows:
+        if r.close:
+            closes.append(float(r.close))
+            dates.append(r.date)
+            volumes.append(int(r.volume or 0))
+
+    # SMA helper
+    def sma(values, period):
+        if len(values) < period:
+            return [None] * len(values)
+        result = []
+        for i in range(len(values)):
+            if i < period - 1:
+                result.append(None)
+            else:
+                result.append(sum(values[i - period + 1:i + 1]) / period)
+        return result
+
+    sma20 = sma(closes, 20)
+    sma50 = sma(closes, 50)
+
+    # Price time-series for ALL stocks
+    for i, r in enumerate(ohlcv_rows):
+        d_str = r.date.isoformat()[:10] if hasattr(r.date, 'isoformat') else str(r.date)[:10]
+        price_data.append({
+            'date': d_str,
+            'close': float(r.close) if r.close else None,
+            'volume': int(r.volume or 0),
+            'sma20': sma20[i] if sma20[i] is not None else None,
+            'sma50': sma50[i] if sma50[i] is not None else None,
+        })
+
+    # Fetch Financial data to compute PE, PBV, ROE
+    try:
+        financial_rows = (
+            db.query(Financial)
+            .filter(
+                Financial.ticker == base,
+                Financial.type.in_(['income', 'balance'])
+            )
+            .order_by(Financial.period.desc())
+            .all()
+        )
+        if not financial_rows:
+            financial_rows = (
+                db.query(Financial)
+                .filter(
+                    Financial.ticker == ticker_with_suffix,
+                    Financial.type.in_(['income', 'balance'])
+                )
+                .order_by(Financial.period.desc())
+                .all()
+            )
+
+        if financial_rows:
+            # Build a dict: period -> {income_data, balance_data}
+            fin_by_period = {}
+            for fr in financial_rows:
+                p_key = fr.period.isoformat()[:10] if hasattr(fr.period, 'isoformat') else str(fr.period)[:10]
+                if p_key not in fin_by_period:
+                    fin_by_period[p_key] = {}
+                data = fr.data
+                if isinstance(data, str):
+                    try:
+                        data = _json.loads(data)
+                    except (_json.JSONDecodeError, TypeError):
+                        data = {}
+                if not isinstance(data, dict):
+                    data = {}
+                fin_by_period[p_key][fr.type] = data
+
+            # Estimate shares outstanding using latest market_cap / latest close
+            shares_est = None
+            try:
+                stock = db.query(Stock).filter(Stock.ticker == base).first()
+                if stock and stock.market_cap and closes:
+                    shares_est = stock.market_cap / closes[-1]
+            except Exception:
+                pass
+            if not shares_est:
+                try:
+                    from database import Fundamental as FundModel
+                    fund_row = db.query(FundModel).filter(FundModel.ticker == base).first()
+                    if not fund_row:
+                        fund_row = db.query(FundModel).filter(FundModel.ticker == ticker_with_suffix).first()
+                    if fund_row and fund_row.trailing_pe and fund_row.trailing_eps and closes:
+                        # trailing_pe * trailing_eps = price, so shares_est = market_cap/price
+                        pass
+                except Exception:
+                    pass
+                # Fallback: use 1 billion shares as rough estimate
+                shares_est = 1_000_000_000
+
+            has_financial_data = bool(fin_by_period)
+
+            # For each financial period, find the closest OHLCV date and compute ratios
+            for p_key in sorted(fin_by_period.keys(), reverse=True):
+                fin = fin_by_period[p_key]
+                income = fin.get('income', {})
+                balance = fin.get('balance', {})
+
+                net_income = income.get('Net Income')
+                total_equity = balance.get('Total Equity')
+
+                # Find closest OHLCV date (within 180 days of period end)
+                period_dt = None
+                try:
+                    period_dt = datetime.strptime(p_key, '%Y-%m-%d')
+                except ValueError:
+                    try:
+                        period_dt = datetime.strptime(p_key[:10], '%Y-%m-%d')
+                    except ValueError:
+                        continue
+
+                closest_close = None
+                closest_date = None
+                for j, r in enumerate(ohlcv_rows):
+                    if r.close:
+                        diff = abs((r.date - period_dt).days) if hasattr(r.date, 'isoformat') else 9999
+                        if diff <= 180:
+                            # Keep the closest date before or around period end
+                            if closest_date is None or diff < abs((closest_date - period_dt).days):
+                                closest_close = float(r.close)
+                                closest_date = r.date
+
+                if closest_close is None and closes:
+                    # Fallback: use last available close
+                    closest_close = closes[-1]
+                    closest_date = dates[-1] if dates else None
+
+                if closest_close and net_income is not None:
+                    eps = net_income / shares_est if shares_est else 0
+                    pe_val = closest_close / eps if eps != 0 else None
+                    if pe_val is not None and pe_val > 0 and pe_val < 10000:
+                        ratios['pe'].append({
+                            'date': p_key,
+                            'value': round(pe_val, 2),
+                        })
+
+                if closest_close and total_equity is not None:
+                    bvps = total_equity / shares_est if shares_est else 0
+                    pbv_val = closest_close / bvps if bvps != 0 else None
+                    if pbv_val is not None and pbv_val > 0 and pbv_val < 1000:
+                        ratios['pbv'].append({
+                            'date': p_key,
+                            'value': round(pbv_val, 2),
+                        })
+
+                if net_income is not None and total_equity is not None and total_equity != 0:
+                    roe_val = (net_income / total_equity) * 100
+                    if roe_val is not None and abs(roe_val) < 1000:
+                        ratios['roe'].append({
+                            'date': p_key,
+                            'value': round(roe_val, 2),
+                        })
+
+    except Exception as exc:
+        logger.warning("Error computing fundamental history for %s: %s", ticker, exc)
+
+    # Sort all ratio series by date ascending
+    for key in ratios:
+        ratios[key].sort(key=lambda x: x['date'])
+
+    return {
+        'ticker': base,
+        'has_financial_data': has_financial_data,
+        'ratios': ratios,
+        'price_data': price_data,
+    }
+
+
+# ─── 27.1.2 — Corporate Actions Timeline ────────────────────
+
+
+@router.get('/api/stocks/{ticker}/corporate-actions')
+def get_corporate_actions(ticker: str, db: Session = Depends(get_db)):
+    """Return corporate actions timeline for a given stock."""
+    base = _ticker_base(ticker)
+    ticker_with_suffix = _ticker_with_suffix(ticker)
+
+    events = (
+        db.query(CalendarEvent)
+        .filter(
+            (CalendarEvent.ticker == base) | (CalendarEvent.ticker == ticker_with_suffix)
+        )
+        .order_by(CalendarEvent.event_date.desc())
+        .all()
+    )
+
+    data = []
+    for ev in events:
+        data.append({
+            'type': ev.event_type,
+            'title': ev.title,
+            'date': ev.event_date.isoformat() if hasattr(ev.event_date, 'isoformat') else str(ev.event_date),
+            'description': ev.description,
+        })
+
+    return {
+        'data': data,
+        'count': len(data),
+    }
 
 
 # ─── Peer Comparison ────────────────────

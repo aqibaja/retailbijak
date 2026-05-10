@@ -582,3 +582,5 @@ Sprint 4: Chart Drawings → Sector Rotation → Portfolio Dividends
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
 | 2026-05-11 | Research | ✅ | Audit 40,876 lines + competitor gap analysis. |
+| 2026-05-11 | 27.1.1 — Fundamental Charts | ✅ | Backend endpoint `/api/stocks/{ticker}/fundamentals/history` — PE/PBV/ROE trend + price/SMA/volume data. Frontend Chart.js charts in stock detail. 30 tickers with financial data. |
+| 2026-05-11 | 27.1.2 — Corporate Actions Timeline | ✅ | Backend endpoint `/api/stocks/{ticker}/corporate-actions` + frontend timeline widget in stock detail sidebar. Dividends, earnings, IPO events per ticker. |

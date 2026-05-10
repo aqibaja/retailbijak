@@ -24,7 +24,7 @@ def _serialize_signal_rows(signals) -> list[dict[str, Any]]:
 
 
 def _compute_analysis_metrics_from_ohlcv(db: Session, ticker: str) -> dict[str, Any]:
-from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+    from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
     df = get_ohlcv_dataframe(db, ticker, limit=100)
     if df.empty or len(df) < 20:
         return {'volume_spike': 1.0, 'trend_score': 50, 'volatility_score': 50, 'breakout': False}

@@ -192,6 +192,8 @@ export async function renderStockDetail(root, ticker) {
           </div>
           <div class="stock-tab-content" data-tab-content="fundamental">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Fundamental Metrics</h3><div id="fundamental-grid" class="fundamental-grid"><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Riwayat Fundamental</h3><div id="fundamental-history"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div>
+            <div class="stock-side-panel"><h3 class="stock-side-panel-title">Aksi Korporasi</h3><div id="corporate-actions-timeline"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="diskusi">
             <div class="stock-side-panel">
@@ -882,6 +884,10 @@ export async function renderStockDetail(root, ticker) {
   }
   renderMarketStatsV2(fund?.data || detail?.data || {}, candles, technical);
   renderFundamentalGrid(fund?.data || detail?.data || {});
+  // 27.1.1 — Fundamental History Charts
+  renderFundamentalHistory(symbol);
+  // 27.1.2 — Corporate Actions Timeline
+  renderCorporateActions(symbol);
   renderDecisionPanel(candles, technical);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
@@ -1483,6 +1489,338 @@ function renderFundamentalGrid(d) {
   if(revenue!=null)cards.push(card('Revenue',fmtRp(revenue),'neutral',''));
   if(netIncome!=null)cards.push(card('Net Income',fmtRp(netIncome),netIncome>=0?'good':'bad',netIncome>=0?'Profit':'Rugi'));
   el.innerHTML = cards.join('');
+}
+
+// ─── 27.1.1 — Fundamental History Charts ────────────────────
+
+let fundamentalHistoryCharts = [];
+
+function renderFundamentalHistory(symbol) {
+  const container = document.getElementById('fundamental-history');
+  if (!container) return;
+
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamentals/history`).then(res => {
+    if (!res || !res.price_data || !res.price_data.length) {
+      container.innerHTML = '<div class="empty-state-v2"><h3>Belum ada data</h3><p>Data riwayat fundamental belum tersedia untuk saham ini.</p></div>';
+      return;
+    }
+
+    const hasFinancial = res.has_financial_data && (
+      (res.ratios?.pe?.length > 0) ||
+      (res.ratios?.pbv?.length > 0) ||
+      (res.ratios?.roe?.length > 0)
+    );
+
+    // Build charts HTML
+    let html = '';
+
+    // Ratio charts (only if financial data available)
+    if (hasFinancial) {
+      html += '<div class="fund-chart-toggles flex gap-1 mb-2 flex-wrap">';
+      const ratioTypes = [
+        { key: 'pe', label: 'P/E', active: true },
+        { key: 'pbv', label: 'P/BV', active: false },
+        { key: 'roe', label: 'ROE (%)', active: false },
+      ];
+      ratioTypes.forEach(r => {
+        const hasData = res.ratios[r.key]?.length > 0;
+        html += `<button type="button" class="btn btn-sm fund-chart-toggle ${r.active ? 'active' : ''}" data-ratio="${r.key}" ${!hasData ? 'disabled' : ''}>${r.label} ${!hasData ? '<small style="opacity:0.5">—</small>' : ''}</button>`;
+      });
+      html += '</div>';
+      html += '<div class="fund-chart-container" style="position:relative;height:200px;margin-bottom:12px"><canvas id="fund-ratio-chart"></canvas></div>';
+    }
+
+    // Price & Volume chart (always show)
+    html += '<div class="fund-chart-container" style="position:relative;height:160px;margin-bottom:8px"><canvas id="fund-price-chart"></canvas></div>';
+
+    container.innerHTML = html;
+
+    // Destroy previous Chart.js instances
+    fundamentalHistoryCharts.forEach(c => { try { c.destroy(); } catch(e) {} });
+    fundamentalHistoryCharts = [];
+
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const cs = getComputedStyle(document.documentElement);
+    const textColor = cs.getPropertyValue('--text-muted').trim() || '#94a3b8';
+    const gridColor = theme === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+    const upColor = cs.getPropertyValue('--up-color').trim() || '#34d399';
+    const downColor = cs.getPropertyValue('--down-color').trim() || '#f87171';
+    const primaryColor = cs.getPropertyValue('--primary-color').trim() || '#10b981';
+    const accentColor = cs.getPropertyValue('--accent-indigo').trim() || '#6366f1';
+
+    // Ratio chart
+    if (hasFinancial) {
+      const ctx = document.getElementById('fund-ratio-chart');
+      if (ctx && typeof Chart !== 'undefined') {
+        const activeRatio = 'pe';
+        const activeData = res.ratios[activeRatio] || [];
+        const labels = activeData.map(d => d.date.slice(0, 7));
+        const values = activeData.map(d => d.value);
+
+        const chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'P/E',
+              data: values,
+              borderColor: primaryColor,
+              backgroundColor: primaryColor + '22',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+              pointHitRadius: 10,
+              borderWidth: 2,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: cs.getPropertyValue('--bg-panel').trim() || '#1e293b',
+                titleColor: textColor,
+                bodyColor: textColor,
+                borderColor: gridColor,
+                borderWidth: 1,
+                cornerRadius: 8,
+                padding: 10,
+                callbacks: {
+                  label: function(ctx) {
+                    const val = ctx.parsed.y;
+                    const label = ctx.dataset.label;
+                    return `${label}: ${val != null ? val.toFixed(2) : '—'}x`;
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                display: true,
+                ticks: { color: textColor, maxTicksLimit: 6, font: { size: 10 } },
+                grid: { color: gridColor },
+              },
+              y: {
+                display: true,
+                ticks: { color: textColor, font: { size: 10 } },
+                grid: { color: gridColor },
+              },
+            },
+            interaction: {
+              intersect: false,
+              mode: 'index',
+            },
+          },
+        });
+        fundamentalHistoryCharts.push(chart);
+
+        // Toggle between ratio views
+        container.querySelectorAll('.fund-chart-toggle').forEach(btn => {
+          btn.addEventListener('click', function() {
+            container.querySelectorAll('.fund-chart-toggle').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const ratioKey = this.dataset.ratio;
+            const ratioData = res.ratios[ratioKey] || [];
+            const newLabels = ratioData.map(d => d.date.slice(0, 7));
+            const newValues = ratioData.map(d => d.value);
+            const labelMap = { pe: 'P/E', pbv: 'P/BV', roe: 'ROE (%)' };
+            const colorMap = { pe: primaryColor, pbv: accentColor, roe: upColor };
+            chart.data.labels = newLabels;
+            chart.data.datasets[0].data = newValues;
+            chart.data.datasets[0].label = labelMap[ratioKey] || ratioKey;
+            chart.data.datasets[0].borderColor = colorMap[ratioKey] || primaryColor;
+            chart.data.datasets[0].backgroundColor = (colorMap[ratioKey] || primaryColor) + '22';
+            chart.update();
+          });
+        });
+      }
+    }
+
+    // Price chart (close + SMA20 + SMA50)
+    const priceCtx = document.getElementById('fund-price-chart');
+    if (priceCtx && typeof Chart !== 'undefined') {
+      // Sample price data to ~120 points for performance
+      const step = Math.max(1, Math.floor(res.price_data.length / 120));
+      const sampled = res.price_data.filter((_, i) => i % step === 0 || i === res.price_data.length - 1);
+      const pLabels = sampled.map(d => d.date.slice(0, 10));
+      const closes = sampled.map(d => d.close);
+      const sma20Data = sampled.map(d => d.sma20);
+      const sma50Data = sampled.map(d => d.sma50);
+
+      // Volume as bar overlay
+      const volumes = sampled.map(d => d.volume);
+      const volMax = Math.max(...volumes, 1);
+
+      const priceChart = new Chart(priceCtx, {
+        type: 'line',
+        data: {
+          labels: pLabels,
+          datasets: [
+            {
+              label: 'Harga',
+              data: closes,
+              borderColor: primaryColor,
+              backgroundColor: 'transparent',
+              tension: 0.2,
+              pointRadius: 0,
+              borderWidth: 2,
+              order: 1,
+            },
+            {
+              label: 'SMA 20',
+              data: sma20Data,
+              borderColor: '#f59e0b',
+              backgroundColor: 'transparent',
+              tension: 0.2,
+              pointRadius: 0,
+              borderWidth: 1,
+              borderDash: [4, 4],
+              order: 1,
+            },
+            {
+              label: 'SMA 50',
+              data: sma50Data,
+              borderColor: accentColor,
+              backgroundColor: 'transparent',
+              tension: 0.2,
+              pointRadius: 0,
+              borderWidth: 1,
+              borderDash: [4, 4],
+              order: 1,
+            },
+            {
+              label: 'Volume',
+              data: volumes.map(v => (v / volMax) * (closes.length ? Math.max(...closes) * 0.3 : 1000)),
+              backgroundColor: volumes.map((v, i) => (closes[i] || 0) >= (i > 0 ? closes[i-1] || 0 : 0) ? upColor + '44' : downColor + '44'),
+              borderColor: 'transparent',
+              pointRadius: 0,
+              type: 'bar',
+              order: 2,
+              yAxisID: 'y1',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: textColor,
+                font: { size: 10 },
+                boxWidth: 12,
+                padding: 8,
+              },
+              position: 'top',
+            },
+            tooltip: {
+              backgroundColor: cs.getPropertyValue('--bg-panel').trim() || '#1e293b',
+              titleColor: textColor,
+              bodyColor: textColor,
+              borderColor: gridColor,
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              mode: 'index',
+              intersect: false,
+            },
+          },
+          scales: {
+            x: {
+              display: true,
+              ticks: { color: textColor, maxTicksLimit: 8, font: { size: 9 } },
+              grid: { color: gridColor },
+            },
+            y: {
+              display: true,
+              position: 'left',
+              ticks: {
+                color: textColor,
+                font: { size: 9 },
+                callback: function(val) { return 'Rp' + val.toLocaleString('id-ID'); },
+              },
+              grid: { color: gridColor },
+            },
+            y1: {
+              display: false,
+              position: 'right',
+              grid: { display: false },
+            },
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index',
+          },
+        },
+      });
+      fundamentalHistoryCharts.push(priceChart);
+    }
+  }).catch(e => {
+    console.warn('Fundamental history fetch failed:', e);
+    container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat data</h3><p>Riwayat fundamental tidak dapat dimuat saat ini.</p></div>';
+  });
+}
+
+// ─── 27.1.2 — Corporate Actions Timeline ────────────────────
+
+function renderCorporateActions(symbol) {
+  const container = document.getElementById('corporate-actions-timeline');
+  if (!container) return;
+
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/corporate-actions`).then(res => {
+    const events = res?.data || [];
+    if (!events.length) {
+      container.innerHTML = '<div class="empty-state-v2" style="padding:12px"><h3>Belum ada data</h3><p>Belum ada aksi korporasi tercatat untuk saham ini.</p></div>';
+      return;
+    }
+
+    // Color mapping for event types
+    const typeColors = {
+      dividend: '#34d399',
+      split: '#3b82f6',
+      rights: '#8b5cf6',
+      ipo: '#f59e0b',
+      earnings: '#6366f1',
+      corporate: '#f97316',
+    };
+
+    const typeLabels = {
+      dividend: 'Dividen',
+      split: 'Stock Split',
+      rights: 'HMETD',
+      ipo: 'IPO',
+      earnings: 'Laporan Keuangan',
+      corporate: 'Aksi Korporasi',
+    };
+
+    const html = `<div class="ca-timeline">${events.slice(0, 20).map(ev => {
+      const color = typeColors[ev.type] || '#64748b';
+      const label = typeLabels[ev.type] || ev.type;
+      const dateStr = ev.date ? ev.date.slice(0, 10) : '';
+      const desc = ev.description ? ev.description.slice(0, 120) : '';
+      return `<div class="ca-item" onclick="this.classList.toggle('ca-expanded')" style="cursor:pointer">
+        <div class="ca-item-dot" style="background:${color}">
+          <span class="ca-dot-inner" style="background:${color}"></span>
+        </div>
+        <div class="ca-item-content">
+          <div class="ca-item-header">
+            <span class="ca-item-type" style="color:${color}">${label}</span>
+            <span class="ca-item-date">${dateStr}</span>
+          </div>
+          <div class="ca-item-title">${ev.title || ''}</div>
+          ${desc ? `<div class="ca-item-desc">${desc}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('')}</div>
+    ${events.length > 20 ? `<div class="text-xs text-dim mt-2 text-center">+ ${events.length - 20} event lainnya</div>` : ''}`;
+
+    container.innerHTML = html;
+  }).catch(e => {
+    console.warn('Corporate actions fetch failed:', e);
+    container.innerHTML = '<div class="empty-state-v2" style="padding:12px"><h3>Gagal memuat data</h3><p>Aksi korporasi tidak dapat dimuat saat ini.</p></div>';
+  });
 }
 
 function renderMarketStatsV2(d, candles, tech){
