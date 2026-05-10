@@ -25,6 +25,7 @@ const ROUTE_META = {
   corporate: { title: 'RetailBijak — Aksi Korporasi', desc: 'IPO, rights issue, stock split, dividen, dan aksi korporasi saham IDX.' },
   chart: { title: 'RetailBijak — Chart', desc: 'Full-screen chart saham IDX dengan drawing tools dan multiple timeframe.' },
   indices: { title: 'RetailBijak — Indeks IDX', desc: 'Pantau konstituen dan performa indeks saham IDX: LQ45, IDX30, KOMPAS100, IDX80, IDXESGL.' },
+  dividends: { title: 'RetailBijak — Dividend Dashboard & Kalkulator', desc: 'Pantau dividen saham IDX, hitung estimasi pendapatan dividen, dan temukan dividend aristocrats.' },
 };
 
 // Dynamic view registry — lazy import per route (1.7.1)
@@ -51,6 +52,7 @@ const viewModules = {
   corporate: () => import('./views/corporate.js?v=20260510'),
   chart: () => import('./views/chart.js?v=20260510'),
   indices: () => import('./views/indices.js?v=20260510'),
+  dividends: () => import('./views/dividend.js?v=20260510'),
 };
 const viewCache = {};
 

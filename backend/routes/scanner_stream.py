@@ -31,6 +31,11 @@ except ModuleNotFoundError:
     from backend.database import SessionLocal
 
 try:
+    from database import OHLCVDaily
+except ModuleNotFoundError:
+    from backend.database import OHLCVDaily
+
+try:
     from indicators import compute_swingaq_signals
 except ModuleNotFoundError:
     from backend.indicators import compute_swingaq_signals
@@ -137,6 +142,80 @@ async def scan(timeframe: str = '1d', rule: str | None = None, index: str | None
 
     return StreamingResponse(
         scan_all_db_generator(timeframe, rule=rule, index=index),
+        media_type='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+    )
+
+
+# ─── 26.1.1 — Live Watchlist Price Streaming (SSE) ──────
+
+async def watchlist_stream_generator(tickers_str: str):
+    """SSE generator that streams latest price data for a list of tickers every 3 seconds."""
+    db = SessionLocal()
+    try:
+        parsed = [t.strip().upper() for t in tickers_str.split(',') if t.strip()]
+        if not parsed:
+            while True:
+                yield f"data: {json.dumps({'type': 'empty', 'message': 'No tickers provided'})}\n\n"
+                await asyncio.sleep(30)
+            return
+
+        while True:
+            results = []
+            for ticker in parsed:
+                try:
+                    row = db.query(OHLCVDaily).filter(
+                        OHLCVDaily.ticker == ticker
+                    ).order_by(OHLCVDaily.date.desc()).first()
+
+                    if row and row.close is not None:
+                        # Fetch previous close for change calculation
+                        prev_row = db.query(OHLCVDaily).filter(
+                            OHLCVDaily.ticker == ticker,
+                            OHLCVDaily.date < row.date
+                        ).order_by(OHLCVDaily.date.desc()).first()
+
+                        prev_close = prev_row.close if (prev_row and prev_row.close is not None) else row.close
+                        change = round(float(row.close) - float(prev_close), 2) if prev_close else 0.0
+                        change_pct = round((change / float(prev_close)) * 100, 2) if prev_close and float(prev_close) != 0 else 0.0
+
+                        results.append({
+                            'ticker': ticker,
+                            'price': round(float(row.close), 2),
+                            'change': change,
+                            'change_pct': change_pct,
+                            'volume': int(row.volume) if row.volume else 0,
+                        })
+                    else:
+                        results.append({
+                            'ticker': ticker,
+                            'price': None,
+                            'change': None,
+                            'change_pct': None,
+                            'volume': None,
+                            'error': 'No data',
+                        })
+                except Exception as exc:
+                    logger.warning(f'Watchlist stream error for {ticker}: {exc}')
+                    results.append({
+                        'ticker': ticker,
+                        'price': None,
+                        'change': None,
+                        'change_pct': None,
+                        'error': str(exc),
+                    })
+
+            yield f"data: {json.dumps({'type': 'update', 'data': results, 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
+            await asyncio.sleep(3)
+    finally:
+        db.close()
+
+
+@router.get('/api/watchlist/stream')
+async def watchlist_stream(tickers: str = ''):
+    """SSE endpoint that streams live watchlist prices every 3 seconds."""
+    return StreamingResponse(
+        watchlist_stream_generator(tickers),
         media_type='text/event-stream',
         headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )

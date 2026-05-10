@@ -1,7 +1,117 @@
 import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260510';
 import { money, nf, pf } from '../utils/format.js?v=20260510';
-import { observeElements } from '../main.js?v=20260510';
+import { observeElements, flashUpdate } from '../main.js?v=20260510';
 import { exportCSV as expCSV } from '../utils/export.js?v=20260510';
+
+// ─── SSE State ──────────────────────────────
+let _wlEventSource = null;   // Watchlist SSE connection
+let _pfEventSource = null;   // Portfolio SSE connection
+
+function stopWatchlistSSE() {
+    if (_wlEventSource) {
+        _wlEventSource.close();
+        _wlEventSource = null;
+    }
+}
+
+function stopPortfolioSSE() {
+    if (_pfEventSource) {
+        _pfEventSource.close();
+        _pfEventSource = null;
+    }
+}
+
+function startWatchlistSSE(tickers) {
+    stopWatchlistSSE();
+    if (!tickers || !tickers.length) return;
+    const url = `${window.location.origin}/api/watchlist/stream?tickers=${tickers.join(',')}`;
+    _wlEventSource = new EventSource(url);
+    _wlEventSource.onmessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg.type !== 'update' || !msg.data) return;
+            msg.data.forEach(item => {
+                if (item.price == null) return;
+                // Update watchlist row cells
+                const priceEl = document.querySelector(`.wl-price[data-ticker="${item.ticker}"]`);
+                const changeEl = document.querySelector(`.wl-change[data-ticker="${item.ticker}"]`);
+                const pctEl = document.querySelector(`.wl-change-pct[data-ticker="${item.ticker}"]`);
+                if (priceEl) {
+                    const oldVal = priceEl._lastPrice;
+                    priceEl.textContent = money(item.price);
+                    if (oldVal != null && oldVal !== item.price) {
+                        flashUpdate(priceEl, item.change >= 0);
+                    }
+                    priceEl._lastPrice = item.price;
+                }
+                if (changeEl) {
+                    const cls = item.change >= 0 ? 'text-up' : 'text-down';
+                    changeEl.className = `mono font-size-14 wl-change ${cls}`;
+                    changeEl.textContent = `${item.change >= 0 ? '+' : ''}${nf(item.change, 0)}`;
+                }
+                if (pctEl) {
+                    const cls = item.change_pct >= 0 ? 'text-up' : 'text-down';
+                    pctEl.className = `mono font-size-14 wl-change-pct ${cls}`;
+                    pctEl.textContent = pf(item.change_pct);
+                }
+                // Also update portfolio row if present
+                const pfPriceEl = document.querySelector(`.pf-price[data-ticker="${item.ticker}"]`);
+                if (pfPriceEl) {
+                    const oldVal = pfPriceEl._lastPrice;
+                    pfPriceEl.textContent = money(item.price);
+                    if (oldVal != null && oldVal !== item.price) {
+                        flashUpdate(pfPriceEl, item.change >= 0);
+                    }
+                    pfPriceEl._lastPrice = item.price;
+                }
+            });
+        } catch (e) { /* ignore parse errors */ }
+    };
+    _wlEventSource.onerror = () => {
+        // Auto-reconnect is built into EventSource; just log
+        console.warn('Watchlist SSE connection error, will retry...');
+    };
+}
+
+function startPortfolioSSE(tickers) {
+    stopPortfolioSSE();
+    if (!tickers || !tickers.length) return;
+    const url = `${window.location.origin}/api/watchlist/stream?tickers=${tickers.join(',')}`;
+    _pfEventSource = new EventSource(url);
+    _pfEventSource.onmessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg.type !== 'update' || !msg.data) return;
+            msg.data.forEach(item => {
+                if (item.price == null) return;
+                const pfPriceEl = document.querySelector(`.pf-price[data-ticker="${item.ticker}"]`);
+                const pfChangeEl = document.querySelector(`.pf-change[data-ticker="${item.ticker}"]`);
+                const pfPctEl = document.querySelector(`.pf-change-pct[data-ticker="${item.ticker}"]`);
+                if (pfPriceEl) {
+                    const oldVal = pfPriceEl._lastPrice;
+                    pfPriceEl.textContent = money(item.price);
+                    if (oldVal != null && oldVal !== item.price) {
+                        flashUpdate(pfPriceEl, item.change >= 0);
+                    }
+                    pfPriceEl._lastPrice = item.price;
+                }
+                if (pfChangeEl) {
+                    const cls = item.change >= 0 ? 'text-up' : 'text-down';
+                    pfChangeEl.className = `mono font-size-14 pf-change ${cls}`;
+                    pfChangeEl.textContent = `${item.change >= 0 ? '+' : ''}${nf(item.change, 0)}`;
+                }
+                if (pfPctEl) {
+                    const cls = item.change_pct >= 0 ? 'text-up' : 'text-down';
+                    pfPctEl.className = `mono font-size-14 pf-change-pct ${cls}`;
+                    pfPctEl.textContent = pf(item.change_pct);
+                }
+            });
+        } catch (e) { /* ignore parse errors */ }
+    };
+    _pfEventSource.onerror = () => {
+        console.warn('Portfolio SSE connection error, will retry...');
+    };
+}
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {
@@ -136,25 +246,40 @@ export async function renderPortfolio(root, activeTab) {
         </div>
       </section>`;
     observeElements();
+    // Stop previous SSE connections before rendering new tab
+    stopWatchlistSSE();
+    stopPortfolioSSE();
     if (isPort) await renderPortfolioTab(root.querySelector('#tab-content'));
     else await renderWatchlistTab(root.querySelector('#tab-content'));
     
     // Rebalance tab handler
     const rebalanceBtn = root.querySelector('#rebalance-tab-btn');
     if (rebalanceBtn) {
-      rebalanceBtn.addEventListener('click', () => renderRebalanceTab(root.querySelector('#tab-content')));
+      rebalanceBtn.addEventListener('click', () => {
+        stopWatchlistSSE();
+        stopPortfolioSSE();
+        renderRebalanceTab(root.querySelector('#tab-content'));
+      });
     }
 
     // Perf chart handler (18.2)
     const perfBtn = root.querySelector('#perf-chart-btn');
     if (perfBtn) {
-      perfBtn.addEventListener('click', () => renderPerfChart(root.querySelector('#tab-content')));
+      perfBtn.addEventListener('click', () => {
+        stopWatchlistSSE();
+        stopPortfolioSSE();
+        renderPerfChart(root.querySelector('#tab-content'));
+      });
     }
 
     // Watchlist News tab handler
     const wlNewsBtn = root.querySelector('#wl-news-tab-btn');
     if (wlNewsBtn) {
-      wlNewsBtn.addEventListener('click', () => renderWatchlistNews(root.querySelector('#tab-content')));
+      wlNewsBtn.addEventListener('click', () => {
+        stopWatchlistSSE();
+        stopPortfolioSSE();
+        renderWatchlistNews(root.querySelector('#tab-content'));
+      });
     }
 
     // Load watchlist news badge count
@@ -252,12 +377,12 @@ async function renderPortfolioTab(el) {
             const pnl = sumItem?.pnl;
             const pnlPct = sumItem?.pnl_pct;
             const sector = sumItem?.sector || '';
-            return `<tr>
+            return `<tr data-ticker="${r.ticker}">
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="text-xs text-dim">${sector || '—'}</td>
               <td class="mono font-size-14">${r.lots}</td>
               <td class="mono font-size-14 text-muted">${money(r.avg_price)}</td>
-              <td class="mono font-size-14">${cp ? money(cp) : '—'}</td>
+              <td class="mono font-size-14 pf-price" data-ticker="${r.ticker}">${cp ? money(cp) : '—'}</td>
               <td class="mono font-size-14 ${pnlClass(pnl)}">${pnl != null ? pnlFmt(pnl) : '—'}</td>
               <td class="mono font-size-14 ${pnlClass(pnlPct)}">${pnlPct != null ? `${pnlPct > 0 ? '+' : ''}${pf(pnlPct)}` : '—'}</td>
               <td class="text-right"><button type="button" class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
@@ -459,6 +584,10 @@ async function renderPortfolioTab(el) {
     // Load analytics charts
     loadPortfolioAnalytics();
     loadRebalancing();
+
+    // ─── Start live price SSE for portfolio ───
+    const pfTickers = rows.map(r => r.ticker).filter(Boolean);
+    startPortfolioSSE(pfTickers);
 }
 
 async function loadPortfolioAnalytics() {
@@ -793,9 +922,12 @@ async function renderWatchlistTab(el, activeGroupId) {
       </div>` : rows.length ? `
       <div class="table-wrapper">
         <table class="table">
-          <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
+          <thead><tr><th>Kode Saham</th><th>Harga</th><th>Change</th><th>Change %</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
           <tbody>${rows.map(r => `\n            <tr class="watchlist-row" data-ticker="${r.ticker}" role="button" tabindex="0">
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
+              <td class="mono font-size-14 wl-price" data-ticker="${r.ticker}">—</td>
+              <td class="mono font-size-14 wl-change" data-ticker="${r.ticker}">—</td>
+              <td class="mono font-size-14 wl-change-pct" data-ticker="${r.ticker}">—</td>
               <td class="text-muted text-sm">${r.notes || '-'}</td>
               <td class="text-right" style="white-space:nowrap">
                 <button type="button" class="btn-icon wl-alert-toggle" data-ticker="${r.ticker}" title="Buat Alert" style="color:var(--text-dim)">
@@ -974,6 +1106,10 @@ async function renderWatchlistTab(el, activeGroupId) {
         }, i * 200);
       });
     }
+
+    // ─── Start live price SSE ───
+    const watchTickers = rows.map(r => r.ticker).filter(Boolean);
+    startWatchlistSSE(watchTickers);
 }
 
 // ─── Manage Watchlist Groups (19.4) ──────────

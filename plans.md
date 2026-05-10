@@ -700,6 +700,8 @@ async def stream_watchlist(tickers: str = ''):
 |------|------|--------|---------|
 | — | — | 🆕 | **Fase 26 — Research & Planning** |
 | 2026-05-10 | Research | ✅ | Audit codebase + competitor analysis + 10 fitur ranking. |
+| 2026-05-10 | 26.1.1 — Live Watchlist Streaming | ✅ | SSE endpoint `/api/watchlist/stream` + frontend auto-update portfolio & watchlist price cells with flash animation. |
+| 2026-05-10 | 26.1.2 — Dividend Dashboard | ✅ | New `#dividends` view: 149 saham, kalkulator dividen (input saham → net), filter sektor, CSV export, aristocrats section. Backend endpoints `/api/dividends` and `/api/dividends/aristocrats`. |
 
 ---
 
