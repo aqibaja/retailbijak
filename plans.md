@@ -597,3 +597,107 @@ Sprint 4: Chart Drawings → Sector Rotation → Portfolio Dividends
 | 2026-05-11 | 27.4.3 — Portfolio Dividends | ✅ | `GET /api/portfolio/dividends` endpoint. "📋 Dividen" tab with KPI cards + table (yield, est. annual, income %). |
 | | | | |
 | **Fase 27 Total** | 10/10 tasks | ✅ | **Selesai!** Semua fitur Fase 27 deployed. |
+
+
+
+---
+
+# 🇮🇩 RetailBijak — Fase 28: User Identity & Intelligent Engagement
+
+> **Status:** 🆕 **Research Complete — Ready to Execute**
+> **Tujuan:** Foundation layer (user auth, data seeding, PWA) + intelligent daily engagement
+> **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
+
+---
+
+## 🧠 Kondisi Saat Ini (Fase 27 ✅ Baseline)
+
+Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoints.
+
+### 🔴 Critical Gaps
+
+| Gap | Severity | Detail |
+|-----|----------|--------|
+| No user auth | 🔴 HIGH | Zero authentication. Telegram/SMTP credentials shared globally. |
+| AI Picks + Briefing empty | 🔴 HIGH | `daily_ai_pick_reports` (0 rows), `market_briefings` (0 rows). Scheduler broken. |
+| 16 empty user tables | 🟡 MEDIUM | Watchlist, portfolio, paper trades, screeners, drawings — all 0 rows. |
+| 4 bare-minimum views | 🟡 MEDIUM | corporate.js (159L), signal_overview.js (174L), indices.js (177L), alerts.js (182L) |
+| PWA minimal | 🟢 LOW | sw.js hanya 84 lines — no offline cache |
+| No portfolio benchmark | 🟢 LOW | Portfolio chart doesn't overlay IHSG |
+
+---
+
+## 🎯 Research: 10 Fitur Potensial
+
+| # | Fitur | Impact | Effort | Kategori |
+|---|-------|--------|--------|----------|
+| 1 | **User Authentication** 🔥 | 🔥🔥🔥🔥🔥 | 🟡 8h | Foundation |
+| 2 | **Fix AI Scheduler Pipeline** 🔥 | 🔥🔥🔥🔥🔥 | 🟡 4h | Data |
+| 3 | **PWA Installable + Offline** | 🔥🔥🔥🔥 | 🟢 4h | Engagement |
+| 4 | **Portfolio vs IHSG Benchmark** | 🔥🔥🔥🔥 | 🟢 3h | Analytics |
+| 5 | **Seed Sample Data** | 🔥🔥🔥🔥 | 🟢 2h | UX |
+| 6 | **Enhanced 4 Bare Views** | 🔥🔥🔥 | 🟡 6h | Polish |
+| 7 | **Background Alert Sync** | 🔥🔥🔥 | 🟢 3h | Engagement |
+| 8 | **Portfolio Sector Allocation Pie** | 🔥🔥🔥 | 🟢 2h | Analytics |
+| 9 | **Stock Split / Rights Calculator** | 🔥🔥 | 🟢 2h | Intel |
+| 10 | **User Onboarding Flow** | 🔥🔥 | 🟢 3h | UX |
+
+---
+
+## 🔴 Sprint 1 — Foundation (~14h)
+
+### 28.1.1 — User Authentication System 🔥
+**Est:** 🔴 8h | Device-based auth + optional PIN. UserIdentity table. Protect Telegram/SMTP.
+
+### 28.1.2 — Fix AI Scheduler Pipeline 🔥
+**Est:** 🟡 4h | Debug + fallback generator. Ensure daily_ai_pick_reports & market_briefings populate.
+
+### 28.1.3 — PWA Installable + Offline Mode
+**Est:** 🟢 4h | manifest.json, Cache API, offline fallback, install button.
+
+---
+
+## 🟠 Sprint 2 — Data & Insights (~12h)
+
+### 28.2.1 — Portfolio vs IHSG Benchmark
+**Est:** 🟢 3h | Overlay IHSG on portfolio chart. Alpha/Beta KPI.
+
+### 28.2.2 — Seed Sample Data
+**Est:** 🟢 2h | POST /api/seed/sample-portfolio/watchlist/drawings. Settings page button.
+
+### 28.2.3 — Portfolio Sector Allocation Pie
+**Est:** 🟢 2h | Chart.js donut chart. Sector breakdown of portfolio value.
+
+### 28.2.4 — Stock Split / Rights Calculator
+**Est:** 🟢 2h | JS-side calculator widget in stock detail page.
+
+---
+
+## 🟡 Sprint 3 — Polish & Engagement (~12h)
+
+### 28.3.1 — Enhanced 4 Bare Views
+**Est:** 🟡 6h | Filters, sorting, search for corporate/indices/signals/alerts.
+
+### 28.3.2 — Background Alert Sync
+**Est:** 🟢 3h | Service worker periodic sync. Notify when tab closed.
+
+### 28.3.3 — User Onboarding Flow
+**Est:** 🟢 3h | 3-step overlay on first visit. Replay from Help.
+
+---
+
+## ⚡ Prioritas Eksekusi
+
+**Sprint 1:** User Auth → Fix AI Pipeline → PWA Offline
+**Sprint 2:** Portfolio Benchmark → Seed Data → Allocation Pie → Split Calculator
+**Sprint 3:** Enhanced 4 Views → Background Alerts → Onboarding
+
+**Total:** ~38 jam — fokus pada infrastructure, data quality, dan user engagement.
+
+---
+
+## 📋 Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-11 | Research | ✅ | Audit 43,756 lines, 26 tables, 25 views, 105 endpoints. 10 fitur ranked. |
