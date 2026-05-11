@@ -1,28 +1,34 @@
 import { apiFetch, showToast } from '../api.js?v=202605120200';
 import { nf, pf, money } from '../utils/format.js?v=202605120200';
 import { observeElements } from '../utils/helpers.js?v=202605120200';
-import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605120200';
 
-const INITIAL_CAPITAL = 100_000_000; // 100M virtual cash
+const INITIAL_CAPITAL = 100_000_000; // Rp 100 juta virtual cash
+
+// ---------------------------------------------------------------------------
+// Entry point
+// ---------------------------------------------------------------------------
 
 export async function renderPaperTrades(root) {
   document.title = 'RetailBijak — Paper Trading';
+
   root.innerHTML = `
     <section class="market-overview-page stagger-reveal">
+
+      <!-- Header -->
       <div class="market-overview-head">
         <div class="market-head-copy">
           <div class="market-row-kicker">Virtual Trading</div>
           <h1 class="news-hero-title">Paper Trading</h1>
-          <p class="news-hero-sub">Simulasi trading tanpa risiko. Mulai dengan modal virtual Rp100.000.000. Buka posisi, pantau P&L, ukur kemampuan trading-mu!</p>
+          <p class="news-hero-sub">Simulasi trading tanpa risiko. Modal virtual Rp100.000.000. Buka posisi, pantau P&amp;L realtime, ukur kemampuan trading-mu!</p>
         </div>
       </div>
-      <div id="pt-summary" class="market-section-group"><div class="skeleton skeleton-card skeleton-h-100"></div></div>
-      <div id="pt-equity-chart" class="market-section-group" style="display:none">
-        <div class="market-card p-4">
-          <h3 class="panel-title mb-3">Equity Curve</h3>
-          <div id="pt-chart-container" style="height:220px;width:100%"></div>
-        </div>
+
+      <!-- Summary KPI -->
+      <div id="pt-summary" class="market-section-group">
+        <div class="skeleton skeleton-card skeleton-h-100"></div>
       </div>
+
+      <!-- Form buka posisi -->
       <div class="market-section-group">
         <div class="market-card">
           <div class="flex justify-between items-center p-4 border-bottom-subtle">
@@ -30,227 +36,425 @@ export async function renderPaperTrades(root) {
           </div>
           <div class="p-4">
             <div class="flex flex-wrap gap-3 items-end">
-              <div style="flex:1;min-width:100px">
-                <label class="text-xs text-dim uppercase strong">Kode</label>
-                <input type="text" id="pt-ticker" class="form-input" placeholder="BBCA" />
+              <div style="flex:2;min-width:110px">
+                <label class="text-xs text-dim uppercase strong">Kode Saham</label>
+                <input type="text" id="pt-ticker" class="form-input" placeholder="BBCA" autocomplete="off" />
               </div>
-              <div style="flex:1;min-width:80px">
-                <label class="text-xs text-dim uppercase strong">Tipe</label>
-                <select id="pt-type" class="form-input">
+              <div style="flex:1;min-width:90px">
+                <label class="text-xs text-dim uppercase strong">Arah</label>
+                <select id="pt-direction" class="form-input">
                   <option value="BUY">BUY (Long)</option>
                   <option value="SELL">SELL (Short)</option>
                 </select>
               </div>
-              <div style="flex:1;min-width:100px">
-                <label class="text-xs text-dim uppercase strong">Jumlah</label>
-                <input type="number" id="pt-qty" class="form-input" value="100" step="100" min="1" />
+              <div style="flex:1;min-width:90px">
+                <label class="text-xs text-dim uppercase strong">Lot</label>
+                <input type="number" id="pt-lots" class="form-input" value="1" min="1" step="1" />
               </div>
-              <div style="flex:1;min-width:100px">
-                <label class="text-xs text-dim uppercase strong">Harga (Rp)</label>
-                <input type="number" id="pt-price" class="form-input" placeholder="Otomatis" step="25" />
+              <div style="flex:2;min-width:120px">
+                <label class="text-xs text-dim uppercase strong">Harga Entry (Rp)</label>
+                <input type="number" id="pt-price" class="form-input" placeholder="Otomatis dari data" step="1" min="1" />
+              </div>
+              <div style="flex:2;min-width:140px">
+                <label class="text-xs text-dim uppercase strong">Catatan (opsional)</label>
+                <input type="text" id="pt-notes" class="form-input" placeholder="Strategi, alasan, dll" />
               </div>
               <div style="flex-shrink:0">
-                <button id="btn-open-trade" type="button" class="btn btn-primary">Buka</button>
+                <button id="btn-open-trade" type="button" class="btn btn-primary">Buka Posisi</button>
               </div>
             </div>
+            <div id="pt-form-error" class="text-xs text-down mt-2" style="display:none"></div>
           </div>
         </div>
       </div>
+
+      <!-- Filter tabs -->
       <div class="market-section-group">
         <div class="flex gap-2 mb-3">
-          <button id="pt-filter-all" type="button" class="btn btn-sm btn-primary">Semua</button>
-          <button id="pt-filter-open" type="button" class="btn btn-sm">Terbuka</button>
+          <button id="pt-filter-open"   type="button" class="btn btn-sm btn-primary">Terbuka</button>
           <button id="pt-filter-closed" type="button" class="btn btn-sm">Tertutup</button>
         </div>
-        <div id="pt-trades-container"><div class="skeleton skeleton-card skeleton-h-200"></div></div>
+
+        <!-- Open positions table -->
+        <div id="pt-open-container">
+          <div class="skeleton skeleton-card skeleton-h-200"></div>
+        </div>
+
+        <!-- Closed positions table -->
+        <div id="pt-closed-container" style="display:none">
+          <div class="skeleton skeleton-card skeleton-h-200"></div>
+        </div>
       </div>
+
     </section>`;
 
-  let filter = '';
-  loadSummary();
-  loadTrades(filter);
+  // State
+  let activeTab = 'open';
 
+  // Initial load
+  loadSummary();
+  loadOpen();
+
+  // Tab switching
+  document.getElementById('pt-filter-open').addEventListener('click', () => {
+    activeTab = 'open';
+    document.getElementById('pt-filter-open').classList.add('btn-primary');
+    document.getElementById('pt-filter-closed').classList.remove('btn-primary');
+    document.getElementById('pt-open-container').style.display = '';
+    document.getElementById('pt-closed-container').style.display = 'none';
+    loadOpen();
+  });
+
+  document.getElementById('pt-filter-closed').addEventListener('click', () => {
+    activeTab = 'closed';
+    document.getElementById('pt-filter-closed').classList.add('btn-primary');
+    document.getElementById('pt-filter-open').classList.remove('btn-primary');
+    document.getElementById('pt-open-container').style.display = 'none';
+    document.getElementById('pt-closed-container').style.display = '';
+    loadClosed();
+  });
+
+  // Form submit
   document.getElementById('btn-open-trade').addEventListener('click', openTrade);
-  document.getElementById('pt-ticker').addEventListener('keydown', e => { if (e.key === 'Enter') openTrade(); });
-  document.getElementById('pt-filter-all').addEventListener('click', () => { filter = ''; loadTrades(filter); });
-  document.getElementById('pt-filter-open').addEventListener('click', () => { filter = 'open'; loadTrades(filter); });
-  document.getElementById('pt-filter-closed').addEventListener('click', () => { filter = 'closed'; loadTrades(filter); });
+  document.getElementById('pt-ticker').addEventListener('keydown', e => {
+    if (e.key === 'Enter') openTrade();
+  });
+
   observeElements();
 }
 
+// ---------------------------------------------------------------------------
+// Summary KPI
+// ---------------------------------------------------------------------------
+
 async function loadSummary() {
   const el = document.getElementById('pt-summary');
+  if (!el) return;
   try {
     const res = await apiFetch('/paper-trades/summary');
-    if (!res) return;
-    const pnlCls = res.total_pnl >= 0 ? 'text-up' : 'text-down';
+    if (!res) { el.innerHTML = ''; return; }
+
     const portfolioValue = INITIAL_CAPITAL + (res.total_pnl || 0);
-    const pctReturn = ((portfolioValue - INITIAL_CAPITAL) / INITIAL_CAPITAL * 100);
-    el.innerHTML = `<div class="market-card p-4">
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div class="bt-kpi"><span class="bt-kpi-label">Modal Virtual</span><strong class="bt-kpi-value">${money(INITIAL_CAPITAL)}</strong></div>
-        <div class="bt-kpi"><span class="bt-kpi-label">Nilai Portfolio</span><strong class="bt-kpi-value ${pnlCls}">${money(portfolioValue)}</strong></div>
-        <div class="bt-kpi"><span class="bt-kpi-label">Return</span><strong class="bt-kpi-value ${pnlCls}">${pctReturn > 0 ? '+' : ''}${pf(pctReturn)}</strong></div>
-        <div class="bt-kpi"><span class="bt-kpi-label">Total P&L</span><strong class="bt-kpi-value ${pnlCls}">${res.total_pnl > 0 ? '+' : ''}${money(res.total_pnl)}</strong></div>
-        <div class="bt-kpi"><span class="bt-kpi-label">Win Rate</span><strong class="bt-kpi-value">${res.win_rate || 0}%</strong></div>
-      </div>
-    </div>`;
-    // Load equity curve if there are trades
-    if (res.total > 0) renderEquityCurve();
-  } catch (e) { el.innerHTML = ''; }
+    const pctReturn = (portfolioValue - INITIAL_CAPITAL) / INITIAL_CAPITAL * 100;
+    const pnlCls = (res.total_pnl || 0) >= 0 ? 'text-up' : 'text-down';
+    const sign = v => v > 0 ? '+' : '';
+
+    el.innerHTML = `
+      <div class="market-card p-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="bt-kpi">
+            <span class="bt-kpi-label">Modal Virtual</span>
+            <strong class="bt-kpi-value">${money(INITIAL_CAPITAL)}</strong>
+          </div>
+          <div class="bt-kpi">
+            <span class="bt-kpi-label">Nilai Portfolio</span>
+            <strong class="bt-kpi-value ${pnlCls}">${money(portfolioValue)}</strong>
+          </div>
+          <div class="bt-kpi">
+            <span class="bt-kpi-label">Return</span>
+            <strong class="bt-kpi-value ${pnlCls}">${sign(pctReturn)}${pf(pctReturn)}</strong>
+          </div>
+          <div class="bt-kpi">
+            <span class="bt-kpi-label">Total P&amp;L</span>
+            <strong class="bt-kpi-value ${pnlCls}">${sign(res.total_pnl)}${money(res.total_pnl || 0)}</strong>
+          </div>
+          <div class="bt-kpi">
+            <span class="bt-kpi-label">Win Rate</span>
+            <strong class="bt-kpi-value">${res.win_rate || 0}%
+              <span class="text-dim text-xs">(${res.open_count || 0} open)</span>
+            </strong>
+          </div>
+        </div>
+      </div>`;
+  } catch (e) {
+    el.innerHTML = '';
+  }
 }
 
-async function renderEquityCurve() {
-  const chartContainer = document.getElementById('pt-chart-container');
-  const section = document.getElementById('pt-equity-chart');
-  if (!chartContainer || !section) return;
-  if (typeof LightweightCharts === 'undefined') return;
+// ---------------------------------------------------------------------------
+// Open positions table
+// ---------------------------------------------------------------------------
+
+async function loadOpen() {
+  const el = document.getElementById('pt-open-container');
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton skeleton-card skeleton-h-200"></div>';
 
   try {
-    const res = await apiFetch('/paper-trades');
+    const res = await apiFetch('/paper-trades?status=open');
     const trades = res?.data || [];
-    if (trades.length < 1) return;
 
-    section.style.display = '';
-
-    // Build equity curve: accumulate P&L over time
-    let runningEquity = INITIAL_CAPITAL;
-    const points = [{ time: trades[trades.length - 1]?.entry_date?.slice(0,10) || '2026-01-01', value: runningEquity }];
-    // Sort by entry date
-    const sorted = [...trades].sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
-    for (const t of sorted) {
-      const pnl = t.pnl || 0;
-      runningEquity += pnl;
-      points.push({ time: t.exit_date?.slice(0,10) || t.entry_date?.slice(0,10), value: Math.round(runningEquity) });
-    }
-
-    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
-    const isLight = theme === 'light';
-    const textColor = isLight ? '#64748b' : '#94a3b8';
-    const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
-    const container = chartContainer;
-
-    if (container._chart) { container._chart.remove(); }
-
-    const chart = LightweightCharts.createChart(container, {
-      width: container.clientWidth, height: 200,
-      layout: { textColor, background: { type: 'solid', color: 'transparent' } },
-      grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
-      rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false, timeVisible: false },
-      crosshair: { mode: 0 },
-    });
-    container._chart = chart;
-
-    const isUp = runningEquity >= INITIAL_CAPITAL;
-    const line = chart.addLineSeries({
-      color: isUp ? '#10b981' : '#f87171', lineWidth: 2, priceLineVisible: false,
-      lastValueVisible: true, crosshairMarkerVisible: true,
-    });
-    line.setData(points);
-
-    const baseLine = chart.addLineSeries({
-      color: isLight ? 'rgba(100,116,139,0.4)' : 'rgba(148,163,184,0.3)',
-      lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false,
-    });
-    baseLine.setData([{ time: points[0].time, value: INITIAL_CAPITAL }, { time: points[points.length - 1].time, value: INITIAL_CAPITAL }]);
-
-    chart.timeScale().fitContent();
-    new ResizeObserver(() => { if (container.clientWidth > 0) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
-  } catch (e) { /* silent */ }
-}
-
-async function loadTrades(filter) {
-  const el = document.getElementById('pt-trades-container');
-  try {
-    const q = filter ? `?status=${filter}` : '';
-    const res = await apiFetch(`/paper-trades${q}`);
-    const trades = res?.data || [];
     if (!trades.length) {
-      el.innerHTML = '<div class="market-card p-4"><div class="empty-state-v2"><h3>Belum ada trade</h3><p>Buka posisi baru untuk memulai paper trading.</p></div></div>';
+      el.innerHTML = `
+        <div class="market-card p-4">
+          <div class="empty-state-v2">
+            <h3>Belum ada paper trade. Mulai simulasi trading kamu!</h3>
+            <p>Gunakan form di atas untuk membuka posisi pertama.</p>
+          </div>
+        </div>`;
       return;
     }
-    el.innerHTML = `<div class="market-card p-4"><div style="overflow-x:auto">
-      <table class="bt-table">
-        <thead><tr><th>#</th><th>Kode</th><th>Tipe</th><th>Entry</th><th>Exit</th><th>Qty</th><th>Harga</th><th>P&L</th><th>Return</th><th>Status</th><th class="text-right">Aksi</th></tr></thead>
-        <tbody>${trades.map((t, i) => {
-          const pnlCls = (t.pnl || 0) >= 0 ? 'text-up' : 'text-down';
-          return `<tr>
-            <td>${i+1}</td>
-            <td><a href="#stock/${t.ticker}" class="mono strong">${t.ticker}</a></td>
-            <td><span class="badge ${t.trade_type === 'BUY' ? 'badge-primary' : 'badge-warn'}">${t.trade_type}</span></td>
-            <td class="mono text-xs">${t.entry_date.slice(0,10)}</td>
-            <td class="mono text-xs">${t.exit_date ? t.exit_date.slice(0,10) : '—'}</td>
-            <td class="mono">${nf(t.quantity, 0)}</td>
-            <td class="mono text-xs">${money(t.entry_price)}${t.exit_price ? ` → ${money(t.exit_price)}` : ''}</td>
-            <td class="mono ${pnlCls}">${t.pnl != null ? (t.pnl > 0 ? '+' : '') + money(t.pnl) : '—'}</td>
-            <td class="mono ${pnlCls}">${t.pnl_pct != null ? (t.pnl_pct > 0 ? '+' : '') + pf(t.pnl_pct) : '—'}</td>
-            <td><span class="badge ${t.status === 'open' ? 'badge-primary' : 'badge-dim'}">${t.status}</span></td>
-            <td class="text-right">${t.status === 'open' ? `<button type="button" class="btn btn-sm btn-outline pt-close-btn" data-id="${t.id}" data-ticker="${t.ticker}">Tutup</button>` : ''}
-              <button type="button" class="btn-icon pt-delete-btn" data-id="${t.id}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>
-    </div></div>`;
 
-    // Close buttons
+    el.innerHTML = `
+      <div class="market-card p-4">
+        <h3 class="panel-title mb-3">Posisi Terbuka (${trades.length})</h3>
+        <div style="overflow-x:auto">
+          <table class="bt-table">
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Arah</th>
+                <th class="text-right">Lot</th>
+                <th class="text-right">Entry</th>
+                <th class="text-right">Harga Kini</th>
+                <th class="text-right">P&amp;L (Rp)</th>
+                <th class="text-right">P&amp;L (%)</th>
+                <th>Tanggal</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${trades.map(t => {
+                const pnlCls = (t.pnl || 0) >= 0 ? 'text-up' : 'text-down';
+                const sign = t.pnl > 0 ? '+' : '';
+                const signPct = t.pnl_pct > 0 ? '+' : '';
+                return `<tr>
+                  <td><a href="#stock/${t.ticker}" class="mono strong">${t.ticker}</a></td>
+                  <td><span class="badge ${t.direction === 'BUY' ? 'badge-primary' : 'badge-warn'}">${t.direction}</span></td>
+                  <td class="mono text-right">${nf(t.lots, 0)}</td>
+                  <td class="mono text-right">${money(t.entry_price)}</td>
+                  <td class="mono text-right">${money(t.current_price)}</td>
+                  <td class="mono text-right ${pnlCls}">${sign}${money(t.pnl)}</td>
+                  <td class="mono text-right ${pnlCls}">${signPct}${pf(t.pnl_pct)}</td>
+                  <td class="mono text-xs">${(t.entry_date || '').slice(0, 10)}</td>
+                  <td class="text-right" style="white-space:nowrap">
+                    <button type="button" class="btn btn-sm btn-outline pt-close-btn"
+                      data-id="${t.id}" data-ticker="${t.ticker}" data-price="${t.current_price}">Tutup</button>
+                    <button type="button" class="btn-icon pt-delete-btn" data-id="${t.id}" title="Hapus">
+                      <i data-lucide="trash-2" class="lucide-md"></i>
+                    </button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    // Re-init lucide icons
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Close buttons — modal prompt
     el.querySelectorAll('.pt-close-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         const ticker = btn.dataset.ticker;
-        // Auto-close at current price
-        const price = prompt(`Harga tutup untuk ${ticker}:`, '');
-        if (!price || isNaN(price)) return;
+        const suggested = btn.dataset.price || '';
+        const raw = prompt(`Harga tutup untuk ${ticker} (Rp):`, suggested);
+        if (raw === null) return; // cancelled
+        const exitPrice = parseFloat(raw);
+        if (!exitPrice || exitPrice <= 0) {
+          showToast('Harga tidak valid', 'warning');
+          return;
+        }
         try {
-          const res = await apiFetch(`/paper-trades/${id}/close?price=${parseFloat(price)}`, { method: 'POST' });
-          if (res?.ok) { showToast(res.message, 'success'); loadTrades(filter); loadSummary(); }
-          else showToast(res?.message || 'Gagal tutup', 'error');
-        } catch (e) { showToast('Gagal menutup trade', 'error'); }
+          const r = await apiFetch(`/paper-trades/${id}/close`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ exit_price: exitPrice }),
+          });
+          if (r?.ok) {
+            showToast(r.message, 'success');
+            loadOpen();
+            loadSummary();
+          } else {
+            showToast(r?.detail || r?.message || 'Gagal menutup posisi', 'error');
+          }
+        } catch (e) {
+          showToast('Gagal menutup posisi', 'error');
+        }
       });
     });
+
     // Delete buttons
     el.querySelectorAll('.pt-delete-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
         if (!confirm('Hapus trade ini?')) return;
         try {
-          const res = await apiFetch(`/paper-trades/${id}`, { method: 'DELETE' });
-          if (res?.ok) { showToast('Trade dihapus', 'success'); loadTrades(filter); loadSummary(); }
-        } catch (e) { showToast('Gagal hapus', 'error'); }
+          const r = await apiFetch(`/paper-trades/${btn.dataset.id}`, { method: 'DELETE' });
+          if (r?.ok) {
+            showToast('Trade dihapus', 'success');
+            loadOpen();
+            loadSummary();
+          }
+        } catch (e) {
+          showToast('Gagal hapus', 'error');
+        }
       });
     });
-  } catch (e) { el.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat</h3></div>'; }
+
+  } catch (e) {
+    el.innerHTML = '<div class="market-card p-4"><div class="empty-state-v2"><h3>Gagal memuat posisi terbuka</h3></div></div>';
+  }
 }
 
-async function openTrade() {
-  const ticker = document.getElementById('pt-ticker').value.trim().toUpperCase();
-  const tradeType = document.getElementById('pt-type').value;
-  const qty = parseInt(document.getElementById('pt-qty').value) || 100;
-  const priceInput = document.getElementById('pt-price').value;
-  if (!ticker) { showToast('Masukkan kode saham', 'warning'); return; }
+// ---------------------------------------------------------------------------
+// Closed positions table
+// ---------------------------------------------------------------------------
 
-  let price = parseFloat(priceInput);
+async function loadClosed() {
+  const el = document.getElementById('pt-closed-container');
+  if (!el) return;
+  el.innerHTML = '<div class="skeleton skeleton-card skeleton-h-200"></div>';
+
+  try {
+    const res = await apiFetch('/paper-trades?status=closed');
+    const trades = res?.data || [];
+
+    if (!trades.length) {
+      el.innerHTML = `
+        <div class="market-card p-4">
+          <div class="empty-state-v2">
+            <h3>Belum ada posisi yang ditutup.</h3>
+            <p>Tutup posisi terbuka untuk melihat riwayat P&amp;L.</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="market-card p-4">
+        <h3 class="panel-title mb-3">Posisi Tertutup (${trades.length})</h3>
+        <div style="overflow-x:auto">
+          <table class="bt-table">
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Arah</th>
+                <th class="text-right">Lot</th>
+                <th class="text-right">Entry</th>
+                <th class="text-right">Exit</th>
+                <th class="text-right">P&amp;L Realized (Rp)</th>
+                <th class="text-right">P&amp;L (%)</th>
+                <th>Tgl Buka</th>
+                <th>Tgl Tutup</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${trades.map(t => {
+                const pnlCls = (t.pnl || 0) >= 0 ? 'text-up' : 'text-down';
+                const sign = t.pnl > 0 ? '+' : '';
+                const signPct = t.pnl_pct > 0 ? '+' : '';
+                return `<tr>
+                  <td><a href="#stock/${t.ticker}" class="mono strong">${t.ticker}</a></td>
+                  <td><span class="badge ${t.direction === 'BUY' ? 'badge-primary' : 'badge-warn'}">${t.direction}</span></td>
+                  <td class="mono text-right">${nf(t.lots, 0)}</td>
+                  <td class="mono text-right">${money(t.entry_price)}</td>
+                  <td class="mono text-right">${money(t.exit_price)}</td>
+                  <td class="mono text-right ${pnlCls}">${sign}${money(t.pnl)}</td>
+                  <td class="mono text-right ${pnlCls}">${signPct}${pf(t.pnl_pct)}</td>
+                  <td class="mono text-xs">${(t.entry_date || '').slice(0, 10)}</td>
+                  <td class="mono text-xs">${(t.exit_date || '').slice(0, 10)}</td>
+                  <td class="text-right">
+                    <button type="button" class="btn-icon pt-delete-btn" data-id="${t.id}" title="Hapus">
+                      <i data-lucide="trash-2" class="lucide-md"></i>
+                    </button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    el.querySelectorAll('.pt-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Hapus trade ini?')) return;
+        try {
+          const r = await apiFetch(`/paper-trades/${btn.dataset.id}`, { method: 'DELETE' });
+          if (r?.ok) {
+            showToast('Trade dihapus', 'success');
+            loadClosed();
+            loadSummary();
+          }
+        } catch (e) {
+          showToast('Gagal hapus', 'error');
+        }
+      });
+    });
+
+  } catch (e) {
+    el.innerHTML = '<div class="market-card p-4"><div class="empty-state-v2"><h3>Gagal memuat riwayat</h3></div></div>';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Open new trade
+// ---------------------------------------------------------------------------
+
+async function openTrade() {
+  const errEl = document.getElementById('pt-form-error');
+  const showErr = msg => { errEl.textContent = msg; errEl.style.display = ''; };
+  errEl.style.display = 'none';
+
+  const ticker = document.getElementById('pt-ticker').value.trim().toUpperCase();
+  const direction = document.getElementById('pt-direction').value;
+  const lotsRaw = document.getElementById('pt-lots').value;
+  const priceRaw = document.getElementById('pt-price').value;
+  const notes = document.getElementById('pt-notes').value.trim();
+
+  // Validation
+  if (!ticker) { showErr('Kode saham tidak boleh kosong.'); return; }
+
+  const lots = parseInt(lotsRaw);
+  if (!lots || lots <= 0 || isNaN(lots)) { showErr('Jumlah lot harus angka positif.'); return; }
+
+  let price = parseFloat(priceRaw);
+
+  // Auto-fetch price if not provided
   if (!price || price <= 0) {
-    // Try to get current price
     try {
       const chart = await apiFetch(`/stocks/${ticker}/chart-data?limit=1`);
       if (chart?.data?.length) price = chart.data[chart.data.length - 1].close;
-    } catch (e) {}
-    if (!price || price <= 0) { showToast('Masukkan harga', 'warning'); return; }
+    } catch (_) {}
+    if (!price || price <= 0) {
+      showErr('Masukkan harga entry — data harga tidak tersedia untuk ticker ini.');
+      return;
+    }
   }
+
+  const btn = document.getElementById('btn-open-trade');
+  btn.disabled = true;
+  btn.textContent = 'Membuka...';
 
   try {
     const res = await apiFetch('/paper-trades', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, trade_type: tradeType, quantity: qty, price }),
+      body: JSON.stringify({ ticker, direction, lots, entry_price: price, notes }),
     });
+
     if (res?.ok) {
       showToast(res.message, 'success');
+      // Reset form
       document.getElementById('pt-ticker').value = '';
+      document.getElementById('pt-lots').value = '1';
       document.getElementById('pt-price').value = '';
-      loadTrades('');
+      document.getElementById('pt-notes').value = '';
+      errEl.style.display = 'none';
+      // Reload
+      loadOpen();
       loadSummary();
+    } else {
+      showErr(res?.detail || res?.message || 'Gagal membuka posisi.');
     }
-  } catch (e) { showToast('Gagal buka trade', 'error'); }
+  } catch (e) {
+    showErr('Gagal membuka posisi. Coba lagi.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Buka Posisi';
+  }
 }

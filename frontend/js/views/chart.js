@@ -1,6 +1,7 @@
 /**
  * Full-Screen Chart View — Dedicated chart page with drawing tools
  * Fase 15.5 — Full-Screen Chart & Drawing Tools
+ * Fase 30.2.2 — Chart View Enhance: indicators, SR lines, alert shortcut, fullscreen
  */
 import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=202605120200';
 
@@ -14,8 +15,29 @@ let trendLines = [];
 let hLines = [];
 let fibLines = [];       // Array of {lines:[], data:{t1,p1,t2,p2}}
 let fibLabelsContainer = null;
-let drawMode = null; // 'trendline' | 'hline' | 'fibonacci' | null
+let drawMode = null; // 'trendline' | 'hline' | 'fibonacci' | 'sr' | null
 let drawPending = null; // {time, price} for first click
+
+// ── Indicator state ──────────────────────────────────────
+let indicatorSeries = {
+    sma20: null,
+    sma50: null,
+    ema20: null,
+    bbUpper: null,
+    bbMiddle: null,
+    bbLower: null,
+    volumeOverlay: null,  // volume is already rendered; toggle visibility
+};
+let indicatorState = {
+    sma20: false,
+    sma50: false,
+    ema20: false,
+    bb: false,
+    volume: true,  // volume shown by default
+};
+
+// ── Support/Resistance lines (distinct from hLines drawing tool) ──
+let srLines = [];  // Array of {series, price, label el}
 
 const TF_OPTIONS = ['1D', '5D', '1M', '3M', '6M', '1Y', 'MAX'];
 
@@ -23,7 +45,7 @@ export function renderChart(root, ticker) {
     if (!root) return;
     activeTicker = (ticker || '').toUpperCase();
     root.innerHTML = `
-        <div class="fullchart-container">
+        <div class="fullchart-container" id="fullchart-container">
             <div class="fullchart-topbar">
                 <button class="btn btn-ghost btn-sm" id="chart-back-btn"><i data-lucide="arrow-left"></i> Kembali</button>
                 <h2 class="fullchart-title">${activeTicker}</h2>
@@ -34,11 +56,23 @@ export function renderChart(root, ticker) {
                     <button class="btn btn-icon btn-sm" id="tool-trendline" title="Trend Line"><i data-lucide="trending-up"></i></button>
                     <button class="btn btn-icon btn-sm" id="tool-hline" title="Horizontal Line"><i data-lucide="minus"></i></button>
                     <button class="btn btn-icon btn-sm" id="tool-fib" title="Fibonacci Retracement">📐</button>
+                    <button class="btn btn-icon btn-sm" id="tool-sr" title="Support/Resistance Line">〰</button>
                     <button class="btn btn-icon btn-sm" id="tool-clear" title="Clear Drawings"><i data-lucide="eraser"></i></button>
                     <button class="btn btn-icon btn-sm" id="tool-save" title="Save Drawings">💾</button>
                     <button class="btn btn-icon btn-sm" id="tool-load" title="Load Drawings">📂</button>
                     <button class="btn btn-icon btn-sm" id="chart-export-btn" title="Download PNG"><i data-lucide="camera"></i></button>
+                    <button class="btn btn-icon btn-sm" id="tool-alert" title="Set Price Alert">🔔</button>
+                    <button class="btn btn-icon btn-sm" id="tool-fullscreen" title="Fullscreen"><i data-lucide="maximize-2"></i></button>
                 </div>
+            </div>
+            <!-- Indicator toggle panel -->
+            <div class="fullchart-indicators" id="fullchart-indicators">
+                <span class="indicator-label">Indikator:</span>
+                <label class="indicator-toggle"><input type="checkbox" id="ind-sma20"> <span>SMA20</span></label>
+                <label class="indicator-toggle"><input type="checkbox" id="ind-sma50"> <span>SMA50</span></label>
+                <label class="indicator-toggle"><input type="checkbox" id="ind-ema20"> <span>EMA20</span></label>
+                <label class="indicator-toggle"><input type="checkbox" id="ind-bb"> <span>Bollinger</span></label>
+                <label class="indicator-toggle"><input type="checkbox" id="ind-volume" checked> <span>Volume</span></label>
             </div>
             <div id="fullchart-wrap" class="fullchart-wrap">
                 <div class="skeleton skeleton-chart" style="height:100%;border-radius:0"></div>
@@ -107,6 +141,51 @@ export function renderChart(root, ticker) {
     root.querySelector('#tool-save')?.addEventListener('click', saveDrawingsToBackend);
     // Load button
     root.querySelector('#tool-load')?.addEventListener('click', loadDrawingsFromBackend);
+
+    // ── Support/Resistance tool ──────────────────────────
+    root.querySelector('#tool-sr')?.addEventListener('click', () => {
+        if (drawMode === 'sr') {
+            drawMode = null;
+            drawPending = null;
+            showToast('✕ Mode S/R dimatikan', 'info');
+        } else {
+            drawMode = 'sr';
+            drawPending = null;
+            showToast('〰 Klik level harga untuk Support/Resistance', 'info');
+        }
+    });
+
+    // ── Price alert shortcut ─────────────────────────────
+    root.querySelector('#tool-alert')?.addEventListener('click', () => {
+        if (!activeTicker) return;
+        window.location.hash = `#alerts?ticker=${activeTicker}`;
+    });
+
+    // ── Fullscreen button ────────────────────────────────
+    root.querySelector('#tool-fullscreen')?.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+
+    // ── Indicator checkboxes ─────────────────────────────
+    root.querySelector('#ind-sma20')?.addEventListener('change', (e) => {
+        indicatorState.sma20 = e.target.checked;
+        applyIndicator('sma20');
+    });
+    root.querySelector('#ind-sma50')?.addEventListener('change', (e) => {
+        indicatorState.sma50 = e.target.checked;
+        applyIndicator('sma50');
+    });
+    root.querySelector('#ind-ema20')?.addEventListener('change', (e) => {
+        indicatorState.ema20 = e.target.checked;
+        applyIndicator('ema20');
+    });
+    root.querySelector('#ind-bb')?.addEventListener('change', (e) => {
+        indicatorState.bb = e.target.checked;
+        applyIndicator('bb');
+    });
+    root.querySelector('#ind-volume')?.addEventListener('change', (e) => {
+        indicatorState.volume = e.target.checked;
+        applyIndicator('volume');
+    });
 
     loadChartData();
 }
@@ -272,6 +351,11 @@ function renderFullChart(wrap) {
             drawPending = null;
             drawMode = null;
             showToast(`➖ Horizontal line @ ${price.toFixed(0)}`, 'success');
+        } else if (drawMode === 'sr') {
+            drawSRLine(price);
+            drawPending = null;
+            drawMode = null;
+            showToast(`〰 S/R line @ ${price.toFixed(0)}`, 'success');
         } else if (drawMode === 'fibonacci') {
             if (!drawPending) {
                 drawPending = { time, price };
@@ -299,6 +383,8 @@ function renderFullChart(wrap) {
     loadDrawings();
     // Load from backend as source of truth
     loadDrawingsFromBackend();
+    // Re-apply any active indicators
+    reapplyAllIndicators();
 }
 
 function drawTrendLine(t1, p1, t2, p2) {
@@ -617,6 +703,8 @@ function clearDrawingsInternal() {
     if (fibLabelsContainer) {
         fibLabelsContainer.querySelectorAll('.fib-label-group').forEach(g => g.remove());
     }
+    // Clear S/R lines
+    clearSRLines();
     trendLines = [];
     hLines = [];
     fibLines = [];
@@ -692,5 +780,248 @@ function loadDrawings() {
         }
     } catch (e) {
         console.warn('Load drawings error:', e);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FASE 30.2.2 — NEW FEATURES
+// ═══════════════════════════════════════════════════════════
+
+// ── 1. Indicator calculations ────────────────────────────
+
+/**
+ * Calculate Simple Moving Average
+ * @param {number[]} closes - array of close prices
+ * @param {number} period
+ * @returns {Array<{time,value}>}
+ */
+function calcSMA(closes, period) {
+    const result = [];
+    for (let i = period - 1; i < closes.length; i++) {
+        let sum = 0;
+        for (let j = 0; j < period; j++) sum += closes[i - j];
+        result.push({ time: candles[i].time, value: sum / period });
+    }
+    return result;
+}
+
+/**
+ * Calculate Exponential Moving Average
+ * @param {number[]} closes
+ * @param {number} period
+ * @returns {Array<{time,value}>}
+ */
+function calcEMA(closes, period) {
+    const k = 2 / (period + 1);
+    const result = [];
+    let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    result.push({ time: candles[period - 1].time, value: ema });
+    for (let i = period; i < closes.length; i++) {
+        ema = closes[i] * k + ema * (1 - k);
+        result.push({ time: candles[i].time, value: ema });
+    }
+    return result;
+}
+
+/**
+ * Calculate Bollinger Bands (SMA20 ± 2σ)
+ * @param {number[]} closes
+ * @param {number} period
+ * @returns {{upper, middle, lower}} each Array<{time,value}>
+ */
+function calcBB(closes, period = 20) {
+    const upper = [], middle = [], lower = [];
+    for (let i = period - 1; i < closes.length; i++) {
+        const slice = closes.slice(i - period + 1, i + 1);
+        const mean = slice.reduce((a, b) => a + b, 0) / period;
+        const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / period;
+        const sd = Math.sqrt(variance);
+        const t = candles[i].time;
+        upper.push({ time: t, value: mean + 2 * sd });
+        middle.push({ time: t, value: mean });
+        lower.push({ time: t, value: mean - 2 * sd });
+    }
+    return { upper, middle, lower };
+}
+
+/**
+ * Apply or remove an indicator overlay on the chart.
+ * Called when a checkbox changes, and also after chart re-render.
+ * @param {'sma20'|'sma50'|'ema20'|'bb'|'volume'} key
+ */
+function applyIndicator(key) {
+    if (!chart || !candles.length) return;
+    const closes = candles.map(c => c.close);
+
+    if (key === 'volume') {
+        if (volumeSeries) {
+            volumeSeries.applyOptions({ visible: indicatorState.volume });
+        }
+        return;
+    }
+
+    // Helper: remove existing series for this key
+    function removeSeries(seriesRef) {
+        if (seriesRef) {
+            try { chart.removeSeries(seriesRef); } catch (e) {}
+        }
+    }
+
+    if (key === 'sma20') {
+        removeSeries(indicatorSeries.sma20);
+        indicatorSeries.sma20 = null;
+        if (indicatorState.sma20) {
+            const data = calcSMA(closes, 20);
+            if (data.length) {
+                indicatorSeries.sma20 = chart.addLineSeries({
+                    color: '#38bdf8',
+                    lineWidth: 1,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                    title: 'SMA20',
+                });
+                indicatorSeries.sma20.setData(data);
+            }
+        }
+    } else if (key === 'sma50') {
+        removeSeries(indicatorSeries.sma50);
+        indicatorSeries.sma50 = null;
+        if (indicatorState.sma50) {
+            const data = calcSMA(closes, 50);
+            if (data.length) {
+                indicatorSeries.sma50 = chart.addLineSeries({
+                    color: '#fb923c',
+                    lineWidth: 1,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                    title: 'SMA50',
+                });
+                indicatorSeries.sma50.setData(data);
+            }
+        }
+    } else if (key === 'ema20') {
+        removeSeries(indicatorSeries.ema20);
+        indicatorSeries.ema20 = null;
+        if (indicatorState.ema20) {
+            const data = calcEMA(closes, 20);
+            if (data.length) {
+                indicatorSeries.ema20 = chart.addLineSeries({
+                    color: '#a78bfa',
+                    lineWidth: 1,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                    title: 'EMA20',
+                });
+                indicatorSeries.ema20.setData(data);
+            }
+        }
+    } else if (key === 'bb') {
+        removeSeries(indicatorSeries.bbUpper);
+        removeSeries(indicatorSeries.bbMiddle);
+        removeSeries(indicatorSeries.bbLower);
+        indicatorSeries.bbUpper = null;
+        indicatorSeries.bbMiddle = null;
+        indicatorSeries.bbLower = null;
+        if (indicatorState.bb) {
+            const bb = calcBB(closes, 20);
+            if (bb.upper.length) {
+                const bbOpts = { lineWidth: 1, lastValueVisible: false, priceLineVisible: false };
+                indicatorSeries.bbUpper = chart.addLineSeries({ ...bbOpts, color: 'rgba(250,204,21,0.6)', title: 'BB+' });
+                indicatorSeries.bbUpper.setData(bb.upper);
+                indicatorSeries.bbMiddle = chart.addLineSeries({ ...bbOpts, color: 'rgba(250,204,21,0.35)', lineStyle: LightweightCharts.LineStyle.Dashed, title: 'BB mid' });
+                indicatorSeries.bbMiddle.setData(bb.middle);
+                indicatorSeries.bbLower = chart.addLineSeries({ ...bbOpts, color: 'rgba(250,204,21,0.6)', title: 'BB-' });
+                indicatorSeries.bbLower.setData(bb.lower);
+            }
+        }
+    }
+}
+
+/**
+ * Re-apply all active indicators after chart re-render (new data loaded).
+ * Clears stale series references first.
+ */
+function reapplyAllIndicators() {
+    // Reset refs — old chart instance is gone
+    indicatorSeries = {
+        sma20: null, sma50: null, ema20: null,
+        bbUpper: null, bbMiddle: null, bbLower: null,
+        volumeOverlay: null,
+    };
+    ['sma20', 'sma50', 'ema20', 'bb', 'volume'].forEach(k => applyIndicator(k));
+}
+
+// ── 2. Support / Resistance horizontal line ──────────────
+
+/**
+ * Draw a dashed S/R line with a price label at the right edge.
+ * Stored in srLines[] separately from drawing-tool hLines.
+ * @param {number} price
+ */
+function drawSRLine(price) {
+    if (!chart || !candles.length) return;
+    try {
+        const srSeries = chart.addLineSeries({
+            color: '#f43f5e',
+            lineWidth: 1,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            lastValueVisible: true,
+            priceLineVisible: false,
+            title: `S/R ${price.toFixed(0)}`,
+        });
+        srSeries.setData([
+            { time: candles[0].time, value: price },
+            { time: candles[candles.length - 1].time, value: price },
+        ]);
+        srLines.push({ series: srSeries, price });
+    } catch (e) {
+        console.warn('SR line error:', e);
+    }
+}
+
+/**
+ * Clear all S/R lines from chart and array.
+ */
+function clearSRLines() {
+    srLines.forEach(sr => {
+        try { chart.removeSeries(sr.series); } catch (e) {}
+    });
+    srLines = [];
+}
+
+// ── 3. Fullscreen ────────────────────────────────────────
+
+function toggleFullscreen() {
+    const container = document.getElementById('fullchart-container');
+    if (!container) return;
+    if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => {
+            showToast('Fullscreen tidak didukung: ' + err.message, 'error');
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function onFullscreenChange() {
+    const btn = document.getElementById('tool-fullscreen');
+    if (!btn) return;
+    if (document.fullscreenElement) {
+        btn.title = 'Exit Fullscreen';
+        btn.innerHTML = '<i data-lucide="minimize-2"></i>';
+    } else {
+        btn.title = 'Fullscreen';
+        btn.innerHTML = '<i data-lucide="maximize-2"></i>';
+    }
+    // Re-render lucide icons for the swapped icon
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    // Resize chart to fill new dimensions
+    if (chart) {
+        const wrap = document.getElementById('fullchart-wrap');
+        if (wrap) {
+            requestAnimationFrame(() => {
+                chart.resize(wrap.clientWidth, wrap.clientHeight);
+            });
+        }
     }
 }

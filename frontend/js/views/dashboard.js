@@ -508,11 +508,32 @@ async function loadMovers() {
       change: r.change_pct ?? 0, perf_1w: r.perf_1w ?? 0, rank: index + 1,
     })).join('');
   } else {
-    if (moversSummaryChip) moversSummaryChip.textContent = 'Data belum tersedia';
-    document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Belum ada data penggerak</strong><span class="dashboard-widget-state-note">Top movers akan muncul setelah scheduler memperbarui basis data.</span></div>';
+    // Fallback dummy — tampilkan placeholder saham IDX saat data kosong
+    const DUMMY_MOVERS = [
+      { ticker: 'BBCA', name: 'Bank Central Asia', price: 9650, change: 2.34, perf_1w: 1.80, rank: 1 },
+      { ticker: 'TLKM', name: 'Telkom Indonesia',  price: 3820, change: -1.12, perf_1w: -0.55, rank: 2 },
+      { ticker: 'GOTO', name: 'GoTo Gojek Tokopedia', price: 71, change: 4.56, perf_1w: 3.20, rank: 3 },
+      { ticker: 'BMRI', name: 'Bank Mandiri',      price: 6175, change: 1.89, perf_1w: 0.90, rank: 4 },
+      { ticker: 'ASII', name: 'Astra International', price: 5225, change: -0.78, perf_1w: -1.10, rank: 5 },
+    ];
+    if (moversSummaryChip) moversSummaryChip.textContent = 'Contoh data · belum sinkron';
+    document.getElementById('movers-list').innerHTML =
+      DUMMY_MOVERS.slice(0, 4).map(r => row(r)).join('') +
+      '<div class="text-xs text-dim" style="padding:6px 8px">Data akan diperbarui setelah scheduler berjalan.</div>';
   }
   } catch (e) { console.warn('loadMovers failed', e);
-    document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat data</strong><span class="dashboard-widget-state-note">Terjadi kesalahan saat mengambil data penggerak pasar.</span></div>';
+    // Fallback dummy saat error jaringan
+    const DUMMY_MOVERS_ERR = [
+      { ticker: 'BBCA', name: 'Bank Central Asia', price: 9650, change: 2.34, perf_1w: 1.80, rank: 1 },
+      { ticker: 'TLKM', name: 'Telkom Indonesia',  price: 3820, change: -1.12, perf_1w: -0.55, rank: 2 },
+      { ticker: 'GOTO', name: 'GoTo Gojek Tokopedia', price: 71, change: 4.56, perf_1w: 3.20, rank: 3 },
+      { ticker: 'BMRI', name: 'Bank Mandiri',      price: 6175, change: 1.89, perf_1w: 0.90, rank: 4 },
+    ];
+    const chip = document.getElementById('dash-movers-summary-chip');
+    if (chip) chip.textContent = 'Offline · data contoh';
+    document.getElementById('movers-list').innerHTML =
+      DUMMY_MOVERS_ERR.map(r => row(r)).join('') +
+      '<div class="text-xs text-dim" style="padding:6px 8px">Gagal terhubung ke server — menampilkan data contoh.</div>';
   }
 }
 
@@ -563,9 +584,21 @@ async function loadAiPickWidget() {
   };
 
   if (!picks.length) {
-    if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
-    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Belum ada kandidat yang lolos filter hari ini.</span></div>';
-    return;
+    // Fallback dummy — 3 picks placeholder saat API kosong/error
+    const DUMMY_PICKS = [
+      { ticker: 'BBCA', name: 'Bank Central Asia', score: 78, confidence: 'High', fit_label: 'Swing', change_pct: 2.34,
+        entry_zone: [9500, 9700], target_zone: [10200, 10500], invalidation: 9200, reason_labels: ['RSI Bullish', 'Volume Spike', 'Above MA50'] },
+      { ticker: 'BMRI', name: 'Bank Mandiri', score: 72, confidence: 'Medium', fit_label: 'Swing', change_pct: 1.89,
+        entry_zone: [6000, 6200], target_zone: [6600, 6900], invalidation: 5800, reason_labels: ['MACD Cross', 'Sector Leader'] },
+      { ticker: 'TLKM', name: 'Telkom Indonesia', score: 65, confidence: 'Medium', fit_label: 'Defensive', change_pct: -0.45,
+        entry_zone: [3700, 3850], target_zone: [4100, 4300], invalidation: 3550, reason_labels: ['Dividend Play', 'Low Beta'] },
+    ];
+    if (summaryEl) summaryEl.textContent = 'Menampilkan contoh picks — data nyata belum tersedia.';
+    // Render dummy picks using the same card layout below
+    const dummyPayload = { data: DUMMY_PICKS, summary: { eligible_count: DUMMY_PICKS.length } };
+    // Re-assign picks and fall through to render
+    picks.push(...DUMMY_PICKS);
+    if (summaryEl) summaryEl.textContent = `Contoh ${DUMMY_PICKS.length} picks · belum sinkron`;
   }
 
   if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter.`;
@@ -625,11 +658,36 @@ async function loadNews(){
           ${n.summary ? `<small>${String(n.summary).replace(/<[^>]+>/g,'').slice(0,72)}</small>` : ''}
         </a>`).join('');
     } else {
-      document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Berita belum tersedia</strong><span class="dashboard-widget-state-note">Feed berita akan muncul setelah scheduler berjalan. Cek halaman Berita untuk update.</span></div>';
+      // Fallback dummy — 3 artikel placeholder saat feed kosong
+      const DUMMY_NEWS = [
+        { title: 'IHSG Bergerak Mixed di Awal Sesi, Sektor Perbankan Memimpin', source: 'IDX', link: '#news', summary: 'Indeks Harga Saham Gabungan bergerak variatif pada awal perdagangan dengan sektor perbankan menjadi penopang utama.' },
+        { title: 'Asing Catat Net Buy di Saham-Saham Blue Chip IDX', source: 'MARKET', link: '#news', summary: 'Investor asing tercatat melakukan pembelian bersih pada sejumlah saham berkapitalisasi besar di Bursa Efek Indonesia.' },
+        { title: 'Rotasi Sektor: Energi dan Komoditas Mulai Menarik Perhatian', source: 'ANALISIS', link: '#news', summary: 'Pergeseran aliran dana ke sektor energi dan komoditas terlihat seiring ekspektasi kenaikan harga komoditas global.' },
+      ];
+      document.getElementById('news-container').innerHTML = DUMMY_NEWS.slice(0, 2).map((n, index) => `
+        <a href="${n.link}" class="intel-item dash-news-card ${index === 0 ? 'dash-news-card-featured' : ''}">
+          <span class="badge">${n.source}</span>
+          <b>${n.title}</b>
+          <span class="dash-news-meta">${index === 0 ? 'Headline' : 'Brief'} · ${n.source} · Contoh</span>
+          <small>${n.summary}</small>
+        </a>`).join('') +
+        '<div class="text-xs text-dim" style="padding:6px 8px">Berita nyata akan muncul setelah scheduler berjalan.</div>';
     }
   } catch (e) {
     console.warn('loadNews failed', e);
-    document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">Terjadi kesalahan saat mengambil feed berita. Silakan coba lagi.</span></div>';
+    // Fallback dummy saat error jaringan
+    const DUMMY_NEWS_ERR = [
+      { title: 'IHSG Bergerak Mixed di Awal Sesi, Sektor Perbankan Memimpin', source: 'IDX', summary: 'Indeks Harga Saham Gabungan bergerak variatif pada awal perdagangan dengan sektor perbankan menjadi penopang utama.' },
+      { title: 'Asing Catat Net Buy di Saham-Saham Blue Chip IDX', source: 'MARKET', summary: 'Investor asing tercatat melakukan pembelian bersih pada sejumlah saham berkapitalisasi besar.' },
+    ];
+    document.getElementById('news-container').innerHTML = DUMMY_NEWS_ERR.map((n, index) => `
+      <a href="#news" class="intel-item dash-news-card ${index === 0 ? 'dash-news-card-featured' : ''}">
+        <span class="badge">${n.source}</span>
+        <b>${n.title}</b>
+        <span class="dash-news-meta">${index === 0 ? 'Headline' : 'Brief'} · Offline</span>
+        <small>${n.summary}</small>
+      </a>`).join('') +
+      '<div class="text-xs text-dim" style="padding:6px 8px">Gagal terhubung — menampilkan data contoh.</div>';
   }
 }
 

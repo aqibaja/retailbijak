@@ -127,11 +127,50 @@ async function loadComparison(tickers) {
       return nums.indexOf(best);
     }
 
+    // ─── Helper: Pearson correlation (defined early, reused) ─────
+    function pearsonCorr(a, b) {
+      const n = Math.min(a.length, b.length);
+      if (n < 5) return null;
+      let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
+      for (let i = 0; i < n; i++) {
+        sumA += a[i]; sumB += b[i];
+        sumAB += a[i] * b[i];
+        sumA2 += a[i] * a[i]; sumB2 += b[i] * b[i];
+      }
+      const num = n * sumAB - sumA * sumB;
+      const den = Math.sqrt((n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB));
+      return den === 0 ? null : num / den;
+    }
+
+    // ─── Pre-compute correlation badge for header ────────────
+    function corrLabel(r) {
+      if (r == null) return '';
+      const abs = Math.abs(r);
+      const level = abs >= 0.8 ? 'Tinggi' : abs >= 0.5 ? 'Sedang' : 'Rendah';
+      const badgeColor = abs >= 0.8 ? '#10b981' : abs >= 0.5 ? '#f59e0b' : '#94a3b8';
+      return `<span class="corr-inline-badge" style="background:${badgeColor}20;color:${badgeColor};border:1px solid ${badgeColor}40;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:10px;vertical-align:middle">Korelasi: ${r.toFixed(2)} (${level})</span>`;
+    }
+    const _norm0 = (d.prices[`${validTickers[0]}_norm`] || []).map(p => p.value);
+    const _norm1 = validTickers.length >= 2 ? (d.prices[`${validTickers[1]}_norm`] || []).map(p => p.value) : [];
+    const _corrR = validTickers.length >= 2 ? pearsonCorr(_norm0, _norm1) : null;
+    const _corrBadge = validTickers.length >= 2 ? corrLabel(_corrR) : '';
+
     // ─── Build all sections ──────────────────────────
     let html = '';
 
-    // 1. Price Chart (existing)
-    html += '<div class="market-card"><div class="p-3"><h3 class="panel-title">Perbandingan Harga (Normalized 100)</h3></div><div id="compare-chart-container" style="height:400px;width:100%"></div></div>';
+    // 1a. Normalized % Return Chart (Chart.js) — NEW
+    html += `<div class="market-card">
+      <div class="p-3" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+        <h3 class="panel-title" style="margin:0">Return vs Awal (%)${_corrBadge}</h3>
+        <span style="font-size:11px;color:var(--text-dim);margin-left:auto">Base = 100 di tanggal pertama</span>
+      </div>
+      <div style="position:relative;height:320px;padding:0 12px 12px">
+        <canvas id="compare-return-chart"></canvas>
+      </div>
+    </div>`;
+
+    // 1b. Price Chart (existing LightweightCharts)
+    html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Perbandingan Harga (Normalized 100)</h3></div><div id="compare-chart-container" style="height:400px;width:100%"></div></div>';
 
     // 2. Sector + Market Cap Badges per ticker
     html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Informasi Emiten</h3></div><div class="compare-badges-wrap">';
@@ -149,30 +188,30 @@ async function loadComparison(tickers) {
     });
     html += '</div></div>';
 
-    // 3. Fundamental Comparison Table (color-coded)
+    // 3. Fundamental Comparison Table — 8 metrics, best-cell green highlight
     const fundaMetrics = [
-      { label: 'PE', key: 'pe', higherIsBetter: false, fmt: (v) => nf(v, 2) },
-      { label: 'PBV', key: 'pbv', higherIsBetter: false, fmt: (v) => nf(v, 2) },
-      { label: 'ROE', key: 'roe', higherIsBetter: true, fmt: (v) => pf(v) },
-      { label: 'ROA', key: 'roa', higherIsBetter: true, fmt: (v) => pf(v) },
-      { label: 'DER', key: 'der', higherIsBetter: false, fmt: (v) => nf(v, 2) },
-      { label: 'Dividend Yield', key: 'dividend_yield', higherIsBetter: true, fmt: (v) => pf(v) },
+      { label: 'P/E Ratio',       key: 'pe',             higherIsBetter: false, fmt: (v) => v != null ? nf(v, 2) : '—' },
+      { label: 'P/B Ratio',       key: 'pbv',            higherIsBetter: false, fmt: (v) => v != null ? nf(v, 2) : '—' },
+      { label: 'ROE',             key: 'roe',            higherIsBetter: true,  fmt: (v) => v != null ? pf(v)    : '—' },
+      { label: 'ROA',             key: 'roa',            higherIsBetter: true,  fmt: (v) => v != null ? pf(v)    : '—' },
+      { label: 'Debt/Equity',     key: 'der',            higherIsBetter: false, fmt: (v) => v != null ? nf(v, 2) : '—' },
+      { label: 'Market Cap',      key: 'market_cap',     higherIsBetter: true,  fmt: (v) => v != null ? fmtRp(v) : '—' },
+      { label: 'Revenue Growth',  key: 'revenue_growth', higherIsBetter: true,  fmt: (v) => v != null ? pf(v)    : '—' },
+      { label: 'Net Margin',      key: 'net_margin',     higherIsBetter: true,  fmt: (v) => v != null ? pf(v)    : '—' },
+      { label: 'Dividend Yield',  key: 'dividend_yield', higherIsBetter: true,  fmt: (v) => v != null ? pf(v)    : '—' },
     ];
     html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Perbandingan Fundamental</h3></div><div style="overflow-x:auto"><table class="compare-table"><thead><tr><th>Metrik</th>';
     validTickers.forEach((t, i) => { html += `<th style="color:${legendColors[i]}">${t}</th>`; });
     html += '</tr></thead><tbody>';
     fundaMetrics.forEach(m => {
-      const vals = funds.map(f => m.fmt(f[m.key] != null ? f[m.key] : null));
       const rawVals = funds.map(f => f[m.key] != null ? Number(f[m.key]) : null);
+      const vals = funds.map(f => m.fmt(f[m.key] != null ? f[m.key] : null));
       const bestIdx = bestColor(rawVals, m.higherIsBetter);
       html += `<tr><td class="compare-label">${m.label}</td>`;
       vals.forEach((v, i) => {
-        let cls = '';
-        if (rawVals[i] != null) {
-          cls = m.higherIsBetter ? 'text-up' : 'text-down';
-        }
-        if (i === bestIdx && bestIdx >= 0) cls += ' compare-best';
-        html += `<td class="${cls}">${v}</td>`;
+        const isBest = i === bestIdx && bestIdx >= 0 && rawVals[i] != null;
+        const style = isBest ? ' style="background:rgba(16,185,129,0.13);color:#10b981;font-weight:700;border-radius:4px"' : '';
+        html += `<td${style}>${v}</td>`;
       });
       html += '</tr>';
     });
@@ -205,20 +244,7 @@ async function loadComparison(tickers) {
     });
     html += '</tbody></table></div></div>';
 
-    // 5. Price Correlation Section
-    function pearsonCorr(a, b) {
-      const n = Math.min(a.length, b.length);
-      if (n < 5) return null;
-      let sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
-      for (let i = 0; i < n; i++) {
-        sumA += a[i]; sumB += b[i];
-        sumAB += a[i] * b[i];
-        sumA2 += a[i] * a[i]; sumB2 += b[i] * b[i];
-      }
-      const num = n * sumAB - sumA * sumB;
-      const den = Math.sqrt((n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB));
-      return den === 0 ? null : num / den;
-    }
+    // 5. Price Correlation Section (uses pearsonCorr defined above)
     html += '<div class="market-card mt-3"><div class="p-3"><h3 class="panel-title">Korelasi Harga</h3></div><div class="correlation-grid">';
     const firstNorm = d.prices[`${validTickers[0]}_norm`] || [];
     const firstVals = firstNorm.map(p => p.value);
@@ -238,6 +264,9 @@ async function loadComparison(tickers) {
     html += '</div></div>';
 
     container.innerHTML = html;
+
+    // ─── Render Normalized % Return Chart (Chart.js) ─────────
+    renderReturnChart(validTickers, d, legendColors);
 
     // Radar Chart
     const radarHtml = buildRadarChart(validTickers, funds, stats);
@@ -264,6 +293,101 @@ async function loadComparison(tickers) {
   } catch (e) {
     container.innerHTML = '<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal memuat</strong><span class="empty-state-desc">Terjadi kesalahan saat mengambil data perbandingan.</span></div>';
   }
+}
+
+// ─── Normalized % Return Chart (Chart.js) ─────────────────────
+function renderReturnChart(tickers, data, colors) {
+  const canvas = document.getElementById('compare-return-chart');
+  if (!canvas) return;
+
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const isLight = theme === 'light';
+  const textColor = isLight ? '#64748b' : '#94a3b8';
+  const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.04)';
+
+  // Build datasets: convert norm value (base=100) → % return = value - 100
+  const datasets = tickers.map((t, i) => {
+    const normData = data.prices[`${t}_norm`] || [];
+    return {
+      label: t,
+      data: normData.map(p => ({ x: p.date.slice(0, 10), y: parseFloat((p.value - 100).toFixed(2) )})),
+      borderColor: colors[i],
+      backgroundColor: colors[i] + '18',
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      tension: 0.3,
+      fill: false,
+    };
+  });
+
+  // Collect all labels (dates) from first ticker
+  const firstNorm = data.prices[`${tickers[0]}_norm`] || [];
+  const labels = firstNorm.map(p => p.date.slice(0, 10));
+
+  // Destroy existing Chart.js instance on this canvas if any
+  if (canvas._chartjsInstance) {
+    canvas._chartjsInstance.destroy();
+  }
+
+  if (typeof Chart === 'undefined') {
+    // Chart.js not loaded — skip silently (LightweightCharts chart still shows)
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  canvas._chartjsInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: textColor,
+            font: { size: 11, weight: '600' },
+            boxWidth: 12,
+            padding: 16,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y >= 0 ? '+' : ''}${ctx.parsed.y.toFixed(2)}%`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: 'category',
+          ticks: {
+            color: textColor,
+            maxTicksLimit: 8,
+            maxRotation: 0,
+            font: { size: 10 },
+          },
+          grid: { color: gridColor },
+        },
+        y: {
+          ticks: {
+            color: textColor,
+            font: { size: 10 },
+            callback: (v) => (v >= 0 ? '+' : '') + v + '%',
+          },
+          grid: { color: gridColor },
+          title: {
+            display: true,
+            text: 'Return vs Awal (%)',
+            color: textColor,
+            font: { size: 11 },
+          },
+        },
+      },
+    },
+  });
 }
 
 function renderCompareChart(tickers, data, colors) {

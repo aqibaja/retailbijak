@@ -226,6 +226,90 @@ export async function renderSettings(root) {
             </div>
           </div>
 
+          <!-- ─── Notifikasi Preferences ─────────────────── -->
+          <div class="settings-toggle-panel panel flex-col gap-6" style="margin-top:2rem">
+            <div class="settings-section-head">
+              <h2>🔔 Preferensi Notifikasi</h2>
+              <span>Atur jenis notifikasi yang ingin kamu terima. Tersimpan di perangkat.</span>
+            </div>
+            <div class="settings-toggle-grid">
+              <label class="settings-toggle-card">
+                <div>
+                  <div class="strong mb-1 text-main text-base">Notif Harga Alert</div>
+                  <div class="text-sm text-muted">Terima notifikasi saat harga saham menyentuh target alert.</div>
+                </div>
+                <input id="notif-price-alert" type="checkbox" class="settings-checkbox" />
+              </label>
+              <label class="settings-toggle-card">
+                <div>
+                  <div class="strong mb-1 text-main text-base">Notif Market Open/Close</div>
+                  <div class="text-sm text-muted">Pengingat saat bursa IDX buka (09:00) dan tutup (15:30 WIB).</div>
+                </div>
+                <input id="notif-market-hours" type="checkbox" class="settings-checkbox" />
+              </label>
+              <label class="settings-toggle-card">
+                <div>
+                  <div class="strong mb-1 text-main text-base">Notif AI Picks Harian</div>
+                  <div class="text-sm text-muted">Notifikasi saat AI Picks harian baru tersedia setelah bursa tutup.</div>
+                </div>
+                <input id="notif-ai-picks" type="checkbox" class="settings-checkbox" />
+              </label>
+            </div>
+            <div class="settings-actions-row">
+              <span id="notif-status-text" class="text-xs text-dim mono strong settings-status-text"></span>
+              <button id="save-notif" type="button" class="btn btn-primary settings-save-btn">Simpan Notifikasi</button>
+            </div>
+          </div>
+
+          <!-- ─── Default Screener Filter ───────────────── -->
+          <div class="settings-toggle-panel panel flex-col gap-6" style="margin-top:2rem">
+            <div class="settings-section-head">
+              <h2>📊 Default Filter Screener</h2>
+              <span>Timeframe dan urutan default saat membuka Screener. Tersimpan di perangkat.</span>
+            </div>
+            <div class="settings-openrouter-stack">
+              <label class="settings-field-card" for="screener-default-timeframe">
+                <span class="settings-field-label">Default Timeframe</span>
+                <select id="screener-default-timeframe" class="settings-text-input">
+                  <option value="1D">1D — Harian</option>
+                  <option value="1W">1W — Mingguan</option>
+                  <option value="1M">1M — Bulanan</option>
+                </select>
+              </label>
+              <label class="settings-field-card" for="screener-default-sort">
+                <span class="settings-field-label">Default Urutan</span>
+                <select id="screener-default-sort" class="settings-text-input">
+                  <option value="volume">Volume</option>
+                  <option value="change_pct">Change %</option>
+                  <option value="rsi">RSI</option>
+                </select>
+              </label>
+            </div>
+            <div class="settings-actions-row">
+              <span id="screener-defaults-status" class="text-xs text-dim mono strong settings-status-text"></span>
+              <button id="save-screener-defaults" type="button" class="btn btn-primary settings-save-btn">Simpan Default Screener</button>
+            </div>
+          </div>
+
+          <!-- ─── Theme Accent Color ─────────────────────── -->
+          <div class="settings-toggle-panel panel flex-col gap-6" style="margin-top:2rem">
+            <div class="settings-section-head">
+              <h2>🎨 Warna Aksen Tema</h2>
+              <span>Pilih warna aksen antarmuka. Berlaku langsung dan tersimpan di perangkat.</span>
+            </div>
+            <div id="accent-color-picker" style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0">
+              <button class="accent-swatch" data-color="#3b82f6" title="Biru" style="background:#3b82f6"></button>
+              <button class="accent-swatch" data-color="#10b981" title="Hijau" style="background:#10b981"></button>
+              <button class="accent-swatch" data-color="#8b5cf6" title="Ungu" style="background:#8b5cf6"></button>
+              <button class="accent-swatch" data-color="#f97316" title="Oranye" style="background:#f97316"></button>
+              <button class="accent-swatch" data-color="#ef4444" title="Merah" style="background:#ef4444"></button>
+              <button class="accent-swatch" data-color="#06b6d4" title="Cyan" style="background:#06b6d4"></button>
+            </div>
+            <div class="settings-actions-row" style="margin-top:4px">
+              <span id="accent-status-text" class="text-xs text-dim mono strong settings-status-text"></span>
+            </div>
+          </div>
+
           <div class="settings-sample-data panel flex-col gap-4" style="margin-top:2rem">
             <div class="settings-section-head">
               <h2>🌱 Sample Data</h2>
@@ -721,6 +805,89 @@ export async function renderSettings(root) {
         }
       });
     }
+
+    // ─── Notifikasi Preferences ─────────────────────────
+    const notifPriceAlert   = document.getElementById('notif-price-alert');
+    const notifMarketHours  = document.getElementById('notif-market-hours');
+    const notifAiPicks      = document.getElementById('notif-ai-picks');
+    const notifStatusText   = document.getElementById('notif-status-text');
+    const saveNotifBtn      = document.getElementById('save-notif');
+
+    // Load from localStorage
+    notifPriceAlert.checked  = localStorage.getItem('retailbijak.notif.price_alert')  !== 'false';
+    notifMarketHours.checked = localStorage.getItem('retailbijak.notif.market_hours') !== 'false';
+    notifAiPicks.checked     = localStorage.getItem('retailbijak.notif.ai_picks')     !== 'false';
+
+    saveNotifBtn.addEventListener('click', () => {
+      localStorage.setItem('retailbijak.notif.price_alert',  notifPriceAlert.checked);
+      localStorage.setItem('retailbijak.notif.market_hours', notifMarketHours.checked);
+      localStorage.setItem('retailbijak.notif.ai_picks',     notifAiPicks.checked);
+      notifStatusText.textContent = '✅ Preferensi notifikasi disimpan';
+      showToast('Preferensi notifikasi disimpan', 'success');
+      setTimeout(() => { notifStatusText.textContent = ''; }, 3000);
+    });
+
+    // ─── Default Screener Filter ─────────────────────────
+    const screenerTimeframe     = document.getElementById('screener-default-timeframe');
+    const screenerSort          = document.getElementById('screener-default-sort');
+    const screenerDefaultsStatus = document.getElementById('screener-defaults-status');
+    const saveScreenerDefaults  = document.getElementById('save-screener-defaults');
+
+    // Load from localStorage
+    const savedScreenerDefaults = JSON.parse(localStorage.getItem('retailbijak.screener.defaults') || '{}');
+    if (savedScreenerDefaults.timeframe) screenerTimeframe.value = savedScreenerDefaults.timeframe;
+    if (savedScreenerDefaults.sort)      screenerSort.value      = savedScreenerDefaults.sort;
+
+    saveScreenerDefaults.addEventListener('click', () => {
+      const defaults = {
+        timeframe: screenerTimeframe.value,
+        sort:      screenerSort.value,
+      };
+      localStorage.setItem('retailbijak.screener.defaults', JSON.stringify(defaults));
+      screenerDefaultsStatus.textContent = '✅ Default screener disimpan';
+      showToast('Default screener disimpan', 'success');
+      setTimeout(() => { screenerDefaultsStatus.textContent = ''; }, 3000);
+    });
+
+    // ─── Theme Accent Color Picker ───────────────────────
+    const accentStatusText = document.getElementById('accent-status-text');
+    const ACCENT_COLORS = ['#3b82f6','#10b981','#8b5cf6','#f97316','#ef4444','#06b6d4'];
+
+    function applyAccent(color) {
+      document.documentElement.style.setProperty('--accent', color);
+      localStorage.setItem('retailbijak.theme.accent', color);
+    }
+
+    // Apply saved accent on load
+    const savedAccent = localStorage.getItem('retailbijak.theme.accent');
+    if (savedAccent && ACCENT_COLORS.includes(savedAccent)) applyAccent(savedAccent);
+
+    // Mark active swatch
+    function updateSwatchActive(activeColor) {
+      document.querySelectorAll('.accent-swatch').forEach(btn => {
+        const isActive = btn.dataset.color === activeColor;
+        btn.style.outline      = isActive ? '3px solid var(--text-main, #fff)' : 'none';
+        btn.style.outlineOffset = isActive ? '2px' : '0';
+        btn.style.transform    = isActive ? 'scale(1.15)' : 'scale(1)';
+      });
+    }
+
+    const currentAccent = savedAccent || '#3b82f6';
+    updateSwatchActive(currentAccent);
+
+    document.querySelectorAll('.accent-swatch').forEach(btn => {
+      btn.style.cssText += ';width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;transition:transform .15s,outline .15s';
+      btn.addEventListener('click', () => {
+        const color = btn.dataset.color;
+        applyAccent(color);
+        updateSwatchActive(color);
+        if (accentStatusText) {
+          accentStatusText.textContent = `✅ Aksen diubah ke ${btn.title}`;
+          setTimeout(() => { accentStatusText.textContent = ''; }, 2500);
+        }
+        showToast(`Warna aksen: ${btn.title}`, 'success');
+      });
+    });
 
     if (btnSeedClear) {
       btnSeedClear.addEventListener('click', async () => {

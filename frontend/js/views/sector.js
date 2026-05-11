@@ -1,12 +1,15 @@
 // ─── Sectors View — Sector Performance Dashboard ────
 // Fase 8.1: Aggregate sector performance from OHLCV data
 // 11.4.3: Industry accordion in sector detail page
+// 30.2.1: Top stocks per sector, mini heatmap, rotation scatter chart, filter bar
 
 import { apiFetch, showToast } from '../api.js?v=202605120200';
 import { __ } from '../i18n.js?v=202605120200';
 import { nf, pf } from '../utils/format.js?v=202605120200';
 
 let sectorData = null;
+let _filterState = 'all'; // all | up | down | strongest | weakest
+let _rotationScatterChart = null; // Chart.js instance for scatter
 
 // ─── Sector List View (existing) ────────────────────────
 
@@ -42,6 +45,15 @@ export async function renderSectors(root) {
               </div>
             </div>
 
+            <!-- 30.2.1: Filter bar -->
+            <div class="sector-filter-bar" id="sectorFilterBar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+                <button class="sector-filter-chip active" data-filter="all">Semua</button>
+                <button class="sector-filter-chip" data-filter="up">📈 Naik</button>
+                <button class="sector-filter-chip" data-filter="down">📉 Turun</button>
+                <button class="sector-filter-chip" data-filter="strongest">🏆 Terkuat</button>
+                <button class="sector-filter-chip" data-filter="weakest">⚠️ Terlemah</button>
+            </div>
+
             <div id="sectorCarousel" class="sector-carousel">
                 <div class="sector-loading">
                     <div class="loading-spinner"></div>
@@ -56,6 +68,17 @@ export async function renderSectors(root) {
     lucide.createIcons();
     document.getElementById('refreshSectors')?.addEventListener('click', loadSectors);
     document.getElementById('ai-sector-analysis')?.addEventListener('click', runSectorRotationAnalysis);
+
+    // Filter bar chips
+    document.getElementById('sectorFilterBar')?.addEventListener('click', (e) => {
+        const chip = e.target.closest('.sector-filter-chip');
+        if (!chip) return;
+        document.querySelectorAll('.sector-filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        _filterState = chip.dataset.filter || 'all';
+        if (sectorData?.sectors) applyFilterAndRender(sectorData.sectors);
+    });
+
     // Rotation chart toggle
     const toggleBtn = document.getElementById('toggle-rotation-chart');
     if (toggleBtn) {
@@ -96,8 +119,9 @@ async function loadSectors() {
             return;
         }
 
-        renderCarousel(data.sectors);
-        renderDetailGrid(data.sectors);
+        _filterState = 'all';
+        document.querySelectorAll('.sector-filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
+        applyFilterAndRender(data.sectors);
         lucide.createIcons();
     } catch (e) {
         carousel.innerHTML = `<div class="sector-error">
@@ -106,6 +130,26 @@ async function loadSectors() {
         </div>`;
         showToast('Gagal memuat data sektor', 'error');
     }
+}
+
+// ─── 30.2.1: Filter + render pipeline ────────────────────
+function applyFilterAndRender(sectors) {
+    let filtered = [...sectors];
+    const sorted1d = [...sectors].sort((a, b) => b.avg_returns['1d'] - a.avg_returns['1d']);
+
+    if (_filterState === 'up') {
+        filtered = sectors.filter(s => s.avg_returns['1d'] >= 0);
+    } else if (_filterState === 'down') {
+        filtered = sectors.filter(s => s.avg_returns['1d'] < 0);
+    } else if (_filterState === 'strongest') {
+        filtered = sorted1d.slice(0, 5);
+    } else if (_filterState === 'weakest') {
+        filtered = sorted1d.slice(-5).reverse();
+    }
+
+    renderCarousel(filtered);
+    renderDetailGrid(filtered);
+    lucide.createIcons();
 }
 
 function renderCarousel(sectors) {
@@ -148,19 +192,55 @@ function renderDetailGrid(sectors) {
         const top = s.top_stock;
         const bot = s.bottom_stock;
 
-        // Stock list
-        const stockRows = s.stocks.map(st => {
+        // ── 30.2.1: Top 5 stocks table (sorted by 1d change desc) ──
+        const top5 = [...(s.stocks || [])]
+            .sort((a, b) => (b.returns['1d'] || 0) - (a.returns['1d'] || 0))
+            .slice(0, 5);
+        const top5Rows = top5.map(st => {
+            const ticker = st.ticker.replace('.JK', '');
             const ret1d = st.returns['1d'];
             const isPos = ret1d >= 0;
-            return `<div class="sector-stock-row">
-                <a href="#/stock/${st.ticker.replace('.JK', '')}" class="sector-stock-ticker">${st.ticker.replace('.JK', '')}</a>
-                <span class="sector-stock-price">${st.close.toLocaleString('id-ID')}</span>
-                <span class="sector-stock-ret ${isPos ? 'up' : 'down'}">${isPos ? '+' : ''}${ret1d.toFixed(2)}%</span>
-            </div>`;
+            return `<tr onclick="event.stopPropagation();window.location.hash='#/stock/${ticker}'" style="cursor:pointer">
+                <td style="padding:3px 6px;font-weight:700;color:var(--primary-color)">${ticker}</td>
+                <td style="padding:3px 6px;text-align:right;font-variant-numeric:tabular-nums">${st.close != null ? st.close.toLocaleString('id-ID') : '—'}</td>
+                <td style="padding:3px 6px;text-align:right;color:${isPos ? '#22c55e' : '#ef4444'};font-weight:600">${isPos ? '+' : ''}${ret1d.toFixed(2)}%</td>
+            </tr>`;
         }).join('');
+        const top5Html = top5.length ? `
+            <div class="sector-top5" style="margin-top:10px" onclick="event.stopPropagation()">
+                <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">Top 5 Saham</div>
+                <table style="width:100%;border-collapse:collapse;font-size:11px">
+                    <thead>
+                        <tr style="color:var(--text-dim);font-size:10px">
+                            <th style="padding:2px 6px;text-align:left;font-weight:600">Kode</th>
+                            <th style="padding:2px 6px;text-align:right;font-weight:600">Harga</th>
+                            <th style="padding:2px 6px;text-align:right;font-weight:600">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>${top5Rows}</tbody>
+                </table>
+            </div>` : '';
+
+        // ── 30.2.1: Mini heatmap — up to 25 squares ──
+        const heatStocks = [...(s.stocks || [])]
+            .sort((a, b) => (b.returns['1d'] || 0) - (a.returns['1d'] || 0))
+            .slice(0, 25);
+        const heatSquares = heatStocks.map(st => {
+            const ticker = st.ticker.replace('.JK', '');
+            const val = st.returns['1d'] || 0;
+            const col = heatColor(val, 5);
+            return `<div title="${ticker}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}%"
+                style="width:16px;height:16px;border-radius:3px;background:${col};cursor:pointer;flex-shrink:0"
+                onclick="event.stopPropagation();window.location.hash='#/stock/${ticker}'"></div>`;
+        }).join('');
+        const heatmapHtml = heatStocks.length ? `
+            <div class="sector-heatmap" style="margin-top:10px" onclick="event.stopPropagation()">
+                <div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">Heatmap</div>
+                <div style="display:flex;flex-wrap:wrap;gap:3px">${heatSquares}</div>
+            </div>` : '';
 
         const sectorSlug = encodeURIComponent(s.sector);
-        return `<div class="sector-card" id="sector-${s.sector.replace(/\\s+/g, '-')}" onclick="window.location.hash='#sector/${sectorSlug}'" style="cursor:pointer">
+        return `<div class="sector-card" id="sector-${s.sector.replace(/\s+/g, '-')}" onclick="window.location.hash='#sector/${sectorSlug}'" style="cursor:pointer">
             <div class="sector-card-header">
                 <div class="sector-card-title-row">
                     <h2 class="sector-card-title">${s.sector}</h2>
@@ -200,9 +280,8 @@ function renderDetailGrid(sectors) {
                     </div>` : ''}
                 </div>
 
-                <div class="sector-stocks">
-                    ${stockRows}
-                </div>
+                ${top5Html}
+                ${heatmapHtml}
             </div>
 
             <div class="sector-card-bar ${r1d >= 0 ? 'up' : 'down'}" style="width: ${Math.min(Math.abs(r1d) * 3, 100)}%"></div>
@@ -210,6 +289,22 @@ function renderDetailGrid(sectors) {
     }).join('');
 
     grid.innerHTML = cards;
+}
+
+// ── 30.2.1: heatColor helper — red→white→green ──
+function heatColor(value, maxAbs) {
+    const ratio = Math.min(Math.abs(value) / maxAbs, 1);
+    if (value >= 0) {
+        const r = Math.round(255 * (1 - ratio * 0.8));
+        const g = Math.round(255 * (0.3 + ratio * 0.7));
+        const b = Math.round(255 * (1 - ratio * 0.8));
+        return `rgb(${r},${g},${b})`;
+    } else {
+        const r = Math.round(255 * (0.3 + ratio * 0.7));
+        const g = Math.round(255 * (1 - ratio * 0.8));
+        const b = Math.round(255 * (1 - ratio * 0.8));
+        return `rgb(${r},${g},${b})`;
+    }
 }
 
 // Global helper for chip scroll
@@ -533,84 +628,124 @@ Beri analisis singkat (3-4 paragraf) dalam Bahasa Indonesia tentang:
     }
 }
 
-// ─── 16.5.2 — Sector Rotation Chart ──────────────
+// ─── 16.5.2 + 30.2.1 — Sector Rotation Scatter Chart ──────────────
 async function loadRotationChart() {
   const chartEl = document.getElementById('rotation-chart');
   if (!chartEl) return;
+  
   try {
-    const data = await apiFetch('/sectors-rotation?weeks=12');
-    if (!data?.dates?.length || !data?.sectors) {
+    const data = await apiFetch('/sectors/rotation');
+    if (!data?.sectors?.length) {
       chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Data rotasi belum tersedia</p></div>';
       return;
     }
 
-    const dates = data.dates;
+    // ── 30.2.1: Scatter plot — X=momentum (1M return), Y=relative strength (3M return) ──
     const sectors = data.sectors;
-    const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#14b8a6','#6366f1','#d946ef'];
-    
-    // Top 8 sectors by latest performance
-    const entries = Object.entries(sectors)
-      .map(([name, returns]) => ({ name, returns }))
-      .filter(s => s.returns.some(v => v != null))
-      .sort((a, b) => {
-        const aLast = a.returns.filter(v => v != null).pop() || 0;
-        const bLast = b.returns.filter(v => v != null).pop() || 0;
-        return bLast - aLast;
-      })
-      .slice(0, 8);
+    const scatterData = sectors.map(s => ({
+      x: s.returns['1m'] || 0,  // momentum
+      y: s.returns['3m'] || 0,  // relative strength
+      label: s.name
+    }));
 
-    if (!entries.length) {
-      chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Belum ada data</p></div>';
-      return;
+    // Destroy previous chart if exists
+    if (_rotationScatterChart) {
+      _rotationScatterChart.destroy();
+      _rotationScatterChart = null;
     }
 
-    // Build chart using DIV-based bars (zero-dep)
-    const legends = entries.map((s, i) => {
-      const c = colors[i % colors.length];
-      return `<span class="flex items-center gap-1" style="font-size:9px"><span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block"></span>${s.name}</span>`;
-    }).join('');
-    document.getElementById('rotation-legend').innerHTML = legends;
+    chartEl.innerHTML = '<canvas id="rotationScatterCanvas"></canvas>';
+    const canvas = document.getElementById('rotationScatterCanvas');
+    if (!canvas) return;
 
-    // Find min/max for scaling
-    const allVals = entries.flatMap(s => s.returns.filter(v => v != null));
-    if (!allVals.length) { chartEl.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Tidak ada data</p></div>'; return; }
-    const minVal = Math.min(...allVals);
-    const maxVal = Math.max(...allVals);
-    const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal));
-
-    // Render bar chart per sector per week
-    let html = '<div style="overflow-x:auto;padding:8px"><table style="border-collapse:collapse;font-size:10px;width:100%"><thead><tr>';
-    html += '<th style="text-align:left;padding:2px 6px;font-weight:600;color:var(--text-dim);position:sticky;left:0;background:var(--bg-panel)">Sektor</th>';
-    dates.forEach(d => {
-      html += `<th style="text-align:center;padding:2px 3px;font-weight:400;color:var(--text-dim);font-size:9px">${d.slice(-2)}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-
-    entries.forEach((s, i) => {
-      const c = colors[i % colors.length];
-      html += `<tr><td style="padding:3px 6px;font-weight:600;color:var(--text-main);position:sticky;left:0;background:var(--bg-panel);white-space:nowrap"><span style="color:${c}">●</span> ${s.name}</td>`;
-      s.returns.forEach(v => {
-        if (v == null) {
-          html += '<td style="padding:3px;text-align:center"><span class="text-dim">—</span></td>';
-        } else {
-          const pct = (v / absMax) * 100;
-          const isUp = v >= 0;
-          const barW = Math.min(Math.abs(pct), 100);
-          html += `<td style="padding:3px;text-align:center">
-            <div style="display:flex;align-items:center;justify-content:center;gap:2px">
-              <div style="width:100%;height:4px;background:var(--border-subtle);border-radius:2px;overflow:hidden;display:flex;${isUp ? 'flex-direction:row-reverse' : ''}">
-                <div style="height:100%;width:${barW}%;background:${isUp ? '#22c55e' : '#ef4444'};border-radius:2px"></div>
-              </div>
-              <span style="font-size:9px;color:${isUp ? '#22c55e' : '#ef4444'};min-width:32px;text-align:right">${isUp ? '+' : ''}${v.toFixed(1)}%</span>
-            </div>
-          </td>`;
+    const ctx = canvas.getContext('2d');
+    _rotationScatterChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Sektor',
+          data: scatterData,
+          backgroundColor: 'rgba(59, 130, 246, 0.6)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const point = scatterData[ctx.dataIndex];
+                return `${point.label}: Momentum=${point.x.toFixed(1)}%, RS=${point.y.toFixed(1)}%`;
+              }
+            }
+          },
+          annotation: {
+            annotations: {
+              lineX: {
+                type: 'line',
+                xMin: 0,
+                xMax: 0,
+                borderColor: 'rgba(156, 163, 175, 0.5)',
+                borderWidth: 1,
+                borderDash: [5, 5]
+              },
+              lineY: {
+                type: 'line',
+                yMin: 0,
+                yMax: 0,
+                borderColor: 'rgba(156, 163, 175, 0.5)',
+                borderWidth: 1,
+                borderDash: [5, 5]
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Momentum (1M Return %)', color: 'var(--text-dim)' },
+            grid: { color: 'rgba(156, 163, 175, 0.1)' },
+            ticks: { color: 'var(--text-dim)' }
+          },
+          y: {
+            title: { display: true, text: 'Relative Strength (3M Return %)', color: 'var(--text-dim)' },
+            grid: { color: 'rgba(156, 163, 175, 0.1)' },
+            ticks: { color: 'var(--text-dim)' }
+          }
         }
-      });
-      html += '</tr>';
+      }
     });
 
-    html += '</tbody></table></div>';
-    chartEl.innerHTML = html;
+    // Add quadrant labels
+    const legendEl = document.getElementById('rotation-legend');
+    if (legendEl) {
+      legendEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;font-size:10px">
+          <div style="padding:6px;background:rgba(34,197,94,0.1);border-radius:4px;text-align:center">
+            <strong style="color:#22c55e">Leading</strong><br>
+            <span style="color:var(--text-dim)">High momentum, High RS</span>
+          </div>
+          <div style="padding:6px;background:rgba(251,191,36,0.1);border-radius:4px;text-align:center">
+            <strong style="color:#fbbf24">Weakening</strong><br>
+            <span style="color:var(--text-dim)">Low momentum, High RS</span>
+          </div>
+          <div style="padding:6px;background:rgba(59,130,246,0.1);border-radius:4px;text-align:center">
+            <strong style="color:#3b82f6">Improving</strong><br>
+            <span style="color:var(--text-dim)">High momentum, Low RS</span>
+          </div>
+          <div style="padding:6px;background:rgba(239,68,68,0.1);border-radius:4px;text-align:center">
+            <strong style="color:#ef4444">Lagging</strong><br>
+            <span style="color:var(--text-dim)">Low momentum, Low RS</span>
+          </div>
+        </div>
+      `;
+    }
+
   } catch (e) {
     chartEl.innerHTML = `<div class="empty-state-v2"><p class="text-xs text-dim">Gagal: ${e.message || ''}</p></div>`;
   }

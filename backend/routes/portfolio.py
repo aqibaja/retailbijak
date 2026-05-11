@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from database import OHLCVDaily, Fundamental, PortfolioPosition, Stock, get_db
+from database import OHLCVDaily, Fundamental, PortfolioPosition, Stock, PaperTrade, get_db
 from routes.shared_stock_fallbacks import _ticker_base
 
 router = APIRouter()
@@ -344,3 +344,249 @@ def portfolio_dividend_projection(db: Session = Depends(get_db)):
         "average_yield": average_yield,
         "positions": results,
     }
+
+
+# ---------------------------------------------------------------------------
+# Paper Trades — Pydantic schemas
+# ---------------------------------------------------------------------------
+
+class PaperTradeOpen(BaseModel):
+    ticker: str = Field(min_length=1)
+    lots: int = Field(gt=0)
+    entry_price: float = Field(gt=0)
+    direction: str = Field(default="BUY")  # BUY or SELL
+    notes: str = ""
+
+
+class PaperTradeClose(BaseModel):
+    exit_price: float = Field(gt=0)
+    close_date: str | None = None  # "YYYY-MM-DD", optional
+
+
+# ---------------------------------------------------------------------------
+# Helper: get latest close price for a ticker from ohlcv_daily
+# ---------------------------------------------------------------------------
+
+def _latest_price(ticker: str, db: Session) -> float | None:
+    base = _ticker_base(ticker)
+    row = (
+        db.query(OHLCVDaily.close)
+        .filter(OHLCVDaily.ticker == base)
+        .order_by(OHLCVDaily.date.desc())
+        .first()
+    )
+    if row:
+        return row.close
+    # try .JK suffix
+    row = (
+        db.query(OHLCVDaily.close)
+        .filter(OHLCVDaily.ticker == f"{base}.JK")
+        .order_by(OHLCVDaily.date.desc())
+        .first()
+    )
+    return row.close if row else None
+
+
+def _calc_pnl(trade: PaperTrade, current_price: float | None) -> dict:
+    """Return unrealized or realized P&L dict for a trade."""
+    lots = trade.quantity // 100  # quantity stored as shares; 1 lot = 100 shares
+    shares = trade.quantity
+    multiplier = 1 if trade.trade_type == "BUY" else -1
+
+    if trade.status == "closed" and trade.exit_price is not None:
+        pnl = multiplier * (trade.exit_price - trade.entry_price) * shares
+        pnl_pct = multiplier * (trade.exit_price - trade.entry_price) / trade.entry_price * 100
+        cur = trade.exit_price
+    else:
+        cur = current_price or trade.entry_price
+        pnl = multiplier * (cur - trade.entry_price) * shares
+        pnl_pct = multiplier * (cur - trade.entry_price) / trade.entry_price * 100
+
+    return {
+        "id": trade.id,
+        "ticker": trade.ticker,
+        "trade_type": trade.trade_type,
+        "direction": trade.trade_type,
+        "lots": lots,
+        "quantity": shares,
+        "entry_price": trade.entry_price,
+        "exit_price": trade.exit_price,
+        "current_price": round(cur, 2),
+        "entry_date": trade.entry_date.isoformat() if trade.entry_date else None,
+        "exit_date": trade.exit_date.isoformat() if trade.exit_date else None,
+        "pnl": round(pnl, 2),
+        "pnl_pct": round(pnl_pct, 4),
+        "status": trade.status,
+        "notes": trade.notes or "",
+    }
+
+
+# ---------------------------------------------------------------------------
+# GET /api/paper-trades — list all positions with unrealized P&L
+# ---------------------------------------------------------------------------
+
+@router.get("/api/paper-trades")
+def list_paper_trades(status: str | None = None, db: Session = Depends(get_db)):
+    q = db.query(PaperTrade)
+    if status in ("open", "closed"):
+        q = q.filter(PaperTrade.status == status)
+    trades = q.order_by(PaperTrade.entry_date.desc()).all()
+
+    data = []
+    for t in trades:
+        cur = _latest_price(t.ticker, db) if t.status == "open" else None
+        data.append(_calc_pnl(t, cur))
+
+    return {"count": len(data), "data": data}
+
+
+# ---------------------------------------------------------------------------
+# GET /api/paper-trades/summary
+# ---------------------------------------------------------------------------
+
+@router.get("/api/paper-trades/summary")
+def paper_trades_summary(db: Session = Depends(get_db)):
+    trades = db.query(PaperTrade).all()
+    total = len(trades)
+    open_count = sum(1 for t in trades if t.status == "open")
+
+    total_pnl = 0.0
+    wins = 0
+    closed_count = 0
+
+    for t in trades:
+        cur = _latest_price(t.ticker, db) if t.status == "open" else None
+        row = _calc_pnl(t, cur)
+        total_pnl += row["pnl"]
+        if t.status == "closed":
+            closed_count += 1
+            if row["pnl"] > 0:
+                wins += 1
+
+    win_rate = round(wins / closed_count * 100, 1) if closed_count > 0 else 0.0
+
+    return {
+        "total": total,
+        "open_count": open_count,
+        "closed_count": closed_count,
+        "total_pnl": round(total_pnl, 2),
+        "win_rate": win_rate,
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /api/paper-trades — buka posisi baru
+# ---------------------------------------------------------------------------
+
+@router.post("/api/paper-trades")
+def open_paper_trade(payload: PaperTradeOpen, db: Session = Depends(get_db)):
+    ticker = payload.ticker.strip().upper()
+    direction = payload.direction.upper()
+    if direction not in ("BUY", "SELL"):
+        raise HTTPException(status_code=400, detail="direction harus BUY atau SELL")
+
+    shares = payload.lots * 100  # 1 lot = 100 saham IDX
+
+    trade = PaperTrade(
+        ticker=ticker,
+        trade_type=direction,
+        entry_price=payload.entry_price,
+        quantity=shares,
+        entry_date=datetime.utcnow(),
+        status="open",
+        notes=payload.notes,
+    )
+    db.add(trade)
+    db.commit()
+    db.refresh(trade)
+
+    return {
+        "ok": True,
+        "message": f"Posisi {direction} {ticker} ({payload.lots} lot) dibuka @ Rp{payload.entry_price:,.0f}",
+        "id": trade.id,
+    }
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/paper-trades/{id}/close — tutup posisi
+# ---------------------------------------------------------------------------
+
+@router.put("/api/paper-trades/{trade_id}/close")
+def close_paper_trade(trade_id: int, payload: PaperTradeClose, db: Session = Depends(get_db)):
+    trade = db.query(PaperTrade).filter(PaperTrade.id == trade_id).first()
+    if not trade:
+        raise HTTPException(status_code=404, detail="Trade tidak ditemukan")
+    if trade.status == "closed":
+        raise HTTPException(status_code=400, detail="Trade sudah ditutup")
+
+    shares = trade.quantity
+    multiplier = 1 if trade.trade_type == "BUY" else -1
+    pnl = multiplier * (payload.exit_price - trade.entry_price) * shares
+    pnl_pct = multiplier * (payload.exit_price - trade.entry_price) / trade.entry_price * 100
+
+    close_dt = datetime.utcnow()
+    if payload.close_date:
+        try:
+            close_dt = datetime.strptime(payload.close_date, "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    trade.exit_price = payload.exit_price
+    trade.exit_date = close_dt
+    trade.pnl = round(pnl, 2)
+    trade.pnl_pct = round(pnl_pct, 4)
+    trade.status = "closed"
+    db.commit()
+
+    return {
+        "ok": True,
+        "message": f"Posisi {trade.ticker} ditutup @ Rp{payload.exit_price:,.0f} | P&L: Rp{pnl:,.0f}",
+        "pnl": round(pnl, 2),
+        "pnl_pct": round(pnl_pct, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /api/paper-trades/{id}/close — alias (frontend lama pakai POST)
+# ---------------------------------------------------------------------------
+
+@router.post("/api/paper-trades/{trade_id}/close")
+def close_paper_trade_post(trade_id: int, price: float, db: Session = Depends(get_db)):
+    """Legacy: close via query param ?price=xxx (POST)."""
+    trade = db.query(PaperTrade).filter(PaperTrade.id == trade_id).first()
+    if not trade:
+        raise HTTPException(status_code=404, detail="Trade tidak ditemukan")
+    if trade.status == "closed":
+        raise HTTPException(status_code=400, detail="Trade sudah ditutup")
+
+    shares = trade.quantity
+    multiplier = 1 if trade.trade_type == "BUY" else -1
+    pnl = multiplier * (price - trade.entry_price) * shares
+    pnl_pct = multiplier * (price - trade.entry_price) / trade.entry_price * 100
+
+    trade.exit_price = price
+    trade.exit_date = datetime.utcnow()
+    trade.pnl = round(pnl, 2)
+    trade.pnl_pct = round(pnl_pct, 4)
+    trade.status = "closed"
+    db.commit()
+
+    return {
+        "ok": True,
+        "message": f"Posisi {trade.ticker} ditutup @ Rp{price:,.0f} | P&L: Rp{pnl:,.0f}",
+        "pnl": round(pnl, 2),
+    }
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/paper-trades/{id} — hapus posisi
+# ---------------------------------------------------------------------------
+
+@router.delete("/api/paper-trades/{trade_id}")
+def delete_paper_trade(trade_id: int, db: Session = Depends(get_db)):
+    trade = db.query(PaperTrade).filter(PaperTrade.id == trade_id).first()
+    if not trade:
+        raise HTTPException(status_code=404, detail="Trade tidak ditemukan")
+    db.delete(trade)
+    db.commit()
+    return {"ok": True, "message": "Trade dihapus"}

@@ -90,46 +90,144 @@ export function renderHelp(root) {
               </div>
             </div>
             <div class="help-faq-stack" id="help-faq-stack">
+                <details class="help-faq-item" data-help-tags="sinyal buy sell beli jual cara baca signal">
+                    <summary>Bagaimana cara membaca sinyal Buy/Sell?</summary>
+                    <p>Sinyal <strong>Buy</strong> muncul saat CCI menembus ke atas +100 disertai lonjakan volume dan harga di atas magic line (MA). Sinyal <strong>Sell</strong> muncul saat CCI turun di bawah -100 atau harga memotong magic line ke bawah. Selalu konfirmasi dengan price action sebelum eksekusi.</p>
+                </details>
+                <details class="help-faq-item" data-help-tags="rsi relative strength index interpretasi overbought oversold">
+                    <summary>Apa itu RSI dan bagaimana interpretasinya?</summary>
+                    <p>RSI (Relative Strength Index) mengukur kecepatan dan perubahan pergerakan harga, skala 0–100. RSI di atas 70 menandakan <strong>overbought</strong> (potensi koreksi), di bawah 30 menandakan <strong>oversold</strong> (potensi rebound). RSI 40–60 adalah zona netral. Gunakan bersama indikator lain untuk konfirmasi.</p>
+                </details>
+                <details class="help-faq-item" data-help-tags="price alert set harga notifikasi target ambang batas">
+                    <summary>Bagaimana cara set price alert?</summary>
+                    <p>Buka halaman <strong>Alert</strong>, klik "Alert Baru", pilih kode saham, tipe kondisi (Price &gt;, Price &lt;, RSI &gt;, RSI &lt;), dan masukkan nilai target. Alert dicek otomatis setiap 2 menit. Notifikasi dikirim via Telegram jika sudah dikonfigurasi di Pengaturan.</p>
+                </details>
+                <details class="help-faq-item" data-help-tags="paper trade portfolio nyata perbedaan simulasi virtual">
+                    <summary>Apa perbedaan Paper Trade vs Portfolio nyata?</summary>
+                    <p><strong>Paper Trade</strong> adalah simulasi trading tanpa uang nyata — cocok untuk menguji strategi. <strong>Portfolio nyata</strong> mencatat posisi yang benar-benar kamu miliki beserta harga rata-rata dan lot. Keduanya tersimpan di database dan bisa dipantau P&amp;L-nya secara terpisah.</p>
+                </details>
                 <details class="help-faq-item" data-help-tags="swingaq apa itu scan cci magic line akumulasi">
                     <summary>Apa itu SwingAQ?</summary>
                     <p>SwingAQ adalah mesin pemindaian institusional yang menganalisis akumulasi berdasarkan CCI, magic line (MA), dan lonjakan volume untuk mendeteksi kandidat swing trading potensial.</p>
                 </details>
                 <details class="help-faq-item" data-help-tags="hasil scan kosong kosong data ohlcv scheduler">
                     <summary>Kenapa hasil scan kosong?</summary>
-                    <p>Scanner membutuhkan data OHLCV yang diperbarui. Pastikan scheduler berjalan (cek jam 09:00 & 15:30 WIB). Jika masih kosong, coba refresh atau jalankan ulang scan.</p>
-                </details>
-                <details class="help-faq-item" data-help-tags="tambah portofolio saham lot harga rata-rata add">
-                    <summary>Bagaimana cara menambahkan saham ke portofolio?</summary>
-                    <p>Buka halaman Portofolio, klik Tambah, lalu isi kode saham, jumlah lot, dan harga rata-rata. Data tersimpan di basis data dan sinkron antar sesi.</p>
-                </details>
-                <details class="help-faq-item" data-help-tags="watchlist portofolio beda perbedaan pantau incaran">
-                    <summary>Apa perbedaan Watchlist dan Portofolio?</summary>
-                    <p>Watchlist untuk memantau saham incaran tanpa data kepemilikan. Portofolio untuk mencatat posisi yang sudah dimiliki beserta harga rata-rata dan lot.</p>
-                </details>
-                <details class="help-faq-item" data-help-tags="data realtime real-time tertunda yahoo finance scheduler">
-                    <summary>Data real-time atau tertunda?</summary>
-                    <p>Data harga diperbarui melalui scheduler dari Yahoo Finance pada jam 09:00 dan 15:30 WIB. Bukan real-time streaming — gunakan indikator teknikal untuk konfirmasi.</p>
+                    <p>Scanner membutuhkan data OHLCV yang diperbarui. Pastikan scheduler berjalan (cek jam 09:00 &amp; 15:30 WIB). Jika masih kosong, coba refresh atau jalankan ulang scan.</p>
                 </details>
                 <details class="help-faq-item" data-help-tags="ai picks aktifkan openrouter api key llm rekomendasi">
                     <summary>Bagaimana cara mengaktifkan AI Picks?</summary>
                     <p>Masuk ke Pengaturan, masukkan API key OpenRouter, lalu simpan. Setelah aktif, AI Picks akan menampilkan rekomendasi berbasis model bahasa setiap hari.</p>
                 </details>
-                <details class="help-faq-item" data-help-tags="alert harga notifikasi pantau pergerakan saham">
-                    <summary>Bagaimana cara membuat Alert?</summary>
-                    <p>Buka halaman Alert, klik "Alert Baru", masukkan kode saham, pilih tipe (Price >, Price <, RSI >, RSI <), dan tentukan nilai ambang. Alert dicek setiap 2 menit.</p>
-                </details>
                 <details class="help-faq-item" data-help-tags="backtest backtesting strategi sma rsi bolinger uji">
                     <summary>Apa itu Backtesting?</summary>
                     <p>Backtesting menguji strategi trading pada data historis. Pilih saham, strategi (SMA Crossover, RSI Reversal, Bollinger Breakout), lalu lihat equity curve dan Sharpe ratio.</p>
                 </details>
-                <details class="help-faq-item" data-help-tags="theme tema gelap dark light terang ganti">
-                    <summary>Bagaimana cara ganti tema?</summary>
-                    <p>Klik ikon bulan/matahari di pojok kanan atas topbar untuk toggle antara tema gelap dan terang. Pilihan tersimpan otomatis.</p>
+                <details class="help-faq-item" data-help-tags="tambah portofolio saham lot harga rata-rata add">
+                    <summary>Bagaimana cara menambahkan saham ke portofolio?</summary>
+                    <p>Buka halaman Portofolio, klik Tambah, lalu isi kode saham, jumlah lot, dan harga rata-rata. Data tersimpan di basis data dan sinkron antar sesi.</p>
                 </details>
-                <details class="help-faq-item" data-help-tags="screener filter cci volume harga perubahan exchange">
-                    <summary>Filter apa saja yang tersedia di Screener?</summary>
-                    <p>Screener mendukung filter: harga, perubahan %, volume, CCI, kualitas sinyal, dan magic line. Hasil bisa diurutkan dan diekspor ke CSV.</p>
+                <details class="help-faq-item" data-help-tags="data realtime real-time tertunda yahoo finance scheduler">
+                    <summary>Data real-time atau tertunda?</summary>
+                    <p>Data harga diperbarui melalui scheduler dari Yahoo Finance pada jam 09:00 dan 15:30 WIB. Bukan real-time streaming — gunakan indikator teknikal untuk konfirmasi.</p>
                 </details>
+            </div>
+
+            <!-- ─── Keyboard Shortcuts Table ──────────────── -->
+            <div class="help-guide-head mt-16">
+              <h2 class="help-section-title">Pintasan Keyboard Lengkap</h2>
+            </div>
+            <div class="help-shortcuts-table-wrap" style="overflow-x:auto">
+              <table class="help-shortcuts-table" style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-subtle)">
+                    <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Pintasan</th>
+                    <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-help-tags="g d dashboard navigasi goto">
+                    <td style="padding:8px 12px"><kbd>G</kbd> <kbd>D</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Buka Dashboard</td>
+                  </tr>
+                  <tr data-help-tags="g s screener navigasi goto pemindai">
+                    <td style="padding:8px 12px"><kbd>G</kbd> <kbd>S</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Buka Screener</td>
+                  </tr>
+                  <tr data-help-tags="g p portfolio navigasi goto portofolio">
+                    <td style="padding:8px 12px"><kbd>G</kbd> <kbd>P</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Buka Portfolio</td>
+                  </tr>
+                  <tr data-help-tags="g w watchlist navigasi goto pantau">
+                    <td style="padding:8px 12px"><kbd>G</kbd> <kbd>W</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Buka Watchlist</td>
+                  </tr>
+                  <tr data-help-tags="slash search fokus pencarian quick">
+                    <td style="padding:8px 12px"><kbd>/</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Quick search — fokus ke pencarian global</td>
+                  </tr>
+                  <tr data-help-tags="ctrl+k cmd+k search buka pencarian palette">
+                    <td style="padding:8px 12px"><kbd>Ctrl+K</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Buka palet perintah / pencarian global</td>
+                  </tr>
+                  <tr data-help-tags="esc escape tutup modal panel close">
+                    <td style="padding:8px 12px"><kbd>Esc</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Tutup modal, panel, atau pencarian</td>
+                  </tr>
+                  <tr data-help-tags="r refresh reload halaman aktif">
+                    <td style="padding:8px 12px"><kbd>R</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Refresh halaman aktif</td>
+                  </tr>
+                  <tr data-help-tags="arrow up down navigasi hasil pencarian">
+                    <td style="padding:8px 12px"><kbd>↑</kbd> <kbd>↓</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Navigasi hasil pencarian</td>
+                  </tr>
+                  <tr data-help-tags="enter buka item pilih select">
+                    <td style="padding:8px 12px"><kbd>Enter</kbd></td>
+                    <td style="padding:8px 12px;color:var(--text-main)">Buka item terpilih</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- ─── Changelog ─────────────────────────────── -->
+            <div class="help-guide-head mt-16">
+              <h2 class="help-section-title">📋 Changelog</h2>
+            </div>
+            <div class="help-changelog-stack" style="display:flex;flex-direction:column;gap:12px" data-help-tags="changelog update versi rilis history">
+              <div class="help-changelog-item" style="padding:14px 16px;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent,#3b82f6);color:#fff">v29</span>
+                  <span class="text-xs text-dim">Terbaru</span>
+                </div>
+                <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text-main);line-height:1.7">
+                  <li>Paper trades CRUD — simulasi trading tanpa modal nyata</li>
+                  <li>Backtest connect — uji strategi SMA, RSI, Bollinger pada data historis</li>
+                  <li>Financials 870 baris — laporan keuangan lengkap per emiten</li>
+                  <li>Market briefing harian otomatis (AI + fallback)</li>
+                </ul>
+              </div>
+              <div class="help-changelog-item" style="padding:14px 16px;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--bg-card,#334155);color:var(--text-main)">v28</span>
+                </div>
+                <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text-main);line-height:1.7">
+                  <li>User auth — Device ID, PIN akses, nickname akun</li>
+                  <li>PWA offline — install ke homescreen, cache aset statis</li>
+                  <li>Onboarding flow — panduan interaktif untuk pengguna baru</li>
+                  <li>Telegram &amp; SMTP alert integration</li>
+                </ul>
+              </div>
+              <div class="help-changelog-item" style="padding:14px 16px;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--bg-card,#334155);color:var(--text-main)">v27</span>
+                </div>
+                <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text-main);line-height:1.7">
+                  <li>AI Picks harian — rekomendasi berbasis LLM via OpenRouter</li>
+                  <li>Market briefing — ringkasan pasar IDX otomatis setiap hari</li>
+                  <li>25 views — dashboard, screener, portofolio, watchlist, dan lebih banyak lagi</li>
+                  <li>Gamification — streak login, XP, dan badge pencapaian</li>
+                </ul>
+              </div>
             </div>
           </div>
 

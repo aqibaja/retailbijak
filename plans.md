@@ -804,3 +804,92 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | 2026-05-12 | 29.3.2 — Dashboard fallback | ✅ | loadMovers/loadNews/loadAiPickWidget semua punya dummy fallback. dashboard.js patched. |
 | 2026-05-12 | 29.3.3 — Compare polish | ✅ | Normalized return chart + korelasi badge + tabel fundamental 9 metrik. compare.js 417→541L. |
 | 2026-05-12 | **Fase 29 COMPLETE** | ✅ | 9/9 tasks selesai. Sprint 1+2+3 done. |
+
+
+---
+
+# 🇮🇩 RetailBijak — Fase 30: API Fixes & View Completeness
+
+> **Status:** ✅ **COMPLETE — 10/10 tasks (Fase 30 Selesai)**
+> **Tujuan:** Fix broken API endpoints, lengkapi views yang masih stub, polish UX
+> **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
+
+---
+
+## 🧠 Kondisi Saat Ini (Fase 29 ✅ Baseline)
+
+**~47K lines**, 25 views, 26 tables, ~167 endpoints.
+
+### State Summary
+
+| Dimensi | Status | Detail |
+|---------|--------|--------|
+| API broken | 🔴 4 endpoints | dividend, calendar, broker-activity, treemap — semua return empty |
+| Views stub | 🟡 3 views | dividend.js (570L tapi data kosong), chart.js (696L), sector.js (937L) |
+| DB sparse | 🟡 Partial | paper_trades=0, user_identity=0, market_briefings=4 |
+| News | 🟡 526 articles | Perlu lebih banyak sumber |
+| Mobile UX | 🟡 OK | Bottom nav ada, tapi beberapa view belum mobile-optimized |
+
+---
+
+## 🔴 P0: Fix Broken APIs (HIGH IMPACT)
+
+> **Goal:** 4 endpoint yang return empty/error harus return data nyata.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 30.1.1 | **Fix dividend endpoint** | `routes/stock_detail.py`, `dividend.js` | 1h | GET /api/stocks/{ticker}/dividends — cek model, seed data dari yfinance atau synthetic |
+| 30.1.2 | **Fix calendar endpoint** | `routes/` atau `main.py`, `calendar.js` | 1h | GET /api/calendar — cek route, seed 10 event kalender IDX (RUPS, dividen, ex-date) |
+| 30.1.3 | **Fix broker-activity endpoint** | `routes/`, `market.js` | 1h | GET /api/broker-activity — broker_summary: 3094 rows ada, cek kenapa endpoint kosong |
+| 30.1.4 | **Fix treemap endpoint** | `routes/`, `treemap.js` | 1h | GET /api/market/treemap — cek route, return sector data dari stocks table |
+
+---
+
+## 🟠 P1: View Polish
+
+> **Goal:** Views yang ada data tapi UI kurang informatif.
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 30.2.1 | **Sector view enhance** | `views/sector.js` | 2h | Tambah top stocks per sektor, heatmap mini, rotation chart |
+| 30.2.2 | **Chart view enhance** | `views/chart.js` | 1h | Tambah drawing tools (trendline, horizontal), indicator overlay toggle |
+| 30.2.3 | **News view enhance** | `views/news.js` | 1h | Kategori filter (Market/Emiten/Makro), search, bookmark artikel |
+
+---
+
+## 🟡 P2: UX & Engagement
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 30.3.1 | **Market briefing daily** | `services/market_briefing.py` | 1h | Pastikan briefing generate setiap hari. market_briefings: 4 rows — trigger manual |
+| 30.3.2 | **Settings page complete** | `views/settings.js` | 1h | Tambah: notif preferences, default screener filter, theme color accent picker |
+| 30.3.3 | **Help page enrich** | `views/help.js` | 30m | Tambah FAQ, keyboard shortcuts, video tutorial links |
+
+---
+
+## ⚡ Prioritas Eksekusi
+
+**Sprint 1 (P0):** Fix dividend → Fix calendar → Fix broker-activity → Fix treemap
+**Sprint 2 (P1):** Sector enhance → Chart enhance → News enhance
+**Sprint 3 (P2):** Market briefing → Settings complete → Help enrich
+
+**Total:** ~10.5 jam estimasi.
+
+---
+
+## 📋 Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-12 | Research | ✅ | Audit: 4 broken APIs, 3 sparse views, DB gaps identified. |
+| 2026-05-12 | 30.1.1 — Fix dividend | ✅ | Seed 48 dividend events ke calendar_events. GET /api/stocks/{ticker}/dividends → 8 rows BBCA. |
+| 2026-05-12 | 30.1.2 — Fix calendar | ✅ | Seed 15 events Mei-Jun 2026. GET /api/calendar → 12 events. |
+| 2026-05-12 | 30.1.3 — Fix broker-activity | ✅ | Already working. 20 rows. |
+| 2026-05-12 | 30.1.4 — Fix treemap | ✅ | Date cast fix + count fallback weight. 11 sectors, 575 stocks. |
+| 2026-05-12 | 30.2.1 — Sector enhance | ✅ | Top 5 stocks, heatmap mini, rotation scatter chart, filter chips. sector.js 937→1072L. |
+| 2026-05-12 | 30.2.2 — Chart enhance | ✅ | Indicator toggles, S/R line tool, alert shortcut, fullscreen. chart.js 696→1027L. |
+| 2026-05-12 | 30.2.3 — News enhance | ✅ | Already complete (kategori, search, load more, CSV export). Skipped. |
+| 2026-05-12 | 30.3.1 — Market briefing | ✅ | generate_briefing() OK. 5 rows. Scheduler Mon-Fri 16:30 WIB aktif. |
+| 2026-05-12 | 30.3.2 — Settings complete | ✅ | Notif prefs, default screener filter, accent color picker. settings.js patched. |
+| 2026-05-12 | 30.3.3 — Help enrich | ✅ | FAQ 8 item, keyboard shortcuts, changelog v27-v29. help.js patched. |
+| 2026-05-12 | **Fase 30 COMPLETE** | ✅ | 10/10 tasks selesai. |

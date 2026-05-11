@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 RSS_FEEDS = {
     "CNBC Indonesia": "https://www.cnbcindonesia.com/market/rss",
-    "IDX Channel": "https://www.idxchannel.com/rss",
-    "CNN Indonesia": "https://www.cnnindonesia.com/rss",
+    "CNN Indonesia": "https://www.cnnindonesia.com/ekonomi/rss",
+    "Investor.id": "https://investor.id/feed",
 }
 
 # IDX ticker pattern — 2-4 uppercase letters, optionally followed by a period

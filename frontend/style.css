@@ -95,6 +95,13 @@
 .sector-empty h3{font-size:18px;color:var(--text-main);margin:0}
 .sector-empty p{font-size:13px;max-width:320px}
 @media (max-width:767px){.sector-detail-grid{grid-template-columns:1fr}.sector-chip{padding:6px 12px;font-size:11px}.sector-chip-ret{font-size:10px}}
+/* ── 30.2.1: Sector Filter Bar ── */
+.sector-filter-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border-subtle);background:var(--bg-panel);color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.sector-filter-chip:hover{border-color:var(--primary-color);color:var(--primary-color)}
+.sector-filter-chip.active{border-color:var(--primary-color);background:var(--primary-color);color:#fff}
+/* ── 30.2.1: Sector Top5 + Heatmap ── */
+.sector-top5 table tr:hover td{background:var(--bg-panel-hover)}
+.sector-heatmap>div>div:hover{opacity:0.8;transform:scale(1.15);transition:transform .1s}
 /* ── Sector Rotation Heatmap ── */
 .sector-rotation-page{padding:0 0 24px}
 .sector-rotation-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
