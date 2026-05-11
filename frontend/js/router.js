@@ -1,5 +1,6 @@
-import { clearViewTimers } from './main.js?v=20260511';
-import { setPageMeta } from './api.js?v=20260511';
+window.__rbk_log && window.__rbk_log('router.js module loaded', true);
+import { clearViewTimers } from './utils/view_timers.js?v=202605120001';
+import { setPageMeta } from './api.js?v=202605120001';
 
 // Route meta descriptions
 const ROUTE_META = {
@@ -33,32 +34,32 @@ const ROUTE_META = {
 
 // Dynamic view registry — lazy import per route (1.7.1)
 const viewModules = {
-  dashboard: () => import('./views/dashboard.js?v=20260511'),
-  stock_detail: () => import('./views/stock_detail.js?v=20260511'),
-  screener: () => import('./views/screener.js?v=20260511'),
-  portfolio: () => import('./views/portfolio.js?v=20260511'),
-  market: () => import('./views/market.js?v=20260511'),
-  treemap: () => import('./views/treemap.js?v=20260511'),
-  compare: () => import('./views/compare.js?v=20260511'),
-  backtest: () => import('./views/backtest.js?v=20260511'),
-  paper_trades: () => import('./views/paper_trades.js?v=20260511'),
-  news: () => import('./views/news.js?v=20260511'),
-  settings: () => import('./views/settings.js?v=20260511'),
-  help: () => import('./views/help.js?v=20260511'),
-  ai_picks: () => import('./views/ai_picks.js?v=20260511'),
-  sector: () => import('./views/sector.js?v=20260511'),
-  breadth: () => import('./views/breadth.js?v=20260511'),
-  signal_overview: () => import('./views/signal_overview.js?v=20260511'),
-  alerts: () => import('./views/alerts.js?v=20260511'),
-  movers: () => import('./views/movers.js?v=20260511'),
-  calendar: () => import('./views/calendar.js?v=20260511'),
-  corporate: () => import('./views/corporate.js?v=20260511'),
-  ipo: () => import('./views/ipo.js?v=20260511'),
-  chart: () => import('./views/chart.js?v=20260511'),
-  indices: () => import('./views/indices.js?v=20260511'),
-  dividends: () => import('./views/dividend.js?v=20260511'),
-  macro: () => import('./views/macro.js?v=20260511'),
-  sector_rotation: () => import('./views/sector.js?v=20260511'),
+  dashboard: () => import('./views/dashboard.js?v=202605120001'),
+  stock_detail: () => import('./views/stock_detail.js?v=202605120001'),
+  screener: () => import('./views/screener.js?v=202605120001'),
+  portfolio: () => import('./views/portfolio.js?v=202605120001'),
+  market: () => import('./views/market.js?v=202605120001'),
+  treemap: () => import('./views/treemap.js?v=202605120001'),
+  compare: () => import('./views/compare.js?v=202605120001'),
+  backtest: () => import('./views/backtest.js?v=202605120001'),
+  paper_trades: () => import('./views/paper_trades.js?v=202605120001'),
+  news: () => import('./views/news.js?v=202605120001'),
+  settings: () => import('./views/settings.js?v=202605120001'),
+  help: () => import('./views/help.js?v=202605120001'),
+  ai_picks: () => import('./views/ai_picks.js?v=202605120001'),
+  sector: () => import('./views/sector.js?v=202605120001'),
+  breadth: () => import('./views/breadth.js?v=202605120001'),
+  signal_overview: () => import('./views/signal_overview.js?v=202605120001'),
+  alerts: () => import('./views/alerts.js?v=202605120001'),
+  movers: () => import('./views/movers.js?v=202605120001'),
+  calendar: () => import('./views/calendar.js?v=202605120001'),
+  corporate: () => import('./views/corporate.js?v=202605120001'),
+  ipo: () => import('./views/ipo.js?v=202605120001'),
+  chart: () => import('./views/chart.js?v=202605120001'),
+  indices: () => import('./views/indices.js?v=202605120001'),
+  dividends: () => import('./views/dividend.js?v=202605120001'),
+  macro: () => import('./views/macro.js?v=202605120001'),
+  sector_rotation: () => import('./views/sector.js?v=202605120001'),
 };
 const viewCache = {};
 
@@ -129,6 +130,14 @@ export function handleRoute(hash) {
         clearTimeout(safetyTimer);
         // Hapus page-loading SEBELUM render — konten & skeleton langsung kelihatan
         root.classList.remove('page-loading');
+        // DEBUG: tanda router jalan
+        if (!root.querySelector('#rbk-router-marker')) {
+            const m = document.createElement('div');
+            m.id = 'rbk-router-marker';
+            m.style.cssText = 'position:fixed;bottom:70px;right:10px;z-index:99998;background:rgba(16,185,129,0.9);color:#fff;padding:4px 10px;border-radius:6px;font:12px monospace';
+            m.textContent = 'R: ' + viewKey;
+            document.body.appendChild(m);
+        }
         try {
             window.scrollTo({ top: 0, behavior: 'instant' });
         } catch {

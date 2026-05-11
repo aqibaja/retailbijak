@@ -3,7 +3,7 @@
 // API: GET /api/macro, GET /api/macro/{indicator}
 // Chart.js line chart per indicator with card layout
 
-import { apiFetch } from '../api.js?v=20260512';
+import { apiFetch } from '../api.js?v=202605120001';
 
 // ─── Module State ──────────────────────────────────────────
 let macroData = [];

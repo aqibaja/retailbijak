@@ -1,7 +1,7 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=202605112032';
-import { observeElements } from '../utils/helpers.js?v=202605112032';
-import { registerViewTimer } from '../utils/view_timers.js?v=202605112032';
-import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=202605112032';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=202605120001';
+import { observeElements } from '../utils/helpers.js?v=202605120001';
+import { registerViewTimer } from '../utils/view_timers.js?v=202605120001';
+import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=202605120001';
 
 const safeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : []);
 

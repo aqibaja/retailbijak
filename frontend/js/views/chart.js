@@ -2,7 +2,7 @@
  * Full-Screen Chart View — Dedicated chart page with drawing tools
  * Fase 15.5 — Full-Screen Chart & Drawing Tools
  */
-import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=20260512';
+import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=202605120001';
 
 let activeTicker = null;
 let activeTf = '1M';

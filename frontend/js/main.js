@@ -1,7 +1,7 @@
-import { handleRoute } from './router.js?v=202605112032';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605112032';
-import { initTheme } from './theme.js?v=202605112032';
-import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605112032';
+import { handleRoute } from './router.js?v=202605120001';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605120001';
+import { initTheme } from './theme.js?v=202605120001';
+import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120001';
 
 // ─── ENTRY ─── main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
@@ -56,8 +56,8 @@ function showErrorFallback(detail) {
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // Re-exported from utils/view_timers.js for backward compatibility
-export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605112032';
-export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605112032';
+export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120001';
+export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605120001';
 // ─── More Drawer (mobile nav) ────────────────────
 function closeMoreDrawer() {
   const drawer = document.getElementById('more-drawer');
@@ -1033,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // showOnboarding();  // disabled for debug
       // Service worker disabled — causes reload loops
       /*
-        navigator.serviceWorker.register('/sw.js?v=202605112032').then(reg => {
+        navigator.serviceWorker.register('/sw.js?v=202605120001').then(reg => {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           }

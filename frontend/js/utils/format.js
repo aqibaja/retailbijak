@@ -1,56 +1,78 @@
-// ─── Number Formatting Utilities ─────────────────────────
-// Single source of truth for all formatting across views
-// Use: import { nf, pct, money, fmt } from '../utils/format.js';
+// Number formatter utilities for RetailBijak
 
-// Number format with locale id-ID
-// nf(val, digits=2) → "1.234,57"
-export const nf = (n, d = 2) =>
-  n == null || Number.isNaN(Number(n)) ? '—'
-  : Number(n).toLocaleString('id-ID', { maximumFractionDigits: d });
+// Number formatter - Indonesian locale
+export function nf(value, decimals = 0) {
+  if (value == null || isNaN(value)) return '—';
+  return Number(value).toLocaleString('id-ID', { 
+    minimumFractionDigits: decimals, 
+    maximumFractionDigits: decimals 
+  });
+}
 
-// Percentage format
-// pct(val, digits=2) → "+1,23%" or "-0,50%"
-export const pct = (n, d = 2) =>
-  n == null || Number.isNaN(Number(n)) ? '—'
-  : `${Number(n).toLocaleString('id-ID', { maximumFractionDigits: d })}%`;
+// Percentage formatter
+export function pf(value, decimals = 2) {
+  if (value == null || isNaN(value)) return '—';
+  const num = Number(value);
+  return (num >= 0 ? '+' : '') + num.toFixed(decimals) + '%';
+}
 
-// Percentage with sign (for change display)
-// pf(val, digits=2) → "+1,23%" or "-0,50%"
-export const pf = (n, d = 2) =>
-  n == null || Number.isNaN(Number(n)) ? '—'
-  : `${Number(n) >= 0 ? '+' : ''}${Number(n).toLocaleString('id-ID', { maximumFractionDigits: d })}%`;
+// Compact number formatter (1000 → 1K, 1000000 → 1M)
+export function cf(value) {
+  if (value == null || isNaN(value)) return '—';
+  const num = Number(value);
+  if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+  if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+  if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+  return num.toFixed(0);
+}
 
-// Rupiah format
-// money(val) → "Rp 1.234" or "Rp 7.450"
-export const money = (n) =>
-  n == null || Number.isNaN(Number(n)) ? '—'
-  : `Rp ${Number(n).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
+// Currency formatter (IDR)
+export function currencyFormat(value) {
+  if (value == null || isNaN(value)) return 'Rp —';
+  return 'Rp ' + Number(value).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
 
-// Large number Rupiah format (T/Jt/M suffixes)
-// fmtRp(1_500_000_000_000) → "Rp 1,5T"
-export const fmtRp = (n) => {
-  const abs = Math.abs(Number(n ?? 0));
-  if (abs >= 1_000_000_000_000) return `Rp ${(Number(n) / 1_000_000_000_000).toFixed(1)}T`;
-  if (abs >= 1_000_000_000) return `Rp ${(Number(n) / 1_000_000_000).toFixed(1)}M`;
-  if (abs >= 1_000_000) return `Rp ${(Number(n) / 1_000_000).toFixed(1)}Jt`;
-  return `Rp ${Number(n).toLocaleString('id-ID')}`;
-};
-// fmt(val, digits=2) → "1.234,57"
-export const fmt = (n, digits = 2) =>
-  Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
+// Date formatter
+export function dateFormat(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
 
-// ─── Markdown Renderer (lightweight, no deps) ──────────────
-export const renderMarkdown = (text) => {
-  if (!text) return '';
-  let html = text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/__(.+?)__/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/_(.+?)_/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/~~(.+?)~~/g, '<s>$1</s>')
-    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
-    .replace(/\n/g, '<br>');
-  return html;
-};
+// Time formatter
+export function timeFormat(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return dateStr;
+  }
+}
+
+// Relative time (e.g., "2 jam lalu")
+export function relativeTime(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+    
+    if (diffSec < 60) return 'baru saja';
+    if (diffMin < 60) return `${diffMin} menit lalu`;
+    if (diffHour < 24) return `${diffHour} jam lalu`;
+    if (diffDay < 7) return `${diffDay} hari lalu`;
+    return dateFormat(dateStr);
+  } catch {
+    return dateStr;
+  }
+}
