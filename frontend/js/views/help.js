@@ -196,6 +196,30 @@ export function renderHelp(root) {
             <div class="help-changelog-stack" style="display:flex;flex-direction:column;gap:12px" data-help-tags="changelog update versi rilis history">
               <div class="help-changelog-item" style="padding:14px 16px;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent,#3b82f6);color:#fff">v1.2.0</span>
+                  <span class="text-xs text-dim">Terbaru — Mei 2026</span>
+                </div>
+                <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--text-main);line-height:1.7">
+                  <li>Share link saham — salin link langsung dari header stock detail</li>
+                  <li>404 fallback page — halaman tidak ditemukan yang informatif</li>
+                  <li>Dashboard refresh button — perbarui data tanpa reload penuh</li>
+                  <li>Calendar export ICS — download event kalender ke aplikasi kalender</li>
+                  <li>Screener filter sektor & market cap — pindai berdasarkan sektor dan ukuran perusahaan</li>
+                  <li>Market cap di header stock detail — lihat kapitalisasi pasar langsung di price board</li>
+                  <li>Badge sektor & industry di stock detail header</li>
+                  <li>News category count — jumlah artikel per kategori di filter pill</li>
+                  <li>Badge "Baru" untuk artikel berita terbaru (&lt; 2 jam)</li>
+                  <li>Tombol "Tambah ke Portfolio" langsung dari stock detail</li>
+                  <li>Quick screener preset links di dashboard</li>
+                  <li>Alert harga kini vs threshold — lihat seberapa dekat harga dengan target alert</li>
+                  <li>Watchlist sort by % change default</li>
+                  <li>Settings: versi aplikasi & tombol clear cache</li>
+                  <li>TradingView link di chart tab stock detail</li>
+                  <li>IPO countdown hari menuju listing</li>
+                </ul>
+              </div>
+              <div class="help-changelog-item" style="padding:14px 16px;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border-subtle)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
                   <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent,#3b82f6);color:#fff">v29</span>
                   <span class="text-xs text-dim">Terbaru</span>
                 </div>

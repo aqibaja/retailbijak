@@ -1903,5 +1903,26 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 64.2.2 Screener — tambah tombol "Export CSV" hasil scan
 
 ### Sprint 3: Final Smoke Test
-- [ ] 64.3.1 Smoke test 17/17 endpoint
-- [ ] 64.3.2 Commit & push final
+- [x] 64.3.1 Smoke test 17/17 endpoint ✅
+- [x] 64.3.2 Commit 8d0a2a5 pushed ✅
+
+**Status: ✅ FASE 64 SELESAI — commit 8d0a2a5**
+
+---
+
+## Fase 65 — IPO & Macro Page Polish (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Polish halaman IPO dan Macro yang belum banyak disentuh
+
+### Sprint 1: IPO Page
+- [ ] 65.1.1 IPO — tampilkan countdown hari menuju listing date
+- [ ] 65.1.2 IPO — tambah badge "Upcoming" / "Listed" / "Closed"
+
+### Sprint 2: Macro Page
+- [ ] 65.2.1 Macro — tampilkan trend arrow (naik/turun) di setiap indikator
+- [ ] 65.2.2 Macro — tambah last updated timestamp per indikator
+
+### Sprint 3: Help Page
+- [ ] 65.3.1 Help — update daftar fitur dengan fitur baru Fase 57-64
+- [ ] 65.3.2 Help — tambah shortcut keyboard di halaman help

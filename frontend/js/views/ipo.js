@@ -90,7 +90,13 @@ function renderUpcomingTable(items) {
           <td class="text-truncate" style="max-width:180px">${item.company_name || item.title || '—'}</td>
           <td class="text-dim">${item.sector || '—'}</td>
           ${mobile ? '' : `<td class="text-xs text-dim text-truncate" style="max-width:220px">${desc || '—'}</td>`}
-          <td class="tabular-nums">${formatDate(item.event_date)}</td>
+          <td class="tabular-nums">${formatDate(item.event_date)}${(() => {
+            if (!item.event_date) return '';
+            const days = Math.ceil((new Date(item.event_date) - new Date()) / 86400000);
+            if (days < 0) return ' <span class="badge" style="font-size:9px;background:var(--text-muted)20;color:var(--text-muted)">Listed</span>';
+            if (days === 0) return ' <span class="badge badge-up" style="font-size:9px">Hari Ini!</span>';
+            return ` <span class="badge" style="font-size:9px;background:var(--color-up)18;color:var(--color-up)">${days}h lagi</span>`;
+          })()}</td>
         </tr>`;
       }).join('')}</tbody>
     </table>
