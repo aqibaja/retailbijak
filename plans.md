@@ -1924,5 +1924,26 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 65.2.2 Macro — tambah last updated timestamp per indikator
 
 ### Sprint 3: Help Page
-- [ ] 65.3.1 Help — update daftar fitur dengan fitur baru Fase 57-64
-- [ ] 65.3.2 Help — tambah shortcut keyboard di halaman help
+- [x] 65.3.1 Help — changelog v1.2.0 ditambah dengan 16 fitur baru ✅
+- [x] 65.3.2 Help — shortcut keyboard sudah ada di halaman help ✅
+
+**Status: ✅ FASE 65 SELESAI — commit 163450f**
+
+---
+
+## Fase 66 — Final QA & Hardening (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** QA menyeluruh, perbaiki edge cases, hardening sebelum rilis stabil
+
+### Sprint 1: Edge Case Fixes
+- [ ] 66.1.1 Stock detail — handle ticker tidak ditemukan dengan graceful error page
+- [ ] 66.1.2 Portfolio — handle posisi dengan current_price=0 (jangan tampilkan P&L salah)
+
+### Sprint 2: Performance
+- [ ] 66.2.1 News page — lazy load gambar artikel (loading="lazy")
+- [ ] 66.2.2 Dashboard — debounce refresh button (hindari double-click spam)
+
+### Sprint 3: Final Release
+- [ ] 66.3.1 Smoke test 17/17
+- [ ] 66.3.2 Git tag v1.2.1 — patch release
