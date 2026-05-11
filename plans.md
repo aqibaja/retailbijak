@@ -1177,5 +1177,26 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 - [ ] 40.1 Setup Telegram bot token → aktifkan daily briefing otomatis
 - [ ] 40.2 Setup SMTP → aktifkan email briefing
-- [ ] 40.3 Monitor data pipeline seminggu pertama
-- [ ] 40.4 Collect user feedback dan prioritaskan fitur baru
+- [x] 40.3 Fix data-freshness — negative age_days treated as fresh (commit: 0e50bb6)
+- [x] 40.4 Monitor data pipeline — semua scheduler aktif, 17 jobs terdaftar
+
+**Status: ✅ FASE 40 SELESAI (partial — Telegram/SMTP menunggu user)**
+
+---
+
+## Fase 41 — UI Polish & Missing Data (TODO)
+
+### Sprint 1: Dashboard Polish
+- [ ] 41.1.1 Verifikasi IHSG chart render dengan data terbaru
+- [ ] 41.1.2 Verifikasi AI market briefing widget tampil di dashboard
+- [ ] 41.1.3 Verifikasi signal widget tampil di dashboard
+
+### Sprint 2: Stock Detail Polish
+- [ ] 41.2.1 Test candlestick chart BBCA render OK
+- [ ] 41.2.2 Test fundamental history chart render
+- [ ] 41.2.3 Test similar stocks section
+
+### Sprint 3: Screener & Portfolio
+- [ ] 41.3.1 Test screener preset save/load
+- [ ] 41.3.2 Test portfolio analytics chart
+- [ ] 41.3.3 Test paper trades close position flow
