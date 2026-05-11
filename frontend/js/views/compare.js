@@ -38,7 +38,12 @@ function removeFromCompare(ticker) {
 
 export async function renderCompare(root) {
   document.title = 'RetailBijak — Perbandingan Saham';
-  const stored = getCompareTickers();
+  let stored = getCompareTickers();
+  // Auto-seed default tickers jika belum ada
+  if (stored.length === 0) {
+    saveCompareTickers(['BBCA', 'BMRI', 'TLKM']);
+    stored = getCompareTickers();
+  }
   _compareTickers = stored;
 
   root.innerHTML = `

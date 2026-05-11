@@ -116,6 +116,13 @@ export async function renderBacktest(root) {
   document.getElementById('bt-pattern-limit').addEventListener('change', () => {});
 
   observeElements();
+
+  // Auto-run pattern backtest on load (limit 200 — cepat ~2s)
+  setTimeout(() => {
+    const limitEl = document.getElementById('bt-pattern-limit');
+    if (limitEl) limitEl.value = '200';
+    runPatternBacktest();
+  }, 300);
 }
 
 // ─── Tab Switching ──────────────────────────────────────
