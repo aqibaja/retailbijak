@@ -2916,6 +2916,7 @@ function renderBrokerActivity(data) {
   const el = document.getElementById('broker-activity-panel');
   if (!el) return;
   el.style.display = '';
+  el.classList.remove('hidden');
   el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2">Aktivitas Broker (5 hari)</div>' + 
     data.slice(0, 6).map(r => {
       const net = Number(r.net_volume || 0);

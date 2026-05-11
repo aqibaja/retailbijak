@@ -1511,3 +1511,50 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Status: ✅ FASE 52 SELESAI**
 
+
+
+---
+
+## Fase 53 — UI Polish & Missing Features (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Polish UI, perbaiki tampilan yang masih kasar, tambah fitur kecil yang impactful
+
+### Sprint 1: Portfolio View Polish 🔄
+- [ ] 53.1.1 Portfolio table — tampilkan `current_price` kolom baru (saat ini hanya avg_price)
+- [ ] 53.1.2 Portfolio summary card — tampilkan total_pnl dari `/api/portfolio` (bukan hanya summary endpoint)
+- [ ] 53.1.3 Portfolio — tambah color coding: hijau jika pnl > 0, merah jika < 0
+
+### Sprint 2: Stock Detail Polish 🔄
+- [ ] 53.2.1 Stock detail header — tampilkan sektor + industri jika ada
+- [ ] 53.2.2 Stock detail — pastikan broker activity section visible (bukan hidden)
+- [ ] 53.2.3 Stock detail — pastikan dividend history chart muncul di tab Fundamental
+
+### Sprint 3: News & Calendar Polish 🔄
+- [ ] 53.3.1 News page — pastikan category pills berfungsi (filter by category)
+- [ ] 53.3.2 Calendar — pastikan events Mei-Agustus 2026 tampil
+- [ ] 53.3.3 IPO page — pastikan 6 upcoming IPO tampil dengan benar
+
+
+
+---
+
+## Fase 53 Progress Update (2026-05-12)
+
+### Sprint 1: Portfolio View Polish ✅
+- [x] 53.1.1 Portfolio table — `current_price` kolom sudah ada ✅ ALREADY DONE
+- [x] 53.1.2 Portfolio fallback — patch `sumItem ?? r.current_price` agar data dari `/api/portfolio` jadi fallback ✅
+- [x] 53.1.3 Color coding pnl — sudah ada `pnlClass()` helper ✅ ALREADY DONE
+
+### Sprint 2: Stock Detail Polish ✅
+- [x] 53.2.1 Stock detail header sektor/industri — sudah ada ✅ ALREADY DONE
+- [x] 53.2.2 Broker activity panel — fix `classList.remove('hidden')` agar panel visible saat data ada ✅
+- [x] 53.2.3 Dividend history chart — sudah ditambah di Fase 50 ✅
+
+### Sprint 3: News & Calendar Polish ✅
+- [x] 53.3.1 News category pills — sudah ada dan berfungsi ✅ ALREADY DONE
+- [x] 53.3.2 Calendar Mei 2026 — 11 events (format YYYY-MM) ✅
+- [x] 53.3.3 IPO upcoming — 6 IPO (GULA, WIFI, MAPA, BREN, CUAN, NCKL) ✅
+
+**Status: ✅ FASE 53 SELESAI**
+

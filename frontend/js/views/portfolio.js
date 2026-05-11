@@ -443,10 +443,11 @@ async function renderPortfolioTab(el) {
           <thead><tr><th>Kode Saham</th><th>Sektor</th><th>Lot</th><th>Harga Rata-Rata</th><th>Harga Saat Ini</th><th>Untung/Rugi</th><th>Return %</th><th class="text-right">Aksi</th></tr></thead>
           <tbody>${rows.map(r => {
             const sumItem = summary?.positions?.find(p => p.ticker === r.ticker);
-            const cp = sumItem?.current_price;
-            const pnl = sumItem?.pnl;
-            const pnlPct = sumItem?.pnl_pct;
-            const sector = sumItem?.sector || '';
+            // Fallback to posRes data (from /api/portfolio which now includes pnl)
+            const cp = sumItem?.current_price ?? r.current_price;
+            const pnl = sumItem?.pnl ?? r.pnl;
+            const pnlPct = sumItem?.pnl_pct ?? r.pnl_pct;
+            const sector = sumItem?.sector || r.sector || '';
             return `<tr data-ticker="${r.ticker}">
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="text-xs text-dim">${sector || '—'}</td>
