@@ -537,7 +537,10 @@ export async function renderStockDetail(root, ticker, initialTab) {
           <div class="panel chart-card-v2 mt-2">
             <div class="flex justify-between items-center mb-3">
               <div><h3 class="panel-title">Grafik Harga — ${symbol}</h3><p class="text-xs text-dim" id="chart-subtitle-tab">Chart penuh</p></div>
-              <a href="#chart/${symbol}" class="btn btn-ghost btn-sm" title="Buka Chart Penuh" style="font-size:10px"><i data-lucide="maximize-2" style="width:14px"></i> Full</a>
+              <div style="display:flex;gap:6px;align-items:center">
+                <a href="https://www.tradingview.com/chart/?symbol=IDX:${symbol}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" title="Lihat di TradingView" style="font-size:10px"><i data-lucide="external-link" style="width:14px"></i> TradingView</a>
+                <a href="#chart/${symbol}" class="btn btn-ghost btn-sm" title="Buka Chart Penuh" style="font-size:10px"><i data-lucide="maximize-2" style="width:14px"></i> Full</a>
+              </div>
             </div>
             <div class="chart-toolbar" id="chart-toolbar-tab">
               <span class="timeframe-group">

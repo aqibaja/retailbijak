@@ -722,7 +722,7 @@ function runScreener() {
             btn.disabled = false;
             btn.classList.remove('btn-loading');
             progBox.classList.add('hidden');
-            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
+            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI dari ${totalScanned} saham` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
             showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal.`, 'success');
             scanEventSource.close();

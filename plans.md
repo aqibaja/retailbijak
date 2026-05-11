@@ -1882,5 +1882,26 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 63.2.2 Watchlist — sort by % change descending by default
 
 ### Sprint 3: Settings Page
-- [ ] 63.3.1 Settings — tampilkan versi aplikasi (v1.2.0) di halaman settings
-- [ ] 63.3.2 Settings — tambah tombol "Clear Cache & Reload"
+- [x] 63.3.1 Settings — versi aplikasi v1.2.0 ditampilkan di halaman settings ✅
+- [x] 63.3.2 Settings — tombol "Clear Cache & Reload" ditambah ✅
+
+**Status: ✅ FASE 63 SELESAI — commit 30bc064**
+
+---
+
+## Fase 64 — Stock Detail & Screener Final Polish (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Polish akhir stock detail dan screener sebelum rilis berikutnya
+
+### Sprint 1: Stock Detail
+- [ ] 64.1.1 Stock detail — tampilkan P/E, PBV, ROE di overview card (bukan hanya di tab fundamental)
+- [ ] 64.1.2 Stock detail — tambah tombol "Lihat di TradingView" di chart tab
+
+### Sprint 2: Screener
+- [ ] 64.2.1 Screener — tampilkan jumlah hasil scan di header ("X sinyal ditemukan dari Y saham")
+- [ ] 64.2.2 Screener — tambah tombol "Export CSV" hasil scan
+
+### Sprint 3: Final Smoke Test
+- [ ] 64.3.1 Smoke test 17/17 endpoint
+- [ ] 64.3.2 Commit & push final
