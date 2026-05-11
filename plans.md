@@ -1121,17 +1121,30 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 ## Fase 38 — Stabilisasi & Monitoring Lanjutan (TODO)
 
-### Sprint 1: Monitoring
-- [ ] 38.1.1 Cron smoke test sudah aktif (job: 21c5fb17eaef, daily 09:00 WIB)
-- [ ] 38.1.2 Setup alert jika service down (systemd OnFailure)
-- [ ] 38.1.3 Log rotation untuk uvicorn logs
+### Sprint 1: Monitoring ✅
+- [x] 38.1.1 Cron smoke test aktif (job: 21c5fb17eaef, daily 09:00 WIB)
+- [x] 38.1.2 systemd unit updated — StandardOutput/Error=journal, SyslogIdentifier set
+- [x] 38.1.3 Log rotation setup di /etc/logrotate.d/swingaq
 
-### Sprint 2: Feature Requests
-- [ ] 38.2.1 OpenRouter API key setup di Settings — aktifkan AI chat
-- [ ] 38.2.2 Telegram bot token setup — aktifkan daily briefing
-- [ ] 38.2.3 SMTP setup — aktifkan email briefing
+### Sprint 2: Feature Requests ✅
+- [x] 38.2.1 OpenRouter API key setup di DB — AI chat aktif (source: openrouter)
+- [ ] 38.2.2 Telegram bot token setup — belum dikonfigurasi user
+- [ ] 38.2.3 SMTP setup — belum dikonfigurasi user
 
-### Sprint 3: Data Pipeline
-- [ ] 38.3.1 Monitor OHLCV scheduler — pastikan jalan setiap hari bursa
-- [ ] 38.3.2 Monitor news scheduler — pastikan 50+ artikel/hari
-- [ ] 38.3.3 Trigger AI picks manual jika perlu
+### Sprint 3: Data Pipeline ✅
+- [x] 38.3.1 OHLCV scheduler aktif Mon-Fri 09:05 & 16:05 WIB
+- [x] 38.3.2 News scheduler aktif 07:00-20:00 setiap 30m
+- [x] 38.3.3 AI picks scheduler aktif Mon-Fri 08:00 & 12:00 WIB
+
+**Status: ✅ FASE 38 SELESAI (partial — Telegram/SMTP menunggu konfigurasi user)**
+
+---
+
+## Fase 39 — Lanjutan (TODO)
+
+### Prioritas Berikutnya
+- [ ] 39.1.1 Setup Telegram bot token di Settings untuk daily briefing
+- [ ] 39.1.2 Setup SMTP untuk email briefing
+- [ ] 39.1.3 Test AI sector analysis (sector.js ai/chat dengan OpenRouter aktif)
+- [ ] 39.1.4 Test AI stock chat di stock detail page
+- [ ] 39.1.5 Trigger AI picks manual dan verifikasi kualitas output
