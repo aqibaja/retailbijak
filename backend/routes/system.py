@@ -531,3 +531,58 @@ def trigger_market_briefing(db: Session = Depends(get_db)):
     from services.market_briefing import generate_briefing
     result = generate_briefing(db, force=True)
     return {'ok': True, 'state': result.get('state'), 'source': result.get('source')}
+
+
+class AiChatRequest(BaseModel):
+    message: str = ''
+    context: str = ''
+
+
+@router.post('/api/ai/chat')
+def ai_chat(payload: AiChatRequest, db: Session = Depends(get_db)):
+    """Simple AI chat endpoint — uses OpenRouter if configured, else returns template response."""
+    from database import UserSetting
+    msg = (payload.message or '').strip()
+    if not msg:
+        return {'ok': False, 'reply': 'Pesan kosong.'}
+
+    # Try OpenRouter if API key configured
+    try:
+        key_row = db.query(UserSetting).filter(UserSetting.key == 'openrouter_api_key').first()
+        model_row = db.query(UserSetting).filter(UserSetting.key == 'openrouter_stock_analysis_model').first()
+        api_key = key_row.value if key_row else None
+        model = (model_row.value if model_row else None) or 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
+
+        if api_key:
+            import urllib.request, json as _json
+            body = _json.dumps({
+                'model': model,
+                'messages': [{'role': 'user', 'content': msg}],
+                'max_tokens': 800,
+            }).encode()
+            req = urllib.request.Request(
+                'https://openrouter.ai/api/v1/chat/completions',
+                data=body,
+                headers={
+                    'Authorization': f'Bearer {api_key}',
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://retailbijak.rich27.my.id',
+                },
+                method='POST',
+            )
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = _json.loads(resp.read())
+                reply = data['choices'][0]['message']['content']
+                return {'ok': True, 'reply': reply, 'source': 'openrouter', 'model': model}
+    except Exception as e:
+        logger.warning('AI chat OpenRouter failed: %s', e)
+
+    # Fallback: template response
+    return {
+        'ok': True,
+        'reply': (
+            'OpenRouter belum dikonfigurasi. Silakan set API key di halaman Settings untuk mengaktifkan '
+            'analisis AI. Sementara itu, gunakan data teknikal dan fundamental yang tersedia di platform.'
+        ),
+        'source': 'fallback',
+    }

@@ -1401,39 +1401,47 @@ def run_backtest_post(payload: dict, db: Session = Depends(get_db)):
 
 class PaperTradePayload(BaseModel):
     ticker: str = Field(min_length=1)
-    trade_type: str = Field(pattern=r'^(BUY|SELL)$')
-    quantity: int = Field(gt=0)
-    price: float = Field(gt=0)
+    # Accept both schemas: trade_type (old) or direction (FE portfolio.js)
+    trade_type: str | None = None
+    direction: str | None = None
+    # Accept both: quantity (old) or lots (FE)
+    quantity: int | None = None
+    lots: int | None = None
+    # Accept both: price (old) or entry_price (FE)
+    price: float | None = None
+    entry_price: float | None = None
     strategy: str = 'manual'
     notes: str = ''
 
+    @property
+    def resolved_trade_type(self) -> str:
+        v = (self.trade_type or self.direction or 'BUY').upper()
+        return v if v in ('BUY', 'SELL') else 'BUY'
 
-@router.get('/api/paper-trades')
-def list_paper_trades(status: str = '', db: Session = Depends(get_db)):
-    q = db.query(PaperTrade).order_by(PaperTrade.entry_date.desc())
-    if status in ('open', 'closed'):
-        q = q.filter(PaperTrade.status == status)
-    rows = q.limit(50).all()
-    return {'count': len(rows), 'data': [{
-        'id': r.id, 'ticker': r.ticker, 'trade_type': r.trade_type,
-        'entry_price': r.entry_price, 'quantity': r.quantity,
-        'entry_date': r.entry_date.isoformat()[:19] if r.entry_date else '',
-        'exit_price': r.exit_price, 'exit_date': r.exit_date.isoformat()[:19] if r.exit_date else None,
-        'pnl': r.pnl, 'pnl_pct': r.pnl_pct, 'status': r.status,
-        'strategy': r.strategy or 'manual', 'notes': r.notes or '',
-    } for r in rows]}
+    @property
+    def resolved_quantity(self) -> int:
+        return self.quantity or self.lots or 1
+
+    @property
+    def resolved_price(self) -> float:
+        return self.price or self.entry_price or 0.0
 
 
 @router.post('/api/paper-trades')
 def open_paper_trade(payload: PaperTradePayload, db: Session = Depends(get_db)):
     ticker = payload.ticker.upper().strip()
-    trade = PaperTrade(ticker=ticker, trade_type=payload.trade_type,
-                       entry_price=payload.price, quantity=payload.quantity,
+    tt = payload.resolved_trade_type
+    qty = payload.resolved_quantity
+    ep = payload.resolved_price
+    if ep <= 0:
+        return {'ok': False, 'message': 'Harga entry harus > 0'}
+    trade = PaperTrade(ticker=ticker, trade_type=tt,
+                       entry_price=ep, quantity=qty,
                        strategy=payload.strategy or 'manual', notes=payload.notes or '')
     db.add(trade)
     db.commit()
     db.refresh(trade)
-    return {'ok': True, 'id': trade.id, 'message': f'{trade.trade_type} {ticker}: {payload.quantity} saham @ {payload.price}'}
+    return {'ok': True, 'id': trade.id, 'message': f'{tt} {ticker}: {qty} lot @ {ep}'}
 
 
 @router.post('/api/paper-trades/{trade_id}/close')
