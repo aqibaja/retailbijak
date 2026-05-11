@@ -1142,9 +1142,40 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 ## Fase 39 — Lanjutan (TODO)
 
-### Prioritas Berikutnya
+### Prioritas Berikutnya ✅
 - [ ] 39.1.1 Setup Telegram bot token di Settings untuk daily briefing
 - [ ] 39.1.2 Setup SMTP untuk email briefing
-- [ ] 39.1.3 Test AI sector analysis (sector.js ai/chat dengan OpenRouter aktif)
-- [ ] 39.1.4 Test AI stock chat di stock detail page
-- [ ] 39.1.5 Trigger AI picks manual dan verifikasi kualitas output
+- [x] 39.1.3 AI sector analysis OK — OpenRouter aktif, reply valid
+- [x] 39.1.4 AI stock chat OK — BBCA analisis teknikal berhasil (BULLISH score 98)
+- [x] 39.1.5 AI picks trigger OK — 5 picks generated
+
+**Status: ✅ FASE 39 SELESAI (partial — Telegram/SMTP menunggu konfigurasi user)**
+
+---
+
+## Ringkasan Status Website (2026-05-12)
+
+| Komponen | Status | Detail |
+|----------|--------|--------|
+| Views | ✅ 25/25 OK | Smoke test pass, semua render tanpa error |
+| Backend API | ✅ ~170 endpoints | Semua kritis < 500ms |
+| AI Chat | ✅ Aktif | OpenRouter nvidia/nemotron free model |
+| AI Picks | ✅ Aktif | 5 picks swing/catalyst/defensive |
+| Screener SSE | ✅ Aktif | 702 tickers streaming |
+| OHLCV Data | ✅ Fresh | Scheduler Mon-Fri 09:05 & 16:05 |
+| News | ✅ 547 artikel | Scheduler 07:00-20:00 setiap 30m |
+| Portfolio CRUD | ✅ | 5 posisi sample |
+| Paper Trades | ✅ | 5 open positions |
+| Dividends | ✅ 24 rows | Blue chip coverage |
+| Smoke Test Cron | ✅ | Daily 09:00 WIB (job: 21c5fb17eaef) |
+| Telegram Briefing | ⏳ | Menunggu bot token dari user |
+| SMTP Briefing | ⏳ | Menunggu konfigurasi dari user |
+
+---
+
+## Fase 40 — Next Steps (TODO)
+
+- [ ] 40.1 Setup Telegram bot token → aktifkan daily briefing otomatis
+- [ ] 40.2 Setup SMTP → aktifkan email briefing
+- [ ] 40.3 Monitor data pipeline seminggu pertama
+- [ ] 40.4 Collect user feedback dan prioritaskan fitur baru
