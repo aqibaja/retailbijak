@@ -977,3 +977,77 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | 2026-05-12 | 31.3.2 — Movers enhance | ✅ | Sector filter, timeframe 1D/1W/1M, volume filter, sort toggle. movers.js 354→502L. |
 | 2026-05-12 | 31.3.3 — Calendar enhance | ✅ | Monthly grid + list toggle, color per type, month nav, filter chips. calendar.js 322→444L. |
 | 2026-05-12 | **Fase 31 COMPLETE** | ✅ | 9/9 tasks selesai. |
+
+
+---
+
+# 🇮🇩 RetailBijak — Fase 32: Engagement & Intelligence
+
+> **Status:** 🆕 Planned
+> **Tujuan:** Tingkatkan engagement harian, intelligence fitur, dan data freshness
+> **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
+
+---
+
+## 🧠 Kondisi Saat Ini (Fase 31 ✅ Baseline)
+
+**~51K lines**, 25 views, 26 tables, ~170 API endpoints.
+
+### State Summary
+
+| Dimensi | Status | Detail |
+|---------|--------|--------|
+| Views | ✅ 25 views polished | Semua fungsional + tabs + skeleton |
+| DB Data | 🟡 Sparse engagement | paper_trades=0, alerts=1, user_identity=0 |
+| News | 🟡 526 articles | Perlu lebih banyak + auto-refresh |
+| AI Content | 🟡 5 picks, 5 briefings | Perlu daily auto-generate |
+| Watchlist | 🟡 8 items | Perlu price alerts integration |
+| dividends table | 🔴 NO TABLE | Tabel dividends belum ada di DB |
+
+---
+
+## 🔴 P0: Data Freshness
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 32.1.1 | **Create dividends table** | `database.py`, `routes/` | 1h | Model Dividend + endpoint + seed data 8 saham blue chip |
+| 32.1.2 | **News auto-refresh** | `scheduler.py`, `updaters/news_updater.py` | 1h | Trigger news fetch setiap 30m. Verify cron aktif. Target 50+ artikel/hari |
+| 32.1.3 | **OHLCV freshness check** | `routes/market.py`, `dashboard.js` | 1h | Endpoint GET /api/data-freshness. Dashboard badge: data terkini / stale |
+
+---
+
+## 🟠 P1: Intelligence Features
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 32.2.1 | **Watchlist price alerts** | `views/portfolio.js`, `routes/user.py` | 2h | Tombol 🔔 per watchlist item. Set target price. Alert saat harga tercapai (polling 5m). |
+| 32.2.2 | **AI market summary widget** | `views/dashboard.js`, `services/market_briefing.py` | 1h | Widget di dashboard: ringkasan pasar hari ini dari market_briefings terbaru |
+| 32.2.3 | **Stock similarity engine** | `routes/stock_detail.py`, `views/stock_detail.js` | 2h | "Saham Serupa" section di stock detail. Cari saham dengan sektor + size + momentum mirip |
+
+---
+
+## 🟡 P2: UX Refinements
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 32.3.1 | **Dark/light theme persist** | `js/theme.js`, `js/main.js` | 30m | Pastikan theme preference tersimpan dan applied saat load |
+| 32.3.2 | **Keyboard navigation** | `js/main.js` | 1h | G+D=Dashboard, G+S=Screener, G+P=Portfolio, /=search, R=refresh |
+| 32.3.3 | **Print/export portfolio** | `views/portfolio.js` | 1h | Tombol Export PDF (window.print() + print CSS) dan Export CSV |
+
+---
+
+## ⚡ Prioritas Eksekusi
+
+**Sprint 1 (P0):** Dividends table → News auto-refresh → OHLCV freshness
+**Sprint 2 (P1):** Watchlist alerts → AI summary widget → Stock similarity
+**Sprint 3 (P2):** Theme persist → Keyboard nav → Portfolio export
+
+**Total:** ~10.5 jam estimasi.
+
+---
+
+## 📋 Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-12 | Research | ✅ | Audit: 51K lines, dividends NO TABLE, news 526, paper_trades=0. Gap analysis done. |
