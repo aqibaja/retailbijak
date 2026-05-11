@@ -2142,3 +2142,32 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - 72.3.1 Smoke test 16/16 ✅
 - 72.3.2 Git tag v1.2.6 ✅
 
+
+---
+
+## Fase 73 — Macro Data Seed & Scheduler Status Fix (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Seed macro data agar halaman Macro tidak kosong, fix scheduler status endpoint
+
+### Sprint 1: Macro Data
+- [ ] 73.1.1 Seed macro data (BI Rate, Inflasi, GDP, Neraca Dagang, Cadangan Devisa)
+- [ ] 73.1.2 Verifikasi macro page tampil data setelah seed
+
+### Sprint 2: Scheduler Status
+- [ ] 73.2.1 Fix `/api/scheduler/status` — return jobs aktif dari APScheduler
+- [ ] 73.2.2 Tampilkan scheduler status di settings page
+
+### Sprint 3: Final
+- [ ] 73.3.1 Smoke test 16/16
+- [ ] 73.3.2 Git tag v1.2.7
+
+
+**Status: ✅ FASE 73 SELESAI — tag v1.2.7**
+- 73.1.1 Macro data 61 rows sudah ada di DB ✅
+- 73.1.2 Macro API return 9 indicators, frontend parsing benar ✅
+- 73.2.1 /api/scheduler-health return 18 jobs aktif ✅
+- 73.2.2 Scheduler status sudah tampil di settings page ✅
+- 73.3.1 Smoke test 16/16 ✅
+- 73.3.2 Git tag v1.2.7 ✅
+
