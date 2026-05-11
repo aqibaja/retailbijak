@@ -893,3 +893,77 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | 2026-05-12 | 30.3.2 — Settings complete | ✅ | Notif prefs, default screener filter, accent color picker. settings.js patched. |
 | 2026-05-12 | 30.3.3 — Help enrich | ✅ | FAQ 8 item, keyboard shortcuts, changelog v27-v29. help.js patched. |
 | 2026-05-12 | **Fase 30 COMPLETE** | ✅ | 10/10 tasks selesai. |
+
+
+---
+
+# 🇮🇩 RetailBijak — Fase 31: Polish & Production Hardening
+
+> **Status:** 🆕 Planned
+> **Tujuan:** Polish UI, hardening production, dan fitur engagement terakhir
+> **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
+
+---
+
+## 🧠 Kondisi Saat Ini (Fase 30 ✅ Baseline)
+
+**~49K lines**, 25 views, 26 tables, ~170 API endpoints.
+
+### State Summary
+
+| Dimensi | Status | Detail |
+|---------|--------|--------|
+| API coverage | ✅ 170+ endpoints | Semua major endpoints working |
+| Views | ✅ 25 views | Semua fungsional |
+| DB Data | 🟡 Partial | paper_trades=0, alerts=1, user_identity=0 |
+| Mobile UX | 🟡 OK | Bottom nav ada, beberapa view perlu touch optimization |
+| Error handling | 🟡 Partial | Beberapa view masih blank saat API error |
+| Loading states | 🟡 Partial | Beberapa view tidak ada skeleton |
+
+---
+
+## 🔴 P0: Production Hardening
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 31.1.1 | **Global error boundary** | `js/main.js`, `js/api.js` | 1h | Catch unhandled promise rejections, tampilkan toast error. Prevent blank white screen. |
+| 31.1.2 | **API retry + timeout** | `js/api.js` | 1h | Auto-retry 2x untuk network error. Timeout 10s per request. Exponential backoff. |
+| 31.1.3 | **Loading skeleton semua views** | `js/views/*.js` | 2h | Audit 5 views yang belum punya skeleton: dividend, movers, calendar, breadth, indices |
+
+---
+
+## 🟠 P1: UX Polish
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 31.2.1 | **Stock detail tabs** | `views/stock_detail.js` | 2h | Tambah tab navigasi: Overview \| Chart \| Fundamental \| News \| Corporate. Sticky tab bar. |
+| 31.2.2 | **Portfolio quick-add** | `views/portfolio.js` | 1h | Floating '+' button, modal quick-add posisi tanpa navigasi ke form panjang |
+| 31.2.3 | **Screener save preset** | `views/screener.js` | 1h | Simpan filter kombinasi sebagai preset custom. localStorage-based. |
+
+---
+
+## 🟡 P2: Data & Engagement
+
+| # | Task | Files | Est. | Detail |
+|---|------|-------|------|--------|
+| 31.3.1 | **Dividend view data** | `views/dividend.js` | 1h | Hubungkan ke /api/stocks/{ticker}/dividends. Tabel + yield calculator. |
+| 31.3.2 | **Movers view enhance** | `views/movers.js` | 1h | Tambah filter sektor, timeframe 1D/1W/1M, volume filter |
+| 31.3.3 | **Calendar view enhance** | `views/calendar.js` | 1h | Monthly calendar grid view + list view toggle. Color per event type. |
+
+---
+
+## ⚡ Prioritas Eksekusi
+
+**Sprint 1 (P0):** Error boundary → API retry → Skeleton audit
+**Sprint 2 (P1):** Stock detail tabs → Portfolio quick-add → Screener save preset
+**Sprint 3 (P2):** Dividend data → Movers enhance → Calendar enhance
+
+**Total:** ~10 jam estimasi.
+
+---
+
+## 📋 Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-12 | Research | ✅ | Audit: signals endpoint fixed (12930 rows). 170+ endpoints. Gap analysis done. |

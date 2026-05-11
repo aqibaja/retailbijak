@@ -6,9 +6,51 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from database import Signal, Stock, get_db
-from routes.shared_stock_fallbacks import _ticker_base
+try:
+    from database import Signal, Stock, get_db
+except ModuleNotFoundError:
+    from backend.database import Signal, Stock, get_db
+
+try:
+    from routes.shared_stock_fallbacks import _ticker_base
+except ModuleNotFoundError:
+    from backend.routes.shared_stock_fallbacks import _ticker_base
+
 router = APIRouter()
+
+
+@router.get('/api/signals')
+def list_signals(
+    limit: int = 50,
+    offset: int = 0,
+    signal_type: str = '',
+    timeframe: str = '',
+    ticker: str = '',
+    db: Session = Depends(get_db)
+):
+    from database import Signal
+    q = db.query(Signal)
+    if signal_type:
+        q = q.filter(Signal.signal_type == signal_type)
+    if timeframe:
+        q = q.filter(Signal.timeframe == timeframe)
+    if ticker:
+        q = q.filter(Signal.ticker.ilike(f'%{ticker}%'))
+    total = q.count()
+    rows = q.order_by(Signal.signal_date.desc()).offset(offset).limit(limit).all()
+    return {
+        'count': total,
+        'data': [{
+            'ticker': r.ticker,
+            'timeframe': r.timeframe,
+            'signal_date': str(r.signal_date)[:10] if r.signal_date else None,
+            'signal_type': r.signal_type,
+            'close': r.close,
+            'magic_line': r.magic_line,
+            'cci': r.cci,
+            'stop_loss': r.stop_loss,
+        } for r in rows]
+    }
 
 
 @router.get('/api/signals/summary')
