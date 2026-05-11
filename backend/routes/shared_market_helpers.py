@@ -23,30 +23,29 @@ def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
     if not latest_date:
         return None, []
 
-    latest_date_sql = _sqlite_datetime_literal(latest_date)
     sql = text("""
-        WITH latest_rows AS (
-            SELECT ticker, date, close, volume
-            FROM ohlcv_daily
-            WHERE date = :latest_date
+        WITH top2_dates AS (
+            SELECT date FROM ohlcv_daily
+            GROUP BY date ORDER BY date DESC LIMIT 2
         ),
-        previous_rows AS (
-            SELECT curr.ticker AS ticker, MAX(prev.date) AS prev_date
-            FROM latest_rows curr
-            JOIN ohlcv_daily prev
-              ON prev.ticker = curr.ticker
-             AND prev.date < :latest_date
-            GROUP BY curr.ticker
+        ranked AS (
+            SELECT ticker, date, close, volume,
+                   ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) AS rn
+            FROM ohlcv_daily
+            WHERE date IN (SELECT date FROM top2_dates)
+              AND close IS NOT NULL
         )
-        SELECT curr.ticker, curr.close AS close_price, curr.volume AS volume, prev.close AS prev_close
-        FROM latest_rows curr
-        JOIN previous_rows picked ON picked.ticker = curr.ticker
-        JOIN ohlcv_daily prev
-          ON prev.ticker = picked.ticker
-         AND prev.date = picked.prev_date
-        WHERE prev.close IS NOT NULL AND curr.close IS NOT NULL
+        SELECT
+            a.ticker,
+            a.close AS close_price,
+            a.volume,
+            b.close AS prev_close
+        FROM ranked a
+        LEFT JOIN ranked b ON b.ticker = a.ticker AND b.rn = 2
+        WHERE a.rn = 1 AND b.close IS NOT NULL
     """)
-    return latest_date, db.execute(sql, {'latest_date': latest_date_sql}).mappings().all()
+    rows = db.execute(sql).mappings().all()
+    return latest_date, rows
 
 
 def _historical_close_offset(db: Session, ticker: str, offset: int) -> float | None:
@@ -79,14 +78,14 @@ def _batch_historical_closes(
 ) -> dict[str, dict[int, float | None]]:
     """Batch fetch historical close prices at multiple offsets for many tickers.
 
-    For each ticker, runs a single query to get closes at the specified
-    offsets (trading days ago). More efficient than calling
-    _historical_close_offset individually for each ticker/offset combo.
+    Uses a single bulk SQL query with ROW_NUMBER() to rank rows per ticker,
+    then picks the rows at the requested offsets. O(1) queries regardless
+    of ticker count.
 
     Args:
         db: SQLAlchemy session
         tickers: list of raw ticker symbols
-        offsets: list of offsets (e.g. [5, 21, 63, 126])
+        offsets: list of offsets (e.g. [5, 21])
 
     Returns:
         dict mapping ticker -> {offset: close_price or None}
@@ -95,21 +94,29 @@ def _batch_historical_closes(
         return {}
 
     max_offset = max(offsets)
-    # Fetch the most recent (max_offset + 1) closes for each ticker
-    # to avoid N+1 queries per ticker per offset
+    from sqlalchemy import bindparam
+    sql = text("""
+        SELECT ticker, close, rn
+        FROM (
+            SELECT ticker, close,
+                   ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) - 1 AS rn
+            FROM ohlcv_daily
+            WHERE ticker IN :tickers
+        ) ranked
+        WHERE rn <= :max_offset
+    """).bindparams(bindparam('tickers', expanding=True))
+    rows = db.execute(sql, {'tickers': list(tickers), 'max_offset': max_offset}).fetchall()
+
+    # Build result dict
+    raw: dict[str, dict[int, float | None]] = {t: {} for t in tickers}
+    for ticker, close, rn in rows:
+        raw[ticker][int(rn)] = close
+
     result: dict[str, dict[int, float | None]] = {}
     for ticker in tickers:
-        rows = (
-            db.query(OHLCVDaily.close)
-            .filter(OHLCVDaily.ticker == ticker)
-            .order_by(OHLCVDaily.date.desc())
-            .limit(max_offset + 1)
-            .all()
-        )
-        closes = [r[0] for r in rows]
         ticker_closes: dict[int, float | None] = {}
         for off in offsets:
-            ticker_closes[off] = closes[off] if len(closes) > off else None
+            ticker_closes[off] = raw[ticker].get(off)
         result[ticker] = ticker_closes
     return result
 
@@ -119,9 +126,8 @@ def _batch_historical_closes_date(
 ) -> dict[str, dict[str, float | None]]:
     """Batch fetch close prices closest to target dates for many tickers.
 
-    For each ticker and target date label, finds the close price on the
-    most recent trading day on or before the target date. This is more
-    robust than offset-based lookups for stocks with limited history.
+    Uses one bulk query per target date (not per ticker), so O(len(targets))
+    queries instead of O(len(tickers) * len(targets)).
 
     Args:
         db: SQLAlchemy session
@@ -134,76 +140,97 @@ def _batch_historical_closes_date(
     if not tickers or not targets:
         return {}
 
-    result: dict[str, dict[str, float | None]] = {}
-    for ticker in tickers:
-        ticker_closes: dict[str, float | None] = {}
-        for label, target_date in targets.items():
-            row = (
-                db.query(OHLCVDaily.close)
-                .filter(OHLCVDaily.ticker == ticker, OHLCVDaily.date <= target_date)
-                .order_by(OHLCVDaily.date.desc())
-                .limit(1)
-                .first()
-            )
-            ticker_closes[label] = row[0] if row else None
-        result[ticker] = ticker_closes
+    result: dict[str, dict[str, float | None]] = {t: {} for t in tickers}
+
+    from sqlalchemy import bindparam
+    for label, target_date in targets.items():
+        td_str = target_date.isoformat() if hasattr(target_date, 'isoformat') else str(target_date)
+        sql = text("""
+            SELECT ticker, close
+            FROM (
+                SELECT ticker, close,
+                       ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) AS rn
+                FROM ohlcv_daily
+                WHERE ticker IN :tickers AND date <= :target_date
+            ) ranked
+            WHERE rn = 1
+        """).bindparams(bindparam('tickers', expanding=True))
+        rows = db.execute(sql, {'tickers': list(tickers), 'target_date': td_str}).fetchall()
+        for ticker, close in rows:
+            result[ticker][label] = close
+
     return result
 
 
-def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+def _top_mover_rows(db: Session, top_n: int = 20) -> tuple[Any, list[dict[str, Any]]]:
+    """Return top movers with multi-timeframe performance.
+
+    Two-phase approach for performance:
+    1. Compute change_pct for all tickers (fast — uses _latest_ohlcv_pairs)
+    2. Fetch historical closes only for top_n gainers + top_n losers
+    """
     latest_date, pairs = _latest_ohlcv_pairs(db)
     if not latest_date or not pairs:
         return latest_date, []
 
     stocks = {row.ticker: row.name for row in db.query(Stock).all()}
 
-    # Batch-fetch historical closes for multi-timeframe performance
-    # Use offset-based lookups for short timeframes (1w, 1m)
-    ticker_offsets = [5, 21]
-    tickers_raw = [row['ticker'] for row in pairs]
-    historical_closes = _batch_historical_closes(db, tickers_raw, ticker_offsets)
-
-    # Use date-based lookups for longer timeframes (3m, 6m)
-    # More robust for stocks with limited trading-day history
-    date_targets = {
-        'perf_3m': latest_date - timedelta(days=90),
-        'perf_6m': latest_date - timedelta(days=180),
-    }
-    date_closes = _batch_historical_closes_date(db, tickers_raw, date_targets)
-
-    rows = []
+    # Phase 1: compute change_pct for all tickers cheaply
+    candidates = []
     for row in pairs:
         prev_close = row['prev_close']
         if not prev_close:
             continue
         change_pct = ((row['close_price'] - prev_close) / prev_close) * 100
-        ticker = _display_ticker(row['ticker'])
-        ticker_raw = row['ticker']
-        close_latest = row['close_price']
+        candidates.append({
+            'ticker_raw': row['ticker'],
+            'ticker': _display_ticker(row['ticker']),
+            'close_price': row['close_price'],
+            'volume': row.get('volume'),
+            'change_pct': round(change_pct, 2),
+        })
 
+    # Phase 2: pick top_n gainers + top_n losers only
+    candidates.sort(key=lambda x: x['change_pct'], reverse=True)
+    top_tickers_raw = [c['ticker_raw'] for c in candidates[:top_n]]
+    bottom_tickers_raw = [c['ticker_raw'] for c in candidates[-top_n:]]
+    selected_raw = list(dict.fromkeys(top_tickers_raw + bottom_tickers_raw))  # dedup, preserve order
+
+    # Fetch historical closes only for selected tickers
+    historical_closes = _batch_historical_closes(db, selected_raw, [5, 21])
+    date_targets = {
+        'perf_3m': latest_date - timedelta(days=90),
+        'perf_6m': latest_date - timedelta(days=180),
+    }
+    date_closes = _batch_historical_closes_date(db, selected_raw, date_targets)
+
+    rows = []
+    for c in candidates:
+        ticker_raw = c['ticker_raw']
+        if ticker_raw not in selected_raw:
+            continue
+        close_latest = c['close_price']
         closes = historical_closes.get(ticker_raw, {})
         date_closes_for_ticker = date_closes.get(ticker_raw, {})
 
-        # Compute multi-timeframe performance
         def _perf(close_old: float | None) -> float | None:
             if close_old is not None and close_old != 0:
                 return round(((close_latest - close_old) / close_old) * 100, 2)
             return None
 
-        item: dict[str, Any] = {
-            'ticker': ticker,
-            'name': stocks.get(ticker) or _company_name(row['ticker']),
+        rows.append({
+            'ticker': c['ticker'],
+            'name': stocks.get(c['ticker']) or stocks.get(ticker_raw) or _company_name(ticker_raw),
             'price': close_latest,
-            'change_pct': round(change_pct, 2),
-            'volume': row.get('volume'),
+            'change_pct': c['change_pct'],
+            'volume': c['volume'],
             'date': latest_date.isoformat() if hasattr(latest_date, 'isoformat') else str(latest_date),
             'source': 'db',
             'perf_1w': _perf(closes.get(5)),
             'perf_1m': _perf(closes.get(21)),
             'perf_3m': _perf(date_closes_for_ticker.get('perf_3m')),
             'perf_6m': _perf(date_closes_for_ticker.get('perf_6m')),
-        }
-        rows.append(item)
+        })
     return latest_date, rows
 
 
