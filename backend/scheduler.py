@@ -153,7 +153,17 @@ def init_scheduler():
         logger.info("Registered market_briefing job (Mon-Fri 16:30 WIB)")
     except Exception as e:
         logger.warning(f"Could not register market_briefing: {e}")
-    scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
+    def _idx_daily_sync_job():
+        """Wrapper: single-day only (multi_day=False) agar tidak hang saat scheduled run."""
+        try:
+            from jobs.idx_daily_sync import sync_idx_stock_summary, sync_idx_securities_and_fundamentals, sync_idx_index_chart
+            summary = sync_idx_stock_summary(multi_day=False)
+            meta = sync_idx_securities_and_fundamentals()
+            chart = sync_idx_index_chart()
+            logger.info("IDX daily sync done: ok=%s failed=%s date=%s", summary.get('ok'), summary.get('failed'), summary.get('data_date'))
+        except Exception as e:
+            logger.error("IDX daily sync failed: %s", e)
+    scheduler.add_job(_idx_daily_sync_job, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
     # yfinance_daily_sync sudah disabled — OHLCV dari IDX via idx_daily_sync (18:00 WIB)
     # Telegram daily briefing — Mon-Fri 17:00 WIB (after market briefing at 16:30)
     try:
