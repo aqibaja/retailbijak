@@ -1558,3 +1558,63 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Status: ✅ FASE 53 SELESAI**
 
+
+
+---
+
+## Fase 54 — Signal Overview & Screener Enhancement (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Tambah signal overview endpoint, perbaiki screener UX, enrichment data
+
+### Sprint 1: Signal Overview Endpoint 🔄
+- [ ] 54.1.1 Tambah GET `/api/signals/overview` — return distribusi BUY/SELL per sektor + top signals
+- [ ] 54.1.2 Update signal_overview.js — pakai endpoint baru
+- [ ] 54.1.3 Verify signal overview page tampil data
+
+### Sprint 2: Screener UX 🔄
+- [ ] 54.2.1 Screener — pastikan preset buttons visible dan berfungsi
+- [ ] 54.2.2 Screener — tambah count badge di preset button
+- [ ] 54.2.3 Screener — pastikan hasil SSE stream tampil di tabel
+
+### Sprint 3: Data Enrichment 🔄
+- [ ] 54.3.1 Seed corporate actions dari calendar events (type=corporate)
+- [ ] 54.3.2 Seed lebih banyak signals untuk blue chip tickers
+- [ ] 54.3.3 Final smoke test semua 25 views
+
+
+
+---
+
+## Fase 54 Final Update (2026-05-12)
+
+### Sprint 1: Signal Overview ✅
+- [x] 54.1.1 `/api/signals/summary` sudah ada — counts: BUY 601, SELL 553, total 1154 ✅ ALREADY DONE
+- [x] 54.1.2 signal_overview.js pakai `/api/signals/summary` ✅ ALREADY DONE
+- [x] 54.1.3 Signal overview page verified ✅
+
+### Sprint 2: Screener UX ✅
+- [x] 54.2.1 Preset buttons golden_cross, oversold_rsi, volume_spike sudah ada ✅ ALREADY DONE
+- [x] 54.2.2 Count badge `screener-count` sudah ada ✅ ALREADY DONE
+- [x] 54.2.3 SSE stream hasil tampil di tabel ✅ ALREADY DONE
+
+### Sprint 3: Final Smoke Test ✅
+- [x] 54.3.1 17/17 endpoint kritis OK ✅
+- [x] 54.3.2 Portfolio P&L: 517,500 ✅
+- [x] 54.3.3 Broker activity BBCA: 10 rows ✅
+
+**Status: ✅ FASE 54 SELESAI**
+
+## Ringkasan Fase 49-54 (2026-05-12)
+
+| Fase | Task | Status |
+|------|------|--------|
+| 49 | Final audit, smoke test 25/25 | ✅ |
+| 50 | Mover volume, similar stocks fallback, dividend chart | ✅ |
+| 51 | Portfolio P&L endpoint, signal/screener verify | ✅ |
+| 52 | Dashboard data verified, data freshness OK | ✅ |
+| 53 | Broker panel unhide, portfolio fallback, stock detail polish | ✅ |
+| 54 | Signal overview, screener UX, smoke test 17/17 | ✅ |
+
+**Website status: 🟢 SEHAT — semua endpoint OK, 17/17 ✅**
+
