@@ -110,7 +110,7 @@ def top_movers(limit: int = 10, db: Session = Depends(get_db), sort: str = 'gain
         data.sort(key=lambda x: x['change_pct'])
     else:
         data.sort(key=lambda x: x['change_pct'], reverse=True)
-    return {'count': len(data[:limit]), 'data': data[:limit], 'source': 'db' if data else 'no_data'}
+    return {'count': len(data[:limit]), 'total': len(data), 'data': data[:limit], 'source': 'db' if data else 'no_data'}
 
 
 @router.get('/api/foreign-trading')
