@@ -93,6 +93,9 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: 
             total = len(tickers)
         yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
 
+        # Pre-load sector map for all tickers
+        sector_map = {r.ticker: r.sector for r in db.query(Stock.ticker, Stock.sector).all()}
+
         signals_found = 0
         total_scanned = 0
         total_skipped = 0
@@ -128,6 +131,7 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: 
                 result = {
                     'ticker': ticker,
                     'name': _display_ticker(ticker),
+                    'sector': sector_map.get(ticker),
                     'timeframe': timeframe,
                     'rule': 'SwingAQ (PineScript)',
                     'reason': f'Signal {signal_type} Detected',

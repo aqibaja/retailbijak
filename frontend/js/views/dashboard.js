@@ -167,6 +167,19 @@ export async function renderDashboard(root) {
         </div>
       </div>
     </div>
+    <!-- Quick Screener Presets (61.3.2) -->
+    <div class="panel" style="margin-top:14px;padding:12px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 class="panel-title" style="margin:0;font-size:13px">⚡ Pindai Cepat</h3>
+        <a href="#screener" class="text-xs text-primary strong">Screener →</a>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="#screener?preset=golden_cross" class="btn btn-sm" style="font-size:11px">🌟 Golden Cross</a>
+        <a href="#screener?preset=oversold_rsi" class="btn btn-sm" style="font-size:11px">📉 Oversold RSI</a>
+        <a href="#screener?preset=volume_spike" class="btn btn-sm" style="font-size:11px">📊 Volume Spike</a>
+        <a href="#screener" class="btn btn-sm btn-primary" style="font-size:11px">🔍 Scan Semua</a>
+      </div>
+    </div>
     <!-- Signal Overview Widget -->
     <div class="panel" id="signal-widget" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">

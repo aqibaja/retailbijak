@@ -360,6 +360,7 @@ export async function renderStockDetail(root, ticker, initialTab) {
               <div class="stock-hero-badges"><span class="badge">IDX</span><span class="badge" id="live-badge">DB</span><span class="badge badge-sector" id="sector-badge" style="display:none"></span></div>
             </div>
             <div class="stock-hero-name" id="stock-name">Memuat data emiten...</div>
+            <div class="text-xs text-dim" id="stock-industry" style="display:none;margin-top:2px"></div>
           </div>
         </div>
         <div class="stock-hero-price-area">
@@ -494,7 +495,7 @@ export async function renderStockDetail(root, ticker, initialTab) {
             <div class="stock-side-panel hidden" id="depth-panel"></div>
             <div class="stock-side-panel hidden" id="foreign-flow-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
-            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button><button id="btn-report-pdf" type="button" class="btn btn-sm" title="Download Laporan PDF"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button><button id="btn-share-link" type="button" class="btn btn-sm" title="Salin link saham ini"><i data-lucide="share-2" style="width:14px;height:14px"></i> Salin</button></div></div>
+            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button><button id="btn-report-pdf" type="button" class="btn btn-sm" title="Download Laporan PDF"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button><button id="btn-share-link" type="button" class="btn btn-sm" title="Salin link saham ini"><i data-lucide="share-2" style="width:14px;height:14px"></i> Salin</button><button id="btn-add-portfolio" type="button" class="btn btn-sm" title="Tambah ke Portfolio"><i data-lucide="briefcase" style="width:14px;height:14px"></i> Portfolio</button></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
@@ -717,6 +718,47 @@ export async function renderStockDetail(root, ticker, initialTab) {
       document.execCommand('copy');
       document.body.removeChild(ta);
       showToast('✅ Link disalin!', 'success', 2000);
+    });
+  });
+
+  // ── Add to Portfolio ──
+  document.getElementById('btn-add-portfolio')?.addEventListener('click', () => {
+    const currentPrice = parseFloat(document.getElementById('stock-price')?.textContent?.replace(/[^0-9.]/g, '') || '0');
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = `
+      <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:320px;max-width:90vw">
+        <h3 style="margin:0 0 16px;font-size:16px">Tambah ${symbol} ke Portfolio</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label style="font-size:12px;color:var(--text-muted)">Jumlah Lot
+            <input id="port-lots" type="number" min="1" value="1" class="form-input" style="width:100%;margin-top:4px">
+          </label>
+          <label style="font-size:12px;color:var(--text-muted)">Harga Beli (Rp)
+            <input id="port-price" type="number" min="1" value="${Math.round(currentPrice)}" class="form-input" style="width:100%;margin-top:4px">
+          </label>
+          <label style="font-size:12px;color:var(--text-muted)">Catatan (opsional)
+            <input id="port-notes" type="text" placeholder="misal: swing trade" class="form-input" style="width:100%;margin-top:4px">
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button id="port-cancel" class="btn" style="flex:1">Batal</button>
+          <button id="port-save" class="btn btn-primary" style="flex:1">Simpan</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#port-cancel').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector('#port-save').addEventListener('click', async () => {
+      const lots = parseInt(overlay.querySelector('#port-lots').value) || 1;
+      const price = parseFloat(overlay.querySelector('#port-price').value) || currentPrice;
+      const notes = overlay.querySelector('#port-notes').value;
+      try {
+        await apiFetch('/portfolio', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ticker: symbol, lots, avg_price: price, notes }) });
+        showToast(`✅ ${symbol} ditambahkan ke portfolio`, 'success', 3000);
+        overlay.remove();
+      } catch(e) {
+        showToast('Gagal menambahkan ke portfolio', 'error', 3000);
+      }
     });
   });
 
@@ -1473,6 +1515,10 @@ function hydrateHeader(symbol, detail, fund, candles){
   const sectorBadge = document.getElementById('sector-badge');
   const sector = detail?.data?.sector || fund?.data?.sector;
   if (sectorBadge && sector) { sectorBadge.textContent = sector; sectorBadge.style.display = ''; }
+  // Inject industry
+  const industryEl = document.getElementById('stock-industry');
+  const industry = detail?.data?.industry;
+  if (industryEl && industry) { industryEl.textContent = industry; industryEl.style.display = ''; }
   const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
   const chEl = document.getElementById('stock-change');
   const isUp = change >= 0;

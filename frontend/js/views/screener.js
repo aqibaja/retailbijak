@@ -94,7 +94,7 @@ function renderRow(r) {
         <div class="scanner-row-title">
           <div class="text-main scanner-row-ticker">${r.ticker}</div>
         </div>
-        <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}</div>
+        <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}${r.sector ? ` <span style="opacity:0.5;font-size:10px">· ${r.sector}</span>` : ''}</div>
       </div>
     </div>
     <div class="scanner-row-chart">${renderSparkline(r.close_prices)}</div>
