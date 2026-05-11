@@ -357,7 +357,7 @@ export async function renderStockDetail(root, ticker, initialTab) {
           <div class="stock-hero-info">
             <div class="stock-hero-ticker">
               <h1>${symbol}</h1>
-              <div class="stock-hero-badges"><span class="badge">IDX</span><span class="badge" id="live-badge">DB</span></div>
+              <div class="stock-hero-badges"><span class="badge">IDX</span><span class="badge" id="live-badge">DB</span><span class="badge badge-sector" id="sector-badge" style="display:none"></span></div>
             </div>
             <div class="stock-hero-name" id="stock-name">Memuat data emiten...</div>
           </div>
@@ -381,6 +381,7 @@ export async function renderStockDetail(root, ticker, initialTab) {
         <div class="price-board-item"><span class="price-board-label">Nilai</span><span class="price-board-value" id="pb-value">—</span></div>
         <div class="price-board-item"><span class="price-board-label">52W Tertinggi</span><span class="price-board-value" id="pb-52w-high">—</span></div>
         <div class="price-board-item"><span class="price-board-label">52W Terendah</span><span class="price-board-value" id="pb-52w-low">—</span></div>
+        <div class="price-board-item" id="pb-mktcap-wrap" style="display:none"><span class="price-board-label">Mkt Cap</span><span class="price-board-value" id="pb-market-cap">—</span></div>
       </div>
       <!-- 31.2.1 — Sticky Tab Bar -->
       <div class="stock-tab-bar" id="stock-tab-bar">
@@ -1468,6 +1469,10 @@ function hydrateHeader(symbol, detail, fund, candles){
   const last = candles[candles.length-1], prev = candles[candles.length-2] || last;
   const change = last.close - prev.close, pct = prev.close ? change/prev.close*100 : 0;
   document.getElementById('stock-name').textContent = detail?.data?.name || fund?.data?.name || fallbackIssuerName(symbol);
+  // Inject sector badge
+  const sectorBadge = document.getElementById('sector-badge');
+  const sector = detail?.data?.sector || fund?.data?.sector;
+  if (sectorBadge && sector) { sectorBadge.textContent = sector; sectorBadge.style.display = ''; }
   const priceEl = document.getElementById('stock-price'); priceEl.textContent = money(last.close); flashUpdate(priceEl, change >= 0);
   const chEl = document.getElementById('stock-change');
   const isUp = change >= 0;
@@ -1525,6 +1530,14 @@ function hydrateHeader(symbol, detail, fund, candles){
     const lows = candles.map(c => c.low).filter(l => l > 0);
     if (highs.length) setPb('pb-52w-high', Math.max(...highs), 'Rp');
     if (lows.length) setPb('pb-52w-low', Math.min(...lows), 'Rp');
+  }
+  // Market cap dari detail.data
+  const mc = detail?.data?.market_cap;
+  if (mc) {
+    const mcEl = document.getElementById('pb-market-cap');
+    const mcWrap = document.getElementById('pb-mktcap-wrap');
+    if (mcEl) mcEl.textContent = fmtRp(mc);
+    if (mcWrap) mcWrap.style.display = '';
   }
 }
 /* ─── Theme-aware chart color helpers ─── */

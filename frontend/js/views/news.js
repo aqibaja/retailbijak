@@ -148,12 +148,14 @@ export async function renderNews(root) {
         if (pillsContainer) {
           // Try to get categories from API response, fallback to hardcoded
           const apiCategories = (res && Array.isArray(res.categories) && res.categories.length) ? res.categories : null;
+          const catCounts = res?.category_counts || {};
           const cats = apiCategories
             ? [{ value: '', label: 'Semua' }, ...apiCategories.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))]
             : NEWS_CATEGORIES;
-          pillsContainer.innerHTML = cats.map((c, i) =>
-            `<button type="button" class="news-category-pill${i === 0 ? ' active' : ''}" data-category="${c.value}">${c.label}</button>`
-          ).join('');
+          pillsContainer.innerHTML = cats.map((c, i) => {
+            const cnt = c.value ? (catCounts[c.value] ? ` <span style="opacity:0.6;font-size:10px">${catCounts[c.value]}</span>` : '') : '';
+            return `<button type="button" class="news-category-pill${i === 0 ? ' active' : ''}" data-category="${c.value}">${c.label}${cnt}</button>`;
+          }).join('');
           window.__newsCategory = '';
 
           // Category pill click handler
@@ -444,7 +446,7 @@ function streamCardHtml(n, i) {
   return `<div class="news-card-stream" style="border-left-color:${c1}" data-id="${itemId}">
     ${thumbHtml}
     <div class="news-stream-body">
-      <div class="news-stream-head"><span class="news-stream-source">${sourceCategory(n.source)}</span><span class="news-stream-time">${relativeTime(n.published_at)}</span>${n.sentiment ? `<span class="sentiment-badge ${n.sentiment}">${n.sentiment}</span>` : ''}</div>
+      <div class="news-stream-head"><span class="news-stream-source">${sourceCategory(n.source)}</span><span class="news-stream-time">${relativeTime(n.published_at)}</span>${n.sentiment ? `<span class="sentiment-badge ${n.sentiment}">${n.sentiment}</span>` : ''}${n.published_at && (Date.now() - new Date(n.published_at).getTime()) < 7200000 ? '<span class="badge badge-new" style="font-size:9px;padding:1px 5px;background:var(--color-up);color:#fff;border-radius:3px;margin-left:4px">Baru</span>' : ''}</div>
       <strong class="news-stream-title">${n.title || 'Intel Pasar'}</strong>
       ${summaryHtml}
       <div class="news-inline-content">

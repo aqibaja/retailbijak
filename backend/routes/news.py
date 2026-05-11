@@ -8,7 +8,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from database import News, get_db
 from services.idx_api_client import get_idx_client
@@ -68,10 +68,12 @@ def get_news(db: Session = Depends(get_db), limit: int = 20, offset: int = 0, ti
     # Get available sources for filter UI
     sources = [row[0] for row in db.query(News.source).distinct().filter(News.source != None).order_by(News.source.asc()).all() if row[0]]
 
-    # Get available categories for filter UI
-    categories = [row[0] for row in db.query(News.category).distinct().filter(News.category != None).order_by(News.category.asc()).all() if row[0]]
+    # Get available categories for filter UI with counts
+    cat_counts_raw = db.query(News.category, func.count(News.id)).filter(News.category != None).group_by(News.category).order_by(News.category.asc()).all()
+    categories = [row[0] for row in cat_counts_raw if row[0]]
+    category_counts = {row[0]: row[1] for row in cat_counts_raw if row[0]}
 
-    return {"count": len(data), "total": total, "data": data, "sources": sources, "categories": categories, "source": "db" if news else "no_data"}
+    return {"count": len(data), "total": total, "data": data, "sources": sources, "categories": categories, "category_counts": category_counts, "source": "db" if news else "no_data"}
 
 
 @router.post('/api/news/{news_id}/summarize')
