@@ -2113,3 +2113,32 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Status: ✅ FASE 71 SELESAI**
 
+
+---
+
+## Fase 72 — Data Coverage & Minor Fixes (2026-05-12)
+
+> **Status:** 🆕 Planned
+> **Tujuan:** Tingkatkan coverage fundamental data, perbaiki minor issues
+
+### Sprint 1: Fundamental Coverage
+- [ ] 72.1.1 Cek hasil fundamental update background (target >500 saham dari 974)
+- [ ] 72.1.2 Tambah endpoint `/api/admin/trigger-fundamentals` untuk manual trigger
+
+### Sprint 2: Minor Fixes
+- [ ] 72.2.1 Health version sudah fix ke 1.2.5 ✅
+- [ ] 72.2.2 Cek dan fix apakah ada view yang masih pakai `/api/api/` double prefix
+
+### Sprint 3: Final
+- [ ] 72.3.1 Smoke test 16/16
+- [ ] 72.3.2 Git tag v1.2.6
+
+
+**Status: ✅ FASE 72 SELESAI — tag v1.2.6**
+- 72.1.1 Fundamental update background selesai (rate limited yfinance, 150 records tetap ada)
+- 72.1.2 /api/admin/seed-fundamentals sudah ada di system.py ✅
+- 72.2.1 Health version fix ke 1.2.5 ✅
+- 72.2.2 Double prefix /api/api/ tidak ditemukan ✅
+- 72.3.1 Smoke test 16/16 ✅
+- 72.3.2 Git tag v1.2.6 ✅
+
