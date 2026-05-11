@@ -81,8 +81,10 @@ def init_scheduler():
     logger.info("Initializing APScheduler...")
     scheduler.add_job(update_signals, trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz), id="intraday_signal_update", replace_existing=True)
     scheduler.add_job(update_news, trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz), id="news_update", replace_existing=True)
-    scheduler.add_job(update_fundamentals, trigger=CronTrigger(hour=2, minute=0, timezone=jkt_tz), id="fundamental_update", replace_existing=True)
-    scheduler.add_job(update_financials, trigger=CronTrigger(hour=2, minute=30, timezone=jkt_tz), id="financials_update", replace_existing=True)
+    # ─── FUNDAMENTAL & FINANCIAL — DISABLED (yfinance rate-limited untuk IDX) ───
+    # Gunakan IDX website sebagai gantinya via idx_daily_sync.py (18:00 WIB)
+    # scheduler.add_job(update_fundamentals, ...)
+    # scheduler.add_job(update_financials, ...)
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_swing", replace_existing=True, kwargs={'mode': 'swing'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_defensive", replace_existing=True, kwargs={'mode': 'defensive'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_catalyst", replace_existing=True, kwargs={'mode': 'catalyst'})
@@ -95,7 +97,8 @@ def init_scheduler():
         logger.info("Registered sector_classifier job (daily 03:00 WIB) and industry_classifier (03:05 WIB)")
     except Exception as e:
         logger.warning(f"Could not register sector_classifier: {e}")
-    scheduler.add_job(update_calendar_events, trigger=CronTrigger(hour=4, minute=0, timezone=jkt_tz), id="calendar_update", replace_existing=True)
+    # ─── CALENDAR — DISABLED (yfinance rate-limited) ───
+    # scheduler.add_job(update_calendar_events, ...)
     # Macro data seed — daily 04:05 (only seeds if empty)
     try:
         from updaters.macro_updater import seed_macro_data
@@ -148,7 +151,7 @@ def init_scheduler():
     except Exception as e:
         logger.warning(f"Could not register market_briefing: {e}")
     scheduler.add_job(run_idx_daily_sync, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
-    scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id="yfinance_daily_sync", replace_existing=True)
+    # yfinance_daily_sync sudah disabled — OHLCV dari IDX via idx_daily_sync (18:00 WIB)
     # Telegram daily briefing — Mon-Fri 17:00 WIB (after market briefing at 16:30)
     try:
         from services.telegram_briefing import run_briefing_job as _tg_briefing

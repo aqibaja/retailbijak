@@ -161,6 +161,11 @@ export async function renderDashboard(root) {
     <!-- Calendar Widget -->
     <div class="panel" id="dash-calendar-widget" style="margin-top:14px;display:none"></div>
   </section>`;
+  // Hapus page-loading segera agar konten terlihat — jangan nunggu API
+  root.classList.remove('page-loading');
+  // Dashboard hero langsung visible, jangan nunggu IntersectionObserver
+  const hero = root.querySelector('.dashboard-pro.stagger-reveal');
+  if (hero) hero.classList.add('is-visible');
   observeElements();
   // Skeleton loading — replace widget-state with content-aware skeletons
   const skContainers = [

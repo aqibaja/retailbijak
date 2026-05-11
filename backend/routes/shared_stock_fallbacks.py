@@ -20,28 +20,7 @@ def _ticker_with_suffix(ticker: str) -> str:
 
 
 def _yfinance_fallback_sector_industry(ticker: str, db: Session) -> tuple[str | None, str | None]:
-    """Try yfinance to populate missing sector/industry for a ticker."""
-    try:
-        import yfinance as yf
-        tk = yf.Ticker(f'{ticker}.JK')
-        info = tk.info or {}
-        sector = info.get('sector')
-        industry = info.get('industry')
-        if sector or industry:
-            stock = db.query(Stock).filter(Stock.ticker == ticker).first()
-            if stock:
-                updated = False
-                if sector and not stock.sector:
-                    stock.sector = sector
-                    updated = True
-                if industry and not stock.industry:
-                    stock.industry = industry
-                    updated = True
-                if updated:
-                    db.commit()
-            return sector, industry
-    except Exception as exc:
-        logger.debug("yfinance sector/industry fallback failed for %s: %s", ticker, exc)
+    """DISABLED — yfinance rate-limited untuk IDX. Keyword classifier sebagai fallback."""
     return None, None
 
 
@@ -99,19 +78,11 @@ def _fallback_row_for_ticker(ticker: str, db: Session) -> dict:
         logger.warning("Stock not found in DB for ticker '%s'", base)
     else:
         if not sector:
-            logger.info("Sector missing for %s — will try yfinance fallback", base)
+            logger.info("Sector missing for %s — keyword classifier akan jadi fallback", base)
         if not industry:
-            logger.info("Industry missing for %s — will try yfinance fallback", base)
+            logger.info("Industry missing for %s — keyword classifier akan jadi fallback", base)
 
-    # If sector/industry are missing and the stock exists, try yfinance fallback
-    if stock and (not sector or not industry):
-        yf_sector, yf_industry = _yfinance_fallback_sector_industry(base, db)
-        if not sector and yf_sector:
-            sector = yf_sector
-        if not industry and yf_industry:
-            industry = yf_industry
-
-    # If still missing, try keyword-based classification
+    # If sector/industry are missing and the stock exists, try keyword-based fallback
     if stock and (not sector or not industry):
         kw_sector, kw_industry = _keyword_fallback_sector_industry(base, stock.name or '', db)
         if not sector and kw_sector:

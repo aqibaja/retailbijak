@@ -127,6 +127,8 @@ export function handleRoute(hash) {
         if (currentToken !== routeToken) return;
         // Clear the safety timer since we're about to remove it ourselves
         clearTimeout(safetyTimer);
+        // Hapus page-loading SEBELUM render — konten & skeleton langsung kelihatan
+        root.classList.remove('page-loading');
         try {
             window.scrollTo({ top: 0, behavior: 'instant' });
         } catch {
