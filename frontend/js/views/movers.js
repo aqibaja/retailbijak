@@ -286,18 +286,29 @@ async function loadData() {
     ]);
     cache.gainers = safeRows(gainersRes);
     cache.losers = safeRows(losersRes);
+    cache.total = gainersRes.total || 0; // Store total count from API
 
     // Dummy fallback if API returned nothing (31.1.3)
     if (!cache.gainers.length) cache.gainers = DUMMY_GAINERS;
     if (!cache.losers.length)  cache.losers  = DUMMY_LOSERS;
 
+    updateTotalBadge();
     return true;
   } catch (e) {
     console.error('Movers load error:', e);
     cache.gainers = DUMMY_GAINERS;
     cache.losers  = DUMMY_LOSERS;
+    cache.total = 0;
+    updateTotalBadge();
     return true;
   }
+}
+
+function updateTotalBadge() {
+  const badge = document.getElementById('movers-total-badge');
+  if (!badge) return;
+  const total = cache.total || 0;
+  badge.textContent = total > 0 ? `Total: ${total} saham` : '';
 }
 
 // ─── Render the table body into the container ─────────────────
@@ -407,6 +418,7 @@ export async function renderMovers(root) {
         <div>
           <h1 style="font-size:22px;font-weight:700;color:var(--text-main);margin:0">Market Movers</h1>
           <p class="page-subtitle" style="font-size:13px;color:var(--text-muted);margin-top:4px">Saham IDX dengan pergerakan terbesar — gainers, losers, dan most active dengan multi-timeframe performance.</p>
+          <span id="movers-total-badge" class="badge badge-mini" style="font-size:11px;margin-top:4px;display:inline-block"></span>
         </div>
         <div class="flex gap-2" style="align-items:center">
           <button class="btn" id="movers-export-csv" type="button" style="font-size:12px;padding:8px 16px">📥 CSV</button>
