@@ -1079,10 +1079,10 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 ## Fase 36 — Feature Completeness Audit (TODO)
 
-### Sprint 1: Missing Features
-- [ ] 36.1.1 Fix paper_trades.js — field `trade_type` BUY/SELL (bukan direction/strategy)
-- [ ] 36.1.2 Audit semua form di FE — pastikan field match dengan BE schema
-- [ ] 36.1.3 Fix sector.js `/api/ai/chat` endpoint — belum ada di backend
+### Sprint 1: Missing Features ✅
+- [x] 36.1.1 Fix paper_trades — dual schema (direction/lots/entry_price + trade_type/quantity/price)
+- [x] 36.1.2 Fix sector.js `/api/ai/chat` — endpoint ditambahkan di system.py (OpenRouter + fallback)
+- [x] 36.1.3 stock_detail.py corruption fix — syntax error diperbaiki
 
 ### Sprint 2: Data Quality
 - [ ] 36.2.1 Seed lebih banyak news (target 200+ artikel)
@@ -1093,3 +1093,24 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 - [ ] 36.3.1 Cek query lambat di SQLite (N+1, missing index)
 - [ ] 36.3.2 Cek response time endpoint kritis (market-summary, top-movers, scan)
 - [ ] 36.3.3 Tambah index DB jika perlu
+
+**Commit: 6b8fcaa — Smoke test: 25/25 OK**
+
+---
+
+## Fase 37 — Data Seeding & Performance (TODO)
+
+### Sprint 1: Seed Data
+- [ ] 37.1.1 Trigger news fetch manual — target 500+ artikel
+- [ ] 37.1.2 Seed paper trades sample (5 open + 5 closed)
+- [ ] 37.1.3 Verifikasi dividend data cukup (target 20+ rows)
+
+### Sprint 2: Performance Audit
+- [ ] 37.2.1 Benchmark endpoint kritis: market-summary, top-movers, breadth
+- [ ] 37.2.2 Cek SQLite index — ohlcv_daily(ticker,date), signals(ticker,date)
+- [ ] 37.2.3 Fix N+1 query jika ditemukan
+
+### Sprint 3: UX Final Polish
+- [ ] 37.3.1 Pastikan semua empty state punya dummy/fallback content
+- [ ] 37.3.2 Test mobile view (responsive)
+- [ ] 37.3.3 Final smoke test + commit
