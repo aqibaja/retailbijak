@@ -1945,5 +1945,35 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 66.2.2 Dashboard — debounce refresh button (hindari double-click spam)
 
 ### Sprint 3: Final Release
-- [ ] 66.3.1 Smoke test 17/17
-- [ ] 66.3.2 Git tag v1.2.1 — patch release
+- [x] 66.3.1 Smoke test 17/17 ✅
+- [x] 66.3.2 Git tag v1.2.1 pushed ✅
+
+**Status: ✅ FASE 66 SELESAI — commit 1ca24cf, tag v1.2.1**
+
+---
+
+## 🎉 Website Status: PRODUCTION READY v1.2.1
+
+- **URL**: https://retailbijak.rich27.my.id
+- **Health**: ok v1.2.0 (backend)
+- **Smoke Test**: 17/17 ✅
+- **Git Tag**: v1.2.1
+
+---
+
+## Fase 67 — Data Freshness & Scheduler Improvements (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Pastikan data selalu fresh, perbaiki scheduler, tambah monitoring
+
+### Sprint 1: Data Freshness
+- [ ] 67.1.1 Cek dan trigger OHLCV update untuk data yang stale
+- [ ] 67.1.2 Cek dan trigger signal update
+
+### Sprint 2: Scheduler Health
+- [ ] 67.2.1 Tambah endpoint `/api/scheduler/status` untuk cek job aktif
+- [ ] 67.2.2 Tampilkan scheduler status di settings page
+
+### Sprint 3: Market Data
+- [ ] 67.3.1 Trigger news update — pastikan artikel terbaru tersedia
+- [ ] 67.3.2 Trigger market briefing refresh

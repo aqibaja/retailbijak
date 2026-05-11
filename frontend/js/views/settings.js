@@ -67,6 +67,14 @@ export async function renderSettings(root) {
             </div>
 
             <div class="settings-section-head mt-8">
+              <h2>⏰ Scheduler Jobs</h2>
+              <span>Status 17 job terjadwal APScheduler</span>
+            </div>
+            <div id="scheduler-status-card" style="font-size:12px;color:var(--text-muted)">
+              <div class="text-xs text-dim p-3">Memuat scheduler...</div>
+            </div>
+
+            <div class="settings-section-head mt-8">
               <h2>OpenRouter AI</h2>
               <span>Aktifkan ringkasan AI untuk analisis saham dan AI Picks dengan model gratis default.</span>
             </div>
@@ -420,6 +428,7 @@ export async function renderSettings(root) {
   lucide.createIcons();
   loadDataHealth();
   loadGamification();
+  loadSchedulerStatus();
 
     document.getElementById('save-settings').addEventListener('click', async () => {
         const btn = document.getElementById('save-settings');
@@ -990,5 +999,27 @@ function loadGamification() {
   }).catch(() => {
     card.innerHTML = '<div class="text-xs text-dim p-3">⚠️ Gagal memuat pencapaian</div>';
   });
+}
+
+// ─── Scheduler Status Card ═══════════════════
+async function loadSchedulerStatus() {
+  const card = document.getElementById('scheduler-status-card');
+  if (!card) return;
+  try {
+    const res = await fetch('/api/scheduler-health');
+    const data = await res.json();
+    const jobs = data?.data || [];
+    if (!jobs.length) { card.innerHTML = '<div class="text-xs text-dim p-3">Tidak ada job aktif</div>'; return; }
+    card.innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 0">
+        ${jobs.map(j => `
+          <span style="padding:3px 8px;border-radius:6px;background:var(--bg-panel);border:1px solid var(--border-subtle);font-size:11px;color:var(--text-muted)">
+            ✅ ${j.id}${j.next_run ? ` <span style="opacity:0.6">· ${new Date(j.next_run).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>` : ''}
+          </span>`).join('')}
+      </div>
+      <div class="text-xs text-dim" style="margin-top:4px">${jobs.length} job aktif</div>`;
+  } catch(e) {
+    card.innerHTML = '<div class="text-xs text-dim p-3">⚠️ Gagal memuat scheduler</div>';
+  }
 }
 
