@@ -1,6 +1,8 @@
 // ─── Dividend Dashboard & Kalkulator ──────────────────────────
 // 26.1.2 — Dividend Dashboard & Kalkulator
+// 31.3.1 — Dividend view data: per-ticker API, history table, yield calc, ticker search
 // API: GET /api/dividends, GET /api/dividends/aristocrats
+// API: GET /api/stocks/{ticker}/dividends
 
 import { apiFetch, showToast } from '../api.js?v=202605120200';
 import { nf, pct, money, fmt } from '../utils/format.js?v=202605120200';
@@ -12,7 +14,13 @@ let sectorAverages = {};
 let activeSector = 'all';
 let sortKey = null;
 let sortDir = 'asc';
-let activeTab = 'overview'; // 'overview', 'aristocrats'
+let activeTab = 'overview'; // 'overview', 'aristocrats', 'ticker'
+
+// 31.3.1 — per-ticker state
+let tickerDetailData = [];   // array of dividend events from /api/stocks/{ticker}/dividends
+let activeTicker = 'BBCA';   // current ticker for detail view
+let tickerSortKey = null;
+let tickerSortDir = 'asc';
 
 // ─── Helpers ────────────────────────────────────────────────
 function safeRows(payload, key = 'data') {
@@ -55,6 +63,13 @@ function emptyBlock(msg) {
   </div>`;
 }
 
+// ─── Dummy fallback data (31.1.3) ────────────────────
+const DUMMY_DIVIDENDS = [
+  { ticker: 'BBCA', company_name: 'Bank Central Asia Tbk', sector: 'Keuangan', dividend_yield: 2.45, sector_avg_yield: 2.10, events: [{ event_date: '2026-06-15' }] },
+  { ticker: 'TLKM', company_name: 'Telkom Indonesia Tbk', sector: 'Telekomunikasi', dividend_yield: 4.80, sector_avg_yield: 3.90, events: [{ event_date: '2026-07-01' }] },
+  { ticker: 'ASII', company_name: 'Astra International Tbk', sector: 'Industri', dividend_yield: 3.20, sector_avg_yield: 2.75, events: [{ event_date: '2026-06-20' }] },
+];
+
 function errorBlock(msg) {
   return `<div class="empty-state-card">
     <div class="empty-state-icon">⚠️</div>
@@ -66,8 +81,9 @@ function errorBlock(msg) {
 // ─── Tab rendering ───────────────────────────────────────────
 function renderTabs(active) {
   const tabs = [
-    { key: 'overview', label: '📋 Dividen Overview', icon: '' },
-    { key: 'aristocrats', label: '👑 Dividend Aristocrats', icon: '' },
+    { key: 'overview',    label: '📋 Dividen Overview' },
+    { key: 'aristocrats', label: '👑 Dividend Aristocrats' },
+    { key: 'ticker',      label: '🔍 Per Saham' },
   ];
   return `<div class="flex gap-2" style="margin-bottom:16px;flex-wrap:wrap" role="tablist">
     ${tabs.map(t => `<button class="btn ${active === t.key ? 'btn-primary' : ''}" data-dividend-tab="${t.key}" role="tab" aria-selected="${active === t.key}" style="font-size:12px;padding:6px 14px">${t.label}</button>`).join('')}
@@ -289,6 +305,263 @@ function renderAristocratsTable(data) {
   <div class="text-xs text-dim mt-2">${data.length} perusahaan dengan dividen beruntun ${5}+ tahun.</div>`;
 }
 
+// ─── 31.3.1: Ticker Search Bar ───────────────────────────────
+function renderTickerSearch() {
+  return `<div class="flex gap-2 items-center flex-wrap" style="margin-bottom:16px">
+    <label class="text-xs text-dim" style="white-space:nowrap">Cari Saham:</label>
+    <input type="text" id="ticker-search-input" class="form-input" placeholder="Contoh: BBCA, TLKM, ASII"
+      value="${activeTicker}" maxlength="10"
+      style="max-width:160px;font-size:13px;text-transform:uppercase;font-weight:600;letter-spacing:1px">
+    <button class="btn btn-primary btn-sm" id="ticker-search-btn" type="button">Tampilkan</button>
+    <span class="text-xs text-dim" id="ticker-search-status"></span>
+  </div>`;
+}
+
+// ─── 31.3.1: Per-ticker dividend history table ────────────────
+function renderTickerDividendTable(data, buyPrice) {
+  if (!data || !data.length) {
+    return emptyBlock(`Tidak ada riwayat dividen untuk <strong>${activeTicker}</strong>.`);
+  }
+
+  // Sort
+  let rows = [...data];
+  if (tickerSortKey) {
+    rows.sort((a, b) => {
+      let va, vb;
+      switch (tickerSortKey) {
+        case 'ex_date':      va = a.ex_date || '';      vb = b.ex_date || '';      break;
+        case 'payment_date': va = a.payment_date || ''; vb = b.payment_date || ''; break;
+        case 'amount':       va = Number(a.amount) || 0; vb = Number(b.amount) || 0; break;
+        case 'type':         va = a.type || '';          vb = b.type || '';          break;
+        case 'yield_pct':
+          va = buyPrice > 0 ? (Number(a.amount) / buyPrice) * 100 : 0;
+          vb = buyPrice > 0 ? (Number(b.amount) / buyPrice) * 100 : 0;
+          break;
+        default: va = ''; vb = '';
+      }
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      const cmp = typeof va === 'string' ? va.localeCompare(vb) : Number(va) - Number(vb);
+      return tickerSortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  function sortTh(key, label) {
+    const active = tickerSortKey === key;
+    const arrow = active ? (tickerSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+    return `<th class="sortable-th" data-ticker-sort="${key}">${label}${arrow}</th>`;
+  }
+
+  const thead = `<thead><tr>
+    ${sortTh('ex_date', 'Ex-Date')}
+    ${sortTh('payment_date', 'Payment Date')}
+    ${sortTh('amount', 'Amount (Rp/saham)')}
+    ${sortTh('type', 'Type')}
+    ${sortTh('yield_pct', 'Yield%')}
+  </tr></thead>`;
+
+  const tbody = `<tbody>${rows.map(row => {
+    const amt = Number(row.amount) || 0;
+    const yieldPct = buyPrice > 0 ? (amt / buyPrice) * 100 : null;
+    const yieldStr = yieldPct != null
+      ? `<span class="${yieldPct > 0 ? 'text-up' : 'text-dim'}">${yieldPct.toFixed(2)}%</span>`
+      : '<span class="text-dim">—</span>';
+    const typeLabel = row.type
+      ? `<span class="badge badge-sm">${row.type}</span>`
+      : '<span class="text-dim">—</span>';
+    return `<tr>
+      <td class="tabular-nums">${formatDate(row.ex_date)}</td>
+      <td class="tabular-nums text-dim">${formatDate(row.payment_date)}</td>
+      <td class="tabular-nums"><strong>${amt > 0 ? money(amt) : '—'}</strong></td>
+      <td>${typeLabel}</td>
+      <td class="tabular-nums">${yieldStr}</td>
+    </tr>`;
+  }).join('')}</tbody>`;
+
+  return `<div class="table-wrapper" style="overflow-x:auto;border-radius:12px;border:1px solid var(--border-subtle)">
+    <table class="table dividend-table" id="ticker-dividend-table">${thead}${tbody}</table>
+  </div>
+  <div class="text-xs text-dim mt-2">${rows.length} entri dividen untuk <strong>${activeTicker}</strong>.</div>`;
+}
+
+// ─── 31.3.1: Yield calculator (per-ticker) ───────────────────
+function renderTickerYieldCalc() {
+  return `<div class="panel" style="margin-top:20px;padding:20px">
+    <h2 style="font-size:15px;font-weight:700;margin:0 0 10px">📐 Yield Calculator — ${activeTicker}</h2>
+    <p class="text-xs text-dim" style="margin:0 0 14px">Masukkan harga beli untuk menghitung dividend yield otomatis pada tabel di atas.</p>
+    <div class="flex gap-3 items-end flex-wrap">
+      <div class="flex-col gap-1">
+        <label class="text-xs text-dim" for="ticker-buy-price">Harga Beli (Rp/saham)</label>
+        <input type="number" id="ticker-buy-price" class="form-input" min="1" step="50"
+          placeholder="Contoh: 9500" style="max-width:180px;font-size:13px">
+      </div>
+      <div class="flex-col gap-1" style="min-width:140px">
+        <span class="text-xs text-dim">Total Dividen (setahun terakhir)</span>
+        <strong class="text-lg" id="ticker-total-div">—</strong>
+      </div>
+      <div class="flex-col gap-1" style="min-width:120px">
+        <span class="text-xs text-dim">Yield (vs harga beli)</span>
+        <strong class="text-lg text-up" id="ticker-yield-result">—</strong>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── 31.3.1: Wire ticker tab interactions ────────────────────
+function wireTickerTab(container) {
+  const searchInput = container.querySelector('#ticker-search-input');
+  const searchBtn   = container.querySelector('#ticker-search-btn');
+  const statusEl    = container.querySelector('#ticker-search-status');
+
+  function doSearch() {
+    const val = (searchInput?.value || '').trim().toUpperCase();
+    if (!val) return;
+    if (val === activeTicker && tickerDetailData.length) return;
+    activeTicker = val;
+    tickerSortKey = null;
+    tickerSortDir = 'asc';
+    loadTickerData();
+  }
+
+  searchBtn?.addEventListener('click', doSearch);
+  searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  searchInput?.addEventListener('input', () => {
+    searchInput.value = searchInput.value.toUpperCase();
+  });
+
+  // Wire yield calculator
+  wireTickerYieldCalc(container);
+
+  // Wire sort headers on ticker table
+  wireTickerSortHeaders(container);
+}
+
+function wireTickerYieldCalc(container) {
+  const priceInput  = container.querySelector('#ticker-buy-price');
+  const totalEl     = container.querySelector('#ticker-total-div');
+  const yieldEl     = container.querySelector('#ticker-yield-result');
+  const tableWrap   = container.querySelector('#ticker-dividend-table');
+
+  if (!priceInput) return;
+
+  function recalc() {
+    const buyPrice = parseFloat(priceInput.value) || 0;
+
+    // Rerender table with new yield column
+    const tableContainer = document.getElementById('ticker-table-container');
+    if (tableContainer) {
+      tableContainer.innerHTML = renderTickerDividendTable(tickerDetailData, buyPrice);
+      wireTickerSortHeaders(document.getElementById('ticker-tab-content'));
+    }
+
+    // Compute total dividend from last 12 months
+    if (!tickerDetailData.length) { totalEl && (totalEl.textContent = '—'); yieldEl && (yieldEl.textContent = '—'); return; }
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
+    const recent = tickerDetailData.filter(r => {
+      const d = r.ex_date ? new Date(r.ex_date) : null;
+      return d && d >= cutoff;
+    });
+    const totalDiv = recent.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    if (totalEl) totalEl.textContent = totalDiv > 0 ? money(totalDiv) : '—';
+    if (yieldEl) {
+      if (buyPrice > 0 && totalDiv > 0) {
+        const y = (totalDiv / buyPrice) * 100;
+        yieldEl.textContent = y.toFixed(2) + '%';
+        yieldEl.className = 'text-lg ' + (y > 0 ? 'text-up' : 'text-dim');
+      } else {
+        yieldEl.textContent = '—';
+      }
+    }
+  }
+
+  priceInput.addEventListener('input', recalc);
+  // Trigger once if value already set
+  if (priceInput.value) recalc();
+}
+
+function wireTickerSortHeaders(container) {
+  if (!container) return;
+  container.querySelectorAll('th[data-ticker-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.tickerSort;
+      if (!key) return;
+      if (tickerSortKey === key) {
+        tickerSortDir = tickerSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        tickerSortKey = key;
+        tickerSortDir = 'asc';
+      }
+      const buyPrice = parseFloat(document.getElementById('ticker-buy-price')?.value) || 0;
+      const tableContainer = document.getElementById('ticker-table-container');
+      if (tableContainer) {
+        tableContainer.innerHTML = renderTickerDividendTable(tickerDetailData, buyPrice);
+        wireTickerSortHeaders(document.getElementById('ticker-tab-content'));
+      }
+    });
+  });
+}
+
+// ─── 31.3.1: Load per-ticker dividend data ───────────────────
+async function loadTickerData() {
+  const contentEl = document.getElementById('ticker-tab-content');
+  if (!contentEl) return;
+
+  const statusEl = document.getElementById('ticker-search-status');
+  if (statusEl) statusEl.textContent = `Memuat ${activeTicker}…`;
+
+  // Show skeleton in table area only
+  const tableContainer = document.getElementById('ticker-table-container');
+  if (tableContainer) tableContainer.innerHTML = skeletonRows(5);
+
+  try {
+    const res = await apiFetch(`/stocks/${activeTicker}/dividends`);
+    tickerDetailData = Array.isArray(res?.data) ? res.data : [];
+
+    if (statusEl) statusEl.textContent = tickerDetailData.length
+      ? `${tickerDetailData.length} entri ditemukan`
+      : 'Tidak ada data';
+
+    const buyPrice = parseFloat(document.getElementById('ticker-buy-price')?.value) || 0;
+    if (tableContainer) {
+      tableContainer.innerHTML = renderTickerDividendTable(tickerDetailData, buyPrice);
+    }
+
+    // Update yield calc header ticker label
+    const calcTitle = contentEl.querySelector('#ticker-calc-title');
+    if (calcTitle) calcTitle.textContent = `📐 Yield Calculator — ${activeTicker}`;
+
+    wireTickerSortHeaders(contentEl);
+    wireTickerYieldCalc(contentEl);
+  } catch (e) {
+    console.error('Ticker dividend load error:', e);
+    if (statusEl) statusEl.textContent = 'Gagal memuat data';
+    if (tableContainer) tableContainer.innerHTML = errorBlock(`Gagal mengambil data dividen untuk ${activeTicker}.`);
+  }
+}
+
+// ─── 31.3.1: Render full ticker tab ──────────────────────────
+function renderTickerTab() {
+  const contentEl = document.getElementById('dividend-content');
+  if (!contentEl) return;
+
+  contentEl.innerHTML = `<div id="ticker-tab-content">
+    <div class="panel" style="padding:20px">
+      <h2 style="font-size:16px;font-weight:700;margin:0 0 4px">🔍 Riwayat Dividen Per Saham</h2>
+      <p class="text-xs text-dim" style="margin:0 0 16px">Lihat riwayat dividen lengkap untuk satu saham. Masukkan ticker dan harga beli untuk kalkulasi yield.</p>
+      ${renderTickerSearch()}
+      <div id="ticker-table-container">
+        ${skeletonRows(5)}
+      </div>
+    </div>
+    ${renderTickerYieldCalc()}
+  </div>`;
+
+  wireTickerTab(contentEl);
+  loadTickerData();
+}
+
 // ─── Wire Calculator ─────────────────────────────────────────
 function wireCalculator() {
   const tickerEl = document.getElementById('calc-ticker');
@@ -355,6 +628,11 @@ function wireSortHeaders(container) {
 function renderContent() {
   const contentEl = document.getElementById('dividend-content');
   if (!contentEl) return;
+
+  if (activeTab === 'ticker') {
+    renderTickerTab();
+    return;
+  }
 
   if (activeTab === 'aristocrats') {
     contentEl.innerHTML = `
@@ -477,6 +755,11 @@ async function loadData(forceRefresh = false) {
     sectorAverages = dividendsRes?.sector_averages || {};
     aristocratsData = safeRows(aristocratsRes);
 
+    // Dummy fallback if API returned nothing (31.1.3)
+    if (!dividendsData.length) {
+      dividendsData = DUMMY_DIVIDENDS;
+    }
+
     // Attach sector averages
     dividendsData.forEach(d => {
       if (!d.sector_avg_yield && sectorAverages[d.sector]) {
@@ -528,6 +811,12 @@ function wireTabs(root) {
 export async function renderDividends(root) {
   document.title = 'RetailBijak — Dividend Dashboard & Kalkulator';
 
+  // 31.3.1 — parse ticker from URL hash: #dividend/BBCA
+  const hashParts = window.location.hash.replace('#', '').split('/');
+  if (hashParts[0] === 'dividend' && hashParts[1]) {
+    activeTicker = hashParts[1].toUpperCase();
+  }
+
   // Reset state
   dividendsData = [];
   aristocratsData = [];
@@ -536,6 +825,9 @@ export async function renderDividends(root) {
   sortKey = null;
   sortDir = 'asc';
   activeTab = 'overview';
+  tickerDetailData = [];
+  tickerSortKey = null;
+  tickerSortDir = 'asc';
 
   root.innerHTML = `
     <div class="dividend-page">

@@ -1,9 +1,23 @@
 // ─── Market Breadth View — Advance/Decline Chart ────
 // Fase 9.2: Market breadth visualization
+// 31.1.3 — Added skeleton loading
 
 import { apiFetch, showToast } from '../api.js';
 
 let breadthChart = null;
+
+// ─── Skeleton helpers ────────────────────────────────
+function skeletonSummary() {
+    return Array(5).fill(
+        `<div class="skeleton skeleton-card" style="height:64px;border-radius:10px;flex:1;min-width:120px"></div>`
+    ).join('');
+}
+
+function skeletonTable() {
+    return `<div class="flex-col gap-2 p-4">${
+        Array(8).fill('<div class="skeleton skeleton-card" style="height:36px;border-radius:8px"></div>').join('')
+    }</div>`;
+}
 
 export async function renderBreadth(root) {
     if (!root) root = document.getElementById('app');
@@ -26,16 +40,17 @@ export async function renderBreadth(root) {
                 </div>
             </div>
 
-            <div class="breadth-summary-cards" id="breadthSummary">
-                <div class="loading-spinner"></div>
+            <div class="breadth-summary-cards" id="breadthSummary" style="display:flex;flex-wrap:wrap;gap:10px">
+                ${skeletonSummary()}
             </div>
 
-            <div class="card" style="padding:16px">
-                <canvas id="breadthChart" height="320"></canvas>
+            <div class="card" style="padding:16px;margin-top:16px">
+                <div id="breadthChartSkeleton" class="skeleton" style="height:320px;border-radius:10px"></div>
+                <canvas id="breadthChart" height="320" style="display:none"></canvas>
             </div>
 
             <div class="breadth-table-wrap card" style="padding:0;margin-top:16px">
-                <div id="breadthTable"></div>
+                <div id="breadthTable">${skeletonTable()}</div>
             </div>
         </div>
     `;
@@ -50,16 +65,33 @@ export async function renderBreadth(root) {
 }
 
 async function loadBreadth() {
+    // Show skeletons on refresh
+    const summaryEl = document.getElementById('breadthSummary');
+    const tableEl   = document.getElementById('breadthTable');
+    const chartEl   = document.getElementById('breadthChart');
+    const chartSkel = document.getElementById('breadthChartSkeleton');
+    if (summaryEl) summaryEl.innerHTML = skeletonSummary();
+    if (tableEl)   tableEl.innerHTML   = skeletonTable();
+    if (chartEl)   chartEl.style.display = 'none';
+    if (chartSkel) chartSkel.style.display = 'block';
+
     try {
         const res = await apiFetch('/market/breadth?days=50');
         const data = await res.json();
         if (!data.data || !data.data.length) throw new Error('No data');
 
+        // Hide chart skeleton, show canvas
+        if (chartSkel) chartSkel.style.display = 'none';
+        if (chartEl)   chartEl.style.display = 'block';
+
         renderSummary(data.data);
         renderChart(data.data);
         renderTable(data.data);
     } catch (e) {
-        document.getElementById('breadthSummary').innerHTML = `<div class="breadth-error">⚠️ Gagal memuat data breadth</div>`;
+        if (chartSkel) chartSkel.style.display = 'none';
+        if (chartEl)   chartEl.style.display = 'none';
+        if (summaryEl) summaryEl.innerHTML = `<div class="breadth-error">⚠️ Gagal memuat data breadth</div>`;
+        if (tableEl)   tableEl.innerHTML   = '';
         showToast('Gagal memuat breadth', 'error');
     }
 }

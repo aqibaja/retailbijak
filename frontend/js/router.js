@@ -164,7 +164,7 @@ export function handleRoute(hash) {
               if (viewKey === 'stock' && rest[0]) {
                 const mod = viewCache.stock_detail || await viewModules.stock_detail();
                 viewCache.stock_detail = mod;
-                return mod.renderStockDetail(root, rest[0]);
+                return mod.renderStockDetail(root, rest[0], rest[1] || null);
               }
               if (viewKey === 'chart' && rest[0]) {
                 const mod = viewCache.chart || await viewModules.chart();

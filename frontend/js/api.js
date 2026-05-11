@@ -1,18 +1,25 @@
 const API_BASE = '/api';
 
 // ─── Fetch Wrappers ────────────────────────────────────
-export async function apiFetch(endpoint, options = {}) {
+export async function apiFetch(endpoint, options = {}, _retries = 2) {
+    const timeoutMs = options.timeout || 10000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const opts = { ...options, signal: controller.signal };
+    delete opts.timeout;
     try {
-        const timeoutMs = options.timeout || 8000;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), timeoutMs);
-        const opts = { ...options, signal: controller.signal };
-        delete opts.timeout;
         const res = await fetch(`${API_BASE}${endpoint}`, opts);
-        clearTimeout(timeout);
+        clearTimeout(timer);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (e) {
+        clearTimeout(timer);
+        // Retry on network errors only (not AbortError/timeout, not HTTP 4xx/5xx)
+        if (_retries > 0 && e.name !== 'AbortError' && !(e.message?.startsWith('HTTP'))) {
+            const delay = (3 - _retries) * 1000; // 1s, then 2s
+            await new Promise(r => setTimeout(r, delay));
+            return apiFetch(endpoint, options, _retries - 1);
+        }
         console.error(`API error: ${endpoint}`, e);
         // Only show toast for non-abort errors (timeout = silent)
         if (e.name !== 'AbortError') {

@@ -16,6 +16,7 @@ window.onerror = function(msg, url, line, col, error) {
   const err = {msg, url, line, col, time: Date.now()};
   window.__hermesErrors.push(err);
   console.error('[ErrorBoundary]', msg, url, line, col);
+  console.error('[RetailBijak] Global error:', error);
   showErrorFallback(msg);
   return true; // Prevent default browser handler
 };
@@ -24,7 +25,15 @@ window.addEventListener('unhandledrejection', function(e) {
   const err = {reason: String(e.reason), time: Date.now()};
   window.__hermesErrors.push(err);
   console.error('[ErrorBoundary] Unhandled Rejection:', e.reason);
+  console.error('[RetailBijak] Unhandled rejection:', e.reason);
+  const msg = e.reason?.message || 'Terjadi kesalahan tidak terduga';
+  if (typeof showToast === 'function') showToast(msg, 'error');
   showErrorFallback(e.reason);
+  e.preventDefault();
+});
+
+window.addEventListener('error', event => {
+  console.error('[RetailBijak] Global error:', event.error);
 });
 
 function showErrorFallback(detail) {

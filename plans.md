@@ -899,7 +899,7 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 # 🇮🇩 RetailBijak — Fase 31: Polish & Production Hardening
 
-> **Status:** 🆕 Planned
+> **Status:** ✅ **COMPLETE — 9/9 tasks (Fase 31 Selesai)**
 > **Tujuan:** Polish UI, hardening production, dan fitur engagement terakhir
 > **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
 
@@ -967,3 +967,13 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
 | 2026-05-12 | Research | ✅ | Audit: signals endpoint fixed (12930 rows). 170+ endpoints. Gap analysis done. |
+| 2026-05-12 | 31.1.1 — Global error boundary | ✅ | unhandledrejection + window.error handler. showToast on crash. main.js patched. |
+| 2026-05-12 | 31.1.2 — API retry + timeout | ✅ | apiFetch: 10s timeout, 2x retry + exponential backoff. api.js patched. |
+| 2026-05-12 | 31.1.3 — Skeleton audit | ✅ | breadth.js skeleton added. dividend.js + movers.js dummy fallback added. |
+| 2026-05-12 | 31.2.1 — Stock detail tabs | ✅ | 5 tabs sticky (Overview/Chart/Fundamental/Berita/Korporasi). Lazy load. URL hash preserve. stock_detail.js 2752→3354L. |
+| 2026-05-12 | 31.2.2 — Portfolio quick-add | ✅ | FAB button + modal quick-add + N shortcut. portfolio.js 1903→2076L. |
+| 2026-05-12 | 31.2.3 — Screener save preset | ✅ | Save/load/delete preset localStorage. Max 5. screener.js 1485→1687L. |
+| 2026-05-12 | 31.3.1 — Dividend view data | ✅ | API connect + tabel + yield calculator + ticker search. dividend.js 570→862L. |
+| 2026-05-12 | 31.3.2 — Movers enhance | ✅ | Sector filter, timeframe 1D/1W/1M, volume filter, sort toggle. movers.js 354→502L. |
+| 2026-05-12 | 31.3.3 — Calendar enhance | ✅ | Monthly grid + list toggle, color per type, month nav, filter chips. calendar.js 322→444L. |
+| 2026-05-12 | **Fase 31 COMPLETE** | ✅ | 9/9 tasks selesai. |

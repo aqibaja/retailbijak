@@ -35,7 +35,302 @@ function renderAiPickContextBanner(symbol) {
   }
 }
 
-export async function renderStockDetail(root, ticker) {
+// ─── Stock Detail Tab System (31.2.1) ────────────────────────
+const STOCK_MAIN_TAB_KEY = 'retailbijak.stock_main_tab';
+const VALID_MAIN_TABS = ['overview', 'chart', 'fundamental', 'news', 'corporate'];
+
+// Track lazy-load state per tab so we don't double-fetch
+const _tabLoaded = {};
+
+function _clearTabLoaded() {
+  VALID_MAIN_TABS.forEach(t => { _tabLoaded[t] = false; });
+}
+
+async function switchStockTab(tab, symbol) {
+  if (!VALID_MAIN_TABS.includes(tab)) tab = 'overview';
+
+  // Update tab bar active state
+  document.querySelectorAll('#stock-tab-bar .stock-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  // Update URL hash without triggering a full re-render
+  const newHash = `#stock/${symbol}/${tab}`;
+  if (location.hash !== newHash) {
+    history.replaceState(null, '', newHash);
+  }
+
+  // Persist choice
+  try { sessionStorage.setItem(`${STOCK_MAIN_TAB_KEY}.${symbol}`, tab); } catch {}
+
+  // Show/hide tab content sections
+  const overviewEl   = document.getElementById('tab-content-overview');
+  const chartEl      = document.getElementById('tab-content-chart');
+  const fundEl       = document.getElementById('tab-content-fundamental');
+  const newsEl       = document.getElementById('tab-content-news');
+  const corpEl       = document.getElementById('tab-content-corporate');
+
+  [overviewEl, chartEl, fundEl, newsEl, corpEl].forEach(el => {
+    if (el) el.style.display = 'none';
+  });
+
+  switch (tab) {
+    case 'overview':
+      if (overviewEl) overviewEl.style.display = '';
+      break;
+
+    case 'chart':
+      if (chartEl) {
+        chartEl.style.display = '';
+        if (!_tabLoaded.chart) {
+          _tabLoaded.chart = true;
+          // Lazy-render chart tab on first show using cached 1D candles
+          const tabChartContainer = document.getElementById('tvchart-tab');
+          if (tabChartContainer) {
+            const cached1D = cachedMultiChartCandles?.['1D'];
+            if (cached1D && cached1D.length) {
+              _renderChartInto(tabChartContainer, symbol, cached1D, '1D');
+            } else {
+              fetchChartData(symbol, 160, '1D').then(res => {
+                const c = normalizeCandles(res?.data?.length ? res.data : []);
+                if (c.length) _renderChartInto(tabChartContainer, symbol, c, '1D');
+                else tabChartContainer.innerHTML = '<div class="empty-state-v2"><h3>Tidak ada data chart</h3></div>';
+              }).catch(() => {
+                tabChartContainer.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat chart</h3></div>';
+              });
+            }
+          }
+        }
+      }
+      break;
+
+    case 'fundamental':
+      if (fundEl) {
+        fundEl.style.display = '';
+        if (!_tabLoaded.fundamental) {
+          _tabLoaded.fundamental = true;
+          // Render fundamental history into tab-specific container
+          renderFundamentalHistoryInto(symbol, document.getElementById('fundamental-history-tab'));
+          // Corporate actions already in tab DOM via renderCorporateActions(symbol) which targets #corporate-actions-timeline
+          // (shared ID — already populated during overview load)
+          renderKalkulatorKorporasi(symbol);
+        }
+      }
+      break;
+
+    case 'news':
+      if (newsEl) {
+        newsEl.style.display = '';
+        if (!_tabLoaded.news) {
+          _tabLoaded.news = true;
+          // Fetch fresh news if feed is still empty/skeleton
+          const feedEl = document.getElementById('stock-news-feed-main');
+          const annEl  = document.getElementById('stock-announcements-feed-main');
+          if (feedEl && !feedEl.querySelector('.stock-news-card')) {
+            feedEl.innerHTML = '<div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short mt-1"></div>';
+            apiFetch(`/stocks/${encodeURIComponent(symbol)}/news?limit=10`).then(res => {
+              renderStockNewsFeedInto(feedEl, symbol, res);
+            }).catch(() => {
+              feedEl.innerHTML = '<div class="text-xs text-dim">Gagal memuat berita.</div>';
+            });
+          }
+          if (annEl && !annEl.querySelector('.stock-news-card')) {
+            annEl.innerHTML = '<div class="skeleton skeleton-text"></div>';
+            apiFetch(`/company-announcements?companyCode=${encodeURIComponent(symbol)}&limit=8`).then(res => {
+              renderStockAnnouncementsInto(annEl, symbol, res);
+            }).catch(() => {
+              annEl.innerHTML = '<div class="text-xs text-dim">Gagal memuat pengumuman.</div>';
+            });
+          }
+        }
+      }
+      break;
+
+    case 'corporate':
+      if (corpEl) {
+        corpEl.style.display = '';
+        if (!_tabLoaded.corporate) {
+          _tabLoaded.corporate = true;
+          renderCorporateActionsInto(symbol, document.getElementById('corporate-actions-timeline-main'));
+          renderKalkulatorKorporasiInto(symbol, document.getElementById('kalkulator-korporasi-wrap'));
+        }
+      }
+      break;
+  }
+
+  // Re-init lucide icons for newly visible content
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+}
+
+// Helpers that render into explicit containers (avoid ID conflicts with overview tab)
+function renderStockNewsFeedInto(el, symbol, newsPayload) {
+  if (!el) return;
+  const items = Array.isArray(newsPayload?.data) ? newsPayload.data : [];
+  if (!items.length) {
+    el.innerHTML = '<div class="stock-news-empty"><div class="stock-news-empty-icon"><i data-lucide="newspaper"></i></div><strong>Belum ada berita terkait</strong><span>Berita spesifik untuk saham ini akan muncul saat terdeteksi.</span></div>';
+    return;
+  }
+  el.innerHTML = items.slice(0, 10).map(n => `
+    <a href="${(n.link || '#').replace(/'/g, "\\'")}" target="_blank" rel="noopener noreferrer" class="stock-news-card">
+      <span class="stock-news-source">${n.source || 'rss'}</span>
+      <strong class="stock-news-title">${(n.title || 'Berita').replace(/</g,'&lt;').slice(0, 100)}</strong>
+      <span class="stock-news-date">${(n.published_at || '').slice(0, 10) || ''}</span>
+      ${n.summary ? `<p class="stock-news-summary">${n.summary.replace(/<[^>]*>/g,'').replace(/</g,'&lt;').slice(0, 120)}</p>` : ''}
+    </a>`).join('');
+}
+
+function renderStockAnnouncementsInto(el, symbol, annPayload) {
+  if (!el) return;
+  const items = Array.isArray(annPayload?.data) ? annPayload.data : [];
+  if (!items.length) {
+    el.innerHTML = '<div class="stock-news-empty"><div class="stock-news-empty-icon"><i data-lucide="building"></i></div><strong>Belum ada pengumuman</strong><span>Pengumuman IDX akan muncul setelah tersedia.</span></div>';
+    return;
+  }
+  const upper = symbol.toUpperCase();
+  const filtered = items.filter(a => (a.title || a.subject || '').toUpperCase().includes(upper)).slice(0, 8);
+  const display = filtered.length ? filtered : items.slice(0, 5);
+  el.innerHTML = display.map(a => {
+    const title = a.title || a.subject || 'Pengumuman';
+    const date = (a.date || '').slice(0, 10) || '';
+    const link = a.link || '#';
+    return `<a href="${link.replace(/'/g, "\\'")}" target="_blank" rel="noopener noreferrer" class="stock-news-card">
+      <span class="stock-news-source">IDX</span>
+      <strong class="stock-news-title">${title.replace(/</g,'&lt;').slice(0, 80)}</strong>
+      <span class="stock-news-date">${date}</span>
+    </a>`;
+  }).join('');
+}
+
+function renderCorporateActionsInto(symbol, container) {
+  if (!container) return;
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/corporate-actions`).then(res => {
+    const events = res?.data || [];
+    if (!events.length) {
+      container.innerHTML = '<div class="empty-state-v2" style="padding:12px"><h3>Belum ada data</h3><p>Belum ada aksi korporasi tercatat.</p></div>';
+      return;
+    }
+    const typeColors = { dividend:'#34d399', split:'#3b82f6', rights:'#8b5cf6', ipo:'#f59e0b', earnings:'#6366f1', corporate:'#f97316' };
+    const typeLabels = { dividend:'Dividen', split:'Stock Split', rights:'HMETD', ipo:'IPO', earnings:'Laporan Keuangan', corporate:'Aksi Korporasi' };
+    container.innerHTML = `<div class="ca-timeline">${events.slice(0, 20).map(ev => {
+      const color = typeColors[ev.type] || '#64748b';
+      const label = typeLabels[ev.type] || ev.type;
+      const dateStr = ev.date ? ev.date.slice(0, 10) : '';
+      const desc = ev.description ? ev.description.slice(0, 120) : '';
+      return `<div class="ca-item" onclick="this.classList.toggle('ca-expanded')" style="cursor:pointer">
+        <div class="ca-item-dot" style="background:${color}"><span class="ca-dot-inner" style="background:${color}"></span></div>
+        <div class="ca-item-content">
+          <div class="ca-item-header"><span class="ca-item-type" style="color:${color}">${label}</span><span class="ca-item-date">${dateStr}</span></div>
+          <div class="ca-item-title">${ev.title || ''}</div>
+          ${desc ? `<div class="ca-item-desc">${desc}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('')}</div>
+    ${events.length > 20 ? `<div class="text-xs text-dim mt-2 text-center">+ ${events.length - 20} event lainnya</div>` : ''}`;
+  }).catch(() => {
+    container.innerHTML = '<div class="empty-state-v2" style="padding:12px"><h3>Gagal memuat data</h3></div>';
+  });
+}
+
+function renderKalkulatorKorporasiInto(symbol, wrapper) {
+  if (!wrapper || wrapper.querySelector('#kalkulator-korporasi-card-main')) return;
+  const card = document.createElement('div');
+  card.id = 'kalkulator-korporasi-card-main';
+  card.className = 'panel';
+  card.style.cssText = 'margin-top:12px;border-radius:12px;overflow:hidden';
+  card.innerHTML = `
+    <div id="kalkorp2-toggle" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none">
+      <span class="text-xs uppercase text-dim strong" style="letter-spacing:.06em">🧮 Kalkulator Korporasi</span>
+      <span id="kalkorp2-chevron" style="font-size:12px;transition:transform .2s">▼</span>
+    </div>
+    <div id="kalkorp2-body" style="display:none;padding:0 16px 16px">
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <button id="kalkorp2-tab-split" class="btn btn-primary btn-sm" style="font-size:11px">Stock Split</button>
+        <button id="kalkorp2-tab-rights" class="btn btn-sm" style="font-size:11px">Rights Issue</button>
+      </div>
+      <div id="kalkorp2-panel-split">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div><label class="text-xs text-dim block mb-1">Lot Dimiliki</label><input id="split2-lots" type="number" class="modal-input" value="10" min="1" step="1" style="width:100%"></div>
+          <div><label class="text-xs text-dim block mb-1">Harga Beli (Rp)</label><input id="split2-price" type="number" class="modal-input" value="1000" min="1" step="50" style="width:100%"></div>
+          <div><label class="text-xs text-dim block mb-1">Rasio Split (misal 2 = 1:2)</label><input id="split2-ratio" type="number" class="modal-input" value="2" min="1" step="1" style="width:100%"></div>
+        </div>
+        <button id="split2-calc-btn" class="btn btn-primary btn-sm" style="font-size:11px;margin-bottom:10px">Hitung</button>
+        <div id="split2-result" style="display:none;background:var(--bg-panel,#1e293b);border-radius:8px;padding:10px 12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="text-center"><div class="text-xs text-dim mb-1">Lot Baru</div><strong id="split2-out-lots" class="mono text-up" style="font-size:15px">—</strong></div>
+            <div class="text-center"><div class="text-xs text-dim mb-1">Harga Baru</div><strong id="split2-out-price" class="mono" style="font-size:15px">—</strong></div>
+            <div class="text-center"><div class="text-xs text-dim mb-1">Nilai Total</div><strong id="split2-out-value" class="mono" style="font-size:15px">—</strong></div>
+          </div>
+          <div class="text-xs text-dim mt-2" style="text-align:center">Nilai portofolio tidak berubah setelah split.</div>
+        </div>
+      </div>
+      <div id="kalkorp2-panel-rights" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div><label class="text-xs text-dim block mb-1">Lot Dimiliki</label><input id="rights2-lots" type="number" class="modal-input" value="10" min="1" step="1" style="width:100%"></div>
+          <div><label class="text-xs text-dim block mb-1">Harga Rights (Rp)</label><input id="rights2-price" type="number" class="modal-input" value="500" min="1" step="50" style="width:100%"></div>
+          <div><label class="text-xs text-dim block mb-1">Rasio 1:N (isi N)</label><input id="rights2-ratio" type="number" class="modal-input" value="5" min="1" step="1" style="width:100%"></div>
+          <div><label class="text-xs text-dim block mb-1">Harga Pasar Saat Ini (Rp)</label><input id="rights2-market" type="number" class="modal-input" value="1000" min="1" step="50" style="width:100%"></div>
+        </div>
+        <button id="rights2-calc-btn" class="btn btn-primary btn-sm" style="font-size:11px;margin-bottom:10px">Hitung</button>
+        <div id="rights2-result" style="display:none;background:var(--bg-panel,#1e293b);border-radius:8px;padding:10px 12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="text-center"><div class="text-xs text-dim mb-1">Lot Rights</div><strong id="rights2-out-lots" class="mono text-up" style="font-size:15px">—</strong></div>
+            <div class="text-center"><div class="text-xs text-dim mb-1">Biaya Exercise</div><strong id="rights2-out-cost" class="mono" style="font-size:15px">—</strong></div>
+            <div class="text-center"><div class="text-xs text-dim mb-1">Dilusi %</div><strong id="rights2-out-dilution" class="mono text-down" style="font-size:15px">—</strong></div>
+          </div>
+          <div id="rights2-out-note" class="text-xs text-dim mt-2" style="text-align:center"></div>
+        </div>
+      </div>
+    </div>`;
+  wrapper.appendChild(card);
+
+  // Collapsible
+  card.querySelector('#kalkorp2-toggle').addEventListener('click', () => {
+    const body = card.querySelector('#kalkorp2-body');
+    const chev = card.querySelector('#kalkorp2-chevron');
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    chev.style.transform = open ? '' : 'rotate(180deg)';
+  });
+  // Tab switching
+  const tabSplit = card.querySelector('#kalkorp2-tab-split');
+  const tabRights = card.querySelector('#kalkorp2-tab-rights');
+  const panelSplit = card.querySelector('#kalkorp2-panel-split');
+  const panelRights = card.querySelector('#kalkorp2-panel-rights');
+  tabSplit.addEventListener('click', () => { tabSplit.classList.add('btn-primary'); tabRights.classList.remove('btn-primary'); panelSplit.style.display = ''; panelRights.style.display = 'none'; });
+  tabRights.addEventListener('click', () => { tabRights.classList.add('btn-primary'); tabSplit.classList.remove('btn-primary'); panelRights.style.display = ''; panelSplit.style.display = 'none'; });
+  // Split calc
+  card.querySelector('#split2-calc-btn').addEventListener('click', () => {
+    const lots = parseFloat(card.querySelector('#split2-lots').value) || 0;
+    const price = parseFloat(card.querySelector('#split2-price').value) || 0;
+    const ratio = parseFloat(card.querySelector('#split2-ratio').value) || 1;
+    if (lots <= 0 || price <= 0 || ratio < 1) return;
+    card.querySelector('#split2-out-lots').textContent = nf(lots * ratio, 0) + ' lot';
+    card.querySelector('#split2-out-price').textContent = money(price / ratio);
+    card.querySelector('#split2-out-value').textContent = money(lots * 100 * price);
+    card.querySelector('#split2-result').style.display = '';
+  });
+  // Rights calc
+  card.querySelector('#rights2-calc-btn').addEventListener('click', () => {
+    const lots = parseFloat(card.querySelector('#rights2-lots').value) || 0;
+    const rightsPrice = parseFloat(card.querySelector('#rights2-price').value) || 0;
+    const ratio = parseFloat(card.querySelector('#rights2-ratio').value) || 1;
+    const marketPrice = parseFloat(card.querySelector('#rights2-market').value) || 0;
+    if (lots <= 0 || rightsPrice <= 0 || ratio < 1) return;
+    const shares = lots * 100;
+    const rightsShares = Math.floor(shares / ratio);
+    const rightsLots = rightsShares / 100;
+    const exerciseCost = rightsShares * rightsPrice;
+    const dilutionPct = rightsShares > 0 ? (rightsShares / (shares + rightsShares)) * 100 : 0;
+    const terp = marketPrice > 0 ? ((shares * marketPrice) + (rightsShares * rightsPrice)) / (shares + rightsShares) : 0;
+    card.querySelector('#rights2-out-lots').textContent = nf(rightsLots, 2) + ' lot';
+    card.querySelector('#rights2-out-cost').textContent = money(exerciseCost);
+    card.querySelector('#rights2-out-dilution').textContent = pf(dilutionPct);
+    card.querySelector('#rights2-out-note').textContent = terp > 0 ? `TERP (harga teoritis ex-rights): ${money(terp)}` : 'Isi harga pasar untuk menghitung TERP.';
+    card.querySelector('#rights2-result').style.display = '';
+  });
+}
+
+export async function renderStockDetail(root, ticker, initialTab) {
   // Clean up any previous multi-chart instances (cross-stock navigation)
   try {
     multiChartInstances.forEach(inst => { try { inst.chart.remove(); } catch(e) {} });
@@ -45,6 +340,8 @@ export async function renderStockDetail(root, ticker) {
     cachedMultiChartTechnical = {};
     if (multiChartResizeObserver) { multiChartResizeObserver.disconnect(); multiChartResizeObserver = null; }
   } catch(e) {}
+  // Reset lazy-load flags for new stock
+  _clearTabLoaded();
   const symbol = String(ticker || 'GOTO').toUpperCase().replace('.JK','');
   currentSymbol = symbol;
   document.title = `RetailBijak — ${symbol}`;
@@ -85,11 +382,23 @@ export async function renderStockDetail(root, ticker) {
         <div class="price-board-item"><span class="price-board-label">52W Tertinggi</span><span class="price-board-value" id="pb-52w-high">—</span></div>
         <div class="price-board-item"><span class="price-board-label">52W Terendah</span><span class="price-board-value" id="pb-52w-low">—</span></div>
       </div>
-      <button id="chat-toggle" class="btn btn-icon chat-toggle-btn" title="Tanya AI">
-        <i data-lucide="message-circle" style="width:18px;height:18px"></i>
-      </button>
-      <div id="tv-symbol-profile" class="stock-side-panel hidden"></div>
-      <div class="stock-layout">
+      <!-- 31.2.1 — Sticky Tab Bar -->
+      <div class="stock-tab-bar" id="stock-tab-bar">
+        <button class="stock-tab active" data-tab="overview">Overview</button>
+        <button class="stock-tab" data-tab="chart">Chart</button>
+        <button class="stock-tab" data-tab="fundamental">Fundamental</button>
+        <button class="stock-tab" data-tab="news">Berita</button>
+        <button class="stock-tab" data-tab="corporate">Korporasi</button>
+      </div>
+      <!-- Tab content wrapper -->
+      <div id="stock-tab-content">
+        <!-- OVERVIEW TAB -->
+        <div id="tab-content-overview">
+          <button id="chat-toggle" class="btn btn-icon chat-toggle-btn" title="Tanya AI">
+            <i data-lucide="message-circle" style="width:18px;height:18px"></i>
+          </button>
+          <div id="tv-symbol-profile" class="stock-side-panel hidden"></div>
+          <div class="stock-layout">
         <div class="panel chart-card-v2">
           <div class="flex justify-between items-center mb-3">
             <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">Memuat chart...</p></div>
@@ -209,6 +518,72 @@ export async function renderStockDetail(root, ticker) {
           </div>
         </div>
       </div>
+        </div><!-- /tab-content-overview -->
+
+        <!-- CHART TAB -->
+        <div id="tab-content-chart" style="display:none">
+          <div class="panel chart-card-v2 mt-2">
+            <div class="flex justify-between items-center mb-3">
+              <div><h3 class="panel-title">Grafik Harga — ${symbol}</h3><p class="text-xs text-dim" id="chart-subtitle-tab">Chart penuh</p></div>
+              <a href="#chart/${symbol}" class="btn btn-ghost btn-sm" title="Buka Chart Penuh" style="font-size:10px"><i data-lucide="maximize-2" style="width:14px"></i> Full</a>
+            </div>
+            <div class="chart-toolbar" id="chart-toolbar-tab">
+              <span class="timeframe-group">
+                <label class="indicator-toggle active" data-tf-tab="1D"><span>1D</span></label>
+                <label class="indicator-toggle" data-tf-tab="1W"><span>1W</span></label>
+                <label class="indicator-toggle" data-tf-tab="1M"><span>1M</span></label>
+              </span>
+            </div>
+            <div id="tvchart-tab" class="stock-chart-wrap" style="height:480px"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
+          </div>
+        </div><!-- /tab-content-chart -->
+
+        <!-- FUNDAMENTAL TAB -->
+        <div id="tab-content-fundamental" style="display:none">
+          <div class="stock-side-panel mt-2">
+            <h3 class="stock-side-panel-title">Fundamental Metrics</h3>
+            <div id="fundamental-grid-tab" class="fundamental-grid">
+              <div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div>
+              <div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div>
+              <div class="skeleton skeleton-tile"></div><div class="skeleton skeleton-tile"></div>
+            </div>
+          </div>
+          <div class="stock-side-panel">
+            <h3 class="stock-side-panel-title">Riwayat Fundamental</h3>
+            <div id="fundamental-history-tab"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          </div>
+          <div class="stock-side-panel">
+            <h3 class="stock-side-panel-title">Aksi Korporasi</h3>
+            <div id="corporate-actions-timeline"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          </div>
+        </div><!-- /tab-content-fundamental -->
+
+        <!-- NEWS TAB -->
+        <div id="tab-content-news" style="display:none">
+          <div class="stock-side-panel mt-2">
+            <h3 class="stock-side-panel-title">Berita Terkait ${symbol}</h3>
+            <div id="stock-news-feed-main" class="flex-col gap-2">
+              <div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short mt-1"></div>
+            </div>
+          </div>
+          <div class="stock-side-panel">
+            <h3 class="stock-side-panel-title">Pengumuman IDX</h3>
+            <div id="stock-announcements-feed-main" class="flex-col gap-2">
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          </div>
+        </div><!-- /tab-content-news -->
+
+        <!-- CORPORATE TAB -->
+        <div id="tab-content-corporate" style="display:none">
+          <div class="stock-side-panel mt-2">
+            <h3 class="stock-side-panel-title">Aksi Korporasi</h3>
+            <div id="corporate-actions-timeline-main"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>
+          </div>
+          <div id="kalkulator-korporasi-wrap"></div>
+        </div><!-- /tab-content-corporate -->
+
+      </div><!-- /stock-tab-content -->
     </section>
     <!-- Floating AI Chat Panel -->
     <div id="stock-chat-panel" class="stock-chat-panel" style="display:none">
@@ -231,6 +606,45 @@ export async function renderStockDetail(root, ticker) {
     </div>
     <!-- End Floating AI Chat Panel -->`;
   observeElements();
+
+  // ── 31.2.1 Tab bar init ──────────────────────────────────────
+  document.querySelectorAll('#stock-tab-bar .stock-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchStockTab(btn.dataset.tab, symbol));
+  });
+  // Determine initial tab: URL param > sessionStorage > 'overview'
+  const _urlTab = (() => {
+    const hash = location.hash || '';
+    const parts = hash.replace(/^#\/?/, '').split('/');
+    // parts: ['stock', 'BBCA', 'chart']
+    const t = parts[2] ? parts[2].toLowerCase() : null;
+    return VALID_MAIN_TABS.includes(t) ? t : null;
+  })();
+  const _savedTab = (() => {
+    try { return sessionStorage.getItem(`${STOCK_MAIN_TAB_KEY}.${symbol}`) || null; } catch { return null; }
+  })();
+  const _startTab = _urlTab || (VALID_MAIN_TABS.includes(initialTab) ? initialTab : null) || _savedTab || 'overview';
+  // Apply initial tab (defer slightly so DOM is fully painted)
+  setTimeout(() => switchStockTab(_startTab, symbol), 0);
+
+  // Wire up chart-tab timeframe toggles (lazy — only render when tab is first shown)
+  document.querySelectorAll('[data-tf-tab]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('[data-tf-tab]').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      const tf = el.dataset.tfTab;
+      const container = document.getElementById('tvchart-tab');
+      if (!container) return;
+      container.innerHTML = '<div class="skeleton skeleton-chart stock-chart-skeleton"></div>';
+      fetchChartData(symbol, tf === '1D' ? 160 : tf === '1W' ? 300 : 400, tf).then(res => {
+        const candles = normalizeCandles(res?.data?.length ? res.data : []);
+        if (!candles.length) { container.innerHTML = '<div class="empty-state-v2"><h3>Tidak ada data</h3></div>'; return; }
+        _renderChartInto(container, symbol, candles, tf);
+      }).catch(() => {
+        container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat chart</h3></div>';
+      });
+    });
+  });
+
   // Check watchlist state
   let isWatched = false;
   fetchWatchlist().then(wl => {
@@ -884,7 +1298,9 @@ export async function renderStockDetail(root, ticker) {
   }
   renderMarketStatsV2(fund?.data || detail?.data || {}, candles, technical);
   renderFundamentalGrid(fund?.data || detail?.data || {});
-  // 27.1.1 — Fundamental History Charts
+  // Also populate fundamental-grid-tab (31.2.1 — Fundamental tab)
+  renderFundamentalGridInto(document.getElementById('fundamental-grid-tab'), fund?.data || detail?.data || {});
+  // 27.1.1 — Fundamental History Charts (overview sidebar only; tab version lazy-loaded)
   renderFundamentalHistory(symbol);
   // 27.1.2 — Corporate Actions Timeline
   renderCorporateActions(symbol);
@@ -1444,6 +1860,192 @@ function renderLevelSuggestions(candles, tech){
   const el=document.getElementById('level-suggestions'); if(!el) return; const levels=getLevels(candles, tech);
   const items=[['STOP', levels.stop, 'Kendali risiko', 'metric-bad'], ['ENTRY', levels.entry, 'Zona pullback', 'metric-good'], ['TARGET', levels.target, 'Zona reward', 'metric-warn']];
   el.innerHTML = items.map(([label, price, note, cls]) => `<span class="sugg-chip ${cls}"><strong>${label}</strong> ${money(price)} <small>${note}</small></span>`).join('');
+}
+
+// ─── 31.2.1 Tab helpers ──────────────────────────────────────
+
+// Render fundamental grid into any container (not just #fundamental-grid)
+function renderFundamentalGridInto(el, d) {
+  if (!el) return;
+  const hasData = Boolean(d && (d.trailing_pe || d.per || d.price_to_book || d.pbv || d.roe || d.roa || d.debt_to_equity || d.dividend_yield || d.trailing_eps || d.revenue || d.updated_at));
+  if (!hasData) {
+    el.innerHTML = '<div class="empty-state-v2" style="grid-column:1/-1"><h3>Data Fundamental Belum Tersedia</h3><p>Data fundamental sedang diperbarui.</p></div>';
+    return;
+  }
+  // Reuse same card-building logic as renderFundamentalGrid
+  const trailingPE = d.trailing_pe ?? d.per;
+  const forwardPE = d.forward_pe;
+  const pbv = d.price_to_book ?? d.pbv;
+  const roe = d.roe; const roa = d.roa; const der = d.debt_to_equity;
+  const eps = d.trailing_eps; const divYield = d.dividend_yield;
+  const marketCap = d.market_cap; const revenue = d.revenue; const netIncome = d.net_income;
+  function peS(v) { if(v==null||isNaN(v))return'neutral';if(v<12)return'good';if(v<25)return'neutral';return'bad'; }
+  function pbvS(v) { if(v==null||isNaN(v))return'neutral';if(v<1)return'good';if(v<3)return'neutral';return'bad'; }
+  function roeS(v) { if(v==null||isNaN(v))return'neutral';if(v>15)return'good';if(v>5)return'neutral';return'bad'; }
+  function roaS(v) { if(v==null||isNaN(v))return'neutral';if(v>8)return'good';if(v>2)return'neutral';return'bad'; }
+  function derS(v) { if(v==null||isNaN(v))return'neutral';if(v<0.5)return'good';if(v<2)return'neutral';return'bad'; }
+  function epsS(v) { if(v==null||isNaN(v))return'neutral';if(v>0)return'good';return'bad'; }
+  function dyS(v) { if(v==null||isNaN(v))return'neutral';if(v>3)return'good';if(v>0.5)return'neutral';return'bad'; }
+  function card(label,value,sent,sub){
+    const cls=sent==='good'?'fundamental-good':sent==='bad'?'fundamental-bad':'fundamental-neutral';
+    let html='<div class="fundamental-card '+cls+'"><div class="fundamental-label">'+label+'</div><div class="fundamental-value">'+value+'</div>';
+    if(sub)html+='<div class="fundamental-sub">'+sub+'</div>';
+    return html+'</div>';
+  }
+  const cards=[];
+  cards.push(card('P/E (Trailing)',trailingPE!=null?nf(trailingPE,1)+'x':'—',peS(trailingPE),trailingPE!=null?(trailingPE<12?'Murah':trailingPE<25?'Wajar':'Premium'):''));
+  if(forwardPE!=null)cards.push(card('P/E (Forward)',nf(forwardPE,1)+'x',peS(forwardPE),forwardPE<12?'Murah':forwardPE<25?'Wajar':'Premium'));
+  cards.push(card('PBV',pbv!=null?nf(pbv,2)+'x':'—',pbvS(pbv),pbv!=null?(pbv<1?'Di bawah BV':pbv<3?'Wajar':'Premium'):''));
+  cards.push(card('ROE',roe!=null?pf(roe):'—',roeS(roe),roe!=null?(roe>15?'Efisien':roe>5?'Cukup':'Rendah'):''));
+  cards.push(card('ROA',roa!=null?pf(roa):'—',roaS(roa),roa!=null?(roa>8?'Produktif':roa>2?'Cukup':'Rendah'):''));
+  cards.push(card('DER',der!=null?nf(der,2):'—',derS(der),der!=null?(der<0.5?'Rendah':der<2?'Sedang':'Tinggi'):''));
+  cards.push(card('EPS',eps!=null?money(eps):'—',epsS(eps),eps!=null?(eps>0?'Positif':'Negatif'):''));
+  cards.push(card('Dividend Yield',divYield!=null?pf(divYield):'—',dyS(divYield),divYield!=null?(divYield>3?'Tinggi':divYield>0.5?'Sedang':'Rendah'):''));
+  if(marketCap!=null)cards.push(card('Market Cap',fmtRp(marketCap),'neutral',''));
+  if(revenue!=null)cards.push(card('Revenue',fmtRp(revenue),'neutral',''));
+  if(netIncome!=null)cards.push(card('Net Income',fmtRp(netIncome),netIncome>=0?'good':'bad',netIncome>=0?'Profit':'Rugi'));
+  el.innerHTML = cards.join('');
+}
+
+// Render fundamental history charts into an arbitrary container
+function renderFundamentalHistoryInto(symbol, container) {
+  if (!container) return;
+  // Reuse the same logic as renderFundamentalHistory but target the given container
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamental/history`).then(res => {
+    if (!res || !res.price_data || !res.price_data.length) {
+      container.innerHTML = '<div class="empty-state-v2"><h3>Belum ada data</h3><p>Data riwayat fundamental belum tersedia.</p></div>';
+      return;
+    }
+    const hasFinancial = res.has_financial_data && (
+      (res.ratios?.pe?.length > 0) || (res.ratios?.pbv?.length > 0) || (res.ratios?.roe?.length > 0)
+    );
+    let html = '';
+    if (hasFinancial) {
+      html += '<div class="fund-chart-toggles flex gap-1 mb-2 flex-wrap">';
+      [{ key:'pe', label:'P/E', active:true }, { key:'pbv', label:'P/BV', active:false }, { key:'roe', label:'ROE (%)', active:false }].forEach(r => {
+        const hasData = res.ratios[r.key]?.length > 0;
+        html += `<button type="button" class="btn btn-sm fund-chart-toggle-tab ${r.active ? 'active' : ''}" data-ratio="${r.key}" ${!hasData ? 'disabled' : ''}>${r.label}</button>`;
+      });
+      html += '</div><div class="fund-chart-container" style="position:relative;height:200px;margin-bottom:12px"><canvas id="fund-ratio-chart-tab"></canvas></div>';
+    }
+    html += '<div class="fund-chart-container" style="position:relative;height:160px;margin-bottom:8px"><canvas id="fund-price-chart-tab"></canvas></div>';
+    container.innerHTML = html;
+
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const cs = getComputedStyle(document.documentElement);
+    const textColor = cs.getPropertyValue('--text-muted').trim() || '#94a3b8';
+    const gridColor = theme === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+    const primaryColor = cs.getPropertyValue('--primary-color').trim() || '#10b981';
+    const accentColor = cs.getPropertyValue('--accent-indigo').trim() || '#6366f1';
+    const upColor = cs.getPropertyValue('--up-color').trim() || '#34d399';
+    const downColor = cs.getPropertyValue('--down-color').trim() || '#f87171';
+
+    if (hasFinancial) {
+      const ctx = document.getElementById('fund-ratio-chart-tab');
+      if (ctx && typeof Chart !== 'undefined') {
+        const activeData = res.ratios['pe'] || [];
+        const chart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: activeData.map(d => d.date.slice(0,7)), datasets: [{ label:'P/E', data: activeData.map(d => d.value), borderColor: primaryColor, backgroundColor: primaryColor+'22', fill:true, tension:0.3, pointRadius:3, borderWidth:2 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor: cs.getPropertyValue('--bg-panel').trim()||'#1e293b', titleColor:textColor, bodyColor:textColor, cornerRadius:8, padding:10 } }, scales:{ x:{ ticks:{color:textColor,maxTicksLimit:6,font:{size:10}}, grid:{color:gridColor} }, y:{ ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor} } } },
+        });
+        fundamentalHistoryCharts.push(chart);
+        container.querySelectorAll('.fund-chart-toggle-tab').forEach(btn => {
+          btn.addEventListener('click', function() {
+            container.querySelectorAll('.fund-chart-toggle-tab').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const ratioKey = this.dataset.ratio;
+            const ratioData = res.ratios[ratioKey] || [];
+            const colorMap = { pe: primaryColor, pbv: accentColor, roe: upColor };
+            chart.data.labels = ratioData.map(d => d.date.slice(0,7));
+            chart.data.datasets[0].data = ratioData.map(d => d.value);
+            chart.data.datasets[0].label = { pe:'P/E', pbv:'P/BV', roe:'ROE (%)' }[ratioKey] || ratioKey;
+            chart.data.datasets[0].borderColor = colorMap[ratioKey] || primaryColor;
+            chart.data.datasets[0].backgroundColor = (colorMap[ratioKey] || primaryColor) + '22';
+            chart.update();
+          });
+        });
+      }
+    }
+    const priceCtx = document.getElementById('fund-price-chart-tab');
+    if (priceCtx && typeof Chart !== 'undefined') {
+      const step = Math.max(1, Math.floor(res.price_data.length / 120));
+      const sampled = res.price_data.filter((_, i) => i % step === 0 || i === res.price_data.length - 1);
+      const closes = sampled.map(d => d.close);
+      const volumes = sampled.map(d => d.volume);
+      const volMax = Math.max(...volumes, 1);
+      const priceChart = new Chart(priceCtx, {
+        type: 'line',
+        data: { labels: sampled.map(d => d.date.slice(0,10)), datasets: [
+          { label:'Harga', data:closes, borderColor:primaryColor, backgroundColor:'transparent', tension:0.2, pointRadius:0, borderWidth:2, order:1 },
+          { label:'SMA 20', data:sampled.map(d=>d.sma20), borderColor:'#f59e0b', backgroundColor:'transparent', tension:0.2, pointRadius:0, borderWidth:1, borderDash:[4,4], order:1 },
+          { label:'SMA 50', data:sampled.map(d=>d.sma50), borderColor:accentColor, backgroundColor:'transparent', tension:0.2, pointRadius:0, borderWidth:1, borderDash:[4,4], order:1 },
+          { label:'Volume', data:volumes.map((v,i)=>(v/volMax)*(closes.length?Math.max(...closes)*0.3:1000)), backgroundColor:volumes.map((v,i)=>(closes[i]||0)>=(i>0?closes[i-1]||0:0)?upColor+'44':downColor+'44'), borderColor:'transparent', pointRadius:0, type:'bar', order:2, yAxisID:'y1' },
+        ] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true,labels:{color:textColor,font:{size:10},boxWidth:12,padding:8},position:'top'}, tooltip:{backgroundColor:cs.getPropertyValue('--bg-panel').trim()||'#1e293b',titleColor:textColor,bodyColor:textColor,cornerRadius:8,padding:10,mode:'index',intersect:false} }, scales:{ x:{ticks:{color:textColor,maxTicksLimit:8,font:{size:9}},grid:{color:gridColor}}, y:{position:'left',ticks:{color:textColor,font:{size:9},callback:v=>'Rp'+v.toLocaleString('id-ID')},grid:{color:gridColor}}, y1:{display:false,position:'right',grid:{display:false}} } },
+      });
+      fundamentalHistoryCharts.push(priceChart);
+    }
+  }).catch(() => {
+    container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat data</h3></div>';
+  });
+}
+
+// Render a LightweightCharts candlestick into any container element
+function _renderChartInto(container, symbol, candles, timeframe) {
+  if (!container) return;
+  container.innerHTML = '';
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const isLight = theme === 'light';
+  const cs = getComputedStyle(document.documentElement);
+  const textDim = cs.getPropertyValue('--text-dim').trim() || (isLight ? '#64748b' : '#94a3b8');
+  const gridColor = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.035)';
+  const c = getThemeColors();
+
+  // Try TradingView first
+  if (typeof TradingView !== 'undefined' && container.clientWidth > 0) {
+    try {
+      const tvSymbol = `IDX:${symbol}`;
+      const tfMap = { '1D':'D', '1W':'W', '1M':'M' };
+      new TradingView.widget({
+        container_id: container.id,
+        autosize: true,
+        symbol: tvSymbol,
+        interval: tfMap[timeframe] || 'D',
+        timezone: 'Asia/Jakarta',
+        theme: isLight ? 'Light' : 'dark',
+        style: '1',
+        locale: 'id_ID',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        hide_top_toolbar: false,
+        save_image: false,
+        disabled_features: ['use_localstorage_for_settings','header_symbol_search','header_compare','header_undo_redo','header_screenshot'],
+      });
+      return;
+    } catch(e) { /* fall through */ }
+  }
+
+  // Fallback: LightweightCharts
+  if (typeof LightweightCharts === 'undefined') {
+    container.innerHTML = '<div class="empty-state-v2"><p>Chart library tidak tersedia</p></div>';
+    return;
+  }
+  const data = candles.slice(-160);
+  const chart = LightweightCharts.createChart(container, {
+    width: container.clientWidth, height: container.clientHeight || 480,
+    layout: { textColor: textDim, background: { type:'solid', color:'transparent' } },
+    grid: { vertLines:{ color:gridColor }, horzLines:{ color:gridColor } },
+    rightPriceScale: { borderVisible:false },
+    timeScale: { borderVisible:false },
+  });
+  const cs2 = chart.addCandlestickSeries({ upColor:c.primary, downColor:c.down, borderVisible:false, wickUpColor:c.primary, wickDownColor:c.down });
+  cs2.setData(data.map(d => ({ time:String(d.date).slice(0,10), open:d.open, high:d.high, low:d.low, close:d.close })));
+  const vol = chart.addHistogramSeries({ priceFormat:{type:'volume'}, priceScaleId:'', color:'rgba(148,163,184,0.2)' });
+  vol.setData(data.map(d => ({ time:String(d.date).slice(0,10), value:d.volume||0, color:d.close>=d.open?'rgba(16,185,129,0.25)':'rgba(248,113,113,0.25)' })));
+  chart.priceScale('').applyOptions({ scaleMargins:{ top:.82, bottom:0 } });
+  chart.timeScale().fitContent();
+  new ResizeObserver(() => chart.applyOptions({ width:container.clientWidth, height:container.clientHeight||480 })).observe(container);
 }
 
 function renderFundamentalGrid(d) {

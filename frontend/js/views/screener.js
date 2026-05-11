@@ -457,6 +457,9 @@ export async function renderScreener(root) {
 
     // Seed default presets on first load
     seedDefaultPresets();
+
+    // 31.2.3 — init localStorage preset UI
+    initScreenerPresets(root);
 }
 
 function sortResults() {
@@ -1300,6 +1303,205 @@ async function seedDefaultPresets() {
   } catch (e) {
     console.warn('[screener] Failed to seed default presets:', e);
   }
+}
+
+// ══════════════════════════════════════════════════
+// 31.2.3 — Screener Save Preset (localStorage)
+// ══════════════════════════════════════════════════
+
+const LS_PRESETS_KEY = 'retailbijak.screener.presets';
+const MAX_PRESETS = 5;
+
+function lsGetPresets() {
+  try {
+    const raw = localStorage.getItem(LS_PRESETS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function lsSavePresets(presets) {
+  try {
+    localStorage.setItem(LS_PRESETS_KEY, JSON.stringify(presets));
+  } catch (e) { console.warn('[screener] Failed to save presets to localStorage', e); }
+}
+
+function getCurrentFilters() {
+  const indexSel = document.getElementById('index-filter-select');
+  const sortSel = document.getElementById('screener-sort');
+  const searchEl = document.getElementById('screener-search');
+  const patternSel = document.getElementById('pattern-select');
+  return {
+    indexFilter: indexSel?.value || '',
+    sort: sortSel?.value || 'cci',
+    search: searchEl?.value || '',
+    patternFilter: currentPatternFilter || '',
+    isPatternMode,
+    activeChips: [...activeFilterChips],
+    sortChain: [...sortChain],
+  };
+}
+
+function applyPresetFilters(filters) {
+  if (!filters) return;
+  const indexSel = document.getElementById('index-filter-select');
+  if (indexSel && filters.indexFilter != null) indexSel.value = filters.indexFilter;
+  const sortSel = document.getElementById('screener-sort');
+  if (sortSel && filters.sort) sortSel.value = filters.sort;
+  const searchEl = document.getElementById('screener-search');
+  if (searchEl && filters.search != null) searchEl.value = filters.search;
+  if (filters.activeChips) activeFilterChips = new Set(filters.activeChips);
+  if (filters.isPatternMode != null) isPatternMode = filters.isPatternMode;
+  if (filters.patternFilter != null) {
+    currentPatternFilter = filters.patternFilter;
+    const patternSel = document.getElementById('pattern-select');
+    if (patternSel) patternSel.value = filters.patternFilter;
+  }
+  if (Array.isArray(filters.sortChain)) {
+    sortChain = filters.sortChain;
+    localStorage.setItem('rbk_screener_sort', JSON.stringify(sortChain));
+  }
+  renderAll();
+}
+
+function renderPresetDropdown() {
+  const sel = document.getElementById('ls-preset-select');
+  if (!sel) return;
+  const presets = lsGetPresets();
+  sel.innerHTML = '<option value="">— Muat preset —</option>' +
+    presets.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+}
+
+export function initScreenerPresets(root) {
+  // Inject preset UI into the filter panel — after the existing "Simpan Filter ⭐" section
+  const filterPanel = root.querySelector('.scanner-form');
+  if (!filterPanel) return;
+
+  // Build the preset section HTML
+  const section = document.createElement('div');
+  section.className = 'scanner-form-section mt-4';
+  section.id = 'ls-preset-section';
+  section.innerHTML = `
+    <div class="text-xs text-dim uppercase strong mb-2">Preset Filter Lokal ⭐</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <select id="ls-preset-select" class="form-input" style="flex:1;padding:6px 10px;font-size:12px">
+        <option value="">— Muat preset —</option>
+      </select>
+      <button type="button" id="ls-preset-load" class="btn btn-sm btn-primary" title="Terapkan preset" style="white-space:nowrap">📂 Muat</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button type="button" id="ls-preset-save" class="btn btn-sm btn-primary" style="flex:1;white-space:nowrap">💾 Simpan Filter</button>
+      <button type="button" id="ls-preset-delete" class="btn btn-sm" style="white-space:nowrap" title="Hapus preset terpilih">🗑️ Hapus</button>
+    </div>
+    <div id="ls-preset-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+  `;
+
+  // Insert before the progress box
+  const progressBox = filterPanel.querySelector('#screener-progress');
+  if (progressBox) {
+    filterPanel.insertBefore(section, progressBox);
+  } else {
+    filterPanel.appendChild(section);
+  }
+
+  renderPresetDropdown();
+  renderPresetChips();
+
+  // Save button
+  section.querySelector('#ls-preset-save').addEventListener('click', () => {
+    const presets = lsGetPresets();
+    if (presets.length >= MAX_PRESETS) {
+      showToast(`Maksimal ${MAX_PRESETS} preset. Hapus salah satu dulu.`, 'warning');
+      return;
+    }
+    const name = prompt('Nama preset filter:');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    const filters = getCurrentFilters();
+    const existing = presets.findIndex(p => p.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing >= 0) {
+      if (!confirm(`Preset "${trimmed}" sudah ada. Timpa?`)) return;
+      presets[existing] = { name: trimmed, filters, savedAt: new Date().toISOString() };
+    } else {
+      presets.push({ name: trimmed, filters, savedAt: new Date().toISOString() });
+    }
+    lsSavePresets(presets);
+    renderPresetDropdown();
+    renderPresetChips();
+    showToast(`Preset "${trimmed}" disimpan`, 'success');
+  });
+
+  // Load button
+  section.querySelector('#ls-preset-load').addEventListener('click', () => {
+    const sel = document.getElementById('ls-preset-select');
+    if (!sel || sel.value === '') { showToast('Pilih preset yang akan dimuat', 'warning'); return; }
+    const presets = lsGetPresets();
+    const idx = parseInt(sel.value);
+    const preset = presets[idx];
+    if (!preset) { showToast('Preset tidak ditemukan', 'error'); return; }
+    applyPresetFilters(preset.filters);
+    showToast(`Preset "${preset.name}" diterapkan`, 'success');
+  });
+
+  // Delete button
+  section.querySelector('#ls-preset-delete').addEventListener('click', () => {
+    const sel = document.getElementById('ls-preset-select');
+    if (!sel || sel.value === '') { showToast('Pilih preset yang akan dihapus', 'warning'); return; }
+    const presets = lsGetPresets();
+    const idx = parseInt(sel.value);
+    const preset = presets[idx];
+    if (!preset) return;
+    if (!confirm(`Hapus preset "${preset.name}"?`)) return;
+    presets.splice(idx, 1);
+    lsSavePresets(presets);
+    renderPresetDropdown();
+    renderPresetChips();
+    showToast(`Preset "${preset.name}" dihapus`, 'success');
+  });
+}
+
+function renderPresetChips() {
+  const container = document.getElementById('ls-preset-chips');
+  if (!container) return;
+  const presets = lsGetPresets();
+  if (!presets.length) { container.innerHTML = ''; return; }
+  container.innerHTML = presets.map((p, i) => `
+    <span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-panel,rgba(255,255,255,0.06));border:1px solid var(--border-subtle);border-radius:20px;padding:3px 10px 3px 10px;font-size:11px;cursor:pointer" data-preset-idx="${i}" title="Klik untuk muat preset">
+      <span class="ls-preset-chip-name">${p.name}</span>
+      <button type="button" class="ls-preset-chip-del" data-del-idx="${i}" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 4px" title="Hapus preset">×</button>
+    </span>
+  `).join('');
+
+  // Chip click → load
+  container.querySelectorAll('[data-preset-idx]').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.ls-preset-chip-del')) return;
+      const idx = parseInt(chip.dataset.presetIdx);
+      const presets = lsGetPresets();
+      const preset = presets[idx];
+      if (!preset) return;
+      applyPresetFilters(preset.filters);
+      showToast(`Preset "${preset.name}" diterapkan`, 'success');
+    });
+  });
+
+  // X button → delete
+  container.querySelectorAll('.ls-preset-chip-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.delIdx);
+      const presets = lsGetPresets();
+      const preset = presets[idx];
+      if (!preset) return;
+      if (!confirm(`Hapus preset "${preset.name}"?`)) return;
+      presets.splice(idx, 1);
+      lsSavePresets(presets);
+      renderPresetDropdown();
+      renderPresetChips();
+      showToast(`Preset "${preset.name}" dihapus`, 'success');
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════

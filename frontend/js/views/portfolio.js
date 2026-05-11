@@ -306,6 +306,10 @@ export async function renderPortfolio(root, activeTab) {
 
     // Load watchlist news badge count
     loadWatchlistNewsBadge();
+
+    // 31.2.2 — inject floating quick-add FAB when on portfolio tab
+    if (isPort) injectQuickAddFAB();
+    else removeQuickAddFAB();
 }
 
 // ─── P&L Color ─────────────────────────
@@ -1830,6 +1834,175 @@ export async function renderWhatIfTab(el) {
       resultsEl.classList.add('hidden');
     }
   });
+}
+
+// ══════════════════════════════════════════════════
+// 31.2.2 — Portfolio Quick-Add FAB
+// ══════════════════════════════════════════════════
+
+let _quickAddKeyHandler = null;
+
+function removeQuickAddFAB() {
+  document.getElementById('pf-quick-add-fab')?.remove();
+  document.getElementById('pf-quick-add-modal')?.remove();
+  if (_quickAddKeyHandler) {
+    document.removeEventListener('keydown', _quickAddKeyHandler);
+    _quickAddKeyHandler = null;
+  }
+}
+
+function openQuickAddModal() {
+  // Don't open if another modal is already open
+  if (document.getElementById('stock-modal-overlay') || document.getElementById('pf-quick-add-modal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'pf-quick-add-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.15s ease';
+  overlay.innerHTML = `
+    <div style="background:var(--card-bg,#1a1a2e);border-radius:16px;padding:24px;min-width:320px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-main)">➕ Tambah Posisi Cepat</h3>
+        <button type="button" id="pf-qa-close" style="background:none;border:none;font-size:22px;color:var(--text-dim);cursor:pointer;line-height:1;padding:0">&times;</button>
+      </div>
+      <form id="pf-qa-form" onsubmit="return false">
+        <div style="margin-bottom:14px;position:relative">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Kode Saham</label>
+          <input type="text" id="pf-qa-ticker" autocomplete="off" placeholder="Contoh: BBCA" maxlength="10"
+            style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color,#0f0f1a);color:var(--text-main);font-size:14px;font-weight:700;text-transform:uppercase;box-sizing:border-box;letter-spacing:1px" />
+          <div id="pf-qa-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg,#1a1a2e);border:1px solid var(--border-subtle);border-radius:8px;z-index:100;max-height:180px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.3)"></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Jumlah Lot</label>
+          <input type="number" id="pf-qa-lots" value="1" min="1" step="1"
+            style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color,#0f0f1a);color:var(--text-main);font-size:14px;box-sizing:border-box" />
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Harga Rata-Rata (Rp)</label>
+          <input type="number" id="pf-qa-price" value="1000" min="1" step="50"
+            style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color,#0f0f1a);color:var(--text-main);font-size:14px;box-sizing:border-box" />
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="button" id="pf-qa-cancel" class="btn" style="flex:1;font-size:13px">Batal</button>
+          <button type="submit" id="pf-qa-save" class="btn btn-primary" style="flex:2;font-size:13px;font-weight:700">💾 Simpan</button>
+        </div>
+      </form>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+
+  const tickerInput = overlay.querySelector('#pf-qa-ticker');
+  const suggestionsEl = overlay.querySelector('#pf-qa-suggestions');
+  let suggestDebounce = null;
+
+  // Autocomplete
+  tickerInput.addEventListener('input', () => {
+    clearTimeout(suggestDebounce);
+    const q = tickerInput.value.trim().toUpperCase();
+    tickerInput.value = q;
+    if (q.length < 1) { suggestionsEl.style.display = 'none'; return; }
+    suggestDebounce = setTimeout(async () => {
+      try {
+        const res = await apiFetch(`/stocks/search?q=${encodeURIComponent(q)}&limit=6`);
+        const items = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        if (!items.length) { suggestionsEl.style.display = 'none'; return; }
+        suggestionsEl.innerHTML = items.map(s => {
+          const ticker = s.ticker || s.symbol || '';
+          const name = s.name || s.company_name || '';
+          return `<div class="pf-qa-suggest-item" data-ticker="${ticker}" style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-subtle);transition:background 0.1s" onmouseover="this.style.background='var(--hover-bg,rgba(255,255,255,0.06))'" onmouseout="this.style.background='transparent'">
+            <span style="font-weight:700;color:var(--text-main);font-size:13px">${ticker}</span>
+            <span style="color:var(--text-dim);font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+          </div>`;
+        }).join('');
+        suggestionsEl.style.display = 'block';
+        suggestionsEl.querySelectorAll('.pf-qa-suggest-item').forEach(item => {
+          item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            tickerInput.value = item.dataset.ticker;
+            suggestionsEl.style.display = 'none';
+            overlay.querySelector('#pf-qa-lots').focus();
+          });
+        });
+      } catch (e) { suggestionsEl.style.display = 'none'; }
+    }, 250);
+  });
+
+  // Hide suggestions on blur
+  tickerInput.addEventListener('blur', () => setTimeout(() => { suggestionsEl.style.display = 'none'; }, 200));
+
+  const closeModal = () => {
+    overlay.remove();
+    document.body.style.overflow = '';
+  };
+
+  overlay.querySelector('#pf-qa-close').addEventListener('click', closeModal);
+  overlay.querySelector('#pf-qa-cancel').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // Save
+  overlay.querySelector('#pf-qa-form').addEventListener('submit', async () => {
+    const ticker = tickerInput.value.trim().toUpperCase();
+    const lots = Number(overlay.querySelector('#pf-qa-lots').value);
+    const avgPrice = Number(overlay.querySelector('#pf-qa-price').value);
+    if (!ticker) { showToast('Kode saham wajib diisi', 'error'); tickerInput.focus(); return; }
+    if (isNaN(lots) || lots <= 0) { showToast('Jumlah lot tidak valid', 'error'); return; }
+    if (isNaN(avgPrice) || avgPrice <= 0) { showToast('Harga tidak valid', 'error'); return; }
+    const saveBtn = overlay.querySelector('#pf-qa-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Menyimpan...';
+    try {
+      await savePortfolioPosition({ ticker, lots, avg_price: avgPrice });
+      showToast(`${ticker} ditambahkan ke portofolio`, 'success');
+      closeModal();
+      // Refresh portfolio list without full page reload
+      const tabContent = document.getElementById('tab-content');
+      if (tabContent) await renderPortfolioTab(tabContent);
+    } catch (e) {
+      showToast('Gagal menyimpan posisi', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Simpan';
+    }
+  });
+
+  setTimeout(() => tickerInput.focus(), 100);
+}
+
+export function injectQuickAddFAB() {
+  // Remove stale FAB/handler if any
+  removeQuickAddFAB();
+
+  // Floating button
+  const fab = document.createElement('button');
+  fab.id = 'pf-quick-add-fab';
+  fab.type = 'button';
+  fab.title = 'Tambah posisi cepat (N)';
+  fab.setAttribute('aria-label', 'Tambah posisi portofolio');
+  fab.innerHTML = '<span style="font-size:22px;line-height:1">＋</span>';
+  fab.style.cssText = `
+    position:fixed;bottom:80px;right:20px;z-index:900;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--accent,#6366f1);color:#fff;border:none;
+    box-shadow:0 4px 20px rgba(99,102,241,0.5);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform 0.15s,box-shadow 0.15s;
+  `;
+  fab.addEventListener('mouseenter', () => { fab.style.transform = 'scale(1.1)'; fab.style.boxShadow = '0 6px 28px rgba(99,102,241,0.7)'; });
+  fab.addEventListener('mouseleave', () => { fab.style.transform = 'scale(1)'; fab.style.boxShadow = '0 4px 20px rgba(99,102,241,0.5)'; });
+  fab.addEventListener('click', openQuickAddModal);
+  document.body.appendChild(fab);
+
+  // Keyboard shortcut: N key opens modal when on portfolio page
+  _quickAddKeyHandler = (e) => {
+    if (e.key === 'n' || e.key === 'N') {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (!document.getElementById('pf-quick-add-fab')) return; // not on portfolio page
+      e.preventDefault();
+      openQuickAddModal();
+    }
+  };
+  document.addEventListener('keydown', _quickAddKeyHandler);
 }
 
 // ─── Dividend Tracker ──────────────────────────
