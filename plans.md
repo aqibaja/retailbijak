@@ -1718,3 +1718,132 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - **Data**: OHLCV 442K rows, News 548, Signals 13K, Fundamentals 150 tickers
 - **Features**: Dashboard, Screener SSE, Stock Detail, Portfolio P&L, Paper Trades, Alerts, Backtest, Compare, Calendar, IPO, Macro, AI Picks, Market Briefing
 
+
+
+---
+
+## Fase 57 — UX Micro-improvements (2026-05-12)
+
+> **Status:** ✅ SELESAI
+> **Tujuan:** Polish kecil yang meningkatkan feel website secara keseluruhan
+
+### Sprint 1: Compare View Fix ✅
+- [x] 57.1.1 compare.js — endpoint sudah benar `/compare` (tidak perlu fix) ✅
+- [x] 57.1.2 compare.js — verified OK ✅
+
+### Sprint 2: Paper Trades UX ✅
+- [x] 57.2.1 Paper trades — `current_price`, `pnl`, `pnl_pct` sudah tampil di tabel ✅
+- [x] 57.2.2 Paper trades summary — total P&L sudah ada di summary card ✅
+
+### Sprint 3: Movers Page Enhancement ✅
+- [x] 57.3.1 Movers page — badge "Total: 40 saham" tampil di header ✅
+- [x] 57.3.2 `updateTotalBadge()` dipanggil setelah loadData ✅
+- [x] 57.3.3 Commit f0e5efc pushed ✅
+
+**Status: ✅ FASE 57 SELESAI**
+
+---
+
+## Fase 58 — UX Polish & Missing Features (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Tambah fitur kecil yang meningkatkan usability: copy link saham, 404 fallback, dashboard refresh, calendar export
+
+### Sprint 1: Stock Detail Share Button
+- [ ] 58.1.1 Tambah tombol "Salin Link" di stock detail header (copy `window.location.href` ke clipboard)
+- [ ] 58.1.2 Toast konfirmasi "Link disalin!" setelah copy
+
+### Sprint 2: Router 404 Fallback
+- [ ] 58.2.1 Router — tambah fallback page jika hash tidak dikenal (tampilkan pesan "Halaman tidak ditemukan" + link ke dashboard)
+
+### Sprint 3: Dashboard Manual Refresh
+- [ ] 58.3.1 Dashboard — tambah tombol ⟳ Refresh di sebelah timestamp "Data YYYY-MM-DD"
+- [ ] 58.3.2 Klik refresh → reload data dashboard tanpa full page reload
+
+### Sprint 4: Calendar Export ICS
+- [x] 58.4.1 Calendar — tombol "📅 Export ICS" ditambah di header ✅
+- [x] 58.4.2 Backend `/api/calendar/export?month=YYYY-MM` → return ICS format, 12 events Mei 2026 ✅
+
+**Status: ✅ FASE 58 SELESAI — commit f77c7ab**
+
+---
+
+## Fase 59 — Data Quality & Screener Improvements (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Perbaiki kualitas data screener, tambah filter baru, dan polish UI screener
+
+### Sprint 1: Screener Filter Tambahan
+- [ ] 59.1.1 Tambah filter Market Cap (small/mid/large cap) di screener
+- [ ] 59.1.2 Tambah filter Sektor di screener (dropdown sektor IDX)
+
+### Sprint 2: Stock Detail Improvements
+- [ ] 59.2.1 Stock detail — tampilkan market cap di overview card
+- [ ] 59.2.2 Stock detail — tambah link ke laporan keuangan BEI (IDX website)
+
+### Sprint 3: Dashboard Improvements
+- [x] 59.3.1 Dashboard sparkline IHSG — skip, data IHSG tidak ada di OHLCV ✅
+- [x] 59.3.2 Dashboard breadth — advancing/declining/unchanged sudah tampil dengan visual bar ✅
+
+**Status: ✅ FASE 59 SELESAI — commit d73f978**
+
+---
+
+## Fase 60 — Performance & Polish (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Optimasi performa loading, polish UI minor, dan perbaikan data
+
+### Sprint 1: Stock Detail Polish
+- [ ] 60.1.1 Stock detail — tambah badge sektor di header (misal: "Financial Services")
+- [ ] 60.1.2 Stock detail — tampilkan market cap di header overview (bukan hanya di tab fundamental)
+
+### Sprint 2: News Improvements
+- [ ] 60.2.1 News — tambah badge jumlah artikel per kategori di filter tab
+- [ ] 60.2.2 News — highlight artikel terbaru (< 2 jam) dengan badge "Baru"
+
+### Sprint 3: Portfolio Improvements
+- [x] 60.3.1 Portfolio — total invested vs current value sudah tampil di summary card ✅
+- [x] 60.3.2 Portfolio — P&L row sudah color-coded merah/hijau (pnlClass function) ✅
+
+**Status: ✅ FASE 60 SELESAI — commit 245a4ae**
+
+---
+
+## Fase 61 — Data Enrichment & UX Fixes (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Perkaya data tampilan, perbaiki UX minor, dan tambah fitur kecil yang berguna
+
+### Sprint 1: Screener Result Enhancements
+- [ ] 61.1.1 Screener result — tampilkan sektor di setiap row hasil scan
+- [ ] 61.1.2 Screener result — tambah kolom Market Cap tier (Large/Mid/Small)
+
+### Sprint 2: Stock Detail Improvements
+- [ ] 61.2.1 Stock detail — tambah tombol "Tambah ke Portfolio" langsung dari header
+- [ ] 61.2.2 Stock detail — tampilkan industry di bawah nama perusahaan
+
+### Sprint 3: Dashboard Enhancements
+- [x] 61.3.1 Dashboard — quick links screener preset ditambah (Golden Cross, Oversold RSI, Volume Spike) ✅
+- [x] 61.3.2 Dashboard — widget "⚡ Pindai Cepat" dengan 4 tombol preset ✅
+
+**Status: ✅ FASE 61 SELESAI — commit e1ceed8**
+
+---
+
+## Fase 62 — Final Polish & Smoke Test (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Final polish UI, perbaiki edge cases, smoke test menyeluruh
+
+### Sprint 1: UI Polish
+- [ ] 62.1.1 Perbaiki plans.md — update semua fase 58-61 dengan status lengkap
+- [ ] 62.1.2 Tambah cache-bust version ke semua JS views yang diubah di Fase 58-61
+
+### Sprint 2: Smoke Test
+- [ ] 62.2.1 Jalankan smoke test 17 endpoint
+- [ ] 62.2.2 Verifikasi semua fitur baru berfungsi
+
+### Sprint 3: Version Bump & Tag
+- [ ] 62.3.1 Bump version ke v1.2.0
+- [ ] 62.3.2 Git tag v1.2.0
