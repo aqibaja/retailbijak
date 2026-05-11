@@ -52,6 +52,15 @@
       };
     </script>
   <title>RetailBijak — IDX Stock Intelligence</title>
+  <!-- 32.3.1 — Flash-free theme: apply saved theme before first paint -->
+  <script>
+    (function(){
+      var THEMES = ['dark','light','amoled'];
+      var t = localStorage.getItem('retailbijak.theme') || localStorage.getItem('retail-theme') || 'dark';
+      if (!THEMES.includes(t)) t = 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <script src="js/version.js?v=202605120200"></script>
 
   <script type="module" src="js/main.js?v=202605120200"></script>

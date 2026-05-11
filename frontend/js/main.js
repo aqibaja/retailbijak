@@ -108,6 +108,11 @@ function setupKeyboardShortcuts() {
       const btn = document.getElementById('theme-toggle');
       if (btn) { btn.click(); e.preventDefault(); return; }
     }
+    // 32.3.2 — R → refresh current view
+    if (e.key === 'r' || e.key === 'R') {
+      window.dispatchEvent(new CustomEvent('retailbijak:refresh'));
+      return;
+    }
     // / → focus search
     if (e.key === '/') {
       const input = document.getElementById('global-search-input');

@@ -241,6 +241,7 @@ export async function renderPortfolio(root, activeTab) {
             </div>
             ${isPort ? '<button class="btn btn-sm" id="export-csv-btn" title="Export CSV"><i data-lucide="download" style="width:16px"></i> CSV</button>' : ''}
             ${isPort ? '<button class="btn btn-sm" id="import-csv-btn" title="Import CSV"><i data-lucide="upload" style="width:16px"></i> Import</button>' : ''}
+            ${isPort ? '<button class="btn btn-sm" id="print-portfolio-btn" title="Print Portfolio"><i data-lucide="printer" style="width:16px"></i> Print</button>' : ''}
           </div>
         </div>
         <div id="tab-content" class="col-span-12 panel flex-col portfolio-card">
@@ -519,6 +520,10 @@ async function renderPortfolioTab(el) {
             window.location.href = '/api/portfolio/export-csv';
         });
     }
+
+    // 32.3.3 — Print handler
+    const printBtn = document.getElementById('print-portfolio-btn');
+    if (printBtn) printBtn.addEventListener('click', () => { window.print(); });
 
     // CSV Import handler (17.3)
     const importBtn = document.getElementById('import-csv-btn');

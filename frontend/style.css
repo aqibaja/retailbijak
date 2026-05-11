@@ -888,3 +888,10 @@ html[data-theme="amoled"]{--bg-base:#000;--bg-panel:#050505;--bg-panel-hover:#0a
 [data-theme="light"] .movers-tf-chip,[data-theme="light"] .movers-sort-chip{background:#fff;border-color:rgba(15,23,42,.12)}
 [data-theme="light"] .cal-view-toggle{background:#fff;border-color:rgba(15,23,42,.12)}
 [data-theme="light"] .cal-list-date-header{border-bottom-color:rgba(15,23,42,.08)}
+
+/* ─── 32.3.3 Print View ─────────────────────────────────────── */
+@media print {
+  .sidebar, .topbar, .bottom-nav, .fab-btn { display: none !important; }
+  .main-content { margin: 0 !important; padding: 0 !important; }
+  body { background: white !important; color: black !important; }
+}
