@@ -151,6 +151,21 @@ async function loadAlerts(root) {
         ]);
         allAlerts    = Array.isArray(alertsRes?.data)    ? alertsRes.data    : [];
         allTriggered = Array.isArray(triggeredRes?.data) ? triggeredRes.data : [];
+
+        // Fetch current prices for all unique tickers
+        const tickers = [...new Set(allAlerts.map(a => a.ticker).filter(Boolean))];
+        if (tickers.length) {
+            try {
+                const priceRes = await apiFetch(`/top-movers?limit=200&sort=gainers`);
+                const priceMap = {};
+                (priceRes?.data || []).forEach(s => { priceMap[s.ticker] = s.price || s.close; });
+                // Also try losers
+                const lossRes = await apiFetch(`/top-movers?limit=200&sort=losers`);
+                (lossRes?.data || []).forEach(s => { if (!priceMap[s.ticker]) priceMap[s.ticker] = s.price || s.close; });
+                allAlerts = allAlerts.map(a => ({ ...a, _current_price: priceMap[a.ticker] || null }));
+            } catch(e) { /* price fetch optional */ }
+        }
+
         renderAlertList(root);
     } catch (e) {
         const content = document.getElementById('alerts-content');
@@ -240,6 +255,7 @@ function renderAlertRow(a, triggered) {
                     ${meta.icon} ${meta.label}
                 </span>
                 <span style="font-family:var(--font-mono);font-weight:700;font-size:14px;margin-left:8px">${valueStr}</span>
+                ${a._current_price ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">Harga kini: <span style="font-family:var(--font-mono);color:${a.alert_type==='price_above'?(a._current_price>=a.value?'var(--up-color)':'var(--text-muted)'):(a._current_price<=a.value?'var(--down-color)':'var(--text-muted)')}">${Number(a._current_price).toLocaleString('id-ID')}</span></div>` : ''}
             </div>
             <!-- Status -->
             <div style="min-width:90px">

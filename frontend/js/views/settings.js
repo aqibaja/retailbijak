@@ -342,10 +342,33 @@ export async function renderSettings(root) {
             </div>
           </div>
         </div>
+        <!-- App Info & Cache (63.3) -->
+        <div class="settings-toggle-panel panel flex-col gap-4" style="margin-top:2rem">
+          <div class="settings-section-head">
+            <h2>ℹ️ Informasi Aplikasi</h2>
+            <span>Versi dan utilitas cache</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+              <div class="text-sm text-muted">Versi Aplikasi</div>
+              <div class="mono strong text-main" style="font-size:16px">RetailBijak v1.2.0</div>
+              <div class="text-xs text-muted" style="margin-top:2px">Fase 57–62 · Smoke test 17/17 ✅</div>
+            </div>
+            <button id="btn-clear-cache-settings" class="btn btn-sm" style="font-size:12px">🗑️ Clear Cache & Reload</button>
+          </div>
+        </div>
       </section>
     `;
 
     observeElements();
+
+    // Clear cache & reload button
+    document.getElementById('btn-clear-cache-settings')?.addEventListener('click', () => {
+      if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
+      localStorage.clear();
+      sessionStorage.clear();
+      setTimeout(() => location.reload(), 300);
+    });
 
     let settings;
     try { settings = await fetchSettings(); } catch (e) { settings = null; console.warn('fetchSettings failed', e); }

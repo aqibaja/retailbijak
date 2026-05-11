@@ -1845,5 +1845,42 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 62.2.2 Verifikasi semua fitur baru berfungsi
 
 ### Sprint 3: Version Bump & Tag
-- [ ] 62.3.1 Bump version ke v1.2.0
-- [ ] 62.3.2 Git tag v1.2.0
+- [x] 62.3.1 Bump version ke v1.2.0 di main.py dan system.py ✅
+- [x] 62.3.2 Git tag v1.2.0 pushed ✅
+
+**Status: ✅ FASE 62 SELESAI — commit fb85a94, tag v1.2.0**
+
+---
+
+## 🎉 Website Status: PRODUCTION READY v1.2.0
+
+- **URL**: https://retailbijak.rich27.my.id
+- **Health**: ok v1.2.0
+- **Smoke Test**: 17/17 ✅
+- **Fitur Baru (Fase 58-62)**:
+  - Share link saham, 404 fallback page, dashboard refresh button
+  - Calendar export ICS, screener filter sektor & market cap
+  - Market cap di header stock detail, badge sektor & industry
+  - News category count badge, badge "Baru" artikel < 2 jam
+  - Tombol "Tambah ke Portfolio" dari stock detail
+  - Quick screener preset links di dashboard
+  - Movers total count badge
+
+---
+
+## Fase 63 — Alerting & Notification Improvements (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Perkuat sistem alert dan notifikasi
+
+### Sprint 1: Alert Improvements
+- [ ] 63.1.1 Alert list — tampilkan harga saat ini vs threshold di setiap alert row
+- [ ] 63.1.2 Alert — tambah badge "Triggered" jika harga sudah melewati threshold
+
+### Sprint 2: Watchlist Improvements
+- [ ] 63.2.1 Watchlist — tampilkan % change hari ini di setiap item
+- [ ] 63.2.2 Watchlist — sort by % change descending by default
+
+### Sprint 3: Settings Page
+- [ ] 63.3.1 Settings — tampilkan versi aplikasi (v1.2.0) di halaman settings
+- [ ] 63.3.2 Settings — tambah tombol "Clear Cache & Reload"

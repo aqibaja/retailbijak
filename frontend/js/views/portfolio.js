@@ -1201,6 +1201,8 @@ async function renderWatchlistTab(el, activeGroupId) {
     } catch (e) { fetchError = true; data = null; groups = []; }
     const allRows = Array.isArray(data?.data) ? data.data : [];
     const rows = activeGroup ? allRows.filter(r => r.group_id === activeGroup) : allRows;
+    // Sort by change_pct descending by default (will be updated by SSE)
+    rows.sort((a, b) => (b.change_pct || 0) - (a.change_pct || 0));
     // Build a Set of tickers that have active alerts for O(1) lookup
     const alertTickerSet = new Set(activeAlerts.map(a => a.ticker));
 
