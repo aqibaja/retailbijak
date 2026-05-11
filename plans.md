@@ -2091,3 +2091,25 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Status: ✅ FASE 70 SELESAI — commit berikutnya, tag v1.2.4**
 
+
+---
+
+## Fase 71 — Scheduler Fix & Stability (2026-05-12)
+
+> **Status:** ✅ FASE 71 SELESAI — commit berikutnya, tag v1.2.5
+> **Tujuan:** Fix scheduler warning, stabilitas production
+
+### Sprint 1: Scheduler Fix
+- [x] 71.1.1 Fix corporate_actions_seed — wrapper inject db session ✅
+- [x] 71.1.2 Verifikasi sectors_router sudah ada di try block main.py ✅
+
+### Sprint 2: Audit
+- [x] 71.2.1 IPO countdown sudah ada (days lagi badge) ✅
+- [x] 71.2.2 Macro trend arrows sudah ada ✅
+
+### Sprint 3: Final
+- [x] 71.3.1 Smoke test 16/16 ✅
+- [x] 71.3.2 Git tag v1.2.5 ✅
+
+**Status: ✅ FASE 71 SELESAI**
+
