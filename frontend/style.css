@@ -838,3 +838,53 @@ html[data-theme="amoled"]{--bg-base:#000;--bg-panel:#050505;--bg-panel-hover:#0a
 .news-inline-scroll::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:2px}
 .news-card-stream.expanded{background:var(--bg-panel)!important;border-color:var(--primary-color)!important;border-left-width:3px!important;box-shadow:0 2px 12px rgba(99,102,241,.15)}
 .news-card-stream.expanded .news-stream-summary{display:none}
+/* ── 31.2.1 Stock Detail Tab Bar ── */
+.stock-tab-bar{position:sticky;top:60px;z-index:120;display:flex;gap:2px;padding:6px 0 0;background:var(--bg-base);border-bottom:1px solid var(--border-subtle);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:8px -2px 0}
+.stock-tab-bar::-webkit-scrollbar{display:none}
+.stock-tab-bar .stock-tab{flex-shrink:0;padding:7px 16px;font-size:12px;font-weight:600;letter-spacing:.02em;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-muted);cursor:pointer;transition:color .15s ease,border-color .15s ease;white-space:nowrap;border-radius:0}
+.stock-tab-bar .stock-tab:hover{color:var(--text-main)}
+.stock-tab-bar .stock-tab.active{color:var(--primary-color);border-bottom-color:var(--primary-color)}
+#stock-tab-content{padding-top:4px}
+@media(max-width:640px){.stock-tab-bar{top:56px}.stock-tab-bar .stock-tab{padding:6px 12px;font-size:11px}}
+
+/* ─── 31.3.2 Movers Filter Bar ─────────────────────────────── */
+.movers-filter-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid var(--border-subtle);margin-bottom:14px}
+.movers-filter-group{display:flex;align-items:center;gap:8px}
+.movers-filter-label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.movers-sector-select{font-size:12px;font-family:var(--font-sans);color:var(--text-main);background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:4px 10px;cursor:pointer;outline:none;transition:border-color .15s}
+.movers-sector-select:focus{border-color:var(--border-focus)}
+.movers-chip-group{display:flex;gap:4px}
+.movers-tf-chip,.movers-sort-chip{font-size:11px;font-weight:600;font-family:var(--font-sans);padding:4px 12px;border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-panel);color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.movers-tf-chip:hover,.movers-sort-chip:hover{border-color:var(--primary-color);color:var(--text-main)}
+.movers-tf-chip.active,.movers-sort-chip.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+.movers-filter-group-vol{margin-left:auto}
+.movers-vol-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;user-select:none}
+.movers-vol-label input[type=checkbox]{accent-color:var(--primary-color);width:14px;height:14px;cursor:pointer}
+.movers-sector-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--accent-badge-bg);color:var(--accent-text);letter-spacing:.03em;white-space:nowrap}
+@media(max-width:767px){.movers-filter-bar{gap:10px}.movers-filter-group-vol{margin-left:0}.movers-filter-label{display:none}}
+
+/* ─── 31.3.3 Calendar Enhancements ─────────────────────────── */
+/* View toggle */
+.cal-view-toggle{display:flex;gap:2px;margin-left:auto;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:2px}
+.cal-view-btn{font-size:11px;font-weight:600;font-family:var(--font-sans);padding:4px 10px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.cal-view-btn:hover{color:var(--text-main)}
+.cal-view-btn.active{background:var(--primary-color);color:#fff}
+
+/* Colored dots on grid cells */
+.cal-day-dots{display:flex;gap:2px;justify-content:center;margin-top:3px;flex-wrap:wrap}
+.cal-day-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+/* List view */
+.calendar-list-view{display:flex;flex-direction:column;gap:16px;padding:4px 0}
+.cal-list-group{display:flex;flex-direction:column;gap:6px}
+.cal-list-date-header{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;padding:4px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:4px}
+.cal-list-events{display:flex;flex-direction:column;gap:6px}
+
+/* Event card left-border accent (set inline per type) */
+.calendar-event-card{border-left-width:3px!important;border-left-style:solid!important}
+
+/* Light theme overrides */
+[data-theme="light"] .movers-sector-select{background:#fff;border-color:rgba(15,23,42,.12)}
+[data-theme="light"] .movers-tf-chip,[data-theme="light"] .movers-sort-chip{background:#fff;border-color:rgba(15,23,42,.12)}
+[data-theme="light"] .cal-view-toggle{background:#fff;border-color:rgba(15,23,42,.12)}
+[data-theme="light"] .cal-list-date-header{border-bottom-color:rgba(15,23,42,.08)}
