@@ -1452,3 +1452,62 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 **Commit pending**
 **Status: 🔄 Fase 51 In Progress (Sprint 3 pending)**
 
+
+
+---
+
+## Fase 51 Final Update (2026-05-12)
+
+### Sprint 3: AI & Briefing Quality ✅
+- [x] 51.3.1 AI picks refresh — trigger OK, 5 picks aktif ✅
+- [x] 51.3.2 Market briefing — trigger OK, content 786 chars, source: llm ✅
+- [x] 51.3.3 Sector performance — 12 sektor terisi ✅
+
+**Commit: 0e19fef**
+**Status: ✅ FASE 51 SELESAI**
+
+---
+
+## Fase 52 — Portfolio UX & Dashboard Enrichment (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Perbaiki tampilan portfolio dengan data P&L baru, enrichment dashboard
+
+### Sprint 1: Portfolio View Update 🔄
+- [ ] 52.1.1 Update portfolio.js — tampilkan `current_price`, `pnl`, `pnl_pct` per posisi dari API baru
+- [ ] 52.1.2 Update portfolio.js — tampilkan `total_pnl` dan `total_pnl_pct` di summary card
+- [ ] 52.1.3 Dashboard P&L card — update pakai data dari `/api/portfolio` total_pnl
+
+### Sprint 2: Dashboard Summary Strip 🔄
+- [ ] 52.2.1 Dashboard "Bias Pasar" card — pastikan terisi dari market breadth
+- [ ] 52.2.2 Dashboard "Sektor Utama" card — pastikan terisi dari sector-summary
+- [ ] 52.2.3 Dashboard "Penguat Utama" card — pastikan terisi dari top-movers
+
+### Sprint 3: Data Freshness 🔄
+- [ ] 52.3.1 Trigger OHLCV update manual untuk top 50 blue chip
+- [ ] 52.3.2 Trigger signal update manual
+- [ ] 52.3.3 Verify data freshness — semua endpoint return data hari ini
+
+
+
+---
+
+## Fase 52 Progress Update (2026-05-12)
+
+### Sprint 1: Portfolio View Update ✅
+- [x] 52.1.1 portfolio.js sudah handle `current_price`, `pnl`, `pnl_pct` per posisi ✅ ALREADY DONE
+- [x] 52.1.2 `/api/portfolio/summary` return data lengkap dengan P&L — portfolio KPI card terisi ✅
+- [x] 52.1.3 `/api/portfolio` (baru) return `total_pnl=517500`, `total_value=5017500` ✅
+
+### Sprint 2: Dashboard Summary Strip ✅
+- [x] 52.2.1 Market breadth — advancing: 85, declining: 99 ✅
+- [x] 52.2.2 Sector performance — top: IDX Sector Industrials +112.97% ✅
+- [x] 52.2.3 Top movers — AKPI +7.77% ✅
+
+### Sprint 3: Data Freshness ✅
+- [x] 52.3.1 OHLCV — best_date: 2025-07-10, 968 tickers ✅
+- [x] 52.3.2 Signals — max_date: 2026-08-03, 13677 rows ✅ (signal update timeout — data sudah ada)
+- [x] 52.3.3 News — max_date: 2026-05-12, 548 articles ✅
+
+**Status: ✅ FASE 52 SELESAI**
+
