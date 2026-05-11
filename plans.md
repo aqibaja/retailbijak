@@ -1307,3 +1307,19 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Commit: f5d839a**
 **Status: ✅ FASE 47 SELESAI**
+
+---
+
+## Fase 48 — Fundamental Data & Coverage (2026-05-12)
+
+### Sprint 1: Fundamental Fix ✅
+- [x] 48.1.1 Trigger seed-fundamentals — 150 tickers seeded dengan data non-null
+- [x] 48.1.2 BBCA fundamental verified — PE: 11.08, PB: 2.94, ROE: 18.93%, div_yield: 1.21% ✅
+- [x] 48.1.3 Coverage: 150/150 tickers punya trailing_pe dan roe ✅
+
+### Sprint 2: Dividends ✅
+- [x] 48.2.1 Dividends total 58 rows, 14 tickers ✅
+- [x] 48.2.2 Data freshness OK — ohlcv: fresh, news: ok, signals: ok ✅
+
+**Commit: 487b7bf**
+**Status: ✅ FASE 48 SELESAI**
