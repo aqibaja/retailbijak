@@ -127,7 +127,12 @@ def init_scheduler():
     # Corporate actions seed — daily 05:00
     try:
         from updaters.corporate_actions_updater import seed_corporate_actions
-        scheduler.add_job(seed_corporate_actions, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id='corporate_actions_seed', replace_existing=True)
+        from database import SessionLocal as _SL
+        def _run_corporate_actions_seed():
+            _db = _SL()
+            try: seed_corporate_actions(_db)
+            finally: _db.close()
+        scheduler.add_job(_run_corporate_actions_seed, trigger=CronTrigger(hour=5, minute=0, timezone=jkt_tz), id='corporate_actions_seed', replace_existing=True)
         logger.info("Registered corporate_actions_seed job (daily 05:00 WIB)")
     except Exception as e:
         logger.warning(f"Could not register corporate_actions_seed: {e}")
