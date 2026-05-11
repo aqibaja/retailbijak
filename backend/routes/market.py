@@ -271,17 +271,23 @@ def get_market_treemap(
     stock_map = {s.ticker: s for s in db_stocks}
 
     # 3. Get OHLCV rows for target date
-    ohlcv_rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == target_date).all()
+    # Use func.date() cast to handle SQLite storing dates as full timestamp strings
+    target_date_str = str(target_date)[:10]
+    ohlcv_rows = db.query(OHLCVDaily).filter(
+        func.date(OHLCVDaily.date) == target_date_str
+    ).all()
     price_map = {r.ticker: r for r in ohlcv_rows}
 
     # 4. Get previous close prices (last trading day before target_date)
-    prev_date_row = db.query(OHLCVDaily.date).filter(
-        OHLCVDaily.date < target_date,
-    ).order_by(OHLCVDaily.date.desc()).first()
+    prev_date_row = db.query(func.date(OHLCVDaily.date)).filter(
+        func.date(OHLCVDaily.date) < target_date_str,
+    ).order_by(func.date(OHLCVDaily.date).desc()).first()
 
     prev_price_map = {}
     if prev_date_row:
-        prev_rows = db.query(OHLCVDaily).filter(OHLCVDaily.date == prev_date_row[0]).all()
+        prev_rows = db.query(OHLCVDaily).filter(
+            func.date(OHLCVDaily.date) == str(prev_date_row[0])[:10]
+        ).all()
         prev_price_map = {r.ticker: r.close for r in prev_rows if r.close is not None}
 
     # 5. Build unified stock data with sector info
@@ -327,13 +333,21 @@ def get_market_treemap(
             sector_groups[sec]['return_count'] += 1
 
     # 7. Build sector list with weight and avg return
+    # Fallback: if no market_cap data, use stock count as weight proxy
+    total_stock_count = len(stock_data_list)
+    use_count_fallback = total_market_cap == 0
+
     sector_list = []
     for sec, info in sector_groups.items():
-        weight = info['total_market_cap'] / total_market_cap if total_market_cap > 0 else 0
+        if use_count_fallback:
+            weight = len(info['stocks']) / total_stock_count if total_stock_count > 0 else 0
+        else:
+            weight = info['total_market_cap'] / total_market_cap if total_market_cap > 0 else 0
         avg_return = round(info['return_sum'] / info['return_count'], 2) if info['return_count'] > 0 else 0
 
-        # Top 10 stocks in sector by market cap
-        top_stocks = sorted(info['stocks'], key=lambda x: x['market_cap'], reverse=True)[:10]
+        # Top 10 stocks in sector — by market_cap if available, else by price
+        sort_key = (lambda x: x['market_cap']) if not use_count_fallback else (lambda x: x['price'] or 0)
+        top_stocks = sorted(info['stocks'], key=sort_key, reverse=True)[:10]
 
         sector_list.append({
             'sector': sec,
