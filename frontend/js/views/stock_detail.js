@@ -518,6 +518,16 @@ export async function renderStockDetail(root, ticker, initialTab) {
           </div>
         </div>
       </div>
+      <!-- 32.2.3 — Saham Serupa -->
+      <div class="panel" id="similar-stocks-panel" style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h3 class="panel-title" style="margin:0">🔗 Saham Serupa</h3>
+          <span class="text-xs text-dim" id="similar-stocks-sector"></span>
+        </div>
+        <div id="similar-stocks-list" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px">
+          <div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Memuat saham serupa...</strong></div>
+        </div>
+      </div>
         </div><!-- /tab-content-overview -->
 
         <!-- CHART TAB -->
@@ -1349,6 +1359,9 @@ export async function renderStockDetail(root, ticker, initialTab) {
 
   // Peer Comparison (async)
   renderPeerComparison(symbol);
+
+  // 32.2.3 — Saham Serupa (async)
+  loadSimilarStocks(symbol);
 
   
   
@@ -3051,6 +3064,35 @@ function renderPeerComparison(symbol) {
         </a>`;
       }).join('');
   }).catch(() => {});
+}
+
+// ─── 32.2.3 — Saham Serupa ──────────────────────
+async function loadSimilarStocks(symbol) {
+  const listEl = document.getElementById('similar-stocks-list');
+  const sectorEl = document.getElementById('similar-stocks-sector');
+  if (!listEl) return;
+  try {
+    const res = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/similar?limit=5`);
+    if (!res || !res.data || !res.data.length) {
+      listEl.innerHTML = '<span class="text-xs text-dim">Tidak ada saham serupa ditemukan.</span>';
+      return;
+    }
+    if (sectorEl && res.sector) sectorEl.textContent = res.sector;
+    listEl.innerHTML = res.data.map(s => {
+      const chg = s.change_pct ?? 0;
+      const chgCls = chg > 0 ? 'text-up' : chg < 0 ? 'text-down' : 'text-dim';
+      const arrow = chg > 0 ? '▲' : chg < 0 ? '▼' : '—';
+      return `<a href="#stock/${s.ticker}" style="display:flex;flex-direction:column;gap:4px;min-width:110px;max-width:130px;flex-shrink:0;padding:10px 12px;border-radius:8px;background:var(--panel-bg, var(--bg-secondary));border:1px solid var(--border-color);text-decoration:none;cursor:pointer;transition:border-color .15s" class="similar-stock-card">
+        <span style="font-size:13px;font-weight:700;color:var(--text-main)">${s.ticker}</span>
+        <span style="font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:106px">${(s.name || s.ticker).slice(0, 16)}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text-main)">${s.close != null ? nf(s.close, 0) : '—'}</span>
+        <span style="font-size:11px;font-weight:600" class="${chgCls}">${arrow} ${pf(chg)}</span>
+      </a>`;
+    }).join('');
+  } catch (e) {
+    if (listEl) listEl.innerHTML = '<span class="text-xs text-dim">Briefing belum tersedia.</span>';
+    console.warn('loadSimilarStocks failed', e);
+  }
 }
 
 function fallbackIssuerName(ticker){ const names={GOTO:'GoTo Gojek Tokopedia Tbk.',BBCA:'Bank Central Asia Tbk.',BMRI:'Bank Mandiri Tbk.',BBRI:'Bank Rakyat Indonesia Tbk.',TLKM:'Telkom Indonesia Tbk.'}; return names[ticker] || `${ticker} — Ekuitas IDX`; }

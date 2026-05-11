@@ -1579,3 +1579,58 @@ def paper_trade_summary(db: Session = Depends(get_db)):
     win_rate = round((wins / len(closed) * 100), 2) if closed else 0
     return {'total': total, 'open': open_count, 'closed': len(closed),
             'total_pnl': round(total_pnl, 2), 'win_rate': win_rate, 'source': 'db'}
+
+
+@router.get('/api/stocks/{ticker}/similar')
+def similar_stocks(ticker: str, limit: int = 5, db: Session = Depends(get_db)):
+    """Return stocks in the same sector sorted by closest momentum (change_pct) to target."""
+    from sqlalchemy import func
+
+    # Get target stock info
+    target = db.query(Stock).filter(Stock.ticker == ticker.upper()).first()
+    if not target:
+        return {'count': 0, 'data': []}
+
+    # Find stocks in same sector
+    sector_stocks = db.query(Stock).filter(
+        Stock.sector == target.sector,
+        Stock.ticker != ticker.upper()
+    ).limit(50).all()
+
+    if not sector_stocks:
+        return {'count': 0, 'data': []}
+
+    # Get latest prices for scoring
+    latest_date = db.query(func.max(OHLCVDaily.date)).scalar()
+    tickers = [s.ticker for s in sector_stocks]
+
+    prices = {r.ticker: r for r in db.query(OHLCVDaily).filter(
+        OHLCVDaily.ticker.in_(tickers),
+        OHLCVDaily.date == latest_date
+    ).all()}
+
+    # Score by momentum similarity
+    target_price = db.query(OHLCVDaily).filter(
+        OHLCVDaily.ticker == ticker.upper(),
+        OHLCVDaily.date == latest_date
+    ).first()
+
+    results = []
+    for s in sector_stocks:
+        p = prices.get(s.ticker)
+        if not p:
+            continue
+        results.append({
+            'ticker': s.ticker,
+            'name': s.name or s.ticker,
+            'sector': s.sector,
+            'close': p.close,
+            'change_pct': p.change_pct or 0,
+            'volume': p.volume or 0,
+        })
+
+    # Sort by closest change_pct to target
+    target_chg = target_price.change_pct if target_price else 0
+    results.sort(key=lambda x: abs(x['change_pct'] - (target_chg or 0)))
+
+    return {'count': len(results[:limit]), 'sector': target.sector, 'data': results[:limit]}

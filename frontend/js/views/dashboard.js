@@ -85,6 +85,24 @@ export async function renderDashboard(root) {
       <div class="dash-freshness-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
     </div>
 
+    <!-- 32.2.2 — Ringkasan Pasar Hari Ini Widget (after KPI cards, before top movers) -->
+    <div class="panel" id="market-briefing-today" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">🤖</span>
+          <h3 class="panel-title" style="margin:0">Ringkasan Pasar Hari Ini</h3>
+          <span id="briefing-today-badge" class="badge badge-mini" style="font-size:10px;display:none"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="text-xs text-dim" id="briefing-today-date"></span>
+          <button class="btn btn-sm" id="briefing-today-refresh-btn" style="font-size:10px;padding:2px 8px" title="Refresh ringkasan">🔄</button>
+        </div>
+      </div>
+      <div id="briefing-today-body" style="font-size:13px;line-height:1.65;color:var(--text-main)">
+        <div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Memuat ringkasan pasar...</strong></div>
+      </div>
+    </div>
+
     <div class="dash-grid-pro dash-mobile-shell">
       <div class="panel dash-chart-panel">
         <div class="flex justify-between items-center mb-3">
@@ -198,6 +216,7 @@ export async function renderDashboard(root) {
   loadPnlWidget();  // P&L widget (async)
   loadMiniHeatmapWidget(); // Mini heatmap widget (async)
   loadMarketBriefing(); // AI Briefing widget (18.3)
+  loadMarketBriefingToday(); // 32.2.2 — Ringkasan Pasar Hari Ini
   // Lazy load Chart.js — dengan timeout (biar ga hang kalo CDN diblokir)
   if (typeof Chart === 'undefined' && document.getElementById('ihsgMainChart')) {
     try {
@@ -348,10 +367,11 @@ async function loadFreshnessStats() {
     document.head.appendChild(style);
   }
   try {
-    const [freshnessRes, indRes, stockRes] = await Promise.all([
+    const [freshnessRes, indRes, stockRes, dfRes] = await Promise.all([
       apiFetch('/system/freshness'),
       apiFetch('/industries'),
       apiFetch('/stocks'),
+      apiFetch('/data-freshness'),
     ]);
 
     const labels = freshnessRes?.labels || {};
@@ -366,14 +386,26 @@ async function loadFreshnessStats() {
       return 'old';
     };
 
+    // OHLCV freshness badge from /api/data-freshness (32.1.3)
+    const ohlcvStatus = dfRes?.ohlcv?.status || 'stale';
+    const ohlcvAge = dfRes?.ohlcv?.age_days ?? '?';
+    const ohlcvLatest = dfRes?.ohlcv?.latest || labels.ohlcv_daily || '—';
+    const ohlcvBadgeEmoji = ohlcvStatus === 'fresh' ? '🟢' : ohlcvStatus === 'yesterday' ? '🟡' : '🔴';
+    const ohlcvBadgeText = ohlcvStatus === 'fresh'
+      ? 'Data Segar'
+      : ohlcvStatus === 'yesterday'
+        ? 'Data Kemarin'
+        : 'Data Lama';
+    const ohlcvTitle = `${ohlcvBadgeEmoji} ${ohlcvBadgeText} — ${ohlcvLatest} (${ohlcvAge}h lalu)`;
+
     const items = [
       { icon: 'database', label: 'Saham', value: stockCount.toLocaleString('id-ID'), fLabel: labels.stocks || '—' },
-      { icon: 'bar-chart-3', label: 'OHLCV', value: labels.ohlcv_daily || '—', fLabel: labels.ohlcv_daily || '—' },
+      { icon: 'bar-chart-3', label: 'OHLCV', value: ohlcvLatest, fLabel: labels.ohlcv_daily || '—', badge: `<span title="${ohlcvTitle}" style="font-size:13px;line-height:1;cursor:default">${ohlcvBadgeEmoji}</span>` },
       { icon: 'newspaper', label: 'Berita', value: labels.news || '—', fLabel: labels.news || '—' },
       { icon: 'building-2', label: 'Industri', value: indCount.toLocaleString('id-ID'), fLabel: labels.fundamentals || '—' },
     ];
 
-    grid.innerHTML = items.map(({ icon, label, value, fLabel }) => {
+    grid.innerHTML = items.map(({ icon, label, value, fLabel, badge }) => {
       const cls = freshnessCls(fLabel);
       return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:8px">
         <i data-lucide="${icon}" style="width:14px;height:14px;flex-shrink:0;opacity:.6"></i>
@@ -381,7 +413,7 @@ async function loadFreshnessStats() {
           <strong style="font-size:13px;display:block">${value}</strong>
           <small style="font-size:9px;opacity:.55;text-transform:uppercase;letter-spacing:.03em">${label}</small>
         </div>
-        <span class="freshness-dot ${cls}" title="${fLabel}"></span>
+        ${badge || `<span class="freshness-dot ${cls}" title="${fLabel}"></span>`}
       </div>`;
     }).join('');
 
@@ -1093,8 +1125,57 @@ async function loadMarketBriefing() {
     if (metaEl) metaEl.innerHTML = '<span class="text-dim">Error</span>';
   }
 }
+// ─── 32.2.2 — Ringkasan Pasar Hari Ini ──────────────
+async function loadMarketBriefingToday() {
+  const bodyEl = document.getElementById('briefing-today-body');
+  const badgeEl = document.getElementById('briefing-today-badge');
+  const dateEl = document.getElementById('briefing-today-date');
+  if (!bodyEl) return;
+  try {
+    const res = await apiFetch('/market/briefing');
+    if (res?.ok && res?.content) {
+      // Split into max 3 paragraphs
+      const rawText = res.content || '';
+      const paragraphs = rawText.split(/\n{2,}/).filter(p => p.trim()).slice(0, 3);
+      bodyEl.innerHTML = paragraphs.length
+        ? paragraphs.map(p => `<p style="margin:0 0 8px">${p.trim().replace(/\n/g, '<br>')}</p>`).join('')
+        : `<p style="margin:0">${rawText.trim()}</p>`;
+      // Source badge: AI or fallback
+      const src = res.source === 'cache' ? 'cache' : (res.source === 'ai' || res.source === 'openrouter') ? 'AI' : res.source || 'AI';
+      const sent = res.sentiment || 'neutral';
+      const sentEmoji = sent === 'bullish' ? '🟢' : sent === 'bearish' ? '🔴' : '⚪';
+      const badgeCls = sent === 'bullish' ? 'badge-up' : sent === 'bearish' ? 'badge-down' : 'badge-neutral';
+      if (badgeEl) {
+        badgeEl.textContent = `${sentEmoji} ${src}`;
+        badgeEl.className = `badge badge-mini ${badgeCls}`;
+        badgeEl.style.display = '';
+      }
+      if (dateEl) dateEl.textContent = res.date || res.generated_at?.slice(0, 10) || '';
+    } else if (res?.state === 'disabled') {
+      bodyEl.innerHTML = '<p style="margin:0;color:var(--text-dim)">🔑 Atur API key OpenRouter di Settings › AI untuk mengaktifkan ringkasan pasar.</p>';
+    } else {
+      bodyEl.innerHTML = '<p style="margin:0;color:var(--text-dim)">Briefing belum tersedia. Coba refresh.</p>';
+    }
+  } catch (e) {
+    console.warn('loadMarketBriefingToday failed', e);
+    bodyEl.innerHTML = '<p style="margin:0;color:var(--text-dim)">Briefing belum tersedia.</p>';
+  }
+}
+
 // ─── Refresh Btn ────────────────────────────────
 document.addEventListener('click', (e) => {
+  // 32.2.2 — Ringkasan Pasar Hari Ini refresh
+  if (e.target.closest('#briefing-today-refresh-btn')) {
+    const bodyEl = document.getElementById('briefing-today-body');
+    if (bodyEl) bodyEl.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Memperbarui ringkasan...</strong></div>';
+    apiFetch('/market/briefing', { method: 'POST' }).then(res => {
+      if (res?.ok) loadMarketBriefingToday();
+      else if (bodyEl) bodyEl.innerHTML = '<p style="margin:0;color:var(--text-dim)">Gagal memperbarui. Coba lagi.</p>';
+    }).catch(() => {
+      if (bodyEl) bodyEl.innerHTML = '<p style="margin:0;color:var(--text-dim)">Gagal memperbarui. Coba lagi.</p>';
+    });
+    return;
+  }
   const btn = e.target.closest('#briefing-refresh-btn');
   if (btn) {
     const textEl = document.getElementById('market-briefing-text');
