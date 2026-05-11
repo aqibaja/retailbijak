@@ -1,6 +1,6 @@
 window.__rbk_log && window.__rbk_log('router.js module loaded', true);
-import { clearViewTimers } from './utils/view_timers.js?v=202605120100';
-import { setPageMeta } from './api.js?v=202605120100';
+import { clearViewTimers } from './utils/view_timers.js?v=202605120200';
+import { setPageMeta } from './api.js?v=202605120200';
 
 // Route meta descriptions
 const ROUTE_META = {
@@ -34,32 +34,32 @@ const ROUTE_META = {
 
 // Dynamic view registry — lazy import per route (1.7.1)
 const viewModules = {
-  dashboard: () => import('./views/dashboard.js?v=202605120100'),
-  stock_detail: () => import('./views/stock_detail.js?v=202605120100'),
-  screener: () => import('./views/screener.js?v=202605120100'),
-  portfolio: () => import('./views/portfolio.js?v=202605120100'),
-  market: () => import('./views/market.js?v=202605120100'),
-  treemap: () => import('./views/treemap.js?v=202605120100'),
-  compare: () => import('./views/compare.js?v=202605120100'),
-  backtest: () => import('./views/backtest.js?v=202605120100'),
-  paper_trades: () => import('./views/paper_trades.js?v=202605120100'),
-  news: () => import('./views/news.js?v=202605120100'),
-  settings: () => import('./views/settings.js?v=202605120100'),
-  help: () => import('./views/help.js?v=202605120100'),
-  ai_picks: () => import('./views/ai_picks.js?v=202605120100'),
-  sector: () => import('./views/sector.js?v=202605120100'),
-  breadth: () => import('./views/breadth.js?v=202605120100'),
-  signal_overview: () => import('./views/signal_overview.js?v=202605120100'),
-  alerts: () => import('./views/alerts.js?v=202605120100'),
-  movers: () => import('./views/movers.js?v=202605120100'),
-  calendar: () => import('./views/calendar.js?v=202605120100'),
-  corporate: () => import('./views/corporate.js?v=202605120100'),
-  ipo: () => import('./views/ipo.js?v=202605120100'),
-  chart: () => import('./views/chart.js?v=202605120100'),
-  indices: () => import('./views/indices.js?v=202605120100'),
-  dividends: () => import('./views/dividend.js?v=202605120100'),
-  macro: () => import('./views/macro.js?v=202605120100'),
-  sector_rotation: () => import('./views/sector.js?v=202605120100'),
+  dashboard: () => import('./views/dashboard.js?v=202605120200'),
+  stock_detail: () => import('./views/stock_detail.js?v=202605120200'),
+  screener: () => import('./views/screener.js?v=202605120200'),
+  portfolio: () => import('./views/portfolio.js?v=202605120200'),
+  market: () => import('./views/market.js?v=202605120200'),
+  treemap: () => import('./views/treemap.js?v=202605120200'),
+  compare: () => import('./views/compare.js?v=202605120200'),
+  backtest: () => import('./views/backtest.js?v=202605120200'),
+  paper_trades: () => import('./views/paper_trades.js?v=202605120200'),
+  news: () => import('./views/news.js?v=202605120200'),
+  settings: () => import('./views/settings.js?v=202605120200'),
+  help: () => import('./views/help.js?v=202605120200'),
+  ai_picks: () => import('./views/ai_picks.js?v=202605120200'),
+  sector: () => import('./views/sector.js?v=202605120200'),
+  breadth: () => import('./views/breadth.js?v=202605120200'),
+  signal_overview: () => import('./views/signal_overview.js?v=202605120200'),
+  alerts: () => import('./views/alerts.js?v=202605120200'),
+  movers: () => import('./views/movers.js?v=202605120200'),
+  calendar: () => import('./views/calendar.js?v=202605120200'),
+  corporate: () => import('./views/corporate.js?v=202605120200'),
+  ipo: () => import('./views/ipo.js?v=202605120200'),
+  chart: () => import('./views/chart.js?v=202605120200'),
+  indices: () => import('./views/indices.js?v=202605120200'),
+  dividends: () => import('./views/dividend.js?v=202605120200'),
+  macro: () => import('./views/macro.js?v=202605120200'),
+  sector_rotation: () => import('./views/sector.js?v=202605120200'),
 };
 const viewCache = {};
 

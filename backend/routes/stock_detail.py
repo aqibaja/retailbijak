@@ -1353,6 +1353,36 @@ def get_stock_report_pdf(ticker: str, db: Session = Depends(get_db)):
         }
     )
 
+@router.get('/api/stocks/{ticker}/full-detail')
+def get_stock_full_detail(ticker: str, db: Session = Depends(get_db)):
+    """Composite endpoint — gabungkan info, chart, fundamental, technical, broker, peers dalam 1 call paralel."""
+    import concurrent.futures
+    base = _ticker_base(ticker)
+
+    def safe(fn, *args, **kwargs):
+        try: return fn(*args, **kwargs)
+        except Exception: return None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+        f_info   = ex.submit(safe, _fallback_row_for_ticker, base, db)
+        f_chart  = ex.submit(safe, get_chart_data, base, 160, '1D', db)
+        f_fund   = ex.submit(safe, get_fundamental, base, db)
+        f_tech   = ex.submit(safe, get_technical_summary_api, base, db)
+        f_broker = ex.submit(safe, get_broker_activity, base, 10, db)
+        f_peers  = ex.submit(safe, get_peers, base, 6, db)
+
+    return {
+        'ticker': base,
+        'info': f_info.result(),
+        'chart_data': f_chart.result(),
+        'fundamental': f_fund.result(),
+        'technical': f_tech.result(),
+        'broker_activity': f_broker.result(),
+        'peers': f_peers.result(),
+        'source': 'composite',
+    }
+
+
 @router.get('/api/paper-trades/summary')
 def paper_trade_summary(db: Session = Depends(get_db)):
     from sqlalchemy import func

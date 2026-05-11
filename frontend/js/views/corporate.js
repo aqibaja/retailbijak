@@ -2,7 +2,7 @@
  * Corporate Actions View — IPO, Rights, Dividends, Stock Split tracker
  * Fase 15.3 — Corporate Actions & IPO Tracker
  */
-import { showToast, apiFetch } from '../api.js?v=202605120001';
+import { showToast, apiFetch } from '../api.js?v=202605120200';
 
 let activeTab = 'all';
 

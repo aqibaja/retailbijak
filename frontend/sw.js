@@ -2,7 +2,7 @@
 // Cache-first strategy, offline fallback, background sync,
 // and install prompt relay.
 
-const CACHE_NAME = 'retailbijak-v3'; // Bumped to clear duplicate export cache
+const CACHE_NAME = 'retailbijak-v4'; // Bumped to clear duplicate export cache
 const OFFLINE_URL = '/offline.html';
 
 // Static asset extensions to cache

@@ -2,9 +2,9 @@
 // Fase 8.1: Aggregate sector performance from OHLCV data
 // 11.4.3: Industry accordion in sector detail page
 
-import { apiFetch, showToast } from '../api.js';
-import { __ } from '../i18n.js';
-import { nf, pf } from '../utils/format.js';
+import { apiFetch, showToast } from '../api.js?v=202605120200';
+import { __ } from '../i18n.js?v=202605120200';
+import { nf, pf } from '../utils/format.js?v=202605120200';
 
 let sectorData = null;
 

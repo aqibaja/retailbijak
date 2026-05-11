@@ -40,3 +40,14 @@ Thumbs.db
 # Environment
 .env
 .env.local
+frontend/CRITICAL_FINDINGS.md
+frontend/DIAGNOSIS.md
+frontend/SOLUTION_SUMMARY.md
+frontend/FRONTEND_AUDIT_REPORT.md
+frontend/i18n_audit_report.md
+frontend/diag.html
+frontend/index.full.html
+frontend/test*.html
+frontend/minimal.html
+frontend/assets/temp_*
+frontend/js/test_*.js

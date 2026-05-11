@@ -79,6 +79,9 @@ scheduler = BackgroundScheduler(timezone=jkt_tz)
 def init_scheduler():
     """Configure and start the background scheduler."""
     logger.info("Initializing APScheduler...")
+    # ─── OHLCV — Mon-Fri 09:05 & 16:05 WIB ───
+    scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(day_of_week='mon-fri', hour='9,16', minute=5, timezone=jkt_tz), id="ohlcv_daily_update", replace_existing=True)
+    logger.info("Registered ohlcv_daily_update job (Mon-Fri 09:05 & 16:05 WIB)")
     scheduler.add_job(update_signals, trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz), id="intraday_signal_update", replace_existing=True)
     scheduler.add_job(update_news, trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz), id="news_update", replace_existing=True)
     # ─── FUNDAMENTAL & FINANCIAL — DISABLED (yfinance rate-limited untuk IDX) ───

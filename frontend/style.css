@@ -8,7 +8,7 @@
 .scanner-row-chart{flex-shrink:0;width:68px;display:flex;align-items:center;justify-content:center}
 .sparkline-svg{display:block;opacity:.85;border-radius:2px}
 /* ── Page Transition (16.6.1) ── */
-#app-root.page-loading{opacity:0.3;transition:opacity .15s ease;pointer-events:none}
+#app-root.page-loading{transition:opacity .15s ease;pointer-events:none}
 .view-content{opacity:0}
 .view-content.view-visible{opacity:1}
 /* ── Scanner Results Header ── */

@@ -2,7 +2,7 @@
  * Indices View — Track IDX index constituents (LQ45, IDX30, KOMPAS100, IDX80, IDXESGL)
  * Fase 15.1 — Index Intelligence Engine
  */
-import { showToast, setLoading, apiFetch } from '../api.js?v=202605120001';
+import { showToast, setLoading, apiFetch } from '../api.js?v=202605120200';
 
 let indicesData = [];
 let currentIndex = null;

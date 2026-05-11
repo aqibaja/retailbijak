@@ -395,8 +395,8 @@ def get_system_freshness(db: Session = Depends(get_db)):
         'fundamentals': "SELECT MAX(updated_at) FROM fundamentals",
         'financials': "SELECT MAX(period) FROM financials",
         'news': "SELECT MAX(published_at) FROM news",
-        'broker_summary': "SELECT MAX(updated_at) FROM broker_summary",
-        'ai_pick_reports': "SELECT MAX(generated_at) FROM ai_pick_reports",
+        'broker_summary': "SELECT MAX(date) FROM broker_summary",
+        'ai_pick_reports': "SELECT MAX(generated_at) FROM daily_ai_pick_reports",
         'watchlist_items': "SELECT MAX(updated_at) FROM watchlist_items",
         'portfolio_positions': "SELECT MAX(updated_at) FROM portfolio_positions",
     }

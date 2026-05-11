@@ -1,11 +1,11 @@
 window.__rbk_log && window.__rbk_log('dashboard.js module loaded', true);
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=202605120100';
-import { observeElements, animateValue } from '../utils/helpers.js?v=202605120100';
-import { registerViewTimer } from '../utils/view_timers.js?v=202605120100';
-import { nf, pf } from '../utils/format.js?v=202605120100';
-import { ssSet } from '../utils/storage.js?v=202605120100';
-import { loadTodayEvents } from './calendar.js?v=202605120100';
-import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605120100';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=202605120200';
+import { observeElements, animateValue } from '../utils/helpers.js?v=202605120200';
+import { registerViewTimer } from '../utils/view_timers.js?v=202605120200';
+import { nf, pf } from '../utils/format.js?v=202605120200';
+import { ssSet } from '../utils/storage.js?v=202605120200';
+import { loadTodayEvents } from './calendar.js?v=202605120200';
+import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605120200';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 

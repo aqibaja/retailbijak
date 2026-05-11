@@ -1,13 +1,6 @@
-import { handleRoute } from './router.js?v=202605120200';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605120200';
-import { initTheme } from './theme.js?v=202605120200';
-import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120200';
-
-// ─── ENTRY ─── main.js
-window.__rbk_log && window.__rbk_log('main.js module loaded', true);
-console.log('RBK: main.js module execution started');
-
-document.documentElement.setAttribute('data-js-loaded', 'true');
+import { handleRoute } from './router.js?v=20260510';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260510';
+import { initTheme } from './theme.js?v=20260510';
 
 // ================= GLOBAL ERROR BOUNDARY =================
 window.__hermesErrors = [];
@@ -46,9 +39,59 @@ function showErrorFallback(detail) {
 }
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
-// Re-exported from utils/view_timers.js for backward compatibility
-export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120200';
-export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605120200';
+window.__viewTimers = [];
+export function registerViewTimer(id) { window.__viewTimers.push(id); }
+export function clearViewTimers() {
+  window.__viewTimers.forEach(id => {
+    if (id.startsWith('i_')) clearInterval(parseInt(id.slice(2)));
+    else clearTimeout(parseInt(id));
+  });
+  window.__viewTimers = [];
+}
+export function observeElements(selector = '.stagger-reveal') {
+   const observer = new IntersectionObserver((entries) => {
+       entries.forEach((entry, i) => {
+           if (entry.isIntersecting) {
+               setTimeout(() => {
+                   entry.target.classList.add('is-visible');
+               }, i * 50); // Stagger delay 50ms
+               observer.unobserve(entry.target);
+           }
+       });
+   }, { rootMargin: '0px 0px -50px 0px' });
+   document.querySelectorAll(selector).forEach(el => observer.observe(el));
+}
+// Number Counter Animation (RequestAnimationFrame)
+export function animateValue(obj, start, end, duration, prefix = '', suffix = '') {
+   let startTimestamp = null;
+   const step = (timestamp) => {
+       if (!startTimestamp) startTimestamp = timestamp;
+       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+       const easeOut = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+       const current = start + (end - start) * easeOut;
+       
+       // Format based on value size
+       let formatted;
+       if (Math.abs(end) > 100) formatted = current.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+       else formatted = current.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+       
+       obj.innerHTML = `${prefix}${formatted}${suffix}`;
+       
+       if (progress < 1) {
+           window.requestAnimationFrame(step);
+       } else {
+           obj.innerHTML = `${prefix}${end > 100 ? end.toLocaleString('id-ID', {maximumFractionDigits:0}) : end.toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2})}${suffix}`;
+       }
+   };
+   window.requestAnimationFrame(step);
+}
+// Flash Highlight (for price updates)
+export function flashUpdate(element, isUp) {
+   if (!element) return;
+   element.classList.remove('flash-up', 'flash-down');
+   void element.offsetWidth; // Trigger reflow
+   element.classList.add(isUp ? 'flash-up' : 'flash-down');
+}
 // ─── More Drawer (mobile nav) ────────────────────
 function closeMoreDrawer() {
   const drawer = document.getElementById('more-drawer');
@@ -127,34 +170,11 @@ function setupKeyboardShortcuts() {
 
 // ─── Lucide Icons Auto-Render via MutationObserver ───
 function setupLucideAutoRender() {
-  const render = () => {
-    if (typeof lucide === 'undefined' || !lucide.createIcons) return;
-    lucide.createIcons();
-    const target = document.getElementById('app-root') || document.body;
-    let rendering = false;
-    const observer = new MutationObserver(() => {
-      if (rendering) return;
-      rendering = true;
-      requestAnimationFrame(() => {
-        lucide.createIcons();
-        rendering = false;
-      });
-    });
-    observer.observe(target, { childList: true, subtree: true });
-  };
-  
-  // Wait for Lucide CDN if not loaded yet
-  if (typeof lucide === 'undefined') {
-    const checkLucide = setInterval(() => {
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        clearInterval(checkLucide);
-        render();
-      }
-    }, 100);
-    setTimeout(() => clearInterval(checkLucide), 5000); // Timeout after 5s
-  } else {
-    render();
-  }
+  if (typeof lucide === 'undefined' || !lucide.createIcons) return;
+  lucide.createIcons(); // Initial render
+  const target = document.getElementById('app-root') || document.body;
+  const observer = new MutationObserver(() => lucide.createIcons());
+  observer.observe(target, { childList: true, subtree: true });
 }
 
 // ================= UI CORE =================
@@ -1001,20 +1021,21 @@ document.addEventListener('DOMContentLoaded', () => {
       setupScrollEffects();
       setupRunningTicker();
       refreshTopbarMarket();
+      // Auto-refresh topbar market data — paused when tab is hidden
       let _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           clearInterval(_marketIntervalId);
           _marketIntervalId = null;
         } else if (!_marketIntervalId) {
-          refreshTopbarMarket();
+          refreshTopbarMarket(); // immediate refresh on return
           _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
         }
       });
       setupNetworkStatus();
       setupKeyboardShortcuts();
       startMarketCountdown();
-      setupLivePriceStream(); // re-enabled — SSE query fixed
+      setupLivePriceStream();
       setupScrollToTop();
       setupShortcutPanel();
       setupPageTransitions();
@@ -1022,21 +1043,9 @@ document.addEventListener('DOMContentLoaded', () => {
       setupPullToRefresh();
       setupTouchGestures();
       showOnboarding();
-      // Service Worker — re-enabled after fixing reload loop
+      // Register PWA service worker (1.7.6)
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js?v=202605120200').then(reg => {
-          if (reg.waiting) {
-            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-          reg.addEventListener('updatefound', () => {
-            const newSW = reg.installing;
-            newSW.addEventListener('statechange', () => {
-              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                newSW.postMessage({ type: 'SKIP_WAITING' });
-              }
-            });
-          });
-        }).catch(() => {});
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
       }
 
       // ─── PWA Install Prompt ────────────────────────
@@ -1107,14 +1116,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (badge) { badge.textContent = total > 99 ? '99+' : total; badge.style.display = 'flex'; }
             if (unseen.length && res.data[0] && (!window._lastAlertTs || res.data[0].id > window._lastAlertTs)) {
               unseen.slice(0, 3).forEach(a => {
-                if (a.alert_type && a.alert_type.startsWith('screener_match_')) {
-                  showToast(`🔍 Screener: ${Math.round(a.current_value)} saham cocok!`, 'info', 8000);
-                  // Refresh saved screener badges
-                  updateScreenerMatchBadges();
-                } else {
-                  const label = (a.alert_type || '').replace(/_/g, ' ');
-                  showToast(`${a.ticker}: ${label} ${a.trigger_value} (${a.current_value})`, 'info', 8000);
-                }
+                const label = a.alert_type.replace('_', ' ');
+                showToast(`${a.ticker}: ${label} ${a.trigger_value} (${a.current_value})`, 'info', 8000);
               });
               window._lastAlertTs = res.data[0].id;
               // Acknowledge all
@@ -1128,20 +1131,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Initial check after 10s, then every 120s
       setTimeout(checkTriggeredAlerts, 10000);
       setInterval(checkTriggeredAlerts, 120000);
-
-      // ─── Screener match badge updater ───────
-      window.updateScreenerMatchBadges = async function() {
-        try {
-          const res = await apiFetch('/screener/saved');
-          if (res?.data?.length) {
-            const matching = res.data.filter(s => s.match_count > 0);
-            if (matching.length > 0) {
-              const totalMatches = matching.reduce((sum, s) => sum + s.match_count, 0);
-              showToast(`🔍 ${matching.length} screener: ${totalMatches} total saham cocok`, 'info', 6000);
-            }
-          }
-        } catch (e) { /* silent */ }
-      };
 
       // More Drawer button
       const moreBtn = document.getElementById('bottom-more-btn');

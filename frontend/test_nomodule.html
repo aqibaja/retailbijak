@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Non-Module Fallback - RetailBijak</title>
+  <style>
+    body {
+      background: #0b1220;
+      color: #e5edf8;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .topbar {
+      background: rgba(15,23,41,.82);
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: #10b981;
+    }
+    .card {
+      background: rgba(15,23,41,.82);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .kpi-card {
+      background: rgba(15,23,41,.82);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .kpi-label {
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #e5edf8;
+    }
+    .text-up { color: #10b981; }
+    .text-down { color: #ef4444; }
+    .status-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #10b981, #6366f1);
+      z-index: 9999;
+    }
+    .btn {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px 4px;
+    }
+    .btn:hover {
+      background: #059669;
+    }
+    #data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    #data-table th {
+      background: rgba(255,255,255,.05);
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    #data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="status-bar"></div>
+  
+  <div class="topbar">
+    <div class="logo">📈 RetailBijak</div>
+    <div style="color: #94a3b8; font-size: 14px;">Non-Module Fallback Mode</div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h1 style="margin-top: 0;">Dashboard Pasar IDX</h1>
+      <p style="color: #94a3b8;">Fallback mode - ES6 modules tidak didukung atau gagal dimuat</p>
+      
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">IHSG</div>
+          <div class="kpi-value" id="ihsg-value">Loading...</div>
+          <div id="ihsg-change" style="font-size: 14px; margin-top: 4px;">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Volume</div>
+          <div class="kpi-value" id="volume-value">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Market Cap</div>
+          <div class="kpi-value" id="mcap-value">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Status</div>
+          <div class="kpi-value" id="status-value" style="font-size: 18px;">—</div>
+        </div>
+      </div>
+
+      <div style="margin: 20px 0;">
+        <button class="btn" onclick="loadData()">🔄 Refresh Data</button>
+        <button class="btn" onclick="window.location.href='index.html'">🏠 Kembali ke Mode Normal</button>
+        <button class="btn" onclick="window.location.href='test_module_load.html'">🔍 Test Module Load</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Top Movers</h2>
+      <div id="movers-container" class="loading">Memuat data...</div>
+    </div>
+
+    <div class="card">
+      <h2>Debug Info</h2>
+      <div id="debug-log" style="font-family: monospace; font-size: 12px; color: #94a3b8;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Non-module vanilla JS implementation
+    const API_BASE = window.location.origin;
+    const debugLogs = [];
+
+    function log(msg, type = 'info') {
+      const timestamp = new Date().toISOString().split('T')[1].slice(0, -1);
+      const icon = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '✅';
+      debugLogs.push(`[${timestamp}] ${icon} ${msg}`);
+      document.getElementById('debug-log').innerHTML = debugLogs.join('<br>');
+      console.log(`[NOMODULE] ${msg}`);
+    }
+
+    async function fetchAPI(endpoint) {
+      try {
+        log(`Fetching ${endpoint}...`);
+        const response = await fetch(API_BASE + endpoint);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        log(`✅ ${endpoint} loaded`, 'info');
+        return data;
+      } catch (e) {
+        log(`❌ ${endpoint} failed: ${e.message}`, 'error');
+        return null;
+      }
+    }
+
+    async function loadMarketSummary() {
+      const data = await fetchAPI('/api/market-summary');
+      if (data) {
+        const ihsgVal = document.getElementById('ihsg-value');
+        const ihsgChg = document.getElementById('ihsg-change');
+        const statusVal = document.getElementById('status-value');
+        
+        ihsgVal.textContent = Number(data.value || 7080).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+        
+        const change = data.change_pct || 0;
+        const isUp = change >= 0;
+        ihsgChg.textContent = `${isUp ? '+' : ''}${change.toFixed(2)}%`;
+        ihsgChg.className = isUp ? 'text-up' : 'text-down';
+        
+        statusVal.textContent = data.status === 'ok' ? '🟢 BUKA' : '🔴 TUTUP';
+        
+        if (data.volume) {
+          document.getElementById('volume-value').textContent = 
+            (data.volume / 1e9).toFixed(2) + 'B';
+        }
+        if (data.market_cap) {
+          document.getElementById('mcap-value').textContent = 
+            (data.market_cap / 1e12).toFixed(2) + 'T';
+        }
+      }
+    }
+
+    async function loadTopMovers() {
+      const data = await fetchAPI('/api/top-movers?limit=10');
+      const container = document.getElementById('movers-container');
+      
+      if (data && data.data && data.data.length) {
+        let html = '<table id="data-table"><thead><tr><th>Ticker</th><th>Harga</th><th>Change</th><th>Volume</th></tr></thead><tbody>';
+        
+        data.data.forEach(item => {
+          const change = item.change_pct || 0;
+          const isUp = change >= 0;
+          const changeClass = isUp ? 'text-up' : 'text-down';
+          
+          html += `<tr>
+            <td><strong>${item.ticker}</strong></td>
+            <td>${Number(item.price || 0).toLocaleString('id-ID')}</td>
+            <td class="${changeClass}">${isUp ? '+' : ''}${change.toFixed(2)}%</td>
+            <td>${item.volume ? (item.volume / 1e6).toFixed(1) + 'M' : '—'}</td>
+          </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = '<p style="color: #ef4444;">Gagal memuat data movers</p>';
+      }
+    }
+
+    async function loadData() {
+      log('Loading data...');
+      await Promise.all([
+        loadMarketSummary(),
+        loadTopMovers()
+      ]);
+      log('Data loaded successfully', 'info');
+    }
+
+    // Auto-load on page ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadData);
+    } else {
+      loadData();
+    }
+
+    log('Non-module fallback page initialized', 'info');
+    log('Browser: ' + navigator.userAgent, 'info');
+    log('Module support: ' + ('type' in HTMLScriptElement.prototype ? 'YES' : 'NO'), 'info');
+  </script>
+</body>
+</html>
