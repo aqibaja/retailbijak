@@ -326,7 +326,7 @@ function renderConstituents(list) {
     if (!tbody) return;
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">Tidak ada konstituen ditemukan</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state-v2"><span class="empty-icon">🔍</span><strong class="empty-state-title">Tidak ada konstituen ditemukan</strong></div></td></tr>`;
         return;
     }
 

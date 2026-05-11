@@ -895,3 +895,24 @@ html[data-theme="amoled"]{--bg-base:#000;--bg-panel:#050505;--bg-panel-hover:#0a
   .main-content { margin: 0 !important; padding: 0 !important; }
   body { background: white !important; color: black !important; }
 }
+
+/* ── Fase 68 Mobile Polish ── */
+@media(max-width:767px){
+  /* 68.1.1 stock-actions wrap di mobile */
+  .stock-actions{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}
+  .stock-actions .btn{min-height:44px;flex:1 1 auto;font-size:12px;justify-content:center}
+  .stock-actions .btn-sm{min-height:36px;flex:1 1 calc(50% - 3px);font-size:11px}
+
+  /* 68.1.2 dash-quick-actions wrap di mobile */
+  .dash-quick-actions{display:flex!important;flex-wrap:wrap!important;gap:4px!important;margin-left:0!important;margin-top:6px!important}
+  .dash-quick-actions .btn{flex:1 1 auto;min-height:36px;font-size:11px;white-space:nowrap}
+
+  /* 68.2.2 screener filter panel collapse toggle */
+  .scanner-form-mobile-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:var(--radius-md);cursor:pointer;font-size:13px;font-weight:700;color:var(--text-main);margin-bottom:8px;user-select:none}
+  .scanner-form-mobile-toggle svg{transition:transform .25s var(--ease-out)}
+  .scanner-form-mobile-toggle.open svg{transform:rotate(180deg)}
+  .scanner-form.mobile-collapsed{display:none!important}
+}
+@media(min-width:768px){
+  .scanner-form-mobile-toggle{display:none}
+}

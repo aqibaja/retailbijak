@@ -84,6 +84,7 @@ try:
     from backend.routes.scanner_stream import router as scanner_stream_router
     from backend.routes.scanner import router as scanner_router
     from backend.routes.signals import router as signals_router
+    from backend.routes.sectors import router as sectors_router
     from backend.routes.calendar import router as calendar_router
     from backend.routes.index_constituents import router as index_constituents_router
     from backend.routes.comments import router as comments_router

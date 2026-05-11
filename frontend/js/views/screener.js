@@ -183,7 +183,11 @@ export async function renderScreener(root) {
           <h1 class="text-3xl strong mb-2 tracking-tight">Pemindai Akumulasi Institusi</h1>
         </div>
         <div class="scanner-layout">
-          <div class="scanner-form flex-col gap-5">
+          <button class="scanner-form-mobile-toggle" id="scanner-form-toggle" aria-expanded="true">
+            <span>⚙ Filter &amp; Kontrol</span>
+            <i data-lucide="chevron-down" style="width:16px;height:16px"></i>
+          </button>
+          <div class="scanner-form flex-col gap-5" id="scanner-form-panel">
             <div class="scanner-header-text">PUSAT KONTROL</div>
             <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
             <div class="scanner-form-section">
@@ -411,6 +415,18 @@ export async function renderScreener(root) {
       });
     }
     applyPerfVisibility();
+
+    // Mobile filter panel toggle (68.2.2)
+    const scannerToggle = root.querySelector('#scanner-form-toggle');
+    const scannerPanel = root.querySelector('#scanner-form-panel');
+    if (scannerToggle && scannerPanel) {
+      scannerToggle.addEventListener('click', () => {
+        const isOpen = scannerToggle.getAttribute('aria-expanded') === 'true';
+        scannerToggle.setAttribute('aria-expanded', String(!isOpen));
+        scannerToggle.classList.toggle('open', !isOpen);
+        scannerPanel.classList.toggle('mobile-collapsed', isOpen);
+      });
+    }
 
     // Column toggle button
     root.querySelector('#btn-columns')?.addEventListener('click', toggleColumnDropdown);
