@@ -46,15 +46,19 @@ export async function setPin(pin) {
 // ─── Identity ───────────────────────────────────────────
 
 export async function getMyIdentity() {
-    const res = await fetch('/api/auth/me');
+    const id = getDeviceId();
+    const res = await fetch('/api/auth/me', {
+        headers: { 'X-Device-Id': id },
+    });
     if (!res.ok) return null;
     return await res.json();
 }
 
 export async function updateNickname(name) {
+    const id = getDeviceId();
     const res = await fetch('/api/auth/nickname', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Id': id },
         body: JSON.stringify({ nickname: name }),
     });
     return await res.json();
