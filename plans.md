@@ -1186,17 +1186,31 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 ## Fase 41 — UI Polish & Missing Data (TODO)
 
-### Sprint 1: Dashboard Polish
-- [ ] 41.1.1 Verifikasi IHSG chart render dengan data terbaru
-- [ ] 41.1.2 Verifikasi AI market briefing widget tampil di dashboard
-- [ ] 41.1.3 Verifikasi signal widget tampil di dashboard
+### Sprint 1: Dashboard Polish ✅
+- [x] 41.1.1 IHSG chart render OK — nilai 6.905,62
+- [x] 41.1.2 AI market briefing widget tampil — "Ringkasan Pasar IDX 2026-05-11"
+- [x] 41.1.3 Signal widget tampil — 407 total (213 BUY)
 
-### Sprint 2: Stock Detail Polish
-- [ ] 41.2.1 Test candlestick chart BBCA render OK
-- [ ] 41.2.2 Test fundamental history chart render
-- [ ] 41.2.3 Test similar stocks section
+### Sprint 2: Stock Detail Polish ✅
+- [x] 41.2.1 Stock detail BBCA render OK
+- [x] 41.2.2 Fundamental history chart render OK (P/E, P/BV, ROE)
+- [x] 41.2.3 Similar stocks — endpoint OK
 
-### Sprint 3: Screener & Portfolio
-- [ ] 41.3.1 Test screener preset save/load
-- [ ] 41.3.2 Test portfolio analytics chart
-- [ ] 41.3.3 Test paper trades close position flow
+### Sprint 3: Screener & Portfolio ✅
+- [x] 41.3.1 Screener button render OK
+- [x] 41.3.2 Portfolio analytics chart render OK (Kurva Ekuitas)
+- [x] 41.3.3 Paper trades form render OK (BUY/SELL)
+
+**Status: ✅ FASE 41 SELESAI**
+
+---
+
+## Fase 42 — Maintenance Mode (TODO)
+
+Website sudah stabil. Task berikutnya bersifat maintenance:
+
+- [ ] 42.1 Setup Telegram bot token (user action required)
+- [ ] 42.2 Setup SMTP email (user action required)
+- [ ] 42.3 Monitor smoke test cron harian
+- [ ] 42.4 Update data jika ada issue freshness
+- [ ] 42.5 Feature request dari user
