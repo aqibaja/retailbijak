@@ -2220,3 +2220,11 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 75.3.1 Smoke test 16/16
 - [ ] 75.3.2 Git tag v1.3.0 (major version bump)
 
+
+**Status: ✅ FASE 75 SELESAI — tag v1.3.0**
+- 75.1.1 Seed market_cap 219 saham (30 blue chips hardcoded + 189 dari OHLCV proxy) ✅
+- 75.1.2 Treemap weight akurat — Financials 63.6%, 11 sectors, 154 stocks ✅
+- 75.2.1 Macro cards tambah "Diperbarui" timestamp ✅
+- 75.3.1 Smoke test 16/16 ✅
+- 75.3.2 Git tag v1.3.0 (major version bump) ✅
+
