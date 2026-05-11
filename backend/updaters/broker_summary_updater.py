@@ -16,8 +16,13 @@ Runs daily at 05:30 via APScheduler.
 import logging
 import random
 from datetime import datetime, timezone
+from sqlalchemy import text
 
-from database import BrokerSummary, OHLCVDaily, Stock, SessionLocal
+try:
+    from database import BrokerSummary, OHLCVDaily, Stock, SessionLocal
+except ModuleNotFoundError:
+    from backend.database import BrokerSummary, OHLCVDaily, Stock, SessionLocal
+
 logger = logging.getLogger(__name__)
 
 # Broker definitions
@@ -52,17 +57,37 @@ def seed_broker_summary(target_date=None, top_n=100):
         ).delete()
         db.commit()
 
-        # Get top N stocks by latest close (proxy for active stocks)
+        # Prioritize blue chip tickers, then fill with most-active
+        BLUE_CHIPS = [
+            'BBCA','BBRI','BMRI','TLKM','ASII','UNVR','KLBF','ICBP','PGAS','SMGR',
+            'ANTM','PTBA','ADRO','INDF','GGRM','HMSP','JSMR','WIKA','WSKT','BSDE',
+            'CPIN','JPFA','MAPI','LSIP','AALI','EXCL','ISAT','TBIG','TOWR','MNCN',
+            'GOTO','BUKA','EMTK','MDKA','AMMN','BRPT','TPIA','INKP','INTP','SMCB',
+        ]
+        # Use date with most rows (avoid sparse future dates)
+        from sqlalchemy import func as sqlfunc
+        best_date_row = db.execute(
+            text("SELECT date, COUNT(*) as cnt FROM ohlcv_daily GROUP BY date ORDER BY cnt DESC LIMIT 1")
+        ).fetchone()
+        best_date = best_date_row[0] if best_date_row else None
+
         latest_ohlcv = (
             db.query(OHLCVDaily)
-            .order_by(OHLCVDaily.date.desc())
+            .filter(OHLCVDaily.date == best_date)
+            .order_by(OHLCVDaily.volume.desc())
             .limit(top_n * 3)
             .all()
-        )
-        
-        # Get unique tickers
+        ) if best_date else []
+
+        # Get unique tickers — blue chips first
         seen = set()
         all_tickers = []
+        # Add blue chips first
+        for t in BLUE_CHIPS:
+            if t not in seen and len(all_tickers) < top_n:
+                seen.add(t)
+                all_tickers.append(t)
+        # Fill remainder from OHLCV
         for row in latest_ohlcv:
             if row.ticker not in seen and len(all_tickers) < top_n:
                 seen.add(row.ticker)

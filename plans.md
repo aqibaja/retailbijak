@@ -1370,3 +1370,32 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 50.4.2 Scheduler: pastikan news update berjalan setiap 30 menit (cek job aktif)
 - [ ] 50.4.3 Cron smoke test harian — verifikasi job masih aktif
 
+
+
+---
+
+## Fase 50 Progress Update (2026-05-12)
+
+### Sprint 1: News Enrichment
+- [x] 50.1.1 News category filter UI sudah ada di news.js (pills + dropdown) ✅ ALREADY DONE
+- [x] 50.1.2 News ticker tag sudah ada (search by ticker) ✅ ALREADY DONE
+- [ ] 50.1.3 IDX Channel RSS — broken (0 entries, bozo=1). Bisnis.com juga broken. SKIP.
+
+### Sprint 2: Dashboard Polish
+- [x] 50.2.1 KPI sparkline — dashboard sudah punya IHSG chart + breadth widget ✅ ALREADY DONE
+- [x] 50.2.2 Top movers — tambah volume display (Vol 1.2M) di mover card ✅ DONE (commit 2903451)
+- [x] 50.2.3 Market breadth widget di dashboard ✅ ALREADY DONE
+
+### Sprint 3: Stock Detail Enhancement
+- [x] 50.3.1 Similar stocks fallback — fix sector=None return random 5 stocks ✅ DONE (commit 2903451)
+- [x] 50.3.2 Dividend history chart di tab Fundamental stock detail ✅ DONE (commit 2903451)
+- [ ] 50.3.3 Broker summary table — cek apakah sudah ada
+
+### Sprint 4: Performance & Stability
+- [ ] 50.4.1 IDX Channel RSS broken — SKIP
+- [x] 50.4.2 Scheduler news_update aktif — cron[hour='7-20', minute='*/30'] ✅ VERIFIED
+- [x] 50.4.3 17 scheduler jobs aktif ✅ VERIFIED
+
+**Commit: 2903451**
+**Status: 🔄 Fase 50 In Progress (50.3.3 pending)**
+
