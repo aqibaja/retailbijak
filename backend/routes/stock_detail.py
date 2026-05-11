@@ -83,14 +83,18 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
     fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker_with_suffix).first()
     if not fundamental:
         fundamental = db.query(Fundamental).filter(Fundamental.ticker == ticker_base).first()
-    
+
     if not fundamental:
         # yfinance on-demand sudah dimatikan — rate-limited untuk IDX
         # Data fundamental dari IDX via idx_daily_sync (18:00 WIB)
         pass
-    
+
     if not fundamental:
         return {'ticker': ticker, 'message': 'Fundamental data not found'}
+
+    # market_cap ada di tabel stocks, bukan fundamental
+    stock_info = db.query(Stock).filter(Stock.ticker == ticker_base).first()
+    market_cap = (stock_info.market_cap if stock_info and stock_info.market_cap else None)
 
     return {
         'ticker': ticker,
@@ -106,6 +110,7 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
             'revenue': fundamental.revenue,
             'net_income': fundamental.net_income,
             'free_cashflow': fundamental.free_cashflow,
+            'market_cap': market_cap,
             'updated_at': fundamental.updated_at.isoformat() if fundamental.updated_at else None,
         },
     }

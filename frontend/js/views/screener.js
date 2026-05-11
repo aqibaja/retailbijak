@@ -199,6 +199,35 @@ export async function renderScreener(root) {
                 </select>
               </div>
             </div>
+            <div class="scanner-form-section">
+              <div class="text-xs text-dim uppercase strong mb-2">Filter Sektor</div>
+              <div class="flex gap-2">
+                <select id="sector-filter-select" class="scanner-select" style="flex:1;min-width:140px;">
+                  <option value="">Semua Sektor</option>
+                  <option value="Basic Materials">Basic Materials</option>
+                  <option value="Consumer Cyclical">Consumer Cyclical</option>
+                  <option value="Consumer Defensive">Consumer Defensive</option>
+                  <option value="Energy">Energy</option>
+                  <option value="Financial Services">Financial Services</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Industrials">Industrials</option>
+                  <option value="Real Estate">Real Estate</option>
+                  <option value="Technology">Technology</option>
+                  <option value="Utilities">Utilities</option>
+                </select>
+              </div>
+            </div>
+            <div class="scanner-form-section">
+              <div class="text-xs text-dim uppercase strong mb-2">Filter Market Cap</div>
+              <div class="flex gap-2">
+                <select id="cap-filter-select" class="scanner-select" style="flex:1;min-width:140px;">
+                  <option value="">Semua Cap</option>
+                  <option value="large">Large Cap (&gt;10T)</option>
+                  <option value="mid">Mid Cap (1T–10T)</option>
+                  <option value="small">Small Cap (&lt;1T)</option>
+                </select>
+              </div>
+            </div>
             <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
             <button id="btn-run-screener" type="button" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
             <button id="btn-quick-scan" type="button" class="btn btn-sm scanner-control-btn mt-1 mb-2">⚡ Pindai Semua</button>
@@ -661,8 +690,14 @@ function runScreener() {
 
     const indexEl = document.getElementById('index-filter-select');
     const indexVal = indexEl ? indexEl.value : '';
+    const sectorEl = document.getElementById('sector-filter-select');
+    const sectorVal = sectorEl ? sectorEl.value : '';
+    const capEl = document.getElementById('cap-filter-select');
+    const capVal = capEl ? capEl.value : '';
     let scanUrl = `${getScanEventSourceUrl('1d')}&rule=SwingAQ`;
     if (indexVal) scanUrl += `&index=${encodeURIComponent(indexVal)}`;
+    if (sectorVal) scanUrl += `&sector=${encodeURIComponent(sectorVal)}`;
+    if (capVal) scanUrl += `&cap=${encodeURIComponent(capVal)}`;
     scanEventSource = new EventSource(scanUrl);
     scanEventSource.onmessage = (event) => {
         if (!isMounted()) { scanEventSource.close(); scanEventSource = null; return; }

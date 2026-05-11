@@ -16,9 +16,9 @@ except ModuleNotFoundError:
     from backend.stocks import get_all_tickers
 
 try:
-    from database import StockIndex
+    from database import StockIndex, Stock, Fundamental
 except ModuleNotFoundError:
-    from backend.database import StockIndex
+    from backend.database import StockIndex, Stock, Fundamental
 
 try:
     from routes.shared_stocks_helpers import _display_ticker
@@ -52,7 +52,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: str | None = None):
+async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: str | None = None, sector: str | None = None, cap: str | None = None):
     db = SessionLocal()
     try:
         tickers = get_all_tickers()
@@ -67,6 +67,29 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: 
             ).all()
             idx_tickers = {r.ticker for r in idx_rows}
             tickers = [t for t in tickers if t in idx_tickers]
+            total = len(tickers)
+
+        # Filter by sector
+        if sector:
+            sector_rows = db.query(Stock.ticker).filter(
+                Stock.sector == sector
+            ).all()
+            sector_tickers = {r.ticker for r in sector_rows}
+            tickers = [t for t in tickers if t in sector_tickers]
+            total = len(tickers)
+
+        # Filter by market cap tier: small (<1T), mid (1T-10T), large (>10T)
+        if cap:
+            cap_rows = db.query(Stock.ticker, Fundamental.market_cap).join(
+                Fundamental, Stock.ticker == Fundamental.ticker, isouter=True
+            ).all()
+            cap_map = {r.ticker: (r.market_cap or 0) for r in cap_rows}
+            if cap == 'small':
+                tickers = [t for t in tickers if cap_map.get(t, 0) < 1_000_000_000_000]
+            elif cap == 'mid':
+                tickers = [t for t in tickers if 1_000_000_000_000 <= cap_map.get(t, 0) < 10_000_000_000_000]
+            elif cap == 'large':
+                tickers = [t for t in tickers if cap_map.get(t, 0) >= 10_000_000_000_000]
             total = len(tickers)
         yield f"data: {json.dumps({'type': 'start', 'total': total, 'timeframe': timeframe, 'rule': 'SwingAQ (PineScript)', 'timestamp': datetime.now().isoformat(timespec='seconds')})}\n\n"
 
@@ -136,12 +159,12 @@ async def scan_all_db_generator(timeframe: str, rule: str | None = None, index: 
 
 
 @router.get('/api/scan')
-async def scan(timeframe: str = '1d', rule: str | None = None, index: str | None = None):
+async def scan(timeframe: str = '1d', rule: str | None = None, index: str | None = None, sector: str | None = None, cap: str | None = None):
     if timeframe not in VALID_TIMEFRAMES:
         raise HTTPException(400, f'Invalid timeframe. Valid: {VALID_TIMEFRAMES}')
 
     return StreamingResponse(
-        scan_all_db_generator(timeframe, rule=rule, index=index),
+        scan_all_db_generator(timeframe, rule=rule, index=index, sector=sector, cap=cap),
         media_type='text/event-stream',
         headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )

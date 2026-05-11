@@ -2122,7 +2122,13 @@ function renderFundamentalGrid(d) {
   if(marketCap!=null)cards.push(card('Market Cap',fmtRp(marketCap),'neutral',''));
   if(revenue!=null)cards.push(card('Revenue',fmtRp(revenue),'neutral',''));
   if(netIncome!=null)cards.push(card('Net Income',fmtRp(netIncome),netIncome>=0?'good':'bad',netIncome>=0?'Profit':'Rugi'));
-  el.innerHTML = cards.join('');
+  el.innerHTML = cards.join('') + `
+    <div style="grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-subtle)">
+      <a href="https://www.idx.co.id/id/perusahaan-tercatat/laporan-keuangan-dan-tahunan/" target="_blank" rel="noopener"
+         style="font-size:12px;color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+        <i data-lucide="external-link" style="width:12px;height:12px"></i> Laporan Keuangan di IDX
+      </a>
+    </div>`;
 }
 
 // ─── 27.1.1 — Fundamental History Charts ────────────────────
