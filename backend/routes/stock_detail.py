@@ -1229,6 +1229,173 @@ def run_backtest(ticker: str = '', strategy: str = 'sma_cross', initial_capital:
     }
 
 
+@router.post('/api/backtest/run')
+def run_backtest_post(payload: dict, db: Session = Depends(get_db)):
+    """POST wrapper for backtest — accepts JSON body with optional start_date/end_date.
+
+    Body fields:
+        ticker (str): e.g. "BBCA"
+        strategy (str): sma_cross | rsi_reversal | bb_breakout
+        initial_capital (float): default 10_000_000
+        start_date (str): optional YYYY-MM-DD filter
+        end_date (str): optional YYYY-MM-DD filter
+    """
+    ticker = str(payload.get('ticker', '')).strip().upper()
+    strategy = str(payload.get('strategy', 'sma_cross')).strip()
+    initial_capital = float(payload.get('initial_capital', 10_000_000))
+    start_date = payload.get('start_date', '')
+    end_date = payload.get('end_date', '')
+
+    if not ticker:
+        return {'status': 'error', 'message': 'Ticker required (e.g. BBCA)'}
+
+    base = _ticker_base(ticker)
+    try:
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+        import numpy as np
+        import math
+    except Exception as e:
+        return {'status': 'error', 'message': f'Engine unavailable: {e}'}
+
+    df = get_ohlcv_dataframe(db, base, limit=600)
+    if df.empty or len(df) < 50:
+        return {'status': 'error', 'message': 'Insufficient OHLCV data'}
+
+    # Apply optional date range filter
+    if start_date:
+        try:
+            df = df[df.index >= start_date]
+        except Exception:
+            pass
+    if end_date:
+        try:
+            df = df[df.index <= end_date]
+        except Exception:
+            pass
+
+    if len(df) < 50:
+        return {'status': 'error', 'message': 'Data tidak cukup untuk rentang tanggal ini (min 50 hari)'}
+
+    df_ind = calculate_all_indicators(df)
+    closes = df_ind['close'].astype(float).values
+    dates = df_ind.index.tolist()
+    n = len(closes)
+
+    signals = [0] * n
+
+    if strategy == 'sma_cross':
+        sma20 = df_ind['sma_20'].values if 'sma_20' in df_ind else None
+        sma50 = df_ind['sma_50'].values if 'sma_50' in df_ind else None
+        if sma20 is None or sma50 is None:
+            return {'status': 'error', 'message': 'SMA data not available'}
+        for i in range(1, n):
+            if not np.isnan(sma20[i]) and not np.isnan(sma50[i]) and not np.isnan(sma20[i-1]) and not np.isnan(sma50[i-1]):
+                if sma20[i-1] <= sma50[i-1] and sma20[i] > sma50[i]:
+                    signals[i] = 1
+                elif sma20[i-1] >= sma50[i-1] and sma20[i] < sma50[i]:
+                    signals[i] = -1
+    elif strategy == 'rsi_reversal':
+        rsi = df_ind['rsi'].values if 'rsi' in df_ind else None
+        if rsi is None:
+            return {'status': 'error', 'message': 'RSI data not available'}
+        for i in range(1, n):
+            if not np.isnan(rsi[i]) and not np.isnan(rsi[i-1]):
+                if rsi[i-1] < 30 and rsi[i] >= 30:
+                    signals[i] = 1
+                elif rsi[i-1] > 70 and rsi[i] <= 70:
+                    signals[i] = -1
+    elif strategy == 'bb_breakout':
+        bb_high = df_ind['bb_high'].values if 'bb_high' in df_ind else None
+        bb_low = df_ind['bb_low'].values if 'bb_low' in df_ind else None
+        if bb_high is None or bb_low is None:
+            return {'status': 'error', 'message': 'BB data not available'}
+        for i in range(1, n):
+            if not np.isnan(bb_high[i]) and not np.isnan(bb_low[i]):
+                if not np.isnan(closes[i-1]) and closes[i-1] <= bb_high[i-1] and closes[i] > bb_high[i]:
+                    signals[i] = 1
+                elif not np.isnan(closes[i-1]) and closes[i-1] >= bb_low[i-1] and closes[i] < bb_low[i]:
+                    signals[i] = -1
+    else:
+        return {'status': 'error', 'message': f'Unknown strategy: {strategy}. Use: sma_cross, rsi_reversal, bb_breakout'}
+
+    cash = initial_capital
+    shares = 0
+    equity_curve = []
+    trades = []
+    in_position = False
+    for i in range(n):
+        price = float(closes[i])
+        if signals[i] == 1 and not in_position and cash > 0:
+            buy_shares = int(cash / price)
+            cost = buy_shares * price
+            shares = buy_shares
+            cash -= cost
+            in_position = True
+            trades.append({'date': str(dates[i])[:10], 'type': 'BUY', 'price': round(price, 2), 'shares': buy_shares, 'value': round(cost, 2)})
+        elif signals[i] == -1 and in_position and shares > 0:
+            proceeds = shares * price
+            cash += proceeds
+            if trades:
+                trades[-1]['sell_date'] = str(dates[i])[:10]
+                trades[-1]['sell_price'] = round(price, 2)
+                trades[-1]['pnl'] = round(proceeds - trades[-1]['value'], 2)
+                trades[-1]['pnl_pct'] = round(((price / trades[-1]['price']) - 1) * 100, 2)
+            shares = 0
+            in_position = False
+        equity = cash + (shares * price)
+        equity_curve.append({'date': str(dates[i])[:10], 'equity': round(equity, 2)})
+
+    if in_position and shares > 0:
+        price = float(closes[-1])
+        proceeds = shares * price
+        cash += proceeds
+        if trades and 'sell_date' not in trades[-1]:
+            trades[-1]['sell_date'] = str(dates[-1])[:10]
+            trades[-1]['sell_price'] = round(price, 2)
+            trades[-1]['pnl'] = round(proceeds - trades[-1]['value'], 2)
+            trades[-1]['pnl_pct'] = round(((price / trades[-1]['price']) - 1) * 100, 2)
+        shares = 0
+
+    final_equity = cash
+    total_return = ((final_equity / initial_capital) - 1) * 100
+    eq_values = [e['equity'] for e in equity_curve]
+    peak = eq_values[0]
+    max_dd = 0
+    for v in eq_values:
+        if v > peak:
+            peak = v
+        dd = (peak - v) / peak * 100
+        if dd > max_dd:
+            max_dd = dd
+    returns = []
+    for j in range(1, len(eq_values)):
+        if eq_values[j-1] > 0:
+            returns.append((eq_values[j] / eq_values[j-1]) - 1)
+    sharpe = 0
+    if len(returns) > 1:
+        avg_ret = sum(returns) / len(returns)
+        std_ret = math.sqrt(sum((r - avg_ret) ** 2 for r in returns) / (len(returns) - 1)) if len(returns) > 1 else 0
+        sharpe = round((avg_ret / std_ret) * math.sqrt(252), 2) if std_ret > 0 else 0
+    closed_trades = [t for t in trades if 'pnl' in t]
+    wins = sum(1 for t in closed_trades if t.get('pnl', 0) > 0)
+    win_rate = round((wins / len(closed_trades) * 100), 2) if closed_trades else 0
+
+    return {
+        'ticker': base,
+        'strategy': strategy,
+        'initial_capital': initial_capital,
+        'final_equity': round(final_equity, 2),
+        'total_return': round(total_return, 2),
+        'max_drawdown': round(max_dd, 2),
+        'sharpe_ratio': sharpe,
+        'win_rate': win_rate,
+        'total_trades': len(closed_trades),
+        'equity_curve': equity_curve[::5],
+        'trades': trades,
+        'source': 'derived',
+    }
+
+
 # ─── Paper Trading ─────────────────────
 
 

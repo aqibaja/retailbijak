@@ -49,6 +49,14 @@ export async function renderBacktest(root) {
                 <label class="text-xs text-dim uppercase strong">Modal Awal (Rp)</label>
                 <input type="number" id="bt-capital" class="form-input" value="10000000" step="1000000" />
               </div>
+              <div class="flex-col gap-1" style="flex:1;min-width:120px">
+                <label class="text-xs text-dim uppercase strong">Dari Tanggal</label>
+                <input type="date" id="bt-start-date" class="form-input" value="2024-01-01" />
+              </div>
+              <div class="flex-col gap-1" style="flex:1;min-width:120px">
+                <label class="text-xs text-dim uppercase strong">Sampai Tanggal</label>
+                <input type="date" id="bt-end-date" class="form-input" />
+              </div>
               <div style="flex-shrink:0">
                 <button id="btn-run-backtest" type="button" class="btn btn-primary">Jalankan</button>
               </div>
@@ -132,13 +140,23 @@ async function runBacktest() {
   const ticker = document.getElementById('bt-ticker').value.trim().toUpperCase();
   const strategy = document.getElementById('bt-strategy').value;
   const capital = parseFloat(document.getElementById('bt-capital').value) || 10000000;
+  const startDate = document.getElementById('bt-start-date').value || '';
+  const endDate = document.getElementById('bt-end-date').value || '';
   if (!ticker) { showToast('Masukkan kode saham', 'warning'); return; }
+
+  const btn = document.getElementById('btn-run-backtest');
+  if (btn) { btn.disabled = true; btn.textContent = 'Memproses…'; }
 
   const container = document.getElementById('bt-results');
   container.innerHTML = '<div class="text-center py-8"><div class="skeleton skeleton-text skeleton-w-60 mb-2"></div><div class="skeleton skeleton-text short"></div></div>';
 
   try {
-    const res = await apiFetch(`/backtest?ticker=${ticker}&strategy=${strategy}&initial_capital=${capital}`);
+    const res = await apiFetch('/backtest/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker, strategy, initial_capital: capital, start_date: startDate, end_date: endDate }),
+      timeout: 30000,
+    });
     if (res?.status === 'error') {
       container.innerHTML = `<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Gagal</strong><span class="empty-state-desc">${res.message || 'Error tidak diketahui'}</span></div>`;
       return;
@@ -237,6 +255,9 @@ async function runBacktest() {
 
   } catch (e) {
     container.innerHTML = `<div class="empty-state-card"><div class="empty-state-icon">⚠️</div><strong class="empty-state-title">Error</strong><span class="empty-state-desc">${e.message || 'Gagal menjalankan backtest'}</span></div>`;
+  } finally {
+    const btn = document.getElementById('btn-run-backtest');
+    if (btn) { btn.disabled = false; btn.textContent = 'Jalankan'; }
   }
 }
 
