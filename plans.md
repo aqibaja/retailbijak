@@ -1058,17 +1058,38 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 
 ## Fase 35 — Smoke Test Cron & Monitoring (2026-05-12)
 
-### Sprint 1: Playwright Smoke Test
-- [ ] 35.1.1 Buat script smoke_test.js di /opt/swingaq/
-- [ ] 35.1.2 Setup cron harian 08:00 WIB — jalankan smoke test
-- [ ] 35.1.3 Kirim hasil ke Telegram jika ada view error
+### Sprint 1: Playwright Smoke Test ✅
+- [x] 35.1.1 Buat script smoke_test.js di /opt/swingaq/ — 25/25 views OK
+- [x] 35.1.2 Setup cron harian 09:00 WIB (job_id: 21c5fb17eaef) — next run 2026-05-13
+- [x] 35.1.3 Notifikasi via Hermes cron delivery ke Telegram
 
-### Sprint 2: Data Pipeline Verify
-- [ ] 35.2.1 Verifikasi scheduler OHLCV berjalan otomatis (Mon-Fri 09:00 & 15:30)
-- [ ] 35.2.2 Verifikasi scheduler signal berjalan (Mon-Fri setiap 30m)
-- [ ] 35.2.3 Test screener SSE stream end-to-end
+### Sprint 2: Data Pipeline Verify ✅
+- [x] 35.2.1 Scheduler OHLCV aktif — Mon-Fri 09:05 & 16:05 WIB
+- [x] 35.2.2 Scheduler signal aktif — Mon-Fri 09:00-16:00 setiap 30m
+- [x] 35.2.3 Screener SSE OK — streaming 702 tickers live
 
-### Sprint 3: UX CRUD Test
-- [ ] 35.3.1 Test portfolio add/delete position
-- [ ] 35.3.2 Test watchlist add/remove
-- [ ] 35.3.3 Test paper trades CRUD
+### Sprint 3: UX CRUD Test ✅
+- [x] 35.3.1 Portfolio CRUD OK — add/delete position verified
+- [x] 35.3.2 Watchlist CRUD OK — add/delete verified
+- [x] 35.3.3 Paper trades CRUD OK — BUY/SELL/DELETE verified
+
+**Status: ✅ FASE 35 SELESAI**
+
+---
+
+## Fase 36 — Feature Completeness Audit (TODO)
+
+### Sprint 1: Missing Features
+- [ ] 36.1.1 Fix paper_trades.js — field `trade_type` BUY/SELL (bukan direction/strategy)
+- [ ] 36.1.2 Audit semua form di FE — pastikan field match dengan BE schema
+- [ ] 36.1.3 Fix sector.js `/api/ai/chat` endpoint — belum ada di backend
+
+### Sprint 2: Data Quality
+- [ ] 36.2.1 Seed lebih banyak news (target 200+ artikel)
+- [ ] 36.2.2 Seed paper trades sample data
+- [ ] 36.2.3 Verifikasi dividend data — tabel ada, data cukup?
+
+### Sprint 3: Performance
+- [ ] 36.3.1 Cek query lambat di SQLite (N+1, missing index)
+- [ ] 36.3.2 Cek response time endpoint kritis (market-summary, top-movers, scan)
+- [ ] 36.3.3 Tambah index DB jika perlu
