@@ -14,17 +14,24 @@ def _serialize_signal_rows(signals) -> list[dict[str, Any]]:
             'timeframe': signal.timeframe,
             'signal_type': signal.signal_type,
             'signal_date': signal.signal_date.isoformat() if signal.signal_date else None,
-            'price': signal.price,
-            'entry_price': signal.entry_price,
-            'target_price': signal.target_price,
+            'price': signal.close,          # Signal model uses 'close' not 'price'
+            'entry_price': signal.close,    # no entry_price field — use close
+            'target_price': None,           # no target_price field in model
             'stop_loss': signal.stop_loss,
-            'rationale': signal.rationale,
+            'sl_pct': signal.sl_pct,
+            'magic_line': signal.magic_line,
+            'cci': signal.cci,
+            'rationale': None,              # no rationale field in model
         })
     return data
 
 
 def _compute_analysis_metrics_from_ohlcv(db: Session, ticker: str) -> dict[str, Any]:
-    from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+    try:
+        from indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+    except ModuleNotFoundError:
+        from backend.indicators_extended import get_ohlcv_dataframe, calculate_all_indicators
+
     df = get_ohlcv_dataframe(db, ticker, limit=100)
     if df.empty or len(df) < 20:
         return {'volume_spike': 1.0, 'trend_score': 50, 'volatility_score': 50, 'breakout': False}

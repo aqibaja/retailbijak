@@ -454,6 +454,37 @@ def get_broker_activity(ticker: str, limit: int = 10, db: Session = Depends(get_
         return {'ticker': base, 'count': 0, 'data': [], 'source': 'no_data', 'message': str(exc)}
 
 
+@router.get('/api/stocks/{ticker}/news')
+def get_stock_news(ticker: str, limit: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
+    """Return news articles related to a specific ticker."""
+    base = _ticker_base(ticker)
+    try:
+        rows = (
+            db.query(News)
+            .filter(News.tickers.contains(base))
+            .order_by(News.published_at.desc())
+            .limit(limit)
+            .all()
+        )
+        data = []
+        for r in rows:
+            data.append({
+                'id': r.id,
+                'title': r.title,
+                'link': r.link,
+                'published_at': r.published_at.isoformat() if r.published_at else None,
+                'source': r.source,
+                'summary': r.summary,
+                'image_url': r.image_url,
+                'tickers': json.loads(r.tickers) if r.tickers else [],
+                'sentiment': r.sentiment,
+                'category': r.category,
+            })
+        return {'ticker': base, 'count': len(data), 'data': data}
+    except Exception as exc:
+        return {'ticker': base, 'count': 0, 'data': [], 'message': str(exc)}
+
+
 # ─── Alert CRUD ───────────────────────────
 
 

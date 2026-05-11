@@ -1,22 +1,13 @@
-import { handleRoute } from './router.js?v=202605120001';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605120001';
-import { initTheme } from './theme.js?v=202605120001';
-import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120001';
+import { handleRoute } from './router.js?v=202605120100';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605120100';
+import { initTheme } from './theme.js?v=202605120100';
+import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120100';
 
 // ─── ENTRY ─── main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
 console.log('RBK: main.js module execution started');
 
-// ─── DEBUG: verify JS executes ───
-console.log('[RBK] main.js loaded at', new Date().toISOString());
 document.documentElement.setAttribute('data-js-loaded', 'true');
-// Set background hijau tipis sebagai tanda JS jalan
-const dbg = document.createElement('div');
-dbg.id = 'js-debug-bar';
-dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;height:3px;background:#10b981;transition:opacity 2s';
-document.body.appendChild(dbg);
-setTimeout(() => { dbg.style.opacity = '0'; }, 3000);
-// ──────────────────────────────────
 
 // ================= GLOBAL ERROR BOUNDARY =================
 window.__hermesErrors = [];
@@ -56,8 +47,8 @@ function showErrorFallback(detail) {
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // Re-exported from utils/view_timers.js for backward compatibility
-export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120001';
-export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605120001';
+export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120100';
+export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605120100';
 // ─── More Drawer (mobile nav) ────────────────────
 function closeMoreDrawer() {
   const drawer = document.getElementById('more-drawer');
@@ -1007,7 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       setupLucideAutoRender();
       setupSearchOverlay();
-      // setupScrollEffects();  // disabled for debug
+      setupScrollEffects();
       setupRunningTicker();
       refreshTopbarMarket();
       let _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
@@ -1021,19 +1012,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       setupNetworkStatus();
-      // setupKeyboardShortcuts();  // disabled for debug
+      setupKeyboardShortcuts();
       startMarketCountdown();
-      // setupLivePriceStream(); // disabled — SSE causes browser freeze
-      // setupScrollToTop();  // disabled for debug
-      // setupShortcutPanel();  // disabled for debug
-      // setupPageTransitions();  // disabled for debug
-      // setupSwipeNavigation();  // disabled for debug
-      // setupPullToRefresh();  // disabled for debug
-      // setupTouchGestures();  // disabled for debug
-      // showOnboarding();  // disabled for debug
-      // Service worker disabled — causes reload loops
-      /*
-        navigator.serviceWorker.register('/sw.js?v=202605120001').then(reg => {
+      setupLivePriceStream(); // re-enabled — SSE query fixed
+      setupScrollToTop();
+      setupShortcutPanel();
+      setupPageTransitions();
+      setupSwipeNavigation();
+      setupPullToRefresh();
+      setupTouchGestures();
+      showOnboarding();
+      // Service Worker — re-enabled after fixing reload loop
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js?v=202605120100').then(reg => {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
@@ -1046,12 +1037,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           });
         }).catch(() => {});
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_UPDATED') {
-            window.location.reload(true);
-          }
-        });
-      */
+      }
 
       // ─── PWA Install Prompt ────────────────────────
       let deferredPrompt = null;

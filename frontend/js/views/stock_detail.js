@@ -1,7 +1,7 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=202605120001';
-import { observeElements, flashUpdate } from '../utils/helpers.js?v=202605120001';
-import { nf, pct, pf, money, fmtRp, renderMarkdown } from '../utils/format.js?v=202605120001';
-import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=202605120001';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=202605120100';
+import { observeElements, flashUpdate } from '../utils/helpers.js?v=202605120100';
+import { nf, pct, pf, money, fmtRp, renderMarkdown } from '../utils/format.js?v=202605120100';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=202605120100';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -262,7 +262,7 @@ export async function renderStockDetail(root, ticker) {
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
   document.getElementById('btn-add-compare').addEventListener('click', () => {
-    import('./compare.js?v=202605120001').then(m => {
+    import('./compare.js?v=202605120100').then(m => {
       m.addToCompare(symbol);
     });
   });
@@ -1499,7 +1499,7 @@ function renderFundamentalHistory(symbol) {
   const container = document.getElementById('fundamental-history');
   if (!container) return;
 
-  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamentals/history`).then(res => {
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamental/history`).then(res => {
     if (!res || !res.price_data || !res.price_data.length) {
       container.innerHTML = '<div class="empty-state-v2"><h3>Belum ada data</h3><p>Data riwayat fundamental belum tersedia untuk saham ini.</p></div>';
       return;

@@ -1,11 +1,11 @@
 window.__rbk_log && window.__rbk_log('dashboard.js module loaded', true);
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=202605120001';
-import { observeElements, animateValue } from '../utils/helpers.js?v=202605120001';
-import { registerViewTimer } from '../utils/view_timers.js?v=202605120001';
-import { nf, pf } from '../utils/format.js?v=202605120001';
-import { ssSet } from '../utils/storage.js?v=202605120001';
-import { loadTodayEvents } from './calendar.js?v=202605120001';
-import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605120001';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=202605120100';
+import { observeElements, animateValue } from '../utils/helpers.js?v=202605120100';
+import { registerViewTimer } from '../utils/view_timers.js?v=202605120100';
+import { nf, pf } from '../utils/format.js?v=202605120100';
+import { ssSet } from '../utils/storage.js?v=202605120100';
+import { loadTodayEvents } from './calendar.js?v=202605120100';
+import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605120100';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -29,12 +29,6 @@ function buildAiPickContext(item, mode = 'swing') {
 }
 
 export async function renderDashboard(root) {
-  // DEBUG
-  const dbg2 = document.createElement('div');
-  dbg2.id = 'dash-debug';
-  dbg2.style.cssText = 'position:fixed;bottom:100px;right:10px;z-index:99997;background:rgba(99,102,241,0.9);color:#fff;padding:4px 10px;border-radius:6px;font:12px monospace';
-  dbg2.textContent = 'DASH: rendering';
-  document.body.appendChild(dbg2);
   
   document.title = 'RetailBijak — Dashboard';
   root.innerHTML = `

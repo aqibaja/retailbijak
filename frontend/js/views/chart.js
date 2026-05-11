@@ -2,7 +2,7 @@
  * Full-Screen Chart View — Dedicated chart page with drawing tools
  * Fase 15.5 — Full-Screen Chart & Drawing Tools
  */
-import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=202605120001';
+import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=202605120100';
 
 let activeTicker = null;
 let activeTf = '1M';
@@ -550,7 +550,7 @@ async function saveDrawingsToBackend() {
         const fibData = fibLines.map(fib => fib.data);
 
         // First clear existing backend drawings
-        await apiFetch(`/chart/${activeTicker}/drawings`, { method: 'DELETE' });
+        await apiFetch(`/api/chart/${activeTicker}/drawings`, { method: 'DELETE' });
 
         // Save each drawing individually
         const allDrawings = [
