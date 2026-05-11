@@ -1275,3 +1275,19 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Commit: 5e0b1a7**
 **Status: ✅ FASE 45 SELESAI**
+
+---
+
+## Fase 46 — Market Briefing Fix (2026-05-12)
+
+### Sprint 1: Briefing Data Fix ✅
+- [x] 46.1.1 Fix `_get_market_context` — pakai date dengan ≥200 rows bukan max date (sparse 2026-08-03)
+- [x] 46.1.2 Fix `generate_briefing` — query ORDER BY id DESC ambil row terbaru bukan pertama
+- [x] 46.1.3 Briefing verified — content 813 chars, source: cache, date: 2026-05-11 ✅
+
+### Sprint 2: AI Content ✅
+- [x] 46.2.1 AI picks triggered — 5 picks (BAIK, BULL, BIPI, DADA, MINA) ✅
+- [x] 46.2.2 Market briefing triggered — LLM source: ok ✅
+
+**Commit: b9a26b2**
+**Status: ✅ FASE 46 SELESAI**
