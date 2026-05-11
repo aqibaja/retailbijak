@@ -152,6 +152,34 @@ def sector_list(db: Session = Depends(get_db)):
     }
 
 
+@router.get('/api/sectors/rotation')
+def sector_rotation_heatmap_early(db: Session = Depends(get_db)):
+    """Return sector rotation data optimized for heatmap visualization.
+    NOTE: Registered here (before {sector} wildcard) to avoid route shadowing.
+    """
+    sectors_data, today = _compute_sector_aggregates(db)
+    periods = ['1d', '5d', '1m', '3m']
+    sectors_heatmap = []
+    for sec in sectors_data:
+        returns = {p: sec['avg_returns'].get(p, 0) for p in periods}
+        momentum_score = (
+            returns.get('1d', 0) * 0.4 + returns.get('5d', 0) * 0.3
+            + returns.get('1m', 0) * 0.2 + returns.get('3m', 0) * 0.1
+        )
+        sectors_heatmap.append({
+            'name': sec['sector'],
+            'stocks_count': sec['count'],
+            'returns': returns,
+            'momentum_score': round(momentum_score, 2),
+        })
+    sectors_heatmap.sort(key=lambda x: x['momentum_score'], reverse=True)
+    for p in periods:
+        ranked = sorted(enumerate(sectors_heatmap), key=lambda x: x[1]['returns'].get(p, 0), reverse=True)
+        for rank, (idx, _) in enumerate(ranked, start=1):
+            sectors_heatmap[idx][f'rank_{p}'] = rank
+    return {'periods': periods, 'sectors': sectors_heatmap, 'generated_at': datetime.utcnow().isoformat()}
+
+
 @router.get('/api/sectors/{sector}')
 def sector_detail(sector: str, db: Session = Depends(get_db)):
     """Return sector detail with industry breakdown.
