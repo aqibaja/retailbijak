@@ -1235,3 +1235,24 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [x] 43.3.3 Settings 404 hanya /api/auth/me — bukan bug, device belum register
 
 **Status: ✅ FASE 43 SELESAI**
+
+---
+
+## Fase 44 — View Enhancement & Data Seeding (2026-05-12)
+
+### Sprint 1: CDN & Runtime Fixes ✅
+- [x] 44.1.1 Load Chart.js 4.4.3 dari CDN di index.html — market chart timeout resolved. Commit: 589ebd6
+- [x] 44.1.2 TradingView screener error — third-party widget, tidak bisa difix dari sisi kita
+- [x] 44.1.3 /api/auth/me 404 di settings — expected behavior, bukan bug
+
+### Sprint 2: Data Seeding ✅
+- [x] 44.2.1 Seed 10 alerts (price_above/below, rsi_above/below) untuk 10 blue chip — total 11 alerts
+- [x] 44.2.2 Seed macro indicators lengkap — 35 rows baru, total 61 rows, 9 indikator (bi_rate, inflation, gdp_growth, usd_idr, dll)
+- [x] 44.2.3 Seed 36 calendar events Mei-Agu 2026 — RUPS, dividen, earnings blue chip
+
+### Sprint 3: Verify ✅
+- [x] 44.3.1 alerts API: 11 alerts ✅
+- [x] 44.3.2 macro API: 9 indicator types, 61 rows ✅
+- [x] 44.3.3 calendar API: Mei 11, Jun 100, Jul 8, Agu 8 events ✅
+
+**Status: ✅ FASE 44 SELESAI**
