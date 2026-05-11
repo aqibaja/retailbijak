@@ -1,11 +1,11 @@
 window.__rbk_log && window.__rbk_log('dashboard.js module loaded', true);
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch, showToast } from '../api.js?v=202605120200';
-import { observeElements, animateValue } from '../utils/helpers.js?v=202605120200';
-import { registerViewTimer } from '../utils/view_timers.js?v=202605120200';
-import { nf, pf, currencyFormat } from '../utils/format.js?v=202605120200';
-import { ssSet } from '../utils/storage.js?v=202605120200';
-import { loadTodayEvents } from './calendar.js?v=202605120200';
-import { showSkeleton } from '../skeleton.js?v=202605120200';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch, showToast } from '../api.js?v=20260512';
+import { observeElements, animateValue } from '../utils/helpers.js?v=20260512';
+import { registerViewTimer } from '../utils/view_timers.js?v=20260512';
+import { nf, pf, currencyFormat } from '../utils/format.js?v=20260512';
+import { ssSet } from '../utils/storage.js?v=20260512';
+import { loadTodayEvents } from './calendar.js?v=20260512';
+import { showSkeleton } from '../skeleton.js?v=20260512';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -723,17 +723,22 @@ async function loadNews(){
   }
 }
 
-const row = (r) => `<a href="#stock/${r.ticker}" class="mover-row dash-mover-row">
+const row = (r) => {
+  const volStr = r.volume >= 1e9 ? `${(r.volume/1e9).toFixed(1)}B` : r.volume >= 1e6 ? `${(r.volume/1e6).toFixed(1)}M` : r.volume >= 1e3 ? `${(r.volume/1e3).toFixed(0)}K` : (r.volume||0).toString();
+  const chg = r.change_pct ?? r.change ?? 0;
+  const isUp = chg >= 0;
+  return `<a href="#stock/${r.ticker}" class="mover-row dash-mover-row">
   <div class="dash-mover-main">
     <span class="dash-mover-rank">#${r.rank || '—'}</span>
     <div><b class="mono">${r.ticker}</b><small>${r.name || ''}</small></div>
   </div>
   <div class="text-right">
     <b class="mono">${r.price == null ? '—' : nf(r.price,0)}</b>
-    <small class="${r.change>=0?'text-up':'text-down'}">${pf(r.change)}</small>
-    <small class="${r.perf_1w>=0?'text-up':'text-down'}">1W: ${pf(r.perf_1w)}</small>
+    <small class="${isUp?'text-up':'text-down'}">${pf(chg)}</small>
+    <small class="text-dim" style="font-size:10px">Vol ${volStr}</small>
   </div>
 </a>`;
+};
 
 let ihsgChart;
 const PERIOD_MAP = { '1W': '1W', '1M': '1M', '1Q': '1Q', '1Y': '1Y' };

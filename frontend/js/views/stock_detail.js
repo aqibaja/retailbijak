@@ -2374,6 +2374,46 @@ function renderFundamentalHistory(symbol) {
       });
       fundamentalHistoryCharts.push(priceChart);
     }
+
+    // Dividend history bar chart
+    try {
+      const divRes = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/dividends`);
+      if (divRes && divRes.data && divRes.data.length > 0) {
+        const divContainer = document.createElement('div');
+        divContainer.style.cssText = 'margin-top:12px';
+        divContainer.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span class="text-xs text-dim uppercase strong" style="letter-spacing:.05em">Riwayat Dividen</span>
+            <span class="text-xs text-dim">Total yield: ${divRes.total_yield != null ? divRes.total_yield.toFixed(2)+'%' : '—'}</span>
+          </div>
+          <div style="position:relative;height:120px"><canvas id="fund-div-chart"></canvas></div>`;
+        container.appendChild(divContainer);
+
+        const divCtx = document.getElementById('fund-div-chart');
+        if (divCtx && typeof Chart !== 'undefined') {
+          const sorted = [...divRes.data].sort((a,b) => (a.ex_date||a.payment_date||'').localeCompare(b.ex_date||b.payment_date||''));
+          const divLabels = sorted.map(d => (d.ex_date||d.payment_date||'').slice(0,7));
+          const divValues = sorted.map(d => d.amount || 0);
+          const divChart = new Chart(divCtx, {
+            type: 'bar',
+            data: {
+              labels: divLabels,
+              datasets: [{ label: 'Dividen (Rp)', data: divValues, backgroundColor: upColor + 'bb', borderColor: upColor, borderWidth: 1, borderRadius: 4 }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Rp ${ctx.parsed.y.toLocaleString('id-ID')}` } } },
+              scales: {
+                x: { ticks: { color: textColor, font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: gridColor } },
+                y: { ticks: { color: textColor, font: { size: 9 }, callback: v => 'Rp'+v.toLocaleString('id-ID') }, grid: { color: gridColor } }
+              }
+            }
+          });
+          fundamentalHistoryCharts.push(divChart);
+        }
+      }
+    } catch(e) { /* dividend chart optional */ }
+
   }).catch(e => {
     console.warn('Fundamental history fetch failed:', e);
     container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat data</h3><p>Riwayat fundamental tidak dapat dimuat saat ini.</p></div>';

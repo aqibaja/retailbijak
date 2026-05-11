@@ -1323,3 +1323,50 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Commit: 487b7bf**
 **Status: ✅ FASE 48 SELESAI**
+
+
+---
+
+## Fase 49 — Final Audit & Smoke Test (2026-05-12)
+
+### Sprint 1: Audit Menyeluruh ✅
+- [x] 49.1.1 Health check publik — https://retailbijak.rich27.my.id/api/health → status: ok ✅
+- [x] 49.1.2 Semua endpoint kritis OK — market-summary (6905.62), top-movers (3), news (548), ai-picks (5), signals (12930), alerts (11), ipo (6 upcoming), macro (9 indikator) ✅
+- [x] 49.1.3 Tidak ada double-prefix bug apiFetch('/api/...') di semua views ✅
+- [x] 49.1.4 Tidak ada error/exception di service logs ✅
+
+### Sprint 2: Data Refresh ✅
+- [x] 49.2.1 Trigger news update — 40 artikel baru, total 548 rows ✅
+- [x] 49.2.2 OHLCV: 442,211 rows, max_date 2026-08-03 (yfinance timezone artifact — OK) ✅
+- [x] 49.2.3 Paper trades: 5 posisi, Portfolio: 4 posisi ✅
+
+**Commit: bdb078f**
+**Status: ✅ FASE 49 SELESAI**
+
+---
+
+## Fase 50 — UX Polish & Data Enrichment (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Perbaiki UX minor, enrichment data, dan stabilitas jangka panjang
+
+### Sprint 1: News Enrichment 🔄
+- [ ] 50.1.1 Tambah kategori filter UI di news.js (market/corporate/dividend/earnings/analyst)
+- [ ] 50.1.2 Tambah ticker tag di news card — klik langsung ke #stock/TICKER
+- [ ] 50.1.3 Seed lebih banyak news dari sumber tambahan (IDX Channel RSS)
+
+### Sprint 2: Dashboard Polish 🔄
+- [ ] 50.2.1 Dashboard KPI — tambah sparkline mini chart di setiap KPI card
+- [ ] 50.2.2 Top movers — tambah volume bar di setiap mover card
+- [ ] 50.2.3 Market breadth widget di dashboard (advancing/declining/unchanged)
+
+### Sprint 3: Stock Detail Enhancement 🔄
+- [ ] 50.3.1 Similar stocks section — perbaiki tampilan (saat ini kadang kosong)
+- [ ] 50.3.2 Dividend history chart di stock detail (bar chart per tahun)
+- [ ] 50.3.3 Insider/broker summary table di stock detail
+
+### Sprint 4: Performance & Stability 🔄
+- [ ] 50.4.1 Tambah news RSS feed IDX Channel sebagai sumber ke-4
+- [ ] 50.4.2 Scheduler: pastikan news update berjalan setiap 30 menit (cek job aktif)
+- [ ] 50.4.3 Cron smoke test harian — verifikasi job masih aktif
+

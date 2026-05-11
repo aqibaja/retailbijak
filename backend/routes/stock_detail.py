@@ -1599,14 +1599,20 @@ def similar_stocks(ticker: str, limit: int = 5, db: Session = Depends(get_db)):
     if not target:
         return {'count': 0, 'data': []}
 
-    # Find stocks in same sector
-    sector_stocks = db.query(Stock).filter(
-        Stock.sector == target.sector,
-        Stock.ticker != ticker.upper()
-    ).limit(50).all()
+    # Find stocks in same sector; fallback to random stocks if sector is None
+    if target.sector:
+        sector_stocks = db.query(Stock).filter(
+            Stock.sector == target.sector,
+            Stock.ticker != ticker.upper()
+        ).limit(50).all()
+    else:
+        sector_stocks = []
 
     if not sector_stocks:
-        return {'count': 0, 'data': []}
+        # Fallback: pick random liquid stocks from any sector
+        sector_stocks = db.query(Stock).filter(
+            Stock.ticker != ticker.upper()
+        ).order_by(func.random()).limit(50).all()
 
     # Get latest prices for scoring
     latest_date = db.query(func.max(OHLCVDaily.date)).scalar()
