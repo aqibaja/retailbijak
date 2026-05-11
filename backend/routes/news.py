@@ -346,6 +346,31 @@ def get_corporate_actions(year: int | None = None, month: int | None = None, lim
         elif a.get("payment_date") and str(a.get("payment_date")) >= grace:
             future.append(a)
 
+    # Fallback to calendar_events DB if IDX API returned nothing
+    if not future:
+        try:
+            from database import SessionLocal, CalendarEvent
+            from sqlalchemy import text as _text
+            _db = SessionLocal()
+            try:
+                today_str = datetime.utcnow().strftime('%Y-%m-%d')
+                rows = _db.query(CalendarEvent).filter(
+                    CalendarEvent.event_type.in_(['ipo', 'rights', 'split', 'corporate', 'dividend'])
+                ).order_by(CalendarEvent.event_date.desc()).limit(limit).all()
+                for row in rows:
+                    future.append({
+                        "type": row.event_type,
+                        "title": row.title,
+                        "code": row.ticker,
+                        "date": str(row.event_date)[:10] if row.event_date else None,
+                        "description": row.description,
+                        "source": "db_calendar",
+                    })
+            finally:
+                _db.close()
+        except Exception:
+            pass
+
     result = _resp_ok(future[:limit], source="idx_corporate_live" if future else "no_data", count=len(future[:limit]))
     _corporate_actions_cache["data"] = result
     _corporate_actions_cache["ts"] = now

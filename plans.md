@@ -2171,3 +2171,23 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - 73.3.1 Smoke test 16/16 ✅
 - 73.3.2 Git tag v1.2.7 ✅
 
+
+---
+
+## Fase 74 — Corporate Actions Seed & UX Polish (2026-05-11)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Seed corporate actions data, polish minor UX gaps
+
+### Sprint 1: Corporate Actions Data
+- [ ] 74.1.1 Trigger seed corporate actions agar halaman Corporate tidak kosong
+- [ ] 74.1.2 Verifikasi corporate page tampil data setelah seed
+
+### Sprint 2: Macro Timestamp
+- [ ] 74.2.1 Tambah last_updated timestamp di macro card (tahun data terakhir sudah ada, tambah "Diperbarui: X")
+- [ ] 74.2.2 Tambah refresh button di macro page
+
+### Sprint 3: Final
+- [ ] 74.3.1 Smoke test 16/16
+- [ ] 74.3.2 Git tag v1.2.8
+

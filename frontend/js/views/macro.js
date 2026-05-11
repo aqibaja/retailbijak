@@ -146,6 +146,9 @@ export async function renderMacro(root) {
           <h1 style="font-size:22px;font-weight:700;color:var(--text-main);margin:0">📊 Macro & Ekonomi</h1>
           <p class="page-subtitle" style="font-size:13px;color:var(--text-muted);margin-top:4px">Indikator makroekonomi Indonesia — BI Rate, Inflasi, GDP, Neraca Dagang, Cadangan Devisa.</p>
         </div>
+        <button id="macro-refresh-btn" class="btn btn-sm" title="Refresh data makro" style="align-self:flex-start">
+          <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Refresh
+        </button>
       </div>
 
       <div id="macro-loading">
@@ -169,6 +172,14 @@ export async function renderMacro(root) {
   }
 
   root._macroRefresh = () => loadMacroData(root, true);
+
+  // Wire refresh button
+  root.querySelector('#macro-refresh-btn')?.addEventListener('click', async () => {
+    const btn = root.querySelector('#macro-refresh-btn');
+    if (btn) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+    await loadMacroData(root, true);
+    if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+  });
 }
 
 async function loadMacroData(root, force = false) {
