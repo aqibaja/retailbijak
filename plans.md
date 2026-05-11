@@ -1291,3 +1291,19 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Commit: b9a26b2**
 **Status: ✅ FASE 46 SELESAI**
+
+---
+
+## Fase 47 — Dividends & Final Audit (2026-05-12)
+
+### Sprint 1: Data Seeding ✅
+- [x] 47.1.1 Seed 34 dividends baru — total 58 rows, 14 tickers (BBCA, BBRI, BMRI, TLKM, ASII, UNVR, KLBF, ICBP, PGAS, SMGR, ANTM, PTBA, ADRO, INDF)
+- [x] 47.1.2 Dividends API verified — count: 58 ✅
+
+### Sprint 2: Final Audit ✅
+- [x] 47.2.1 25/25 views audit — 23 ✅, 2 🟡 (breadth/chart — timing issue, data OK)
+- [x] 47.2.2 Semua endpoint kritis OK — health, market-summary, signals, news, ai-picks, briefing, alerts, calendar, ipo, macro
+- [x] 47.2.3 Index-constituents OK — 5 indeks (LQ45, IDX30, dll), 45 konstituen LQ45
+
+**Commit: f5d839a**
+**Status: ✅ FASE 47 SELESAI**
