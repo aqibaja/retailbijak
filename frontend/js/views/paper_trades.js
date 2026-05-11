@@ -1,7 +1,7 @@
-import { apiFetch, showToast } from '../api.js?v=20260511';
-import { nf, pf, money } from '../utils/format.js?v=20260511';
-import { observeElements } from '../main.js?v=20260511';
-import { showSkeleton, hideSkeleton } from '../skeleton.js?v=20260511';
+import { apiFetch, showToast } from '../api.js?v=202605112032';
+import { nf, pf, money } from '../utils/format.js?v=202605112032';
+import { observeElements } from '../utils/helpers.js?v=202605112032';
+import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605112032';
 
 const INITIAL_CAPITAL = 100_000_000; // 100M virtual cash
 

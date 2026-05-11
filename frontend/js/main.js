@@ -1,6 +1,22 @@
-import { handleRoute } from './router.js?v=20260511';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=20260511';
-import { initTheme } from './theme.js?v=20260511';
+import { handleRoute } from './router.js?v=202605112032';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605112032';
+import { initTheme } from './theme.js?v=202605112032';
+import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605112032';
+
+// ─── ENTRY ─── main.js
+window.__rbk_log && window.__rbk_log('main.js module loaded', true);
+console.log('RBK: main.js module execution started');
+
+// ─── DEBUG: verify JS executes ───
+console.log('[RBK] main.js loaded at', new Date().toISOString());
+document.documentElement.setAttribute('data-js-loaded', 'true');
+// Set background hijau tipis sebagai tanda JS jalan
+const dbg = document.createElement('div');
+dbg.id = 'js-debug-bar';
+dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;height:3px;background:#10b981;transition:opacity 2s';
+document.body.appendChild(dbg);
+setTimeout(() => { dbg.style.opacity = '0'; }, 3000);
+// ──────────────────────────────────
 
 // ================= GLOBAL ERROR BOUNDARY =================
 window.__hermesErrors = [];
@@ -39,15 +55,9 @@ function showErrorFallback(detail) {
 }
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
-window.__viewTimers = [];
-export function registerViewTimer(id) { window.__viewTimers.push(id); }
-export function clearViewTimers() {
-  window.__viewTimers.forEach(id => {
-    if (id.startsWith('i_')) clearInterval(parseInt(id.slice(2)));
-    else clearTimeout(parseInt(id));
-  });
-  window.__viewTimers = [];
-}
+// Re-exported from utils/view_timers.js for backward compatibility
+export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605112032';
+export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605112032';
 export function observeElements(selector = '.stagger-reveal') {
    const observer = new IntersectionObserver((entries) => {
        entries.forEach((entry, i) => {
@@ -170,11 +180,26 @@ function setupKeyboardShortcuts() {
 
 // ─── Lucide Icons Auto-Render via MutationObserver ───
 function setupLucideAutoRender() {
-  if (typeof lucide === 'undefined' || !lucide.createIcons) return;
-  lucide.createIcons(); // Initial render
-  const target = document.getElementById('app-root') || document.body;
-  const observer = new MutationObserver(() => lucide.createIcons());
-  observer.observe(target, { childList: true, subtree: true });
+  const render = () => {
+    if (typeof lucide === 'undefined' || !lucide.createIcons) return;
+    lucide.createIcons(); // Initial render
+    const target = document.getElementById('app-root') || document.body;
+    const observer = new MutationObserver(() => lucide.createIcons());
+    observer.observe(target, { childList: true, subtree: true });
+  };
+  
+  // Wait for Lucide CDN if not loaded yet
+  if (typeof lucide === 'undefined') {
+    const checkLucide = setInterval(() => {
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        clearInterval(checkLucide);
+        render();
+      }
+    }, 100);
+    setTimeout(() => clearInterval(checkLucide), 5000); // Timeout after 5s
+  } else {
+    render();
+  }
 }
 
 // ================= UI CORE =================
@@ -1045,7 +1070,30 @@ document.addEventListener('DOMContentLoaded', () => {
       showOnboarding();
       // Register PWA service worker (1.7.6)
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('/sw.js?v=202605112032').then(reg => {
+          // If waiting, skip wait and reload
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            window.location.reload(true);
+          }
+          // Detect new SW installing
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                // New SW installed, tell it to activate
+                newSW.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload(true);
+              }
+            });
+          });
+        }).catch(() => {});
+        // Auto-reload when SW sends update message
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_UPDATED') {
+            window.location.reload(true);
+          }
+        });
       }
 
       // ─── PWA Install Prompt ────────────────────────

@@ -1,9 +1,11 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=20260511';
-import { observeElements, animateValue } from '../main.js?v=20260511';
-import { nf, pf } from '../utils/format.js?v=20260511';
-import { ssSet } from '../utils/storage.js?v=20260511';
-import { loadTodayEvents } from './calendar.js?v=20260511';
-import { showSkeleton, hideSkeleton } from '../skeleton.js?v=20260511';
+window.__rbk_log && window.__rbk_log('dashboard.js module loaded', true);
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=202605112032';
+import { observeElements, animateValue } from '../utils/helpers.js?v=202605112032';
+import { registerViewTimer } from '../utils/view_timers.js?v=202605112032';
+import { nf, pf } from '../utils/format.js?v=202605112032';
+import { ssSet } from '../utils/storage.js?v=202605112032';
+import { loadTodayEvents } from './calendar.js?v=202605112032';
+import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605112032';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -27,6 +29,13 @@ function buildAiPickContext(item, mode = 'swing') {
 }
 
 export async function renderDashboard(root) {
+  // DEBUG
+  const dbg2 = document.createElement('div');
+  dbg2.id = 'dash-debug';
+  dbg2.style.cssText = 'position:fixed;bottom:100px;right:10px;z-index:99997;background:rgba(99,102,241,0.9);color:#fff;padding:4px 10px;border-radius:6px;font:12px monospace';
+  dbg2.textContent = 'DASH: rendering';
+  document.body.appendChild(dbg2);
+  
   document.title = 'RetailBijak — Dashboard';
   root.innerHTML = `
   <section class="dashboard-pro stagger-reveal" aria-label="Dashboard Pasar">
@@ -181,21 +190,33 @@ export async function renderDashboard(root) {
     const el = document.getElementById(id);
     if (el) showSkeleton(el, type, 3);
   });
-  const [market] = await Promise.all([loadMarketSummary(), loadNews(), loadIntel(), loadMovers(), loadAiPickWidget()]);
+  // API calls dengan timeout — jangan saling blokir
+  const apiTimeout = 6000; // 6 detik max
+  const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
+  const [market] = await Promise.all([
+    withTimeout(loadMarketSummary(), apiTimeout),
+    withTimeout(loadNews(), apiTimeout),
+    withTimeout(loadIntel(), apiTimeout),
+    withTimeout(loadMovers(), apiTimeout),
+    withTimeout(loadAiPickWidget(), apiTimeout),
+  ]);
   loadMarketNarrative();
   loadPnlWidget();  // P&L widget (async)
   loadMiniHeatmapWidget(); // Mini heatmap widget (async)
   loadMarketBriefing(); // AI Briefing widget (18.3)
-  // Lazy load Chart.js only for dashboard (1.7.2)
+  // Lazy load Chart.js — dengan timeout (biar ga hang kalo CDN diblokir)
   if (typeof Chart === 'undefined' && document.getElementById('ihsgMainChart')) {
     try {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        s.crossOrigin = 'anonymous';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
+      await Promise.race([
+        new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+          s.crossOrigin = 'anonymous';
+          s.onload = resolve; s.onerror = reject;
+          document.head.appendChild(s);
+        }),
+        new Promise(r => setTimeout(() => { console.warn('Chart.js CDN timeout — skip chart'); r(); }, 5000)),
+      ]);
     } catch (e) { console.warn('Chart.js lazy load failed', e); }
   }
   initChart(market);
@@ -215,7 +236,7 @@ export async function renderDashboard(root) {
     loadSignalWidget();
     loadMiniHeatmapWidget();
   }, 120000);
-  window.__viewTimers.push('i_' + _dashRefreshTimer);
+  registerViewTimer('i_' + _dashRefreshTimer);
 }
 // ─── Breadth Widget ────────────────────────────
 async function loadBreadthWidget() {
@@ -319,7 +340,6 @@ async function loadBreadthWidget() {
   });
   // Apply widget visibility on load
   applyWidgetVisibility();
-}
 
 // ─── Data Freshness Stats ────────────────────────────
 async function loadFreshnessStats() {

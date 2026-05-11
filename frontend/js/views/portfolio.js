@@ -1,7 +1,7 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, fetchPortfolioDividends, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260511';
-import { money, nf, pf } from '../utils/format.js?v=20260511';
-import { observeElements, flashUpdate } from '../main.js?v=20260511';
-import { exportCSV as expCSV } from '../utils/export.js?v=20260511';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, fetchPortfolioDividends, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=202605112032';
+import { money, nf, pf } from '../utils/format.js?v=202605112032';
+import { observeElements, flashUpdate } from '../utils/helpers.js?v=202605112032';
+import { exportCSV as expCSV } from '../utils/export.js?v=202605112032';
 
 // ─── SSE State ──────────────────────────────
 let _wlEventSource = null;   // Watchlist SSE connection
@@ -344,11 +344,8 @@ async function renderPortfolioTab(el) {
       <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Return</span><strong class="portfolio-kpi-value" id="risk-totalreturn">—</strong></div>
       <div class="portfolio-kpi"><span class="portfolio-kpi-label">Total Posisi</span><strong class="portfolio-kpi-value" id="risk-positions">—</strong></div>
       <div class="portfolio-kpi"><span class="portfolio-kpi-label">Sektor</span><strong class="portfolio-kpi-value" id="risk-sectors">—</strong></div>
-    </div>
-    <div id="monthly-heatmap-section" style="margin-top:12px;display:none">
-      <h4 class="text-xs uppercase text-dim strong mb-2">Return Bulanan (%)</h4>
-      <div id="monthly-heatmap-grid" class="flex flex-wrap gap-1"></div>
-    </div>
+    </div>`;
+    //
     // Analytics charts container
     const analyticsHtml = `<div id="portfolio-analytics-section" class="portfolio-analytics-grid">
       <div class="portfolio-chart-card" id="equity-curve-card">
@@ -868,7 +865,7 @@ async function loadTransactionHistory(el) {
 }
 
 async function showTransactionForm(el) {
-  const { showModal } = await import('./portfolio.js?v=20260511');
+  const { showModal } = await import('./portfolio.js?v=202605112032');
   showModal({
     title: 'Catat Transaksi',
     fields: [
