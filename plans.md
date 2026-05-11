@@ -2200,3 +2200,23 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - 74.3.1 Smoke test 16/16 ✅
 - 74.3.2 Git tag v1.2.8 ✅
 
+
+---
+
+## Fase 75 — Polish & Stability Final (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Polish akhir sebelum rilis stabil v1.3.0
+
+### Sprint 1: Data Polish
+- [ ] 75.1.1 Seed market_cap untuk lebih banyak saham (saat ini hanya 5/974) agar treemap weight akurat
+- [ ] 75.1.2 Verifikasi treemap tampil dengan weight yang benar setelah seed
+
+### Sprint 2: UX Polish
+- [ ] 75.2.1 Tambah "last updated" timestamp di macro cards (saat ini hanya tampil tahun)
+- [ ] 75.2.2 Perbaiki news count — API return 548 tapi limit=3 hanya tampil 3
+
+### Sprint 3: Final Release v1.3.0
+- [ ] 75.3.1 Smoke test 16/16
+- [ ] 75.3.2 Git tag v1.3.0 (major version bump)
+
