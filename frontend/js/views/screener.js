@@ -474,8 +474,11 @@ function sortResults() {
 }
 
 function filterResults() {
-    const term = document.getElementById('screener-search').value.toUpperCase();
-    const filtered = currentResults.filter(r => r.ticker.includes(term));
+    const searchEl = document.getElementById('screener-search');
+    if (!searchEl) return;
+    const term = searchEl.value.toUpperCase();
+    if (!currentResults.length) return;
+    const filtered = currentResults.filter(r => r.ticker && r.ticker.includes(term));
     renderList(filtered);
 }
 
@@ -501,7 +504,15 @@ function renderList(results) {
     // Apply multi-sort
     const sorted = applySorting(chipFiltered);
     const hasResults = sorted.length > 0;
-    if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
+    if (toolbar) {
+      if (hasResults) {
+        toolbar.classList.remove('hidden');
+        toolbar.style.display = 'flex';
+      } else {
+        toolbar.classList.add('hidden');
+        toolbar.style.display = '';
+      }
+    }
     const sc = document.getElementById('screener-search');
     const totalEl = document.getElementById('screener-total');
     if (totalEl && totalScanned > 0) {
@@ -633,14 +644,14 @@ function runScreener() {
 
     btn.disabled = true;
     btn.classList.add('btn-loading');
-    if (toolbar) toolbar.style.display = 'none';
+    if (toolbar) { toolbar.classList.add('hidden'); toolbar.style.display = ''; }
     const searchInput = document.getElementById('screener-search');
     if (searchInput) searchInput.value = '';
     countBadge.textContent = 'MEMINDAI...';
     totalScanned = 0;
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
-    progBox.style.display = 'block';
+    progBox.classList.remove('hidden');
 
     // Check if we're still mounted before touching DOM
     const isMounted = () => document.getElementById('screener-content') !== null;
@@ -672,7 +683,7 @@ function runScreener() {
             totalScanned = data.total_scanned || 0;
             btn.disabled = false;
             btn.classList.remove('btn-loading');
-            progBox.style.display = 'none';
+            progBox.classList.add('hidden');
             countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
             renderList(currentResults);
             showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal.`, 'success');
@@ -692,14 +703,18 @@ function runScreener() {
         scanEventSource = null;
         btn.disabled = false;
         btn.classList.remove('btn-loading');
-        progBox.style.display = 'none';
+        progBox.classList.add('hidden');
         countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERPUTUS` : 'GAGAL';
         if (currentResults.length > 0) {
             renderList(currentResults);
             showToast('Pemindaian terputus. Hasil parsial ditampilkan.', 'warning');
         } else {
-            renderList([]);
-            showToast('Pemindaian gagal.', 'error');
+            contentArea.innerHTML = renderEmptyState({
+              title: 'Pemindaian gagal',
+              body: 'Koneksi ke server terputus sebelum ada hasil.',
+              action: 'Periksa koneksi lalu coba jalankan scan lagi.',
+            });
+            showToast('Pemindaian gagal. Koneksi terputus.', 'error');
         }
     };
 }
@@ -1155,7 +1170,7 @@ function runPatternScan(pattern) {
     } else if (data.type === 'done') {
       totalScanned = data.total_scanned || 0;
       if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
-      if (progBox) progBox.style.display = 'none';
+      if (progBox) progBox.classList.add('hidden');
       if (patternProg) {
         const label = pattern ? (patternNames[pattern] || pattern) : 'Semua Pola';
         patternProg.textContent = `Scan pola selesai: ${currentResults.length} saham dengan pola ${label}`;
@@ -1171,7 +1186,7 @@ function runPatternScan(pattern) {
   patternScanSource.onerror = () => {
     if (patternScanSource) { patternScanSource.close(); patternScanSource = null; }
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
-    if (progBox) progBox.style.display = 'none';
+    if (progBox) progBox.classList.add('hidden');
     if (patternProg) {
       patternProg.textContent = 'Scan pola terputus.';
       setTimeout(() => patternProg.classList.add('hidden'), 3000);
@@ -1199,38 +1214,45 @@ function handlePresetScan(preset) {
 
   if (contentArea) contentArea.innerHTML = renderSkeleton();
   if (countBadge) countBadge.textContent = `MEMUAT ${p.label.toUpperCase()}...`;
-  if (toolbar) toolbar.style.display = 'none';
-  if (progBox) { progBox.style.display = 'block';
-    document.getElementById('sp-text').textContent = `Menjalankan preset ${p.label}...`;
-    document.getElementById('sp-percent').textContent = '50%';
-    document.getElementById('sp-fill').style.width = '50%';
+  if (toolbar) { toolbar.classList.add('hidden'); toolbar.style.display = ''; }
+  if (progBox) {
+    progBox.classList.remove('hidden');
+    const spText = document.getElementById('sp-text');
+    const spPercent = document.getElementById('sp-percent');
+    const spFill = document.getElementById('sp-fill');
+    if (spText) spText.textContent = `Menjalankan preset ${p.label}...`;
+    if (spPercent) spPercent.textContent = '50%';
+    if (spFill) spFill.style.width = '50%';
   }
 
   currentResults = [];
   isPatternMode = false;
-
-  fetch(`/api/scan/preset/${preset}?limit=30`)
-    .then(r => r.json())
+  apiFetch(`/scan/preset/${preset}?limit=30`)
     .then(data => {
       const items = Array.isArray(data?.data) ? data.data : [];
       currentResults = items.map(item => ({
         ticker: item.ticker,
         name: item.name || item.ticker,
         close: item.close || 0,
-        cci: item.cci,
-        magic_line: item.magic_line,
+        cci: item.cci ?? null,
+        magic_line: item.magic_line ?? null,
         signal: item.signal || preset,
-        volume_spike: item.volume_spike,
+        volume_spike: item.volume_spike ?? null,
+        perf_1w: item.perf_1w ?? null,
+        perf_1m: item.perf_1m ?? null,
+        perf_3m: item.perf_3m ?? null,
+        perf_6m: item.perf_6m ?? null,
+        close_prices: item.close_prices ?? null,
       }));
       totalScanned = items.length;
-      if (progBox) progBox.style.display = 'none';
+      if (progBox) progBox.classList.add('hidden');
       if (countBadge) countBadge.textContent = items.length > 0 ? `${items.length} ${p.label}` : 'TIDAK ADA';
-      if (toolbar && items.length) toolbar.style.display = 'flex';
+      if (toolbar && items.length) { toolbar.classList.remove('hidden'); toolbar.style.display = 'flex'; }
       renderList(currentResults);
       showToast(`Preset ${p.label}: ${items.length} saham ditemukan`, items.length ? 'success' : 'info');
     })
     .catch(e => {
-      if (progBox) progBox.style.display = 'none';
+      if (progBox) progBox.classList.add('hidden');
       if (contentArea) contentArea.innerHTML = renderEmptyState({ title: `Gagal: ${p.label}`, body: 'Terjadi kesalahan saat memuat preset.', action: 'Coba lagi nanti.' });
       if (countBadge) countBadge.textContent = 'GAGAL';
       showToast('Gagal memuat preset', 'error');
