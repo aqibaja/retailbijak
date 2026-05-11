@@ -220,7 +220,7 @@ def get_dividends(
 
 @router.get("/api/dividends/aristocrats")
 def get_dividend_aristocrats(
-    min_years: int = 5,
+    min_years: int = 3,
     db: Session = Depends(get_db),
 ):
     """Companies with N+ years of consecutive dividend history."""

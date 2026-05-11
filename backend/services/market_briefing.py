@@ -22,13 +22,16 @@ def _get_market_context(db) -> dict:
     """Collect market data for briefing context."""
     from sqlalchemy import func
 
-    # Latest OHLCV for IHSG (approximate from top stocks)
-    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    # Latest OHLCV date from DB (not UTC today — data may be from previous trading day)
+    latest_date_row = db.query(func.max(OHLCVDaily.date)).scalar()
+    if not latest_date_row:
+        return {'total': 0, 'gainers': '', 'losers': '', 'sectors': '', 'date': ''}
+    latest_date = latest_date_row if isinstance(latest_date_row, str) else str(latest_date_row)[:10]
 
-    # Get all rows for today sorted by ticker
+    # Get all rows for latest date sorted by ticker
     all_rows = (
         db.query(OHLCVDaily)
-        .filter(OHLCVDaily.date == today)
+        .filter(OHLCVDaily.date == latest_date_row)
         .all()
     )
 
@@ -60,7 +63,7 @@ def _get_market_context(db) -> dict:
 
     latest_ohlcv = (
         db.query(OHLCVDaily)
-        .filter(OHLCVDaily.date == today)
+        .filter(OHLCVDaily.date == latest_date_row)
         .all()
     )
     for row in latest_ohlcv:
@@ -77,7 +80,7 @@ def _get_market_context(db) -> dict:
     top_sectors = sorted(sector_avg.items(), key=lambda x: -abs(x[1]))[:5]
 
     return {
-        'date': today,
+        'date': latest_date,
         'total_stocks': len(latest_ohlcv),
         'gainers': ', '.join(gainers[:3]) or 'tidak tersedia',
         'losers': ', '.join(losers[:3]) or 'tidak tersedia',
