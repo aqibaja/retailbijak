@@ -237,7 +237,7 @@ function setupSearchOverlay() {
 ].filter(Boolean).join('');
        suggestions.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)));
    };
-   const refreshSuggestions = async () => {
+   let refreshSuggestions = async () => {
        const q = input.value.trim();
        if (!q) {
            suggestions.innerHTML = '<div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div>';

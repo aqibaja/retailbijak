@@ -176,7 +176,7 @@ async function loadMacroData(root, force = false) {
   const content = root.querySelector('#macro-content');
 
   try {
-    const payload = await apiFetch('/api/macro', {}, force);
+    const payload = await apiFetch('/macro', {}, force);
     if (!payload || !payload.indicators) {
       throw new Error('Response tidak valid');
     }

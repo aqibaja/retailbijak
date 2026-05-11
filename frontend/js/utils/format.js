@@ -55,6 +55,23 @@ export function timeFormat(dateStr) {
   }
 }
 
+// Aliases for backward compatibility
+export const money = currencyFormat;
+export const pct = pf;
+export const fmtRp = cf;
+export const fmt = nf;
+
+// Markdown renderer (simple — bold, italic, newlines)
+export function renderMarkdown(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
 // Relative time (e.g., "2 jam lalu")
 export function relativeTime(dateStr) {
   if (!dateStr) return '—';

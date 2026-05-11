@@ -2,7 +2,7 @@
 // Fase 9.2: Market breadth visualization
 // 31.1.3 — Added skeleton loading
 
-import { apiFetch, showToast } from '../api.js';
+import { apiFetch, showToast } from '../api.js?v=202605120200';
 
 let breadthChart = null;
 

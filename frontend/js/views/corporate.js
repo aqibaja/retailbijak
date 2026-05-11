@@ -189,7 +189,7 @@ async function loadData(root) {
         }
 
         // Secondary: calendar events
-        const calRes = await apiFetch('/api/calendar?event_type=ipo,rights,corporate,rups,split,dividend&limit=100');
+        const calRes = await apiFetch('/calendar?event_type=ipo,rights,corporate,rups,split,dividend&limit=100');
         if (calRes && Array.isArray(calRes.events)) {
             calRes.events.forEach(e => {
                 allItems.push({

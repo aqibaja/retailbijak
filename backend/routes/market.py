@@ -395,6 +395,51 @@ def get_market_treemap(
     }
 
 
+# ─── 32.1.3 — OHLCV / News / Signal Freshness ──────
+
+@router.get('/api/data-freshness')
+def data_freshness(db: Session = Depends(get_db)):
+    """Return freshness status for OHLCV, News, and Signals."""
+    try:
+        from database import OHLCVDaily, News, Signal
+    except ModuleNotFoundError:
+        from backend.database import OHLCVDaily, News, Signal
+    from datetime import datetime
+
+    now = datetime.now()
+
+    # OHLCV latest
+    ohlcv_latest = db.query(func.max(OHLCVDaily.date)).scalar()
+    ohlcv_str = str(ohlcv_latest)[:10] if ohlcv_latest else None
+    if ohlcv_latest:
+        ohlcv_date = ohlcv_latest.date() if hasattr(ohlcv_latest, 'date') else ohlcv_latest
+        ohlcv_age_days = (now.date() - ohlcv_date).days
+    else:
+        ohlcv_age_days = 999
+
+    # News latest
+    news_latest = db.query(func.max(News.published_at)).scalar()
+    news_str = str(news_latest)[:16] if news_latest else None
+
+    # Signals latest
+    sig_latest = db.query(func.max(Signal.signal_date)).scalar()
+    sig_str = str(sig_latest)[:10] if sig_latest else None
+
+    if ohlcv_age_days == 0:
+        ohlcv_status = 'fresh'
+    elif ohlcv_age_days == 1:
+        ohlcv_status = 'yesterday'
+    else:
+        ohlcv_status = 'stale'
+
+    return {
+        'ohlcv': {'latest': ohlcv_str, 'age_days': ohlcv_age_days, 'status': ohlcv_status},
+        'news': {'latest': news_str, 'status': 'ok'},
+        'signals': {'latest': sig_str, 'status': 'ok'},
+        'checked_at': now.isoformat(),
+    }
+
+
 # ─── 16.2.1 — SSE Live Price Ticker ────────────────
 
 import asyncio

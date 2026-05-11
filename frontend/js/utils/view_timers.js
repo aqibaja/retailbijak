@@ -5,8 +5,9 @@ export function registerViewTimer(id) { viewTimers.push(id); }
 
 export function clearViewTimers() {
   viewTimers.forEach(id => {
-    if (id.startsWith('i_')) clearInterval(parseInt(id.slice(2)));
-    else clearTimeout(parseInt(id));
+    const s = String(id);
+    if (s.startsWith('i_')) clearInterval(parseInt(s.slice(2)));
+    else clearTimeout(parseInt(s));
   });
   viewTimers.length = 0;
 }

@@ -217,7 +217,7 @@ async function loadChartData() {
     try {
         const rangeMap = { '1D': 2, '5D': 7, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, 'MAX': 1000 };
         const days = rangeMap[activeTf] || 30;
-        const res = await apiFetch(`/api/stocks/${activeTicker}/chart-data?range=${activeTf}`);
+        const res = await apiFetch(`/stocks/${activeTicker}/chart-data?range=${activeTf}`);
         
         if (!res || !res.data || !res.data.length) {
             wrap.innerHTML = '<div class="empty-state-v2" style="height:60vh"><div class="empty-icon">📉</div><h3>Data tidak tersedia</h3><p>Tidak ada data harga untuk timeframe ini.</p></div>';
@@ -636,7 +636,7 @@ async function saveDrawingsToBackend() {
         const fibData = fibLines.map(fib => fib.data);
 
         // First clear existing backend drawings
-        await apiFetch(`/api/chart/${activeTicker}/drawings`, { method: 'DELETE' });
+        await apiFetch(`/chart/${activeTicker}/drawings`, { method: 'DELETE' });
 
         // Save each drawing individually
         const allDrawings = [

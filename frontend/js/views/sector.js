@@ -355,7 +355,7 @@ export async function renderSector(root, sectorName) {
     try {
         // Decode URL-encoded sector name, then re-encode for API
         const sectorDecoded = decodeURIComponent(sectorName.trim());
-        const res = await apiFetch(`/api/sectors/${encodeURIComponent(sectorDecoded)}`);
+        const res = await apiFetch(`/sectors/${encodeURIComponent(sectorDecoded)}`);
         if (!res) throw new Error('No response');
 
         const data = res;
@@ -773,7 +773,7 @@ async function renderSortableStockTable(sectorName) {
   el.innerHTML = '<div class="skeleton" style="height:300px"></div>';
 
   try {
-    const data = await apiFetch(`/api/sectors/${encodeURIComponent(sectorName)}/stocks?sort=${_sortableState.sort}&order=${_sortableState.order}&limit=200`);
+    const data = await apiFetch(`/sectors/${encodeURIComponent(sectorName)}/stocks?sort=${_sortableState.sort}&order=${_sortableState.order}&limit=200`);
     if (!data?.stocks?.length) {
       el.innerHTML = '<div class="empty-state-v2"><p class="text-xs text-dim">Tidak ada data saham untuk sektor ini.</p></div>';
       return;

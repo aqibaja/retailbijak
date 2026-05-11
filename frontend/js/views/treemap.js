@@ -45,8 +45,9 @@ function squarifyLayout(items, containerW, containerH) {
     }
   }
 
-  function squarify(items, x, y, w, h) {
-    if (!items.length) return;
+  function squarify(items, x, y, w, h, depth) {
+    if (!items.length || w <= 0 || h <= 0) return;
+    if ((depth || 0) > 200) { items.forEach(it => result.push({ ...it, x, y, w: w / items.length, h })); return; }
     if (items.length === 1) {
       result.push({ ...items[0], x, y, w, h });
       return;
@@ -58,7 +59,6 @@ function squarifyLayout(items, containerW, containerH) {
     while (remaining.length) {
       const item = remaining.shift();
       row.push(item);
-      const nextW = isVertical ? w : (row.reduce((s, r) => s + r.area, 0) / h);
       const cur = worstRatio(row, isVertical ? h : w);
       if (remaining.length > 0) {
         const next = worstRatio([...row, remaining[0]], isVertical ? h : w);
@@ -68,21 +68,21 @@ function squarifyLayout(items, containerW, containerH) {
           remaining.unshift(item);
           const sum = row.reduce((s, r) => s + r.area, 0);
           if (isVertical) {
-            const rw = (sum / h);
-            squarify(row, x, y, rw, h);
-            x += rw; w -= rw;
+            const rw = Math.max(1, sum / h);
+            layoutRow(row, x, y, rw, h);
+            x += rw; w = Math.max(0, w - rw);
           } else {
-            const rh = (sum / w);
-            squarify(row, x, y, w, rh);
-            y += rh; h -= rh;
+            const rh = Math.max(1, sum / w);
+            layoutRow(row, x, y, w, rh);
+            y += rh; h = Math.max(0, h - rh);
           }
-          squarify(remaining, x, y, w, h);
+          squarify(remaining, x, y, w, h, (depth || 0) + 1);
           return;
         }
       }
     }
-    // Last row
-    squarify(row, x, y, w, h);
+    // Last row — use layoutRow directly to avoid infinite recursion
+    layoutRow(row, x, y, w, h);
   }
 
   squarify(sorted, 0, 0, containerW, containerH);

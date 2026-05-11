@@ -1625,12 +1625,12 @@ def similar_stocks(ticker: str, limit: int = 5, db: Session = Depends(get_db)):
             'name': s.name or s.ticker,
             'sector': s.sector,
             'close': p.close,
-            'change_pct': p.change_pct or 0,
+            'change_pct': round(((p.close - p.open) / p.open * 100) if p.open and p.open > 0 else 0, 2),
             'volume': p.volume or 0,
         })
 
     # Sort by closest change_pct to target
-    target_chg = target_price.change_pct if target_price else 0
+    target_chg = round(((target_price.close - target_price.open) / target_price.open * 100) if target_price and target_price.open and target_price.open > 0 else 0, 2)
     results.sort(key=lambda x: abs(x['change_pct'] - (target_chg or 0)))
 
     return {'count': len(results[:limit]), 'sector': target.sector, 'data': results[:limit]}

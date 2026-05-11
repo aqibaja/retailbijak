@@ -7,11 +7,44 @@ import { exportCSV as expCSV } from '../utils/export.js?v=202605120200';
 let _wlEventSource = null;   // Watchlist SSE connection
 let _pfEventSource = null;   // Portfolio SSE connection
 
+// ─── Alert Polling State (32.2.1) ────────────
+let _alertPollTimer = null;  // setInterval handle for alert polling
+
 function stopWatchlistSSE() {
     if (_wlEventSource) {
         _wlEventSource.close();
         _wlEventSource = null;
     }
+    // Also stop alert polling when leaving watchlist
+    stopAlertPolling();
+}
+
+// ─── 32.2.1 — Alert Polling ──────────────────
+function stopAlertPolling() {
+    if (_alertPollTimer) {
+        clearInterval(_alertPollTimer);
+        _alertPollTimer = null;
+    }
+}
+
+async function checkTriggeredAlerts() {
+    try {
+        const res = await apiFetch('/alerts');
+        const alerts = Array.isArray(res?.data) ? res.data : [];
+        const triggered = alerts.filter(a => a.triggered || a.status === 'triggered');
+        triggered.forEach(a => {
+            const condLabel = a.condition === 'price_above' || a.alert_type === 'price_above' ? 'naik di atas' : 'turun di bawah';
+            const val = a.value ?? a.target_price ?? 0;
+            showToast(`🔔 Alert ${a.ticker}: harga ${condLabel} Rp${Number(val).toLocaleString('id-ID')}`, 'warning', 8000);
+        });
+    } catch (e) { /* silent — polling should never throw */ }
+}
+
+function startAlertPolling() {
+    stopAlertPolling();
+    // Check immediately on start, then every 5 minutes
+    checkTriggeredAlerts();
+    _alertPollTimer = setInterval(checkTriggeredAlerts, 5 * 60 * 1000);
 }
 
 function stopPortfolioSSE() {
@@ -624,7 +657,7 @@ async function renderPortfolioTab(el) {
     loadTransactionHistory(el);
     // Load analytics charts
     loadPortfolioAnalytics();
-    loadRebalancing();
+    // loadRebalancing() — handled by rebalance tab click, not auto-load
 
     // ─── Start live price SSE for portfolio ───
     const pfTickers = rows.map(r => r.ticker).filter(Boolean);
@@ -1153,15 +1186,22 @@ async function renderRebalanceTab(el) {
   }
 }
 async function renderWatchlistTab(el, activeGroupId) {
-    let data, groups, fetchError;
+    let data, groups, fetchError, activeAlerts = [];
     const activeGroup = activeGroupId || 0;
     try {
-        const [wlRes, grpRes] = await Promise.all([fetchWatchlist(), apiFetch('/watchlist-groups')]);
+        const [wlRes, grpRes, alertsRes] = await Promise.all([
+            fetchWatchlist(),
+            apiFetch('/watchlist-groups'),
+            apiFetch('/alerts').catch(() => null),
+        ]);
         data = wlRes;
         groups = Array.isArray(grpRes?.data) ? grpRes.data : [];
+        activeAlerts = Array.isArray(alertsRes?.data) ? alertsRes.data.filter(a => a.active !== 0) : [];
     } catch (e) { fetchError = true; data = null; groups = []; }
     const allRows = Array.isArray(data?.data) ? data.data : [];
     const rows = activeGroup ? allRows.filter(r => r.group_id === activeGroup) : allRows;
+    // Build a Set of tickers that have active alerts for O(1) lookup
+    const alertTickerSet = new Set(activeAlerts.map(a => a.ticker));
 
     // Build group tabs
     const groupTabs = `<div class="watchlist-group-tabs flex gap-1 p-2" style="border-bottom:1px solid var(--border-subtle);overflow-x:auto">
@@ -1198,8 +1238,8 @@ async function renderWatchlistTab(el, activeGroupId) {
               <td class="mono font-size-14 wl-change-pct" data-ticker="${r.ticker}">—</td>
               <td class="text-muted text-sm">${r.notes || '-'}</td>
               <td class="text-right" style="white-space:nowrap">
-                <button type="button" class="btn-icon wl-alert-toggle" data-ticker="${r.ticker}" title="Buat Alert" style="color:var(--text-dim)">
-                  <i data-lucide="bell" class="lucide-md"></i>
+                <button type="button" class="btn-icon wl-alert-toggle" data-ticker="${r.ticker}" title="Set Price Alert" style="color:${alertTickerSet.has(r.ticker) ? 'var(--warning-color,#f59e0b)' : 'var(--text-dim)'}">
+                  <i data-lucide="${alertTickerSet.has(r.ticker) ? 'bell-ring' : 'bell'}" class="lucide-md"></i>
                 </button>
                 <button type="button" class="btn-icon delete-watchlist portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button>
               </td>
@@ -1258,52 +1298,138 @@ async function renderWatchlistTab(el, activeGroupId) {
         });
     });
 
-    // ─── Watchlist Inline Alert Toggle ───
+    // ─── 32.2.1 — Watchlist Price Alert Mini-Modal ───
     el.querySelectorAll('.wl-alert-toggle').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const ticker = btn.dataset.ticker;
         if (!ticker) return;
 
-        try {
-          // Check if alert already exists
-          const alertsRes = await apiFetch('/alerts');
-          const existing = alertsRes?.data?.find(a => a.ticker === ticker);
+        // Remove any existing alert modal
+        document.getElementById('wl-alert-modal')?.remove();
 
-          if (existing) {
-            // Toggle active/inactive via PUT
-            const newActive = existing.active ? 0 : 1;
-            const res = await apiFetch(`/alerts/${existing.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ active: newActive }),
-            });
-            if (res?.ok) {
-              showToast(`${ticker}: Alert ${newActive ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
-              btn.style.color = newActive ? 'var(--up-color)' : 'var(--text-dim)';
-              btn.querySelector('i')?.setAttribute('data-lucide', newActive ? 'bell-plus' : 'bell');
-              if (window.lucide) lucide.createIcons();
+        // Fetch current alerts for this ticker
+        let existingAlert = null;
+        try {
+          const alertsRes = await apiFetch('/alerts');
+          const all = Array.isArray(alertsRes?.data) ? alertsRes.data : [];
+          existingAlert = all.find(a => a.ticker === ticker && a.active !== 0) || null;
+        } catch (e) { /* proceed without existing data */ }
+
+        // Get current price for placeholder
+        let currentPrice = 0;
+        try {
+          const stockRes = await apiFetch(`/stocks/${ticker}`);
+          currentPrice = stockRes?.close || stockRes?.price || 0;
+        } catch (e) { /* ignore */ }
+
+        const defaultPrice = existingAlert
+          ? (existingAlert.value ?? existingAlert.target_price ?? currentPrice)
+          : (currentPrice > 0 ? Math.round(currentPrice * 1.05) : '');
+        const defaultCond = existingAlert
+          ? (existingAlert.condition || existingAlert.alert_type || 'price_above')
+          : 'price_above';
+
+        // Build mini-modal
+        const modal = document.createElement('div');
+        modal.id = 'wl-alert-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.15s ease';
+        modal.innerHTML = `
+          <div style="background:var(--card-bg,#1a1a2e);border-radius:16px;padding:24px;min-width:300px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h3 style="margin:0;font-size:14px;font-weight:700;color:var(--text-main)">🔔 Price Alert — <span class="mono">${ticker}</span></h3>
+              <button type="button" id="wl-alert-close" style="background:none;border:none;font-size:20px;color:var(--text-dim);cursor:pointer;line-height:1;padding:0">&times;</button>
+            </div>
+            ${currentPrice > 0 ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Harga saat ini: <strong style="color:var(--text-main)">Rp${currentPrice.toLocaleString('id-ID')}</strong></div>` : ''}
+            <form id="wl-alert-form" onsubmit="return false">
+              <div style="margin-bottom:12px">
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Kondisi</label>
+                <select id="wl-alert-condition" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color,#0f0f1a);color:var(--text-main);font-size:13px;box-sizing:border-box">
+                  <option value="price_above" ${defaultCond === 'price_above' ? 'selected' : ''}>📈 Harga naik di atas</option>
+                  <option value="price_below" ${defaultCond === 'price_below' ? 'selected' : ''}>📉 Harga turun di bawah</option>
+                </select>
+              </div>
+              <div style="margin-bottom:18px">
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Target Harga (Rp)</label>
+                <input type="number" id="wl-alert-price" value="${defaultPrice}" min="1" step="1"
+                  style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-color,#0f0f1a);color:var(--text-main);font-size:14px;font-weight:700;box-sizing:border-box" />
+              </div>
+              <div style="display:flex;gap:10px">
+                ${existingAlert ? `<button type="button" id="wl-alert-delete" class="btn" style="flex:1;font-size:12px;color:var(--down-color,#ef4444)">🗑️ Hapus Alert</button>` : ''}
+                <button type="submit" id="wl-alert-save" class="btn btn-primary" style="flex:2;font-size:13px;font-weight:700">🔔 Set Alert</button>
+              </div>
+            </form>
+          </div>`;
+
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        const closeModal = () => { modal.remove(); document.body.style.overflow = ''; };
+        modal.querySelector('#wl-alert-close').addEventListener('click', closeModal);
+        modal.addEventListener('click', (ev) => { if (ev.target === modal) closeModal(); });
+        modal.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeModal(); });
+        setTimeout(() => modal.querySelector('#wl-alert-price')?.focus(), 100);
+
+        // Delete existing alert
+        modal.querySelector('#wl-alert-delete')?.addEventListener('click', async () => {
+          if (!existingAlert?.id) return;
+          try {
+            await apiFetch(`/alerts/${existingAlert.id}`, { method: 'DELETE' });
+            showToast(`${ticker}: alert dihapus`, 'success');
+            btn.style.color = 'var(--text-dim)';
+            btn.querySelector('i')?.setAttribute('data-lucide', 'bell');
+            if (window.lucide) lucide.createIcons();
+            closeModal();
+          } catch (err) { showToast('Gagal menghapus alert', 'error'); }
+        });
+
+        // Save / update alert
+        modal.querySelector('#wl-alert-form').addEventListener('submit', async () => {
+          const condition = modal.querySelector('#wl-alert-condition').value;
+          const targetPrice = Number(modal.querySelector('#wl-alert-price').value);
+          if (!targetPrice || targetPrice <= 0) { showToast('Target harga tidak valid', 'error'); return; }
+
+          const saveBtn = modal.querySelector('#wl-alert-save');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Menyimpan...';
+
+          try {
+            let res;
+            if (existingAlert?.id) {
+              // Update existing alert
+              res = await apiFetch(`/alerts/${existingAlert.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ condition, alert_type: condition, value: targetPrice, active: 1 }),
+              });
+            } else {
+              // Create new alert — POST /api/alerts
+              res = await apiFetch('/alerts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, condition, value: targetPrice }),
+              });
             }
-          } else {
-            // Create new alert at 5% above current price
-            const stockRes = await apiFetch(`/stocks/${ticker}`);
-            const price = stockRes?.close || stockRes?.price || 0;
-            const alertValue = price > 0 ? Math.round(price * 1.05) : 5000;
-            const res = await apiFetch('/alerts', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ticker, alert_type: 'price_above', value: alertValue }),
-            });
-            if (res?.ok) {
-              showToast(`🔔 Alert ${ticker} > Rp${alertValue.toLocaleString('id-ID')}`, 'success');
-              btn.style.color = 'var(--up-color)';
-              btn.querySelector('i')?.setAttribute('data-lucide', 'bell-plus');
+
+            if (res?.ok || res?.id || res?.data) {
+              const condLabel = condition === 'price_above' ? 'naik di atas' : 'turun di bawah';
+              showToast(`🔔 Alert ${ticker}: ${condLabel} Rp${targetPrice.toLocaleString('id-ID')}`, 'success');
+              // Update bell icon to yellow
+              btn.style.color = 'var(--warning-color,#f59e0b)';
+              btn.querySelector('i')?.setAttribute('data-lucide', 'bell-ring');
               if (window.lucide) lucide.createIcons();
+              closeModal();
+            } else {
+              showToast(res?.message || 'Gagal menyimpan alert', 'error');
+              saveBtn.disabled = false;
+              saveBtn.textContent = '🔔 Set Alert';
             }
+          } catch (err) {
+            showToast('Gagal menyimpan alert', 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = '🔔 Set Alert';
           }
-        } catch (e) {
-          showToast('Gagal memproses alert', 'error');
-        }
+        });
       });
     });
 
@@ -1378,6 +1504,9 @@ async function renderWatchlistTab(el, activeGroupId) {
     // ─── Start live price SSE ───
     const watchTickers = rows.map(r => r.ticker).filter(Boolean);
     startWatchlistSSE(watchTickers);
+
+    // ─── 32.2.1 — Start alert polling (every 5 min) ───
+    startAlertPolling();
 }
 
 // ─── Manage Watchlist Groups (19.4) ──────────

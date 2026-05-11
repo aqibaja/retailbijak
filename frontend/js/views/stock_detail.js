@@ -1924,7 +1924,7 @@ function renderFundamentalGridInto(el, d) {
 function renderFundamentalHistoryInto(symbol, container) {
   if (!container) return;
   // Reuse the same logic as renderFundamentalHistory but target the given container
-  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamental/history`).then(res => {
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamentals/history`).then(res => {
     if (!res || !res.price_data || !res.price_data.length) {
       container.innerHTML = '<div class="empty-state-v2"><h3>Belum ada data</h3><p>Data riwayat fundamental belum tersedia.</p></div>';
       return;
@@ -2116,7 +2116,7 @@ function renderFundamentalHistory(symbol) {
   const container = document.getElementById('fundamental-history');
   if (!container) return;
 
-  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamental/history`).then(res => {
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/fundamentals/history`).then(res => {
     if (!res || !res.price_data || !res.price_data.length) {
       container.innerHTML = '<div class="empty-state-v2"><h3>Belum ada data</h3><p>Data riwayat fundamental belum tersedia untuk saham ini.</p></div>';
       return;
