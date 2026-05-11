@@ -1027,19 +1027,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // Register PWA service worker (1.7.6)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js?v=202605112032').then(reg => {
-          // If waiting, skip wait and reload
+          // If waiting, skip wait — no auto-reload to avoid infinite loop
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            window.location.reload(true);
           }
-          // Detect new SW installing
+          // Detect new SW installing — just activate, no reload
           reg.addEventListener('updatefound', () => {
             const newSW = reg.installing;
             newSW.addEventListener('statechange', () => {
               if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                // New SW installed, tell it to activate
                 newSW.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload(true);
               }
             });
           });
