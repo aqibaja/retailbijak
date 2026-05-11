@@ -803,38 +803,54 @@ function setupTouchGestures() {
   }, { passive: true });
 }
 
-// ─── First-Run Onboarding ────────────────
+// ─── First-Run Onboarding (3-step) ────────────────
 function showOnboarding() {
-  const key = 'retailbijak.onboarded.v1';
-  if (localStorage.getItem(key)) return;
+  if (localStorage.getItem('retailbijak.onboarded.v1')) return;
+
+  const steps = [
+    { icon: '📊', title: 'Dashboard Real-Time', desc: 'Pantau IHSG, top movers, dan market breadth dalam satu tampilan.' },
+    { icon: '🔍', title: 'Screener Canggih', desc: 'Scan ratusan saham IDX dengan filter teknikal dan fundamental.' },
+    { icon: '💼', title: 'Portfolio Tracker', desc: 'Catat portofolio kamu dan pantau P&L secara otomatis.' },
+  ];
+
+  let current = 0;
+
   const overlay = document.createElement('div');
-  overlay.className = 'onboarding-overlay';
-  overlay.innerHTML = `
-    <div class="onboarding-modal">
-      <div class="onboarding-header">
-        <div class="onboarding-logo">retailbijak</div>
-        <span class="badge badge-up">v4</span>
+  overlay.id = 'onboarding-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+  function renderStep(i) {
+    const s = steps[i];
+    overlay.innerHTML = `
+      <div style="background:var(--card-bg,#1e2130);border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px">${s.icon}</div>
+        <h2 style="color:var(--text-primary,#fff);margin:0 0 12px">${s.title}</h2>
+        <p style="color:var(--text-secondary,#aaa);margin:0 0 24px;line-height:1.5">${s.desc}</p>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+          ${steps.map((_,j) => `<div style="width:8px;height:8px;border-radius:50%;background:${j===i?'var(--accent,#3b82f6)':'#444'}"></div>`).join('')}
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center">
+          ${i > 0 ? '<button id="ob-prev" style="padding:10px 20px;border-radius:8px;border:1px solid #444;background:transparent;color:#aaa;cursor:pointer">Kembali</button>' : ''}
+          <button id="ob-next" style="padding:10px 24px;border-radius:8px;border:none;background:var(--accent,#3b82f6);color:#fff;cursor:pointer;font-weight:600">${i === steps.length-1 ? 'Mulai!' : 'Lanjut'}</button>
+        </div>
+        <button id="ob-skip" style="margin-top:12px;background:none;border:none;color:#666;cursor:pointer;font-size:13px">Lewati</button>
       </div>
-      <h2 class="onboarding-title">Selamat Datang di Pasar IDX</h2>
-      <p class="onboarding-sub">Pantau, analisis, dan trading saham Indonesia secara profesional.</p>
-      <div class="onboarding-steps">
-        <div class="onboarding-step"><span class="onboarding-icon">📊</span><div><strong>Dashboard</strong><span>IHSG, breadth, movers & AI Picks dalam satu layar</span></div></div>
-        <div class="onboarding-step"><span class="onboarding-icon">🔍</span><div><strong>Screener</strong><span>Scan sinyal institusional live dengan filter real-time</span></div></div>
-        <div class="onboarding-step"><span class="onboarding-icon">💼</span><div><strong>Portofolio</strong><span>Catat transaksi, pantau P&L, dan watchlist saham</span></div></div>
-        <div class="onboarding-step"><span class="onboarding-icon">🤖</span><div><strong>AI Analisis</strong><span>Analisis teknikal, fundamental, dan rekomendasi saham</span></div></div>
-      </div>
-      <button id="onboarding-start" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px">Mulai Sekarang</button>
-    </div>`;
+    `;
+    overlay.querySelector('#ob-next').onclick = () => {
+      if (i === steps.length-1) finishOnboarding();
+      else { current++; renderStep(current); }
+    };
+    if (i > 0) overlay.querySelector('#ob-prev').onclick = () => { current--; renderStep(current); };
+    overlay.querySelector('#ob-skip').onclick = finishOnboarding;
+  }
+
+  function finishOnboarding() {
+    localStorage.setItem('retailbijak.onboarded.v1', '1');
+    overlay.remove();
+  }
+
+  renderStep(0);
   document.body.appendChild(overlay);
-
-  const close = () => {
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.remove(), 300);
-    localStorage.setItem(key, '1');
-  };
-
-  document.getElementById('onboarding-start').addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 // ─── Data Freshness ────────────────────────
@@ -1024,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showOnboarding();
       // Service Worker — re-enabled after fixing reload loop
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js?v=202605120200').then(reg => {
+        navigator.serviceWorker.register('/sw.js?v=202605120200').then(async reg => {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
@@ -1036,6 +1052,12 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             });
           });
+          // ─── Periodic Background Sync for alerts ──
+          if ('periodicSync' in reg) {
+            try {
+              await reg.periodicSync.register('check-alerts', { minInterval: 15 * 60 * 1000 });
+            } catch(e) { /* not supported or permission denied */ }
+          }
         }).catch(() => {});
       }
 

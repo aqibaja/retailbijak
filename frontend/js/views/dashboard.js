@@ -1,11 +1,11 @@
 window.__rbk_log && window.__rbk_log('dashboard.js module loaded', true);
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch } from '../api.js?v=202605120200';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch, showToast } from '../api.js?v=202605120200';
 import { observeElements, animateValue } from '../utils/helpers.js?v=202605120200';
 import { registerViewTimer } from '../utils/view_timers.js?v=202605120200';
-import { nf, pf } from '../utils/format.js?v=202605120200';
+import { nf, pf, currencyFormat } from '../utils/format.js?v=202605120200';
 import { ssSet } from '../utils/storage.js?v=202605120200';
 import { loadTodayEvents } from './calendar.js?v=202605120200';
-import { showSkeleton, hideSkeleton } from '../skeleton.js?v=202605120200';
+import { showSkeleton } from '../skeleton.js?v=202605120200';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 
@@ -222,52 +222,6 @@ export async function renderDashboard(root) {
   loadFreshnessStats(); // Data freshness stats card
   setTimeout(() => document.querySelectorAll('.val-counter').forEach(el => animateValue(el, 0, parseInt(el.dataset.val || '0'), 900)), 100);
 
-  // ─── Auto-Refresh Dashboard (24.3.1) ──────
-  let _dashRefreshTimer = setInterval(() => {
-    if (document.hidden) return;
-    loadForeignFlow();
-    loadBreadthWidget();
-    loadSignalWidget();
-    loadMiniHeatmapWidget();
-  }, 120000);
-  registerViewTimer('i_' + _dashRefreshTimer);
-}
-// ─── Breadth Widget ────────────────────────────
-async function loadBreadthWidget() {
-  const el = document.getElementById('dash-breadth-content');
-  if (!el) return;
-  try {
-    const res = await fetchMarketBreadth();
-    const b = res?.data || {};
-    const adv = Number(b.advancing ?? 0);
-    const dec = Number(b.declining ?? 0);
-    const unch = Number(b.unchanged ?? 0);
-    const total = adv + dec + unch;
-    const ratio = dec > 0 ? (adv / dec).toFixed(2) : '—';
-    const advPct = total > 0 ? (adv / total * 100).toFixed(0) : 0;
-    const decPct = total > 0 ? (dec / total * 100).toFixed(0) : 0;
-    const isPositive = adv >= dec;
-    el.innerHTML = `
-      <div class="dash-breadth-visual">
-        <div class="dash-breadth-big-numbers">
-          <div class="dash-breadth-stat up">${adv}<span class="label">↑</span></div>
-          <div class="dash-breadth-stat down">${dec}<span class="label">↓</span></div>
-          <div class="dash-breadth-stat muted">${unch}<span class="label">—</span></div>
-        </div>
-        <div class="dash-breadth-bar-track">
-          <div class="dash-breadth-fill is-up" style="flex:${advPct};min-width:${Math.max(advPct, 4)}%"></div>
-          <div class="dash-breadth-fill is-down" style="flex:${decPct};min-width:${Math.max(decPct, 4)}%"></div>
-        </div>
-        <div class="dash-breadth-footer">
-          <span class="dash-breadth-ratio ${isPositive ? 'up' : 'down'}">A/D Ratio: ${ratio}</span>
-          <span class="dash-breadth-source">${b.latest_date || '—'}</span>
-        </div>
-      </div>`;
-  } catch (e) {
-    console.warn('loadBreadthWidget failed', e);
-    el.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat breadth</strong><span class="dashboard-widget-state-note">Coba refresh halaman.</span></div>';
-  }
-}
   // ─── Dashboard Quick Actions ───
   document.getElementById('dash-refresh-btn')?.addEventListener('click', () => {
     showToast('Me-refresh dashboard...', 'info');
@@ -335,7 +289,53 @@ async function loadBreadthWidget() {
   // Apply widget visibility on load
   applyWidgetVisibility();
 
-// ─── Data Freshness Stats ────────────────────────────
+  // ─── Auto-Refresh Dashboard (24.3.1) ──────
+  let _dashRefreshTimer = setInterval(() => {
+    if (document.hidden) return;
+    loadForeignFlow();
+    loadBreadthWidget();
+    loadSignalWidget();
+    loadMiniHeatmapWidget();
+  }, 120000);
+  registerViewTimer('i_' + _dashRefreshTimer);
+}
+// ─── Breadth Widget ────────────────────────────
+async function loadBreadthWidget() {
+  const el = document.getElementById('dash-breadth-content');
+  if (!el) return;
+  try {
+    const res = await fetchMarketBreadth();
+    const b = res?.data || {};
+    const adv = Number(b.advancing ?? 0);
+    const dec = Number(b.declining ?? 0);
+    const unch = Number(b.unchanged ?? 0);
+    const total = adv + dec + unch;
+    const ratio = dec > 0 ? (adv / dec).toFixed(2) : '—';
+    const advPct = total > 0 ? (adv / total * 100).toFixed(0) : 0;
+    const decPct = total > 0 ? (dec / total * 100).toFixed(0) : 0;
+    const isPositive = adv >= dec;
+    el.innerHTML = `
+      <div class="dash-breadth-visual">
+        <div class="dash-breadth-big-numbers">
+          <div class="dash-breadth-stat up">${adv}<span class="label">↑</span></div>
+          <div class="dash-breadth-stat down">${dec}<span class="label">↓</span></div>
+          <div class="dash-breadth-stat muted">${unch}<span class="label">—</span></div>
+        </div>
+        <div class="dash-breadth-bar-track">
+          <div class="dash-breadth-fill is-up" style="flex:${advPct};min-width:${Math.max(advPct, 4)}%"></div>
+          <div class="dash-breadth-fill is-down" style="flex:${decPct};min-width:${Math.max(decPct, 4)}%"></div>
+        </div>
+        <div class="dash-breadth-footer">
+          <span class="dash-breadth-ratio ${isPositive ? 'up' : 'down'}">A/D Ratio: ${ratio}</span>
+          <span class="dash-breadth-source">${b.latest_date || '—'}</span>
+        </div>
+      </div>`;
+  } catch (e) {
+    console.warn('loadBreadthWidget failed', e);
+    el.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat breadth</strong><span class="dashboard-widget-state-note">Coba refresh halaman.</span></div>';
+  }
+}
+  // ─── Data Freshness Stats ────────────────────────────
 async function loadFreshnessStats() {
   const strip = document.getElementById('dash-freshness-strip');
   const grid = strip?.querySelector('.dash-freshness-grid');
@@ -426,7 +426,7 @@ async function loadMarketSummary() {
       const jktOpts = { timeZone: 'Asia/Jakarta' };
       const todayStr = today.toLocaleDateString('en-CA', jktOpts);
       const diffDays = Math.round((new Date(todayStr) - new Date(dataDate)) / 86400000);
-      if (diffDays <= 1) stalenessHtml = ' <span class="badge badge-up badge-mini">Hari ini</span>';
+      if (diffDays === 0) stalenessHtml = ' <span class="badge badge-up badge-mini">Hari ini</span>';
       else if (diffDays === 1) stalenessHtml = ' <span class="badge badge-neutral badge-mini">Kemarin</span>';
       else if (diffDays <= 5) stalenessHtml = ` <span class="badge badge-warn badge-mini">${diffDays} hari lalu</span>`;
       else stalenessHtml = ` <span class="badge badge-down badge-mini">${diffDays} hari lalu</span>`;
@@ -450,6 +450,7 @@ async function loadMarketSummary() {
 }
 
 async function loadIntel(){
+  try {
   const [summary, breadthRes, gainersRes, losersRes, sectorRes] = await Promise.all([
     fetchMarketSummary().catch(() => null),
     fetchMarketBreadth().catch(() => null),
@@ -491,6 +492,7 @@ async function loadIntel(){
     { kicker: 'Sektor', value: `<a href="#sector/${encodeURIComponent(best?.sector||'Finance')}" class="text-up strong">${best?.sector||best?.name||'Finance'}</a>`, note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
     { kicker: 'Plan', value: Number(summary?.change_pct ?? 0) >= 0 ? 'Selektif' : 'Defensif', note: planLine }
   ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
+  } catch (e) { console.warn('loadIntel failed', e); }
 }
 
 async function loadMovers() {
@@ -562,7 +564,7 @@ async function loadAiPickWidget() {
 
   if (!picks.length) {
     if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
-    mount.innerHTML = '<div class="dashboard-widget-state" style="display:none"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong></div>';
+    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Belum ada kandidat yang lolos filter hari ini.</span></div>';
     return;
   }
 
@@ -921,7 +923,7 @@ async function loadPnlWidget() {
     if (!hasData) {
       // Check if there are any transactions (realized P&L)
       if (realizedPnl !== 0 || (txn?.total_buy_cost || 0) > 0) {
-        labelEl.textContent = `Realisasi ${money(Math.abs(realizedPnl))}`;
+        labelEl.textContent = `Realisasi ${currencyFormat(Math.abs(realizedPnl))}`;
         labelEl.className = realizedPnl >= 0 ? 'up' : 'down';
         noteEl.textContent = `Realized P&L dari transaksi`;
         cardEl.className = `dash-summary-card ${realizedPnl >= 0 ? '' : 'down'}`;
@@ -937,9 +939,9 @@ async function loadPnlWidget() {
     const pnlSign = pnl >= 0 ? '+' : '';
     const pnlClass = pnl >= 0 ? 'up' : 'down';
     const pnlPctSign = pnlPct >= 0 ? '+' : '';
-    labelEl.textContent = `${pnlSign}${money(Math.abs(pnl))}`;
+    labelEl.textContent = `${pnlSign}${currencyFormat(Math.abs(pnl))}`;
     labelEl.className = pnlClass;
-    noteEl.innerHTML = `${pnlPctSign}${pf(Math.abs(pnlPct))} · Total ${money(totalValue)}`;
+    noteEl.innerHTML = `${pnlPctSign}${pf(Math.abs(pnlPct))} · Total ${currencyFormat(totalValue)}`;
     cardEl.className = `dash-summary-card ${pnlClass}`;
 
     // Add a small progress bar

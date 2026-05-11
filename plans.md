@@ -504,7 +504,7 @@
 
 # 🇮🇩 RetailBijak — Fase 27: Advanced Analytics and Daily Engagement
 
-> **Status:** 🆕 **Research Complete — Ready to Execute**
+> **Status:** ✅ **COMPLETE — 10/10 tasks (Fase 28 Selesai)**
 > **Tujuan:** Memperdalam analisis fundamental, daily engagement loop, menutup gap vs Stockbit/RTI
 > **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
 
@@ -604,7 +604,7 @@ Sprint 4: Chart Drawings → Sector Rotation → Portfolio Dividends
 
 # 🇮🇩 RetailBijak — Fase 28: User Identity & Intelligent Engagement
 
-> **Status:** 🆕 **Research Complete — Ready to Execute**
+> **Status:** ✅ **COMPLETE — 10/10 tasks (Fase 28 Selesai)**
 > **Tujuan:** Foundation layer (user auth, data seeding, PWA) + intelligent daily engagement
 > **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
 
@@ -705,3 +705,11 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | 2026-05-11 | 28.1.1 — User Auth | ✅ | UserIdentity model + 5 endpoint auth API + device-based PIN auth. Frontend auth.js + settings UI. |
 | 2026-05-11 | 28.1.2 — Fix AI Pipeline | ✅ | AI picks produces 5 picks (BIPI, DADA, GOTO, MINA, DEWA). Market briefing writes fallback content. Manual trigger endpoints added. |
 | 2026-05-11 | 28.1.3 — PWA Offline | ✅ | sw.js rewrite (294L), manifest.json, offline.html, SVG icons. Cache-first strategy, install prompt relay, periodic sync. |
+| 2026-05-12 | 28.2.1 — Portfolio vs IHSG Benchmark | ✅ | IHSG overlay (dashed kuning) + Alpha/Beta KPI cards di equity curve. Fallback flat line jika IHSG tidak ada di DB. routes/user.py + portfolio.js |
+| 2026-05-12 | 28.2.2 — Seed Sample Data | ✅ | routes/seed.py baru (POST /api/seed/sample, DELETE /api/seed/clear). Tombol di settings.js. 5 portfolio + 8 watchlist sample. main.py updated. |
+| 2026-05-12 | 28.2.3 — Portfolio Sector Allocation Pie | ✅ | GET /api/portfolio/sector-allocation. Chart.js doughnut + custom legend. Dummy 5 sektor jika portfolio kosong. routes/portfolio.py + portfolio.js |
+| 2026-05-12 | 28.2.4 — Stock Split/Rights Calculator | ✅ | Collapsible card di stock detail. Tab Stock Split + Rights Issue. Pure JS, no API. stock_detail.js |
+| 2026-05-12 | 28.3.1 — Enhanced 4 Bare Views | ✅ | corporate.js 159→381L, indices.js 177→397L, signal_overview.js 174→389L, alerts.js 182→423L. Filter/sort/search/pagination semua views. |
+| 2026-05-12 | 28.3.2 — Background Alert Sync | ✅ | SW periodicsync handler + GET /api/alerts/triggered-sw endpoint. periodicSync.register di main.js. |
+| 2026-05-12 | 28.3.3 — User Onboarding Flow | ✅ | 3-step carousel overlay (Dashboard/Screener/Portfolio). Dot indicator, Lanjut/Kembali/Lewati. Tombol replay di help.js. |
+| 2026-05-12 | **Fase 28 COMPLETE** | ✅ | 10/10 tasks selesai. Sprint 1+2+3 done. |

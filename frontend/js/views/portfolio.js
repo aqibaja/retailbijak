@@ -625,6 +625,24 @@ async function renderPortfolioTab(el) {
 async function loadPortfolioAnalytics() {
   const section = document.getElementById('portfolio-analytics-section');
   if (!section) return;
+
+  // ─── 28.2.3 — inject sector-allocation-chart container after equity curve card ───
+  if (!document.getElementById('sector-allocation-chart')) {
+    const equityCard = document.getElementById('equity-curve-card');
+    if (equityCard) {
+      const allocCard = document.createElement('div');
+      allocCard.className = 'portfolio-chart-card';
+      allocCard.innerHTML = `
+        <h4 class="text-xs uppercase text-dim strong mb-2">Alokasi Sektor (Pie)</h4>
+        <div id="sector-allocation-chart" style="max-width:320px;margin:0 auto">
+          <div class="text-xs text-dim" style="padding:20px;text-align:center">Memuat...</div>
+        </div>`;
+      equityCard.parentNode.insertBefore(allocCard, equityCard.nextSibling);
+    }
+  }
+  // Fire sector allocation chart (independent of analytics endpoint)
+  renderSectorAllocation();
+
   try {
     const data = await apiFetch('/portfolio/analytics');
     if (!data?.has_data) {
@@ -633,7 +651,7 @@ async function loadPortfolioAnalytics() {
       return;
     }
     // ─── Equity Curve ───
-    renderEquityCurve(data.equity_curve || []);
+    renderEquityCurve(data.equity_curve || [], data.ihsg_series || [], data.alpha, data.beta);
     // ─── Sector Pie ───
     renderSectorPie(data.sectors || []);
     // ─── Risk Metrics ───
@@ -683,6 +701,107 @@ function renderMonthlyHeatmap(monthly) {
   }).join('');
 }
 
+// ─── 28.2.3 — Sector Allocation Doughnut (Chart.js) ───────────
+async function renderSectorAllocation() {
+  const container = document.getElementById('sector-allocation-chart');
+  if (!container) return;
+
+  let res;
+  try {
+    res = await apiFetch('/portfolio/sector-allocation');
+  } catch (e) {
+    container.innerHTML = '<div class="text-xs text-dim" style="padding:12px;text-align:center">Gagal memuat alokasi sektor</div>';
+    return;
+  }
+
+  const sectors = res?.sectors || res?.data?.sectors || [];
+  const totalValue = res?.total_value || res?.data?.total_value || 0;
+  const isDummy = res?.is_dummy || res?.data?.is_dummy || false;
+
+  if (!sectors.length) {
+    container.innerHTML = '<div class="text-xs text-dim" style="padding:12px;text-align:center">Belum ada data sektor</div>';
+    return;
+  }
+
+  // Build canvas
+  container.innerHTML = `
+    <div style="max-width:320px;margin:0 auto">
+      ${isDummy ? '<div class="text-xs text-dim mb-2" style="text-align:center;opacity:0.7">Contoh data — tambah posisi untuk data nyata</div>' : ''}
+      <canvas id="sector-alloc-canvas" height="220"></canvas>
+      <div id="sector-alloc-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px"></div>
+    </div>`;
+
+  const canvas = document.getElementById('sector-alloc-canvas');
+  if (!canvas) return;
+
+  const labels = sectors.map(s => s.name);
+  const values = sectors.map(s => s.value);
+  const colors = sectors.map(s => s.color);
+
+  // Wait for Chart.js if not yet loaded
+  const getChart = () => new Promise((resolve, reject) => {
+    if (window.Chart) { resolve(window.Chart); return; }
+    let tries = 0;
+    const iv = setInterval(() => {
+      if (window.Chart) { clearInterval(iv); resolve(window.Chart); }
+      if (++tries > 20) { clearInterval(iv); reject(new Error('Chart.js not loaded')); }
+    }, 300);
+  });
+
+  let Chart;
+  try { Chart = await getChart(); }
+  catch (e) {
+    // Fallback: CSS conic-gradient pie
+    renderSectorPie(sectors);
+    return;
+  }
+
+  // Destroy previous instance if any
+  const existing = Chart.getChart(canvas);
+  if (existing) existing.destroy();
+
+  new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderColor: 'rgba(0,0,0,0.15)',
+        borderWidth: 1,
+        hoverOffset: 6,
+      }],
+    },
+    options: {
+      responsive: true,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const s = sectors[ctx.dataIndex];
+              return ` ${s.name}: ${s.pct}%  (${money(s.value)})`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Custom legend
+  const legend = document.getElementById('sector-alloc-legend');
+  if (legend) {
+    legend.innerHTML = sectors.map(s => `
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+        <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
+        <span class="text-dim" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+        <span class="strong mono">${s.pct}%</span>
+        <span class="text-dim mono" style="font-size:10px">${money(s.value)}</span>
+      </div>`).join('');
+  }
+}
+
 // ─── Sector Pie Chart (CSS conic-gradient, zero dependency) ───
 function renderSectorPie(sectors) {
   const container = document.getElementById('sector-pie-chart');
@@ -715,19 +834,19 @@ function renderSectorPie(sectors) {
 }
 
 // ─── Equity Curve (LightweightCharts) ───
-function renderEquityCurve(data) {
+function renderEquityCurve(data, ihsgData, alpha, beta) {
   const container = document.getElementById('equity-curve-chart');
   if (!container) return;
   if (!data.length) {
     container.innerHTML = '<div class="text-xs text-dim" style="padding:40px;text-align:center">Belum ada data transaksi</div>';
     return;
   }
-  
+
   // Filter by active range
   let range = 'ALL';
   const activeBtn = document.querySelector('#equity-range-selector .range-btn.active');
   if (activeBtn) range = activeBtn.dataset.range;
-  
+
   let filtered = data;
   if (range !== 'ALL') {
     const months = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12 }[range] || 0;
@@ -737,21 +856,25 @@ function renderEquityCurve(data) {
       filtered = data.filter(d => new Date(d.date) >= cutoff);
     }
   }
-  
+
   if (filtered.length < 2) {
     container.innerHTML = '<div class="text-xs text-dim" style="padding:40px;text-align:center">Data terlalu sedikit untuk grafik</div>';
     return;
   }
 
+  // Filter IHSG to same date range (null-safe)
+  const ihsgFiltered = Array.isArray(ihsgData) && ihsgData.length
+    ? ihsgData.filter(d => d.date >= filtered[0].date && d.date <= filtered[filtered.length - 1].date)
+    : [];
+
   container.innerHTML = '';
   const W = window.LightweightCharts;
   if (!W || !W.createChart) {
     container.innerHTML = '<div class="text-xs text-dim" style="padding:40px;text-align:center">Memuat chart...</div>';
-    // Retry after lightweight-charts loads
     const check = setInterval(() => {
       if (window.LightweightCharts?.createChart) {
         clearInterval(check);
-        renderEquityCurve(filtered);
+        renderEquityCurve(data, ihsgData, alpha, beta);
       }
     }, 500);
     setTimeout(() => clearInterval(check), 10000);
@@ -769,6 +892,7 @@ function renderEquityCurve(data) {
     handleScale: false,
   });
 
+  // Portfolio equity area series
   const series = chart.addAreaSeries({
     lineColor: '#10b981',
     topColor: 'rgba(16,185,129,0.3)',
@@ -778,20 +902,81 @@ function renderEquityCurve(data) {
   });
 
   series.setData(filtered.map(d => ({
-    time: d.date.slice(0, 10).replace(/-/g, '-'),
+    time: d.date.slice(0, 10),
     value: d.value,
   })));
 
+  // IHSG overlay line series (null-safe: skip if empty)
+  if (ihsgFiltered.length >= 2) {
+    // Normalize IHSG to match portfolio's starting value for visual alignment
+    const portBase = filtered[0].value;
+    const ihsgBase = ihsgFiltered[0].value; // already normalized to 100
+    const scale = portBase / 100; // convert IHSG index (base=100) to portfolio value scale
+
+    const ihsgSeries = chart.addLineSeries({
+      color: 'rgba(251,191,36,0.8)',
+      lineWidth: 1,
+      lineStyle: 1, // dashed (LightweightCharts LineStyle.Dashed = 1)
+      title: 'IHSG',
+      priceFormat: { type: 'custom', formatter: (v) => Math.round(v).toLocaleString('id-ID') },
+      lastValueVisible: true,
+      priceLineVisible: false,
+    });
+
+    ihsgSeries.setData(ihsgFiltered.map(d => ({
+      time: d.date.slice(0, 10),
+      value: d.value * scale,
+    })));
+  }
+
   chart.timeScale().fitContent();
+
+  // Alpha & Beta KPI cards — render below chart card
+  _renderAlphaBetaCards(alpha, beta);
 
   // Range selector buttons
   document.querySelectorAll('#equity-range-selector .range-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#equity-range-selector .range-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      renderEquityCurve(data);
+      renderEquityCurve(data, ihsgData, alpha, beta);
     });
   });
+}
+
+// ─── Alpha & Beta KPI cards ───
+function _renderAlphaBetaCards(alpha, beta) {
+  // Remove any existing cards to avoid duplicates on re-render
+  document.getElementById('ihsg-alpha-beta-cards')?.remove();
+
+  const card = document.getElementById('equity-curve-card');
+  if (!card) return;
+
+  const fmtAlpha = (v) => {
+    if (v == null) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(2);
+  };
+  const fmtBeta = (v) => {
+    if (v == null) return '—';
+    return v.toFixed(2);
+  };
+  const alphaClass = alpha == null ? 'text-dim' : alpha >= 0 ? 'text-up' : 'text-down';
+  const betaClass = beta == null ? 'text-dim' : '';
+
+  const div = document.createElement('div');
+  div.id = 'ihsg-alpha-beta-cards';
+  div.className = 'portfolio-kpi-grid';
+  div.style.cssText = 'margin-top:10px;grid-template-columns:repeat(2,1fr)';
+  div.innerHTML = `
+    <div class="portfolio-kpi">
+      <span class="portfolio-kpi-label">Alpha vs IHSG</span>
+      <strong class="portfolio-kpi-value ${alphaClass}">${fmtAlpha(alpha)}</strong>
+    </div>
+    <div class="portfolio-kpi">
+      <span class="portfolio-kpi-label">Beta vs IHSG</span>
+      <strong class="portfolio-kpi-value ${betaClass}">${fmtBeta(beta)}</strong>
+    </div>`;
+  card.appendChild(div);
 }
 
 async function loadTransactionHistory(el) {

@@ -888,6 +888,8 @@ export async function renderStockDetail(root, ticker) {
   renderFundamentalHistory(symbol);
   // 27.1.2 — Corporate Actions Timeline
   renderCorporateActions(symbol);
+  // 28.2.4 — Kalkulator Korporasi (Stock Split / Rights Issue)
+  renderKalkulatorKorporasi(symbol);
   renderDecisionPanel(candles, technical);
   renderAiPreview(symbol, fund?.data || detail?.data || {}, candles, technical, analysisPayload);
   renderTradePlan(candles, technical);
@@ -1760,6 +1762,194 @@ function renderFundamentalHistory(symbol) {
   }).catch(e => {
     console.warn('Fundamental history fetch failed:', e);
     container.innerHTML = '<div class="empty-state-v2"><h3>Gagal memuat data</h3><p>Riwayat fundamental tidak dapat dimuat saat ini.</p></div>';
+  });
+}
+
+// ─── 28.2.4 — Kalkulator Korporasi (Stock Split / Rights Issue) ───
+function renderKalkulatorKorporasi(symbol) {
+  // Inject container after corporate-actions-timeline card if not already present
+  if (document.getElementById('kalkulator-korporasi-card')) return;
+
+  const caContainer = document.getElementById('corporate-actions-timeline');
+  if (!caContainer) return;
+  const insertAfter = caContainer.closest('.panel, .card, [class*="card"]') || caContainer.parentElement;
+  if (!insertAfter) return;
+
+  const card = document.createElement('div');
+  card.id = 'kalkulator-korporasi-card';
+  card.className = 'panel';
+  card.style.cssText = 'margin-top:12px;border-radius:12px;overflow:hidden';
+
+  card.innerHTML = `
+    <div id="kalkorp-toggle" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none">
+      <span class="text-xs uppercase text-dim strong" style="letter-spacing:.06em">🧮 Kalkulator Korporasi</span>
+      <span id="kalkorp-chevron" style="font-size:12px;transition:transform .2s">▼</span>
+    </div>
+    <div id="kalkorp-body" style="display:none;padding:0 16px 16px">
+      <!-- Tab buttons -->
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <button id="kalkorp-tab-split" class="btn btn-primary btn-sm" style="font-size:11px">Stock Split</button>
+        <button id="kalkorp-tab-rights" class="btn btn-sm" style="font-size:11px">Rights Issue</button>
+      </div>
+
+      <!-- Stock Split panel -->
+      <div id="kalkorp-panel-split">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label class="text-xs text-dim block mb-1">Lot Dimiliki</label>
+            <input id="split-lots" type="number" class="modal-input" value="10" min="1" step="1" style="width:100%">
+          </div>
+          <div>
+            <label class="text-xs text-dim block mb-1">Harga Beli (Rp)</label>
+            <input id="split-price" type="number" class="modal-input" value="1000" min="1" step="50" style="width:100%">
+          </div>
+          <div>
+            <label class="text-xs text-dim block mb-1">Rasio Split (misal 2 = 1:2)</label>
+            <input id="split-ratio" type="number" class="modal-input" value="2" min="1" step="1" style="width:100%">
+          </div>
+        </div>
+        <button id="split-calc-btn" class="btn btn-primary btn-sm" style="font-size:11px;margin-bottom:10px">Hitung</button>
+        <div id="split-result" style="display:none;background:var(--bg-panel,#1e293b);border-radius:8px;padding:10px 12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="text-center">
+              <div class="text-xs text-dim mb-1">Lot Baru</div>
+              <strong id="split-out-lots" class="mono text-up" style="font-size:15px">—</strong>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-dim mb-1">Harga Baru</div>
+              <strong id="split-out-price" class="mono" style="font-size:15px">—</strong>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-dim mb-1">Nilai Total</div>
+              <strong id="split-out-value" class="mono" style="font-size:15px">—</strong>
+            </div>
+          </div>
+          <div class="text-xs text-dim mt-2" style="text-align:center">Nilai portofolio tidak berubah setelah split.</div>
+        </div>
+      </div>
+
+      <!-- Rights Issue panel -->
+      <div id="kalkorp-panel-rights" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label class="text-xs text-dim block mb-1">Lot Dimiliki</label>
+            <input id="rights-lots" type="number" class="modal-input" value="10" min="1" step="1" style="width:100%">
+          </div>
+          <div>
+            <label class="text-xs text-dim block mb-1">Harga Rights (Rp)</label>
+            <input id="rights-price" type="number" class="modal-input" value="500" min="1" step="50" style="width:100%">
+          </div>
+          <div>
+            <label class="text-xs text-dim block mb-1">Rasio 1:N (isi N)</label>
+            <input id="rights-ratio" type="number" class="modal-input" value="5" min="1" step="1" style="width:100%">
+          </div>
+          <div>
+            <label class="text-xs text-dim block mb-1">Harga Pasar Saat Ini (Rp)</label>
+            <input id="rights-market" type="number" class="modal-input" value="1000" min="1" step="50" style="width:100%">
+          </div>
+        </div>
+        <button id="rights-calc-btn" class="btn btn-primary btn-sm" style="font-size:11px;margin-bottom:10px">Hitung</button>
+        <div id="rights-result" style="display:none;background:var(--bg-panel,#1e293b);border-radius:8px;padding:10px 12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="text-center">
+              <div class="text-xs text-dim mb-1">Lot Rights</div>
+              <strong id="rights-out-lots" class="mono text-up" style="font-size:15px">—</strong>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-dim mb-1">Biaya Exercise</div>
+              <strong id="rights-out-cost" class="mono" style="font-size:15px">—</strong>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-dim mb-1">Dilusi %</div>
+              <strong id="rights-out-dilution" class="mono text-down" style="font-size:15px">—</strong>
+            </div>
+          </div>
+          <div id="rights-out-note" class="text-xs text-dim mt-2" style="text-align:center"></div>
+        </div>
+      </div>
+    </div>`;
+
+  insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+
+  // ── Collapsible toggle ──
+  const toggle = card.querySelector('#kalkorp-toggle');
+  const body   = card.querySelector('#kalkorp-body');
+  const chev   = card.querySelector('#kalkorp-chevron');
+  toggle.addEventListener('click', () => {
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    chev.style.transform = open ? '' : 'rotate(180deg)';
+  });
+
+  // ── Tab switching ──
+  const tabSplit  = card.querySelector('#kalkorp-tab-split');
+  const tabRights = card.querySelector('#kalkorp-tab-rights');
+  const panelSplit  = card.querySelector('#kalkorp-panel-split');
+  const panelRights = card.querySelector('#kalkorp-panel-rights');
+
+  tabSplit.addEventListener('click', () => {
+    tabSplit.classList.add('btn-primary');
+    tabRights.classList.remove('btn-primary');
+    panelSplit.style.display = '';
+    panelRights.style.display = 'none';
+  });
+  tabRights.addEventListener('click', () => {
+    tabRights.classList.add('btn-primary');
+    tabSplit.classList.remove('btn-primary');
+    panelRights.style.display = '';
+    panelSplit.style.display = 'none';
+  });
+
+  // ── Stock Split calculator ──
+  card.querySelector('#split-calc-btn').addEventListener('click', () => {
+    const lots  = parseFloat(card.querySelector('#split-lots').value)  || 0;
+    const price = parseFloat(card.querySelector('#split-price').value) || 0;
+    const ratio = parseFloat(card.querySelector('#split-ratio').value) || 1;
+
+    if (lots <= 0 || price <= 0 || ratio < 1) return;
+
+    const newLots  = lots * ratio;
+    const newPrice = price / ratio;
+    const totalVal = lots * 100 * price; // unchanged
+
+    card.querySelector('#split-out-lots').textContent  = nf(newLots, 0) + ' lot';
+    card.querySelector('#split-out-price').textContent = money(newPrice);
+    card.querySelector('#split-out-value').textContent = money(totalVal);
+    card.querySelector('#split-result').style.display  = '';
+  });
+
+  // ── Rights Issue calculator ──
+  card.querySelector('#rights-calc-btn').addEventListener('click', () => {
+    const lots        = parseFloat(card.querySelector('#rights-lots').value)   || 0;
+    const rightsPrice = parseFloat(card.querySelector('#rights-price').value)  || 0;
+    const ratio       = parseFloat(card.querySelector('#rights-ratio').value)  || 1; // 1:N → N
+    const marketPrice = parseFloat(card.querySelector('#rights-market').value) || 0;
+
+    if (lots <= 0 || rightsPrice <= 0 || ratio < 1) return;
+
+    const shares      = lots * 100;
+    // Rights received = shares / ratio (1 right per N existing shares)
+    const rightsShares = Math.floor(shares / ratio);
+    const rightsLots   = rightsShares / 100;
+    const exerciseCost = rightsShares * rightsPrice;
+
+    // Dilution % = new shares / (existing + new shares) * 100
+    const dilutionPct = rightsShares > 0
+      ? (rightsShares / (shares + rightsShares)) * 100
+      : 0;
+
+    // Theoretical ex-rights price (TERP)
+    const terp = marketPrice > 0
+      ? ((shares * marketPrice) + (rightsShares * rightsPrice)) / (shares + rightsShares)
+      : 0;
+
+    card.querySelector('#rights-out-lots').textContent     = nf(rightsLots, 2) + ' lot';
+    card.querySelector('#rights-out-cost').textContent     = money(exerciseCost);
+    card.querySelector('#rights-out-dilution').textContent = pf(dilutionPct);
+    card.querySelector('#rights-out-note').textContent     = terp > 0
+      ? `TERP (harga teoritis ex-rights): ${money(terp)}`
+      : 'Isi harga pasar untuk menghitung TERP.';
+    card.querySelector('#rights-result').style.display = '';
   });
 }
 

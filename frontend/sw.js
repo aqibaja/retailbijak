@@ -169,7 +169,31 @@ self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'retailbijak-periodic-sync') {
     event.waitUntil(fetchLatestDataAndCache());
   }
+  if (event.tag === 'check-alerts') {
+    event.waitUntil(checkAndNotifyAlerts());
+  }
 });
+
+// ─── Alert Check & Notify ──────────────────────────
+async function checkAndNotifyAlerts() {
+  try {
+    const res = await fetch('/api/alerts/triggered-sw');
+    if (!res.ok) return;
+    const data = await res.json();
+    const triggered = data.alerts || [];
+    for (const alert of triggered) {
+      await self.registration.showNotification('RetailBijak Alert 🔔', {
+        body: `${alert.ticker}: ${alert.condition} ${alert.value}`,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-72.png',
+        tag: `alert-${alert.id}`,
+        data: { url: `/#stock/${alert.ticker}` }
+      });
+    }
+  } catch(e) {
+    console.warn('[SW] Alert check failed:', e);
+  }
+}
 
 // ─── Handle messages from clients ─────────────────
 self.addEventListener('message', (event) => {

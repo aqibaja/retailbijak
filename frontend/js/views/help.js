@@ -143,6 +143,10 @@ export function renderHelp(root) {
               <a href="#screener" class="btn btn-primary help-support-btn">Buka Pemindai</a>
               <a href="#portfolio" class="btn btn-secondary help-support-btn">Kelola Aset</a>
             </div>
+            <button id="help-replay-onboarding" class="btn btn-secondary" style="margin-top:16px;width:100%;justify-content:center;">
+              <i data-lucide="play-circle" style="width:16px;height:16px;margin-right:6px"></i>
+              Lihat Onboarding Lagi
+            </button>
           </div>
         </div>
       </section>
@@ -156,6 +160,19 @@ export function renderHelp(root) {
     const guideGrid = document.getElementById('help-guide-grid');
     const searchHint = document.getElementById('help-search-hint');
     const searchEmpty = document.getElementById('help-search-empty');
+
+    // ─── Replay Onboarding ───────────────────────────
+    const replayBtn = document.getElementById('help-replay-onboarding');
+    if (replayBtn) {
+      replayBtn.addEventListener('click', () => {
+        localStorage.removeItem('retailbijak.onboarded.v1');
+        if (typeof showOnboarding === 'function') {
+          showOnboarding();
+        } else {
+          location.reload();
+        }
+      });
+    }
 
     if (searchInput) {
       searchInput.addEventListener('input', () => {

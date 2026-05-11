@@ -653,6 +653,24 @@ def get_triggered_alerts(limit: int = 10, db: Session = Depends(get_db)):
     return {'count': len(data), 'data': data}
 
 
+@router.get('/api/alerts/triggered-sw')
+def get_triggered_alerts_sw(db: Session = Depends(get_db)):
+    """SW-compatible endpoint: returns unseen triggered alerts in {alerts:[]} format."""
+    try:
+        rows = db.query(AlertTrigger).filter(
+            AlertTrigger.seen == 0
+        ).order_by(AlertTrigger.triggered_at.desc()).limit(20).all()
+        alerts = [{
+            'id': r.id,
+            'ticker': r.ticker,
+            'condition': (r.alert_type or '').replace('_', ' '),
+            'value': r.trigger_value,
+        } for r in rows]
+        return {'alerts': alerts}
+    except Exception:
+        return {'alerts': []}
+
+
 @router.post('/api/alerts/triggered/ack')
 def ack_triggered_alerts(ids: list[int] = [], db: Session = Depends(get_db)):
     """Mark triggered alerts as seen."""

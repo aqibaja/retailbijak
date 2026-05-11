@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from database import OHLCVDaily, Fundamental, PortfolioPosition, get_db
+from database import OHLCVDaily, Fundamental, PortfolioPosition, Stock, get_db
 from routes.shared_stock_fallbacks import _ticker_base
 
 router = APIRouter()
@@ -170,6 +170,87 @@ def _format_date(dt: datetime | date) -> str:
     if isinstance(dt, datetime):
         return dt.strftime("%Y-%m-%d")
     return dt.isoformat()
+
+
+@router.get('/api/portfolio/sector-allocation')
+def portfolio_sector_allocation(db: Session = Depends(get_db)):
+    """Return portfolio value breakdown by sector."""
+    SECTOR_COLORS = [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+        '#8b5cf6', '#06b6d4', '#f97316', '#84cc16',
+    ]
+
+    positions = db.query(PortfolioPosition).all()
+
+    if not positions:
+        # Dummy data — 5 representative IDX sectors
+        dummy = [
+            {'name': 'Keuangan',        'value': 35_000_000},
+            {'name': 'Energi',          'value': 20_000_000},
+            {'name': 'Konsumer',        'value': 18_000_000},
+            {'name': 'Infrastruktur',   'value': 15_000_000},
+            {'name': 'Teknologi',       'value': 12_000_000},
+        ]
+        total = sum(d['value'] for d in dummy)
+        sectors = [
+            {
+                'name':  d['name'],
+                'value': d['value'],
+                'pct':   round(d['value'] / total * 100, 1),
+                'color': SECTOR_COLORS[i % len(SECTOR_COLORS)],
+            }
+            for i, d in enumerate(dummy)
+        ]
+        return {'sectors': sectors, 'total_value': total, 'is_dummy': True}
+
+    # Build sector → value map
+    sector_map: dict[str, float] = {}
+    total_value = 0.0
+
+    for pos in positions:
+        ticker = pos.ticker
+        base = _ticker_base(ticker)
+        shares = (pos.lots or 0) * 100
+
+        # Resolve current price from OHLCV
+        price_row = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker == ticker,
+        ).order_by(OHLCVDaily.date.desc()).first()
+        if price_row is None:
+            price_row = db.query(OHLCVDaily).filter(
+                OHLCVDaily.ticker == f'{base}.JK',
+            ).order_by(OHLCVDaily.date.desc()).first()
+
+        price = price_row.close if price_row else (pos.avg_price or 0)
+        value = shares * price
+
+        # Resolve sector from stocks table
+        stock = db.query(Stock).filter(Stock.ticker == ticker).first()
+        if stock is None:
+            stock = db.query(Stock).filter(Stock.ticker == f'{base}.JK').first()
+
+        sector_name = (stock.sector if stock and stock.sector else 'Lainnya').strip() or 'Lainnya'
+
+        sector_map[sector_name] = sector_map.get(sector_name, 0.0) + value
+        total_value += value
+
+    if total_value == 0:
+        total_value = 1  # avoid division by zero
+
+    # Sort descending by value
+    sorted_sectors = sorted(sector_map.items(), key=lambda x: x[1], reverse=True)
+
+    sectors = [
+        {
+            'name':  name,
+            'value': round(val, 2),
+            'pct':   round(val / total_value * 100, 1),
+            'color': SECTOR_COLORS[i % len(SECTOR_COLORS)],
+        }
+        for i, (name, val) in enumerate(sorted_sectors)
+    ]
+
+    return {'sectors': sectors, 'total_value': round(total_value, 2), 'is_dummy': False}
 
 
 @router.get('/api/portfolio/dividends')

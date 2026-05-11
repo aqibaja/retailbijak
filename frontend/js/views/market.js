@@ -1,16 +1,21 @@
 import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=202605120200';
 import { observeElements } from '../utils/helpers.js?v=202605120200';
 import { registerViewTimer } from '../utils/view_timers.js?v=202605120200';
-import { fmt, pct, fmtRp, nf, pf } from '../utils/format.js?v=202605120200';
+// FIX: fmt/pct/fmtRp do not exist in format.js — map to actual exports: nf, pf, cf
+import { nf, pf, cf } from '../utils/format.js?v=202605120200';
+const fmt = nf;
+const pct = pf;
+const fmtRp = cf;
 
 const safeRows = (payload) => (Array.isArray(payload?.data) ? payload.data : []);
 
-async function fetchCorporateActions() { return apiFetch('/corporate-actions?limit=6') || { count: 0, data: [], source: 'no_data' }; }
-async function fetchCompanyAnnouncements() { return apiFetch('/company-announcements?limit=6') || { count: 0, data: [], source: 'no_data' }; }
-async function fetchForeignTrading() { return apiFetch('/foreign-trading?limit=6') || { count: 0, data: [], source: 'no_data' }; }
-async function fetchBrokerActivity() { return apiFetch('/broker-activity?limit=6') || { count: 0, data: [], source: 'no_data' }; }
-async function fetchBreadth() { return apiFetch('/market-breadth') || { count: 0, data: {}, source: 'no_data' }; }
-async function fetchStats() { return apiFetch('/market-stats') || { count: 0, data: {}, source: 'no_data' }; }
+// FIX: apiFetch returns null on error (Promise resolves to null), so || fallback must be inside async wrapper
+async function fetchCorporateActions() { const r = await apiFetch('/corporate-actions?limit=6'); return r ?? { count: 0, data: [], source: 'no_data' }; }
+async function fetchCompanyAnnouncements() { const r = await apiFetch('/company-announcements?limit=6'); return r ?? { count: 0, data: [], source: 'no_data' }; }
+async function fetchForeignTrading() { const r = await apiFetch('/foreign-trading?limit=6'); return r ?? { count: 0, data: [], source: 'no_data' }; }
+async function fetchBrokerActivity() { const r = await apiFetch('/broker-activity?limit=6'); return r ?? { count: 0, data: [], source: 'no_data' }; }
+async function fetchBreadth() { const r = await apiFetch('/market-breadth'); return r ?? { count: 0, data: {}, source: 'no_data' }; }
+async function fetchStats() { const r = await apiFetch('/market-stats'); return r ?? { count: 0, data: {}, source: 'no_data' }; }
 
 const badge = (label, cls = '') => {
   const badgeClassMap = {
@@ -242,19 +247,21 @@ export async function renderMarket(root) {
   }
 
   const settle = (p) => Promise.resolve(p).then((value) => ({ ok: true, value })).catch((error) => ({ ok: false, error, value: null }));
-
-  // Show content section after 2s max — skeletons shown until data arrives
-  const loadingTimeout = window.setTimeout(() => {
-    if (loadingEl && contentEl && contentEl.hidden) {
-      loadingEl.hidden = true;
-      contentEl.hidden = false;
-    }
-  }, 2000);
+  // FIX: show content after 2s max OR as soon as all data is ready (whichever comes first)
+  let _loadingRevealed = false;
+  const revealContent = () => {
+    if (_loadingRevealed) return;
+    _loadingRevealed = true;
+    if (loadingEl) loadingEl.hidden = true;
+    if (contentEl) contentEl.hidden = false;
+  };
+  const loadingTimeout = window.setTimeout(revealContent, 2000);
 
   // Fire all API calls — each populates its card on resolve
   const [summaryP, moversP, actionsP, announcementsP, foreignP, brokersP, breadthP, statsP] = [
     settle(fetchMarketSummary()),
-    settle(fetchTopMovers(8)),
+    // FIX: fetch both gainers and losers by using 'all' sort, fallback to default
+    settle(fetchTopMovers(16, 'gainers')),
     settle(fetchCorporateActions()),
     settle(fetchCompanyAnnouncements()),
     settle(fetchForeignTrading()),
@@ -373,6 +380,8 @@ export async function renderMarket(root) {
 
     contentEl.dataset.marketReady = '1';
     window.clearTimeout(loadingTimeout);
+    // FIX: explicitly reveal content when all data is ready (don't wait for 2s timeout)
+    revealContent();
 
     // Auto-refresh every 90s
     if (window._marketPollTimer) clearInterval(window._marketPollTimer);
@@ -383,7 +392,8 @@ export async function renderMarket(root) {
       const pulseEl2 = document.getElementById('market-summary-sentence');
       if (pulseEl2) pulseEl2.textContent = pulseEl2.textContent.replace(/\d+s lalu$/, '') + ' 90s lalu';
     }, 90000);
-    registerViewTimer('i_' + window._marketPollTimer);
+    // FIX: registerViewTimer expects the raw numeric interval ID, not a prefixed string
+    registerViewTimer(window._marketPollTimer);
   });
 
   // TV Stock Heatmap (always, regardless of data)
@@ -408,6 +418,12 @@ export async function renderMarket(root) {
 
   // Local CSS Grid Heatmap (below TV widget)
   loadLocalHeatmap(root);
+  // FIX: wire up data-market-refresh buttons (emptyState CTAs) — delegate from root
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-market-refresh]')) {
+      renderMarket(root);
+    }
+  }, { once: true });
 
   // Stagger reveal
   document.querySelectorAll('.market-section-group').forEach((el, i) => {
@@ -480,5 +496,13 @@ async function loadLocalHeatmap(root) {
     heatmapSection.insertAdjacentElement('afterend', localHeatmap);
   } catch (e) {
     console.warn('loadLocalHeatmap failed', e);
+    // FIX: show empty state in heatmap section so user knows it failed
+    if (heatmapSection) {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'market-empty';
+      errDiv.style.padding = '16px';
+      errDiv.textContent = 'Heatmap sektor tidak tersedia. Data sektor belum siap atau gagal dimuat.';
+      heatmapSection.appendChild(errDiv);
+    }
   }
 }

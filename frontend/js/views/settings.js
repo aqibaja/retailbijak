@@ -226,6 +226,17 @@ export async function renderSettings(root) {
             </div>
           </div>
 
+          <div class="settings-sample-data panel flex-col gap-4" style="margin-top:2rem">
+            <div class="settings-section-head">
+              <h2>🌱 Sample Data</h2>
+              <span>Isi portfolio & watchlist dengan data contoh untuk eksplorasi fitur.</span>
+            </div>
+            <div class="settings-actions-row" style="gap:12px;flex-wrap:wrap">
+              <button id="btn-seed-sample" type="button" class="btn btn-primary settings-save-btn" style="background:var(--green,#22c55e);border-color:var(--green,#22c55e);color:#fff">Load Sample Data</button>
+              <button id="btn-seed-clear" type="button" class="btn btn-danger settings-save-btn" style="background:var(--red,#ef4444);border-color:var(--red,#ef4444);color:#fff">Clear All Data</button>
+            </div>
+          </div>
+
           <div class="settings-note-rail panel flex-col gap-4">
             <h2 class="settings-note-title"><i data-lucide="terminal" class="lucide-sm"></i> Catatan Terminal</h2>
             <div class="settings-note-stack">
@@ -684,6 +695,54 @@ export async function renderSettings(root) {
         saveNicknameBtn.textContent = 'Simpan Nickname';
       }
     });
+
+    // ─── Sample Data ────────────────────────────────
+    const btnSeedSample = document.getElementById('btn-seed-sample');
+    const btnSeedClear = document.getElementById('btn-seed-clear');
+
+    if (btnSeedSample) {
+      btnSeedSample.addEventListener('click', async () => {
+        btnSeedSample.disabled = true;
+        btnSeedSample.textContent = 'Memuat...';
+        try {
+          const res = await fetch('/api/seed/sample', { method: 'POST' });
+          const data = await res.json();
+          if (data?.ok) {
+            showToast('Sample data loaded!', 'success');
+          } else {
+            showToast('Gagal memuat sample data', 'error');
+          }
+        } catch (e) {
+          console.warn('seed sample failed', e);
+          showToast('Gagal memuat sample data', 'error');
+        } finally {
+          btnSeedSample.disabled = false;
+          btnSeedSample.textContent = 'Load Sample Data';
+        }
+      });
+    }
+
+    if (btnSeedClear) {
+      btnSeedClear.addEventListener('click', async () => {
+        btnSeedClear.disabled = true;
+        btnSeedClear.textContent = 'Menghapus...';
+        try {
+          const res = await fetch('/api/seed/clear', { method: 'DELETE' });
+          const data = await res.json();
+          if (data?.ok) {
+            showToast('Data cleared', 'success');
+          } else {
+            showToast('Gagal menghapus data', 'error');
+          }
+        } catch (e) {
+          console.warn('seed clear failed', e);
+          showToast('Gagal menghapus data', 'error');
+        } finally {
+          btnSeedClear.disabled = false;
+          btnSeedClear.textContent = 'Clear All Data';
+        }
+      });
+    }
 }
 
 // ─── 15.10.3 — Data Health Card ═══════════════════

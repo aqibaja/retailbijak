@@ -120,6 +120,11 @@ try:
 except ModuleNotFoundError:
     from routes.drawings import router as drawings_router
 
+try:
+    from backend.routes.seed import router as seed_router
+except ModuleNotFoundError:
+    from routes.seed import router as seed_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -153,6 +158,7 @@ app.include_router(auth_router)
 app.include_router(macro_router)
 app.include_router(portfolio_router)
 app.include_router(drawings_router)
+app.include_router(seed_router)
 
 app.add_middleware(
     CORSMiddleware,

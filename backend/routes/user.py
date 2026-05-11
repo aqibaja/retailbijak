@@ -1014,9 +1014,79 @@ def portfolio_analytics(db: Session = Depends(get_db)):
     else:
         concentration = {}
 
+    # 7. IHSG benchmark series (normalized to 100 at first portfolio date)
+    ihsg_series = []
+    alpha = None
+    beta = None
+
+    if equity_curve:
+        first_date = equity_curve[0]['date']
+        last_date = equity_curve[-1]['date']
+
+        # Try known IHSG tickers in order
+        ihsg_rows = []
+        for ihsg_ticker in ['^JKSE', 'IHSG', '^IHSG', 'JKSE']:
+            rows = db.query(OHLCVDaily).filter(
+                OHLCVDaily.ticker == ihsg_ticker,
+                OHLCVDaily.date >= first_date,
+                OHLCVDaily.date <= last_date,
+            ).order_by(OHLCVDaily.date.asc()).all()
+            if rows:
+                ihsg_rows = rows
+                break
+
+        if ihsg_rows:
+            base_price = float(ihsg_rows[0].close or 1)
+            if base_price == 0:
+                base_price = 1.0
+            ihsg_series = [
+                {'date': r.date.isoformat(), 'value': round(float(r.close or base_price) / base_price * 100, 4)}
+                for r in ihsg_rows
+            ]
+
+            # Compute alpha & beta via OLS regression on daily returns
+            # Align portfolio and IHSG by date
+            ihsg_map = {pt['date']: pt['value'] for pt in ihsg_series}
+            port_vals = equity_curve
+            # Normalize portfolio to 100 at start too
+            port_base = port_vals[0]['value'] if port_vals[0]['value'] != 0 else 1.0
+            port_norm = {pt['date']: pt['value'] / port_base * 100 for pt in port_vals}
+
+            common_dates = sorted(set(port_norm.keys()) & set(ihsg_map.keys()))
+            if len(common_dates) >= 10:
+                port_series_aligned = [port_norm[d] for d in common_dates]
+                ihsg_series_aligned = [ihsg_map[d] for d in common_dates]
+
+                # Daily returns
+                port_rets = [(port_series_aligned[i] - port_series_aligned[i-1]) / port_series_aligned[i-1]
+                             for i in range(1, len(port_series_aligned)) if port_series_aligned[i-1] != 0]
+                ihsg_rets = [(ihsg_series_aligned[i] - ihsg_series_aligned[i-1]) / ihsg_series_aligned[i-1]
+                             for i in range(1, len(ihsg_series_aligned)) if ihsg_series_aligned[i-1] != 0]
+
+                n = min(len(port_rets), len(ihsg_rets))
+                if n >= 5:
+                    pr = port_rets[:n]
+                    ir = ihsg_rets[:n]
+                    mean_p = sum(pr) / n
+                    mean_i = sum(ir) / n
+                    cov = sum((pr[j] - mean_p) * (ir[j] - mean_i) for j in range(n)) / n
+                    var_i = sum((ir[j] - mean_i) ** 2 for j in range(n)) / n
+                    if var_i > 0:
+                        beta_val = cov / var_i
+                        # Annualised alpha (CAPM, risk-free = 0)
+                        alpha_val = (mean_p - beta_val * mean_i) * 252
+                        alpha = round(alpha_val, 4)
+                        beta = round(beta_val, 4)
+        else:
+            # Fallback: synthetic flat line at 100
+            ihsg_series = [{'date': pt['date'], 'value': 100.0} for pt in equity_curve]
+
     return {
         'equity_curve': equity_curve,
         'benchmark_curve': benchmark_curve,
+        'ihsg_series': ihsg_series,
+        'alpha': alpha,
+        'beta': beta,
         'sectors': sectors,
         'total_value': round(total_portfolio_value, 2),
         'has_data': bool(equity_curve or sectors),
