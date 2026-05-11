@@ -1211,6 +1211,27 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 - [ ] 42.1 Setup Telegram bot token (user action required)
 - [ ] 42.2 Setup SMTP email (user action required)
-- [ ] 42.3 Monitor smoke test cron harian
-- [ ] 42.4 Update data jika ada issue freshness
+- [x] 42.3 Monitor smoke test cron harian — aktif job 21c5fb17eaef
+- [x] 42.4 Update data jika ada issue freshness — calendar seeded 36 events
 - [ ] 42.5 Feature request dari user
+
+---
+
+## Fase 43 — Bug Fix & Data Quality (2026-05-12)
+
+### Sprint 1: JS Runtime Fixes ✅
+- [x] 43.1.1 Fix `animateValue is not defined` di main.js — import dari helpers.js. Commit: 821e666
+- [x] 43.1.2 Load LightweightCharts 4.1.3 dari CDN (bukan stub) — priceScale crash resolved. Commit: 6f6b2a6
+- [x] 43.1.3 Stub fallback diperbarui — tambah priceScale(), subscribeCrosshairMove(), resize()
+
+### Sprint 2: Data Quality ✅
+- [x] 43.2.1 Seed calendar events Mei-Agustus 2026 — 36 events baru (RUPS, dividen, earnings blue chip)
+- [x] 43.2.2 Calendar API verified — Mei: 11, Jun: 100, Jul: 8, Agu: 8 events
+- [x] 43.2.3 /api/auth/me 404 — confirmed expected behavior (device auto-register on first load)
+
+### Sprint 3: Audit & Verify ✅
+- [x] 43.3.1 Deep audit 23 views — semua ✅ render dengan konten
+- [x] 43.3.2 LWC 4.1.3 loaded, canvas present, no chart errors di #stock/BBCA
+- [x] 43.3.3 Settings 404 hanya /api/auth/me — bukan bug, device belum register
+
+**Status: ✅ FASE 43 SELESAI**
