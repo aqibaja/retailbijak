@@ -138,9 +138,17 @@ function setupKeyboardShortcuts() {
 function setupLucideAutoRender() {
   const render = () => {
     if (typeof lucide === 'undefined' || !lucide.createIcons) return;
-    lucide.createIcons(); // Initial render
+    lucide.createIcons();
     const target = document.getElementById('app-root') || document.body;
-    const observer = new MutationObserver(() => lucide.createIcons());
+    let rendering = false;
+    const observer = new MutationObserver(() => {
+      if (rendering) return;
+      rendering = true;
+      requestAnimationFrame(() => {
+        lucide.createIcons();
+        rendering = false;
+      });
+    });
     observer.observe(target, { childList: true, subtree: true });
   };
   
@@ -999,31 +1007,30 @@ document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       setupLucideAutoRender();
       setupSearchOverlay();
-      setupScrollEffects();
+      // setupScrollEffects();  // disabled for debug
       setupRunningTicker();
       refreshTopbarMarket();
-      // Auto-refresh topbar market data — paused when tab is hidden
       let _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           clearInterval(_marketIntervalId);
           _marketIntervalId = null;
         } else if (!_marketIntervalId) {
-          refreshTopbarMarket(); // immediate refresh on return
+          refreshTopbarMarket();
           _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
         }
       });
       setupNetworkStatus();
-      setupKeyboardShortcuts();
+      // setupKeyboardShortcuts();  // disabled for debug
       startMarketCountdown();
       // setupLivePriceStream(); // disabled — SSE causes browser freeze
-      setupScrollToTop();
-      setupShortcutPanel();
-      setupPageTransitions();
-      setupSwipeNavigation();
-      setupPullToRefresh();
-      setupTouchGestures();
-      showOnboarding();
+      // setupScrollToTop();  // disabled for debug
+      // setupShortcutPanel();  // disabled for debug
+      // setupPageTransitions();  // disabled for debug
+      // setupSwipeNavigation();  // disabled for debug
+      // setupPullToRefresh();  // disabled for debug
+      // setupTouchGestures();  // disabled for debug
+      // showOnboarding();  // disabled for debug
       // Service worker disabled — causes reload loops
       /*
         navigator.serviceWorker.register('/sw.js?v=202605112032').then(reg => {
