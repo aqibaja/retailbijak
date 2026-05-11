@@ -323,19 +323,62 @@ def delete_watchlist(ticker: str, db: Session = Depends(get_db)):
 
 @router.get('/api/portfolio')
 def get_portfolio(db: Session = Depends(get_db)):
+    from sqlalchemy import func
     rows = db.query(PortfolioPosition).order_by(PortfolioPosition.ticker.asc()).all()
+    if not rows:
+        return {'count': 0, 'data': [], 'total_value': 0, 'total_cost': 0, 'total_pnl': 0, 'total_pnl_pct': 0}
+
+    # Get latest prices for all tickers using date with most rows among portfolio tickers
+    tickers = [r.ticker for r in rows]
+    from database import OHLCVDaily
+    latest_rows = db.query(OHLCVDaily).filter(OHLCVDaily.ticker.in_(tickers)).all()
+
+    best_date = None
+    if latest_rows:
+        from collections import Counter
+        date_counts = Counter([r.date for r in latest_rows if r.date is not None])
+        best_date = date_counts.most_common(1)[0][0] if date_counts else None
+
+    price_map = {}
+    if best_date:
+        price_rows = db.query(OHLCVDaily).filter(
+            OHLCVDaily.ticker.in_(tickers),
+            OHLCVDaily.date == best_date
+        ).all()
+        price_map = {p.ticker: p.close for p in price_rows}
+
+    data = []
+    total_value = 0.0
+    total_cost = 0.0
+    for row in rows:
+        cur_price = price_map.get(row.ticker)
+        cost = (row.avg_price or 0) * (row.lots or 0) * 100
+        value = (cur_price or row.avg_price or 0) * (row.lots or 0) * 100
+        pnl = value - cost
+        pnl_pct = round((pnl / cost * 100) if cost else 0, 2)
+        total_value += value
+        total_cost += cost
+        data.append({
+            'id': row.id,
+            'ticker': row.ticker,
+            'lots': row.lots,
+            'avg_price': row.avg_price,
+            'current_price': cur_price,
+            'value': round(value, 2),
+            'cost': round(cost, 2),
+            'pnl': round(pnl, 2),
+            'pnl_pct': pnl_pct,
+            'created_at': row.created_at.isoformat() if row.created_at else None,
+        })
+
+    total_pnl = total_value - total_cost
     return {
-        'count': len(rows),
-        'data': [
-            {
-                'id': row.id,
-                'ticker': row.ticker,
-                'lots': row.lots,
-                'avg_price': row.avg_price,
-                'created_at': row.created_at.isoformat() if row.created_at else None,
-            }
-            for row in rows
-        ],
+        'count': len(data),
+        'data': data,
+        'total_value': round(total_value, 2),
+        'total_cost': round(total_cost, 2),
+        'total_pnl': round(total_pnl, 2),
+        'total_pnl_pct': round((total_pnl / total_cost * 100) if total_cost else 0, 2),
     }
 
 

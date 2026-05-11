@@ -1399,3 +1399,56 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 **Commit: 2903451**
 **Status: 🔄 Fase 50 In Progress (50.3.3 pending)**
 
+
+
+---
+
+## Fase 50 Final Update (2026-05-12)
+
+### Sprint 3 Lanjutan ✅
+- [x] 50.3.3 Broker summary — fix seed prioritaskan blue chip (BBCA, BBRI, BMRI, dll). Fix import `text`. BBCA: 10 broker rows ✅
+
+**Commit: 25b0389**
+**Status: ✅ FASE 50 SELESAI**
+
+---
+
+## Fase 51 — Data Quality & UX Refinement (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Perbaiki kualitas data, UX minor, dan stabilitas
+
+### Sprint 1: Signal & Screener Quality 🔄
+- [ ] 51.1.1 Cek signal overview — apakah sinyal BUY/SELL terdistribusi wajar
+- [ ] 51.1.2 Screener preset — test golden_cross, oversold_rsi, volume_spike
+- [ ] 51.1.3 Screener hasil — pastikan ada hasil untuk setiap preset
+
+### Sprint 2: Portfolio & Paper Trade UX 🔄
+- [ ] 51.2.1 Portfolio P&L — pastikan unrealized P&L dihitung dari harga terkini
+- [ ] 51.2.2 Paper trades — pastikan entry/exit flow berjalan
+- [ ] 51.2.3 Watchlist — pastikan add/remove berfungsi
+
+### Sprint 3: AI & Briefing Quality 🔄
+- [ ] 51.3.1 AI picks — refresh picks dengan trigger manual
+- [ ] 51.3.2 Market briefing — pastikan konten fresh (bukan cache lama)
+- [ ] 51.3.3 Sector performance — pastikan data sektor terisi
+
+
+
+---
+
+## Fase 51 Progress Update (2026-05-12)
+
+### Sprint 1: Signal & Screener Quality ✅
+- [x] 51.1.1 Signal overview verified — distribusi sinyal wajar (BUY 5829, SELL 7101) ✅
+- [x] 51.1.2 Screener preset verified — `golden_cross`, `oversold_rsi`, `volume_spike` endpoint OK ✅
+- [x] 51.1.3 Screener hasil available untuk semua preset (count 5 sample) ✅
+
+### Sprint 2: Portfolio & Paper Trade UX 🔄
+- [x] 51.2.1 Fix `/api/portfolio` — tambah `current_price`, `value`, `cost`, `pnl`, `pnl_pct`, `total_value`, `total_cost`, `total_pnl`, `total_pnl_pct` ✅
+- [x] 51.2.2 Paper trades summary verified — 5 open, 0 closed, total_pnl 0 ✅
+- [x] 51.2.3 Watchlist verified — 7 tickers, add/remove API sebelumnya sudah OK ✅
+
+**Commit pending**
+**Status: 🔄 Fase 51 In Progress (Sprint 3 pending)**
+
