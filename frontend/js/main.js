@@ -2,6 +2,7 @@ import { handleRoute } from './router.js?v=202605120200';
 import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605120200';
 import { initTheme } from './theme.js?v=202605120200';
 import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120200';
+import { animateValue, flashUpdate } from './utils/helpers.js?v=202605120200';
 
 // ─── ENTRY ─── main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
