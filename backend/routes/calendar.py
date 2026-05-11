@@ -14,6 +14,7 @@ from datetime import datetime, date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import PlainTextResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -397,3 +398,73 @@ def get_ipo_pipeline(
         "upcoming": upcoming,
         "past": past,
     }
+
+
+@router.get("/api/calendar/export", response_class=PlainTextResponse)
+def export_calendar_ics(
+    month: str = Query(None, description="Format YYYY-MM, default bulan ini"),
+    db: Session = Depends(get_db),
+):
+    """Export calendar events sebagai file .ics (iCalendar format)."""
+    if month:
+        try:
+            target = datetime.strptime(month, "%Y-%m")
+        except ValueError:
+            target = datetime.now()
+    else:
+        target = datetime.now()
+
+    year, mon = target.year, target.month
+    # Ambil semua event bulan ini
+    events = (
+        db.query(CalendarEvent)
+        .filter(
+            func.strftime("%Y", CalendarEvent.event_date) == str(year),
+            func.strftime("%m", CalendarEvent.event_date) == f"{mon:02d}",
+        )
+        .order_by(CalendarEvent.event_date)
+        .all()
+    )
+
+    now_str = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//RetailBijak//IDX Calendar//ID",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:RetailBijak {year}-{mon:02d}",
+    ]
+
+    for ev in events:
+        try:
+            ev_date = datetime.strptime(str(ev.event_date)[:10], "%Y-%m-%d")
+            date_str = ev_date.strftime("%Y%m%d")
+        except Exception:
+            continue
+
+        uid = f"{ev.id}-{ev.ticker or 'IDX'}@retailbijak"
+        summary = f"{ev.ticker or 'IDX'} — {ev.event_type or 'Event'}"
+        if ev.description:
+            summary += f": {ev.description[:60]}"
+
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now_str}",
+            f"DTSTART;VALUE=DATE:{date_str}",
+            f"DTEND;VALUE=DATE:{date_str}",
+            f"SUMMARY:{summary}",
+            f"CATEGORIES:{ev.event_type or 'CORPORATE'}",
+            "END:VEVENT",
+        ]
+
+    lines.append("END:VCALENDAR")
+    ics_content = "\r\n".join(lines) + "\r\n"
+
+    from fastapi.responses import Response
+    return Response(
+        content=ics_content,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename=retailbijak-{year}-{mon:02d}.ics"},
+    )

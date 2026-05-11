@@ -77,6 +77,7 @@ export async function renderCalendar(root) {
           <h2 class="calendar-month-title" id="cal-title">${MONTH_NAMES[currentMonth]} ${currentYear}</h2>
           <button class="btn btn-sm" id="cal-next" aria-label="Bulan berikutnya">&rarr;</button>
           <button class="btn btn-sm btn-primary" id="cal-today" aria-label="Kembali ke hari ini">Hari Ini</button>
+          <button class="btn btn-sm" id="cal-export-ics" title="Export kalender bulan ini sebagai .ics">📅 Export ICS</button>
           <div class="cal-view-toggle" role="group" aria-label="Tampilan">
             <button class="cal-view-btn active" id="cal-view-grid" data-view="grid" title="Grid">⊞ Grid</button>
             <button class="cal-view-btn" id="cal-view-list" data-view="list" title="List">☰ List</button>
@@ -137,6 +138,18 @@ export async function renderCalendar(root) {
     currentYear  = now.getFullYear();
     selectedDate = null;
     loadAndRender();
+  });
+
+  // Export ICS
+  document.getElementById('cal-export-ics')?.addEventListener('click', () => {
+    const mm = String(currentMonth + 1).padStart(2, '0');
+    const monthStr = `${currentYear}-${mm}`;
+    const link = document.createElement('a');
+    link.href = `/api/calendar/export?month=${monthStr}`;
+    link.download = `retailbijak-${monthStr}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   });
 
   // Wire view toggle

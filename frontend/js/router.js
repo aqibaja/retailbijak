@@ -184,10 +184,16 @@ export function handleRoute(hash) {
                 const renderFn = mod[renderFnName];
                 if (renderFn) return renderFn(root);
               }
-              // Fallback to dashboard
-              const dash = viewCache.dashboard || await viewModules.dashboard();
-              viewCache.dashboard = dash;
-              return dash.renderDashboard(root);
+              // Fallback: 404 page jika route tidak dikenal
+              root.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:16px;padding:40px">
+                  <div style="font-size:64px">🔍</div>
+                  <h2 style="font-size:24px;font-weight:700;color:var(--text-main);margin:0">Halaman Tidak Ditemukan</h2>
+                  <p style="color:var(--text-muted);font-size:14px;margin:0">Route <code style="background:var(--bg-card);padding:2px 8px;border-radius:4px">#${cleanPath}</code> tidak dikenal.</p>
+                  <a href="#dashboard" class="btn btn-primary" style="margin-top:8px">← Kembali ke Dashboard</a>
+                </div>
+              `;
+              return;
             };
             await loadAndRender();
 

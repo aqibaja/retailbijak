@@ -72,7 +72,7 @@ export async function renderDashboard(root) {
       </div>
       <div class="dash-quote-card dash-mobile-status" aria-live="polite" aria-atomic="true">
         <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div>
-        <div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
+        <div class="text-xs text-dim mb-2" id="market-data-date" style="display:flex;align-items:center;gap:8px">Data IDX: loading...<button id="btn-dashboard-refresh" type="button" title="Refresh data dashboard" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0;font-size:13px;line-height:1" aria-label="Refresh dashboard">⟳</button></div>
         <div class="text-xs text-dim uppercase strong">IHSG</div>
         <div class="flex justify-between items-end gap-3" role="group" aria-label="IHSG nilai dan perubahan"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
         <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">—</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
@@ -245,6 +245,19 @@ export async function renderDashboard(root) {
   document.getElementById('dash-refresh-btn')?.addEventListener('click', () => {
     showToast('Me-refresh dashboard...', 'info');
     location.reload();
+  });
+  document.getElementById('btn-dashboard-refresh')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-dashboard-refresh');
+    if (btn) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+    showToast('Memperbarui data...', 'info', 2000);
+    try {
+      await loadMarketSummary();
+      showToast('✅ Data diperbarui', 'success', 2000);
+    } catch(e) {
+      showToast('Gagal refresh data', 'error', 2000);
+    } finally {
+      if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+    }
   });
   document.getElementById('dash-clear-cache-btn')?.addEventListener('click', () => {
     if ('caches' in window) {
