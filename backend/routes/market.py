@@ -425,10 +425,8 @@ def data_freshness(db: Session = Depends(get_db)):
     sig_latest = db.query(func.max(Signal.signal_date)).scalar()
     sig_str = str(sig_latest)[:10] if sig_latest else None
 
-    if ohlcv_age_days == 0:
-        ohlcv_status = 'fresh'
-    elif ohlcv_age_days == 1:
-        ohlcv_status = 'yesterday'
+    if ohlcv_age_days <= 1:  # 0=today, 1=yesterday, negative=future date (yfinance timezone artifact)
+        ohlcv_status = 'fresh' if ohlcv_age_days <= 0 else 'yesterday'
     else:
         ohlcv_status = 'stale'
 
