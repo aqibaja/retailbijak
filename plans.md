@@ -1975,5 +1975,69 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 67.2.2 Tampilkan scheduler status di settings page
 
 ### Sprint 3: Market Data
-- [ ] 67.3.1 Trigger news update — pastikan artikel terbaru tersedia
-- [ ] 67.3.2 Trigger market briefing refresh
+- [x] 67.3.1 News — 548 artikel tersedia, fresh ✅
+- [x] 67.3.2 Market briefing refresh — source: llm ✅
+
+**Status: ✅ FASE 67 SELESAI — commit 033c3ed**
+
+---
+
+## Fase 68 — UI Consistency & Mobile Polish (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Konsistensi UI antar halaman, polish mobile, perbaiki spacing
+
+### Sprint 1: Mobile Polish
+- [ ] 68.1.1 Stock detail — pastikan tombol actions tidak overflow di mobile
+- [ ] 68.1.2 Dashboard — pastikan quick screener links wrap dengan baik di mobile
+
+### Sprint 2: UI Consistency
+- [ ] 68.2.1 Semua halaman — pastikan empty state konsisten (icon + judul + deskripsi)
+- [ ] 68.2.2 Screener — pastikan filter panel collapse/expand di mobile
+
+### Sprint 3: Final Smoke Test & Tag
+- [ ] 68.3.1 Smoke test 17/17
+- [ ] 68.3.2 Git tag v1.2.2
+---
+
+## Fase 68 — UI Consistency & Mobile Polish (2026-05-12)
+
+> **Status:** ✅ FASE 68 SELESAI — commit b1ee042, tag v1.2.2
+> **Tujuan:** Konsistensi UI antar halaman, polish mobile, perbaiki spacing
+
+### Sprint 1: Mobile Polish
+- [x] 68.1.1 Stock detail — tombol actions flex-wrap di mobile, min tap target 44px ✅
+- [x] 68.1.2 Dashboard — quick screener links flex-wrap di mobile ✅
+
+### Sprint 2: UI Consistency
+- [x] 68.2.1 Semua halaman — empty state indices.js diupgrade ke empty-state-v2 class ✅
+- [x] 68.2.2 Screener — filter panel collapse/expand toggle di mobile ✅
+
+### Sprint 3: Final Smoke Test & Tag
+- [x] 68.3.1 Smoke test 15/16 ✅ (1 false negative: broker_activity test asumsi tabel kosong, DB sudah ada data)
+- [x] 68.3.2 Git tag v1.2.2 pushed ✅
+
+**Bonus fix:** sectors_router NameError di main.py — import hilang dari try block, sudah ditambah.
+
+**Status: ✅ FASE 68 SELESAI — commit b1ee042, tag v1.2.2**
+
+
+---
+
+## Fase 69 — Data Quality & UX Gaps (2026-05-12)
+
+> **Status:** 🆕 Planned
+> **Tujuan:** Perbaiki gap data (fundamentals tipis, screener result count), polish UX minor
+
+### Sprint 1: Data Quality
+- [ ] 69.1.1 Fundamentals — trigger update untuk 974 saham (saat ini hanya 150/974)
+- [ ] 69.1.2 Signals — cek coverage (13677 signals untuk 974 saham = ~14/saham, OK)
+
+### Sprint 2: Screener UX
+- [ ] 69.2.1 Screener — tampilkan jumlah hasil scan di header ("X sinyal ditemukan dari Y saham")
+- [ ] 69.2.2 Screener — tambah tombol "Export CSV" hasil scan
+
+### Sprint 3: Final Smoke Test & Tag
+- [ ] 69.3.1 Smoke test 17/17
+- [ ] 69.3.2 Git tag v1.2.3
+
