@@ -183,7 +183,7 @@ def get_backfill_progress(db: Session = Depends(get_db)):
 
 @router.get('/api/health')
 def health():
-    return {'status': 'ok', 'version': '1.0.0'}
+    return {'status': 'ok', 'version': '1.1.0'}
 
 @router.post('/api/admin/classify-sectors')
 def trigger_sector_classification(db: Session = Depends(get_db)):

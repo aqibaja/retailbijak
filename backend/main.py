@@ -138,7 +138,7 @@ async def lifespan(app: FastAPI):
             scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title="SwingAQ Scanner", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="SwingAQ Scanner", version="1.1.0", lifespan=lifespan)
 app.include_router(user_router)
 app.include_router(system_router)
 app.include_router(reference_router)
