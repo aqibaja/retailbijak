@@ -2191,3 +2191,12 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 74.3.1 Smoke test 16/16
 - [ ] 74.3.2 Git tag v1.2.8
 
+
+**Status: ✅ FASE 74 SELESAI — tag v1.2.8**
+- 74.1.1 Corporate actions DB fallback ditambah ke news.py ✅
+- 74.1.2 Corporate-actions API return 5 items (IDX live) ✅
+- 74.2.1 Macro card sudah tampilkan tahun data terakhir ✅
+- 74.2.2 Macro refresh button ditambah dengan disable saat loading ✅
+- 74.3.1 Smoke test 16/16 ✅
+- 74.3.2 Git tag v1.2.8 ✅
+
