@@ -8,8 +8,16 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
-from database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
-from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
+try:
+    from database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
+except ModuleNotFoundError:
+    from backend.database import BrokerSummary, UserSetting, OHLCVDaily, Stock, get_db
+
+try:
+    from routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
+except ModuleNotFoundError:
+    from backend.routes.shared_market_helpers import _latest_ohlcv_snapshot, _latest_ohlcv_pairs, _top_mover_rows, _derived_broker_activity_rows
+
 router = APIRouter()
 
 
@@ -389,11 +397,16 @@ async def _live_price_generator(top_n: int = 50, interval: float = 5.0):
             # Get latest OHLCV for top stocks
             rows = db.execute(
                 _text("""
+                    WITH latest AS (
+                        SELECT ticker, MAX(date) as max_date
+                        FROM ohlcv_daily
+                        GROUP BY ticker
+                    )
                     SELECT o.ticker, o.close, o.volume, o.date,
                            s.name, COALESCE(s.sector, 'N/A') as sector
                     FROM ohlcv_daily o
+                    JOIN latest l ON l.ticker = o.ticker AND l.max_date = o.date
                     JOIN stocks s ON s.ticker = o.ticker
-                    WHERE o.date = (SELECT MAX(o2.date) FROM ohlcv_daily o2 WHERE o2.ticker = o.ticker)
                     ORDER BY o.volume DESC
                     LIMIT :n
                 """),

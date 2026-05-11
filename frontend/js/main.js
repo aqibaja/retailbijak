@@ -1016,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupNetworkStatus();
       setupKeyboardShortcuts();
       startMarketCountdown();
-      setupLivePriceStream();
+      // setupLivePriceStream(); // disabled — SSE causes browser freeze
       setupScrollToTop();
       setupShortcutPanel();
       setupPageTransitions();
@@ -1024,14 +1024,12 @@ document.addEventListener('DOMContentLoaded', () => {
       setupPullToRefresh();
       setupTouchGestures();
       showOnboarding();
-      // Register PWA service worker (1.7.6)
-      if ('serviceWorker' in navigator) {
+      // Service worker disabled — causes reload loops
+      /*
         navigator.serviceWorker.register('/sw.js?v=202605112032').then(reg => {
-          // If waiting, skip wait — no auto-reload to avoid infinite loop
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
-          // Detect new SW installing — just activate, no reload
           reg.addEventListener('updatefound', () => {
             const newSW = reg.installing;
             newSW.addEventListener('statechange', () => {
@@ -1041,13 +1039,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           });
         }).catch(() => {});
-        // Auto-reload when SW sends update message
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data && event.data.type === 'SW_UPDATED') {
             window.location.reload(true);
           }
         });
-      }
+      */
 
       // ─── PWA Install Prompt ────────────────────────
       let deferredPrompt = null;
