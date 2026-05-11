@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from database import CalendarEvent, Fundamental, Stock, OHLCVDaily, get_db
+from database import CalendarEvent, Fundamental, Stock, OHLCVDaily, Dividend, get_db
 router = APIRouter()
 
 VALID_EVENT_TYPES = {"dividend", "earnings", "corporate", "economic", "ipo", "rights", "all"}
@@ -143,54 +143,48 @@ def get_upcoming_calendar_events(
 def get_dividends(
     sector: str = "",
     ticker: str = "",
+    limit: int = 50,
     db: Session = Depends(get_db),
 ):
-    """Return all dividend events grouped by ticker with yield & sector info."""
+    """Return dividend history from the dedicated dividends table.
+
+    Falls back to CalendarEvent-based grouping for sector/yield context.
+    Query params:
+      ticker — filter by exact ticker (case-insensitive)
+      sector  — filter by sector (uses Stock join)
+      limit   — max rows returned (default 50)
+    """
+    # ── Primary: query Dividend table ──────────────────────────────
     q = (
-        db.query(
-            CalendarEvent.ticker,
-            CalendarEvent.event_date,
-            CalendarEvent.title,
-            CalendarEvent.description,
-            Fundamental.dividend_yield,
-            Stock.sector,
-            Stock.name,
-        )
-        .outerjoin(Fundamental, CalendarEvent.ticker == Fundamental.ticker)
-        .outerjoin(Stock, CalendarEvent.ticker == Stock.ticker)
-        .filter(CalendarEvent.event_type == "dividend")
+        db.query(Dividend, Stock.name, Stock.sector, Fundamental.dividend_yield)
+        .outerjoin(Stock, Dividend.ticker == Stock.ticker)
+        .outerjoin(Fundamental, Dividend.ticker == Fundamental.ticker)
     )
 
+    if ticker:
+        q = q.filter(Dividend.ticker == ticker.upper())
     if sector:
         q = q.filter(Stock.sector.ilike(f"%{sector}%"))
-    if ticker:
-        q = q.filter(CalendarEvent.ticker.ilike(f"%{ticker}%"))
 
-    rows = q.order_by(CalendarEvent.event_date.desc()).all()
+    rows = q.order_by(Dividend.ex_date.desc()).limit(limit).all()
 
-    # Build per-ticker grouping
-    ticker_map = {}
-    for row in rows:
-        t = row.ticker or "UNKNOWN"
-        if t not in ticker_map:
-            ticker_map[t] = {
-                "ticker": t,
-                "company_name": row.name or "",
-                "sector": row.sector or "",
-                "dividend_yield": row.dividend_yield,
-                "events": [],
-            }
-        ticker_map[t]["events"].append({
-            "event_date": row.event_date.isoformat() if hasattr(row.event_date, "isoformat") else str(row.event_date),
-            "title": row.title,
-            "description": row.description,
-        })
+    data = [
+        {
+            "ticker": r.Dividend.ticker,
+            "company_name": r.name or "",
+            "sector": r.sector or "",
+            "dividend_yield": r.dividend_yield,
+            "ex_date": r.Dividend.ex_date,
+            "payment_date": r.Dividend.payment_date,
+            "amount": r.Dividend.amount,
+            "type": r.Dividend.type,
+            "fiscal_year": r.Dividend.fiscal_year,
+        }
+        for r in rows
+    ]
 
-    data = list(ticker_map.values())
-    data.sort(key=lambda x: x["ticker"])
-
-    # Compute sector averages
-    sector_avg = {}
+    # ── Sector averages from Dividend amounts ───────────────────────
+    sector_avg: dict = {}
     for item in data:
         sec = item["sector"] or "Unknown"
         if sec not in sector_avg:
@@ -199,17 +193,12 @@ def get_dividends(
             sector_avg[sec]["total_yield"] += item["dividend_yield"]
             sector_avg[sec]["count"] += 1
 
-    sector_averages = {}
-    for sec, vals in sector_avg.items():
-        if vals["count"] > 0:
-            sector_averages[sec] = round(vals["total_yield"] / vals["count"], 2)
-        else:
-            sector_averages[sec] = 0
-
-    # Attach sector avg to each item
+    sector_averages = {
+        sec: round(v["total_yield"] / v["count"], 2) if v["count"] else 0
+        for sec, v in sector_avg.items()
+    }
     for item in data:
-        sec = item["sector"] or "Unknown"
-        item["sector_avg_yield"] = sector_averages.get(sec, 0)
+        item["sector_avg_yield"] = sector_averages.get(item["sector"] or "Unknown", 0)
 
     return {
         "count": len(data),

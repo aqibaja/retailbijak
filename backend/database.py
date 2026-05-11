@@ -371,6 +371,23 @@ class ChartDrawing(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Dividend(Base):
+    """Per-share dividend history for IDX blue chip stocks."""
+    __tablename__ = 'dividends'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ticker = Column(String, nullable=False, index=True)
+    ex_date = Column(String, nullable=False)
+    payment_date = Column(String, nullable=True)
+    amount = Column(Float, nullable=True)   # per share in IDR
+    type = Column(String, default='cash')   # cash, stock, special
+    fiscal_year = Column(Integer, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint('ticker', 'ex_date', name='uq_dividend_ticker_exdate'),
+    )
+
+
 # Dependency for FastAPI
 def get_db():
     db = SessionLocal()
