@@ -2228,3 +2228,34 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - 75.3.1 Smoke test 16/16 ✅
 - 75.3.2 Git tag v1.3.0 (major version bump) ✅
 
+
+---
+
+## Fase 76 — Seed Missing Data (2026-05-12)
+
+> **Status:** 🔄 In Progress
+> **Tujuan:** Seed index-constituents, industries, dan IPO data yang masih kosong
+
+### Sprint 1: Seed Data
+- [ ] 76.1.1 Seed index-constituents (LQ45, IDX30, IHSG)
+- [ ] 76.1.2 Seed industries dari sektor yang sudah ada
+- [ ] 76.1.3 Seed IPO data
+
+### Sprint 2: Verifikasi
+- [ ] 76.2.1 Verifikasi indices page tampil konstituen
+- [ ] 76.2.2 Verifikasi IPO page tampil data
+
+### Sprint 3: Final
+- [ ] 76.3.1 Smoke test 16/16
+- [ ] 76.3.2 Git tag v1.3.1
+
+
+**Status: ✅ FASE 76 SELESAI — tag v1.3.1**
+- 76.1.1 Seed index-constituents 285 rows (LQ45, IDX30, KOMPAS100, IDX80, IDXESGL) ✅
+- 76.1.2 Industries 581 saham sudah punya industry ✅
+- 76.1.3 IPO data 4 past IPOs dari calendar_events ✅
+- 76.2.1 /api/index-constituents return 5 indices dengan actual_count ✅
+- 76.2.2 /api/ipo return count_past: 4 ✅
+- 76.3.1 Smoke test 16/16 ✅
+- 76.3.2 Git tag v1.3.1 ✅
+
