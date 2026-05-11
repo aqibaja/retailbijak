@@ -22,8 +22,18 @@ def _get_market_context(db) -> dict:
     """Collect market data for briefing context."""
     from sqlalchemy import func
 
-    # Latest OHLCV date from DB (not UTC today — data may be from previous trading day)
-    latest_date_row = db.query(func.max(OHLCVDaily.date)).scalar()
+    # Latest OHLCV date from DB — gunakan date dengan data terbanyak (bukan max date yang bisa sparse)
+    from sqlalchemy import func as sqlfunc
+    latest_date_row = (
+        db.query(OHLCVDaily.date, sqlfunc.count(OHLCVDaily.ticker).label('cnt'))
+        .group_by(OHLCVDaily.date)
+        .having(sqlfunc.count(OHLCVDaily.ticker) >= 200)
+        .order_by(OHLCVDaily.date.desc())
+        .first()
+    )
+    if not latest_date_row:
+        return {'total': 0, 'gainers': '', 'losers': '', 'sectors': '', 'date': ''}
+    latest_date_row = latest_date_row[0]  # ambil date saja
     if not latest_date_row:
         return {'total': 0, 'gainers': '', 'losers': '', 'sectors': '', 'date': ''}
     latest_date = latest_date_row if isinstance(latest_date_row, str) else str(latest_date_row)[:10]
@@ -213,7 +223,7 @@ def generate_briefing(db, force: bool = False) -> dict[str, Any]:
         existing = db.query(MarketBriefing).filter(
             MarketBriefing.trading_date == today,
             MarketBriefing.runtime_state == 'ok',
-        ).first()
+        ).order_by(MarketBriefing.id.desc()).first()
         if existing:
             logger.info('Briefing already exists for %s, skipping', today)
             return {

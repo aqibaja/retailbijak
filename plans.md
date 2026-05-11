@@ -1256,3 +1256,22 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [x] 44.3.3 calendar API: Mei 11, Jun 100, Jul 8, Agu 8 events ✅
 
 **Status: ✅ FASE 44 SELESAI**
+
+---
+
+## Fase 45 — IPO, Backtest & Compare Enhancement (2026-05-12)
+
+### Sprint 1: IPO Data ✅
+- [x] 45.1.1 Seed 6 IPO upcoming 2026 (NCKL, CUAN, BREN, MAPA, WIFI, GULA) — total 12 IPO events
+- [x] 45.1.2 IPO API verified — upcoming: 6, past: 6 ✅
+
+### Sprint 2: Backtest Enhancement ✅
+- [x] 45.2.1 Auto-run pattern backtest on load (limit 200, ~2s) — view tidak lagi blank
+- [x] 45.2.2 Backtest/patterns verified — 9 patterns, 191 tickers scanned ✅
+
+### Sprint 3: Compare Enhancement ✅
+- [x] 45.3.1 Auto-seed default BBCA+BMRI+TLKM jika stored kosong — compare tidak lagi blank
+- [x] 45.3.2 Macro data verified — 9 indikator, 7 tahun data ✅
+
+**Commit: 5e0b1a7**
+**Status: ✅ FASE 45 SELESAI**
