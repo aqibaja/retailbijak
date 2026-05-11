@@ -1051,3 +1051,24 @@ Fase 27 selesai 10/10. **43,756 lines**, 25 views, 26 DB tables, ~105 API endpoi
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
 | 2026-05-12 | Research | ✅ | Audit: 51K lines, dividends NO TABLE, news 526, paper_trades=0. Gap analysis done. |
+| 2026-05-12 | Fase 33 — JS Runtime Fix | ✅ | 25/25 views OK. Fix: const→let, format.js exports, view_timers String cast, double /api/ prefix x4, squarify recursion, breadth import. Commit: 0d68b65 |
+| 2026-05-12 | Fase 34 — Auth + Data | ✅ | auth.js X-Device-Id header, OHLCV trigger +12K records. Commit: 5f4c1bf |
+
+---
+
+## Fase 35 — Smoke Test Cron & Monitoring (2026-05-12)
+
+### Sprint 1: Playwright Smoke Test
+- [ ] 35.1.1 Buat script smoke_test.js di /opt/swingaq/
+- [ ] 35.1.2 Setup cron harian 08:00 WIB — jalankan smoke test
+- [ ] 35.1.3 Kirim hasil ke Telegram jika ada view error
+
+### Sprint 2: Data Pipeline Verify
+- [ ] 35.2.1 Verifikasi scheduler OHLCV berjalan otomatis (Mon-Fri 09:00 & 15:30)
+- [ ] 35.2.2 Verifikasi scheduler signal berjalan (Mon-Fri setiap 30m)
+- [ ] 35.2.3 Test screener SSE stream end-to-end
+
+### Sprint 3: UX CRUD Test
+- [ ] 35.3.1 Test portfolio add/delete position
+- [ ] 35.3.2 Test watchlist add/remove
+- [ ] 35.3.3 Test paper trades CRUD
