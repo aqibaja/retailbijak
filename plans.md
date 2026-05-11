@@ -2041,3 +2041,53 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - [ ] 69.3.1 Smoke test 17/17
 - [ ] 69.3.2 Git tag v1.2.3
 
+
+**Status: ✅ FASE 69 SELESAI — commit 2a24291, tag v1.2.3**
+- 69.1.1 Fundamental update triggered (background, 974 saham)
+- 69.1.2 Signals coverage OK (13677 signals)
+- 69.2.1 Screener count sudah ada (countBadge line 741)
+- 69.2.2 Export CSV sudah ada (btn-export-csv)
+- 69.3.1 Smoke test 16/16 ✅ (fix broker_activity test false negative)
+- 69.3.2 Git tag v1.2.3 ✅
+
+---
+
+## Fase 70 — Performance & Code Quality (2026-05-12)
+
+> **Status:** 🆕 Planned
+> **Tujuan:** Perbaiki performa loading, code quality, dan minor UX gaps yang tersisa
+
+### Sprint 1: Performance
+- [ ] 70.1.1 Dashboard — debounce refresh button (hindari double-click spam)
+- [ ] 70.1.2 News page — lazy load gambar artikel (loading="lazy")
+
+### Sprint 2: Stock Detail
+- [ ] 70.2.1 Stock detail — handle ticker tidak ditemukan dengan graceful error page
+- [ ] 70.2.2 Portfolio — handle posisi dengan current_price=0 (jangan tampilkan P&L salah)
+
+### Sprint 3: Final Smoke Test & Tag
+- [ ] 70.3.1 Smoke test 16/16
+- [ ] 70.3.2 Git tag v1.2.4
+
+
+---
+
+## Fase 70 — Performance & Code Quality (2026-05-12)
+
+> **Status:** ✅ FASE 70 SELESAI — audit sprint, semua sudah implemented
+> **Tujuan:** Perbaiki performa loading, code quality, dan minor UX gaps
+
+### Sprint 1: Performance
+- [x] 70.1.1 Dashboard — debounce refresh sudah ada (pointerEvents disable saat loading) ✅
+- [x] 70.1.2 News page — lazy load gambar sudah ada (loading="lazy" line 439) ✅
+
+### Sprint 2: Stock Detail & Portfolio
+- [x] 70.2.1 Stock detail — graceful error banner sudah ada (stock-partial-fail-banner) ✅
+- [x] 70.2.2 Portfolio — current_price=0 sudah handle dengan '—' display ✅
+
+### Sprint 3: Final Smoke Test & Tag
+- [x] 70.3.1 Smoke test 16/16 ✅
+- [x] 70.3.2 Git tag v1.2.4 ✅
+
+**Status: ✅ FASE 70 SELESAI — commit berikutnya, tag v1.2.4**
+
