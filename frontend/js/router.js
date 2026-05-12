@@ -79,8 +79,8 @@ function routeToViewKey(route) {
 
 export function handleRoute(hash) {
   console.log('[router.js] handleRoute called with hash:', hash);
-  const cleanHash = hash.replace(/^#/, '').split('/')[0] || 'dashboard';
-    if (!root) return;
+  const root = document.getElementById('app-root');
+  if (!root) return;
 
     // Clear any view-specific timers/intervals from previous view
     clearViewTimers();
