@@ -1037,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupNetworkStatus();
       setupKeyboardShortcuts();
       startMarketCountdown();
-      // setupLivePriceStream(); // Skip SSE for now
+      setupLivePriceStream(); // Re-enable SSE
       setupScrollToTop();
       setupShortcutPanel();
       setupPageTransitions();
@@ -1046,8 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupTouchGestures();
       showOnboarding();
       console.log('[main.js] All setup calls complete');
-      // Service Worker — disabled for debugging
-      /*
+      // Service Worker — re-enabled
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').then(async reg => {
           if (reg.waiting) {
@@ -1069,7 +1068,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }).catch(() => {});
       }
-      */
 
       //  PWA Install Prompt 
       let deferredPrompt = null;
