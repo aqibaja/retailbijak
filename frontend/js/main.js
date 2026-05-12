@@ -59,21 +59,6 @@ function showErrorFallback(detail) {
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // (registerViewTimer, clearViewTimers imported at top of file)
-//  More Drawer (mobile nav) 
-function closeMoreDrawer() {
-  const drawer = document.getElementById('more-drawer');
-  if (drawer) drawer.hidden = true;
-}
-function openMoreDrawer() {
-  const drawer = document.getElementById('more-drawer');
-  if (drawer) {
-    drawer.hidden = false;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  }
-}
-// Expose globally for inline onclick handlers
-window.closeMoreDrawer = closeMoreDrawer;
-window.openMoreDrawer = openMoreDrawer;
 
 //  Keyboard Shortcuts Overlay 
 function openShortcuts() {
