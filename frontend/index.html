@@ -81,17 +81,17 @@
       const path = (hash || '').replace(/^#\/?/, '').split('/')[0] || 'dashboard';
       console.log('[bootstrap] Route path:', path);
       
-      // Simple routing: show placeholder for each view
-      const views = {
-        dashboard: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Dashboard</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Dashboard sedang memuat data real-time...</p></div>',
-        screener: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Screener</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Screener sedang memuat...</p></div>',
-        portfolio: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Portfolio</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Portfolio sedang memuat...</p></div>',
-        market: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Market</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Market overview sedang memuat...</p></div>',
-        settings: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Settings</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Settings sedang memuat...</p></div>',
-      };
-      
-      const content = views[path] || '<h2 style="color:var(--text-main);">404 - Halaman tidak ditemukan</h2>';
-      root.innerHTML = '<div style="padding:24px;max-width:1400px;margin:0 auto;">' + content + '</div>';
+      // Only override if not dashboard (dashboard has inline HTML)
+      if (path !== 'dashboard') {
+        const views = {
+          screener: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Screener</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Screener sedang memuat...</p></div>',
+          portfolio: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Portfolio</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Portfolio sedang memuat...</p></div>',
+          market: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Market</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Market overview sedang memuat...</p></div>',
+          settings: '<h2 style="color:var(--text-main);margin:0 0 20px 0;">Settings</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">Settings sedang memuat...</p></div>',
+        };
+        const content = views[path] || '<h2 style="color:var(--text-main);">404 - Halaman tidak ditemukan</h2>';
+        root.innerHTML = '<div style="padding:24px;max-width:1400px;margin:0 auto;">' + content + '</div>';
+      }
       
       // Load real data if dashboard
       if (path === 'dashboard') {
@@ -99,7 +99,11 @@
           .then(r => r.json())
           .then(data => {
             console.log('[bootstrap] API health:', data);
-            root.innerHTML = '<div style="padding:24px;max-width:1400px;margin:0 auto;"><h2 style="color:var(--text-main);margin:0 0 20px 0;">Dashboard</h2><div class="panel" style="padding:16px;"><p style="color:var(--text-muted);">✓ Backend API v' + data.version + ' connected</p></div></div>';
+            // Update freshness indicator
+            const freshness = document.getElementById('topbar-freshness');
+            if (freshness) {
+              freshness.innerHTML = '<span class="freshness-dot" style="background:#10b981;"></span><span class="text-xs text-dim" style="color:#10b981;">API v' + data.version + '</span>';
+            }
           })
           .catch(e => console.error('[bootstrap] API error:', e.message));
       }
