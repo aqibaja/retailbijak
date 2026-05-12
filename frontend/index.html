@@ -71,7 +71,18 @@
   <script src="js/version.js?v=20260512"></script>
 
   <!-- Main app module -->
-  <script type="module" src="js/main.js"></script>
+  <script type="module">
+    import { handleRoute } from './js/router.js';
+    console.log('[inline] Router imported successfully');
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('[inline] DOMContentLoaded fired');
+      handleRoute(window.location.hash || '#dashboard');
+    });
+    if (document.readyState !== 'loading') {
+      console.log('[inline] DOM already loaded');
+      queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
+    }
+  </script>
 </head>
 <body>
 <a href="#app-root" class="skip-link" data-i18n="skip_link">Langsung ke konten</a>
