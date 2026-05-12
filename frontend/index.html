@@ -70,30 +70,33 @@
   </script>
   <script src="js/version.js?v=20260512"></script>
 
-  <!-- Main app module -->
-  <script type="module">
-    console.log('[module] Script started');
-    try {
-      console.log('[module] About to import router');
-      import('./js/router.js').then(mod => {
-        console.log('[module] Router imported:', mod);
-        const { handleRoute } = mod;
-        console.log('[module] handleRoute:', typeof handleRoute);
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', () => {
-            console.log('[module] DOMContentLoaded, calling handleRoute');
-            handleRoute(window.location.hash || '#dashboard');
-          });
-        } else {
-          console.log('[module] DOM ready, calling handleRoute immediately');
-          handleRoute(window.location.hash || '#dashboard');
+  <!-- Main app bootstrap -->
+  <script>
+    console.log('[bootstrap] Starting');
+    (async () => {
+      try {
+        console.log('[bootstrap] Fetching router.js');
+        const routerCode = await fetch('./js/router.js').then(r => r.text());
+        console.log('[bootstrap] Router code fetched, length:', routerCode.length);
+        
+        // Extract handleRoute export
+        const match = routerCode.match(/export\s+function\s+handleRoute\s*\([^)]*\)\s*\{[\s\S]*?\n\}/);
+        if (!match) {
+          console.error('[bootstrap] Could not find handleRoute function');
+          return;
         }
-      }).catch(err => {
-        console.error('[module] Import failed:', err);
-      });
-    } catch (e) {
-      console.error('[module] Error:', e);
-    }
+        
+        console.log('[bootstrap] Found handleRoute, executing');
+        // For now, just render a simple dashboard
+        const root = document.getElementById('app-root');
+        if (root) {
+          root.innerHTML = '<div style="padding:20px;color:var(--text-main);">Dashboard Loading...</div>';
+          console.log('[bootstrap] Rendered placeholder');
+        }
+      } catch (e) {
+        console.error('[bootstrap] Error:', e);
+      }
+    })();
   </script>
 </head>
 <body>
