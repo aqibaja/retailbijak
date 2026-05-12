@@ -1,8 +1,8 @@
-// import { handleRoute } from './router.js';
-// import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js';
-// import { initTheme } from './theme.js';
-// import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
-// import { animateValue, flashUpdate } from './utils/helpers.js';
+import { handleRoute } from './router.js';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js';
+import { initTheme } from './theme.js';
+import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
+import { animateValue, flashUpdate } from './utils/helpers.js';
 
 //  ENTRY  main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
@@ -11,8 +11,6 @@ console.log('RBK: main.js module execution started');
 document.documentElement.setAttribute('data-js-loaded', 'true');
 
 // ================= GLOBAL ERROR BOUNDARY =================
-// DISABLED FOR DEBUGGING
-/*
 window.__hermesErrors = [];
 
 window.onerror = function(msg, url, line, col, error) {
@@ -56,7 +54,6 @@ function showErrorFallback(detail) {
     </div>
   `;
 }
-*/
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // Re-exported from utils/view_timers.js for backward compatibility
@@ -1034,22 +1031,21 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
       initTheme();
       setupLucideAutoRender();
-      // Disable all other setup calls for debugging
-      // setupSearchOverlay();
-      // setupScrollEffects();
-      // setupRunningTicker();
-      // setupNetworkStatus();
-      // setupKeyboardShortcuts();
-      // startMarketCountdown();
-      // setupLivePriceStream();
-      // setupScrollToTop();
-      // setupShortcutPanel();
-      // setupPageTransitions();
-      // setupSwipeNavigation();
-      // setupPullToRefresh();
-      // setupTouchGestures();
-      // showOnboarding();
-      console.log('[main.js] Minimal setup complete');
+      setupSearchOverlay();
+      setupScrollEffects();
+      setupRunningTicker();
+      setupNetworkStatus();
+      setupKeyboardShortcuts();
+      startMarketCountdown();
+      // setupLivePriceStream(); // Skip SSE for now
+      setupScrollToTop();
+      setupShortcutPanel();
+      setupPageTransitions();
+      setupSwipeNavigation();
+      setupPullToRefresh();
+      setupTouchGestures();
+      showOnboarding();
+      console.log('[main.js] All setup calls complete');
       // Service Worker — disabled for debugging
       /*
       if ('serviceWorker' in navigator) {
@@ -1210,12 +1206,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 // Routing
-// window.addEventListener('hashchange', () => handleRoute(window.location.hash));
-// window.addEventListener('DOMContentLoaded', () => {
-//   console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
-//   handleRoute(window.location.hash || '#dashboard');
-// }, { once: true });
-// if (document.readyState !== 'loading') {
-//    queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
-// }
-console.log('[main.js] Routing disabled for debugging');
+window.addEventListener('hashchange', () => handleRoute(window.location.hash));
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
+  handleRoute(window.location.hash || '#dashboard');
+}, { once: true });
+if (document.readyState !== 'loading') {
+   queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
+}
