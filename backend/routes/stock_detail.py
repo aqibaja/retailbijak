@@ -117,7 +117,7 @@ def get_fundamental(ticker: str, db: Session = Depends(get_db)):
 
 
 @router.get('/api/stocks/{ticker}/financials')
-def get_financials(ticker: str, period: str = Query('annual', regex='^(annual|quarterly)$'), db: Session = Depends(get_db)):
+def get_financials(ticker: str, period: str = Query('annual', pattern='^(annual|quarterly)$'), db: Session = Depends(get_db)):
     """Return income statement, balance sheet, and cash flow data."""
     ticker_with_suffix = _ticker_with_suffix(ticker)
     ticker_base = _ticker_base(ticker)
@@ -1082,6 +1082,7 @@ def compare_stocks(tickers: str = '', db: Session = Depends(get_db)):
         except Exception:
             continue
     return {
+        'ok': bool(result['tickers']),
         'count': len(result['tickers']),
         'data': result,
         'source': 'db' if result['tickers'] else 'no_data',
