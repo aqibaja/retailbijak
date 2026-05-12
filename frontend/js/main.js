@@ -58,9 +58,7 @@ function showErrorFallback(detail) {
 }
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
-// Re-exported from utils/view_timers.js for backward compatibility
-import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
-import { observeElements, animateValue, flashUpdate } from './utils/helpers.js';
+// (registerViewTimer, clearViewTimers imported at top of file)
 //  More Drawer (mobile nav) 
 function closeMoreDrawer() {
   const drawer = document.getElementById('more-drawer');
