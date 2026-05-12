@@ -326,6 +326,7 @@ def scan_preset(preset_name: str, limit: int = 30):
             })
 
         return {
+            'ok': True,
             'status': 'ok',
             'preset': preset_name,
             'count': len(results),

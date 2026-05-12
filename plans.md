@@ -2286,3 +2286,12 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 
 **Status: ✅ PRODUCTION STABLE v1.3.1**
 
+
+**Status: ✅ FASE 78 SELESAI — tag v1.3.2**
+- 78.1.1 Fix compare endpoint — tambah field `ok: True` ✅
+- 78.1.2 Seed news 101 artikel untuk 30 blue chip tickers ✅
+- 78.1.3 Fix FastAPIDeprecationWarning `regex` → `pattern` ✅
+- 78.3.1 Smoke test 16/16 ✅
+- 78.3.2 Git tag v1.3.2 ✅
+
+
