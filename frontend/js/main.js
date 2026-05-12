@@ -7,8 +7,10 @@ import { animateValue, flashUpdate } from './utils/helpers.js';
 //  ENTRY  main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
 console.log('RBK: main.js module execution started');
+console.log('[main.js] Imports successful, about to set data-js-loaded');
 
 document.documentElement.setAttribute('data-js-loaded', 'true');
+console.log('[main.js] data-js-loaded set');
 
 // ================= GLOBAL ERROR BOUNDARY =================
 window.__hermesErrors = [];
