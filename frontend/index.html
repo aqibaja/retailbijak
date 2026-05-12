@@ -189,5 +189,23 @@
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
+
+<!-- Fallback: render loading state if main.js fails -->
+<script>
+  window.addEventListener('load', () => {
+    const root = document.getElementById('app-root');
+    if (root && root.children.length === 0) {
+      console.warn('[Fallback] app-root is empty, main.js may have failed');
+      root.innerHTML = `
+        <div style="padding:40px 20px;max-width:1200px;margin:0 auto;text-align:center;">
+          <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+          <h2 style="color:var(--text-main);font-size:20px;margin:0 0 8px 0;">Memuat Dashboard...</h2>
+          <p style="color:var(--text-muted);font-size:14px;margin:0 0 20px 0;">Jika halaman tidak berubah, coba refresh browser.</p>
+          <button onclick="location.reload()" class="btn btn-primary">Refresh</button>
+        </div>
+      `;
+    }
+  });
+</script>
 </body>
 </html>
