@@ -72,15 +72,27 @@
 
   <!-- Main app module -->
   <script type="module">
-    import { handleRoute } from './js/router.js';
-    console.log('[inline] Router imported successfully');
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('[inline] DOMContentLoaded fired');
-      handleRoute(window.location.hash || '#dashboard');
-    });
-    if (document.readyState !== 'loading') {
-      console.log('[inline] DOM already loaded');
-      queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
+    console.log('[module] Script started');
+    try {
+      console.log('[module] About to import router');
+      import('./js/router.js').then(mod => {
+        console.log('[module] Router imported:', mod);
+        const { handleRoute } = mod;
+        console.log('[module] handleRoute:', typeof handleRoute);
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => {
+            console.log('[module] DOMContentLoaded, calling handleRoute');
+            handleRoute(window.location.hash || '#dashboard');
+          });
+        } else {
+          console.log('[module] DOM ready, calling handleRoute immediately');
+          handleRoute(window.location.hash || '#dashboard');
+        }
+      }).catch(err => {
+        console.error('[module] Import failed:', err);
+      });
+    } catch (e) {
+      console.error('[module] Error:', e);
     }
   </script>
 </head>
