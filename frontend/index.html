@@ -71,37 +71,20 @@
   <script src="js/version.js?v=20260512"></script>
 
   <!-- Main app bootstrap -->
+  <script src="./js/router.js"></script>
   <script>
     console.log('[bootstrap] Starting');
-    window.addEventListener('load', async () => {
+    window.addEventListener('load', () => {
       try {
         console.log('[bootstrap] Window load event fired');
-        const root = document.getElementById('app-root');
-        if (!root) {
-          console.error('[bootstrap] app-root not found');
-          return;
-        }
-        
-        // Dynamic import router
-        console.log('[bootstrap] Importing router module');
-        const routerMod = await import('./js/router.js');
-        console.log('[bootstrap] Router module imported:', Object.keys(routerMod));
-        
-        const { handleRoute } = routerMod;
         if (typeof handleRoute !== 'function') {
-          console.error('[bootstrap] handleRoute is not a function:', typeof handleRoute);
+          console.error('[bootstrap] handleRoute not found');
           return;
         }
-        
         console.log('[bootstrap] Calling handleRoute');
         handleRoute(window.location.hash || '#dashboard');
-        console.log('[bootstrap] handleRoute called successfully');
       } catch (e) {
-        console.error('[bootstrap] Error:', e.message, e.stack);
-        const root = document.getElementById('app-root');
-        if (root) {
-          root.innerHTML = '<div style="padding:20px;color:var(--danger-text);">Error: ' + (e.message || e) + '</div>';
-        }
+        console.error('[bootstrap] Error:', e.message);
       }
     });
   </script>
