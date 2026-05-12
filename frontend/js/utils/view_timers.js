@@ -13,8 +13,10 @@ export function clearViewTimers() {
 }
 
 // Backward compatibility — sync window.__viewTimers with internal array
-Object.defineProperty(window, '__viewTimers', {
-  get() { return viewTimers; },
-  set(v) { viewTimers = v; },
-  configurable: true,
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__viewTimers', {
+    get() { return viewTimers; },
+    set(v) { viewTimers = v; },
+    configurable: true,
+  });
+}
