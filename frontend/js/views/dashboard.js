@@ -1,11 +1,11 @@
 window.__rbk_log && window.__rbk_log('dashboard.js module loaded', true);
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch, showToast } from '../api.js?v=20260512';
-import { observeElements, animateValue } from '../utils/helpers.js?v=20260512';
-import { registerViewTimer } from '../utils/view_timers.js?v=20260512';
-import { nf, pf, currencyFormat } from '../utils/format.js?v=20260512';
-import { ssSet } from '../utils/storage.js?v=20260512';
-import { loadTodayEvents } from './calendar.js?v=20260512';
-import { showSkeleton } from '../skeleton.js?v=20260512';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks, apiFetch, showToast } from '../api.js';
+import { observeElements, animateValue } from '../utils/helpers.js';
+import { registerViewTimer } from '../utils/view_timers.js';
+import { nf, pf, currencyFormat } from '../utils/format.js';
+import { ssSet } from '../utils/storage.js';
+import { loadTodayEvents } from './calendar.js';
+import { showSkeleton } from '../skeleton.js';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 

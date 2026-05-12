@@ -1,8 +1,8 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=202605120200';
-import { observeElements } from '../utils/helpers.js?v=202605120200';
-import { registerViewTimer } from '../utils/view_timers.js?v=202605120200';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js';
+import { observeElements } from '../utils/helpers.js';
+import { registerViewTimer } from '../utils/view_timers.js';
 // FIX: fmt/pct/fmtRp do not exist in format.js — map to actual exports: nf, pf, cf
-import { nf, pf, cf } from '../utils/format.js?v=202605120200';
+import { nf, pf, cf } from '../utils/format.js';
 const fmt = nf;
 const pct = pf;
 const fmtRp = cf;

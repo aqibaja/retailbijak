@@ -2,7 +2,7 @@
  * Alerts View — Price & RSI alert management
  * Fase 28.3.1 — Enhanced: inline form, toggle, filter, delete, validation
  */
-import { apiFetch, showToast } from '../api.js?v=202605120200';
+import { apiFetch, showToast } from '../api.js';
 
 let allAlerts     = [];
 let allTriggered  = [];

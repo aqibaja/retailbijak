@@ -4,8 +4,8 @@
 // API: GET /api/dividends, GET /api/dividends/aristocrats
 // API: GET /api/stocks/{ticker}/dividends
 
-import { apiFetch, showToast } from '../api.js?v=202605120200';
-import { nf, pct, money, fmt } from '../utils/format.js?v=202605120200';
+import { apiFetch, showToast } from '../api.js';
+import { nf, pct, money, fmt } from '../utils/format.js';
 
 // ─── Module State ─────────────────────────────────────────────
 let dividendsData = [];

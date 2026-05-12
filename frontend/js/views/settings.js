@@ -1,6 +1,6 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=202605120200';
-import { observeElements } from '../utils/helpers.js?v=202605120200';
-import { getDeviceId, getMyIdentity, setPin, updateNickname } from '../auth.js?v=202605120200';
+import { fetchSettings, updateSettings, showToast } from '../api.js';
+import { observeElements } from '../utils/helpers.js';
+import { getDeviceId, getMyIdentity, setPin, updateNickname } from '../auth.js';
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';
 const DEFAULT_PICKS_MODEL = 'google/gemma-4-26b-a4b-it';
@@ -993,7 +993,7 @@ async function loadDataHealth() {
 function loadGamification() {
   const card = document.getElementById('gamification-card');
   if (!card) return;
-  import('../gamification.js?v=202605120200').then(mod => {
+  import('../gamification.js').then(mod => {
     mod.trackLogin();
     mod.renderGamificationCard(card);
   }).catch(() => {

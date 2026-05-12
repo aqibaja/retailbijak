@@ -2,8 +2,8 @@
 // 31.3.3 Enhanced: grid/list toggle, color per type, month nav, type filter chips
 // API: GET /api/calendar?month=YYYY-MM, GET /api/calendar/today
 
-import { apiFetch, showToast } from '../api.js?v=202605120200';
-import { nf, dateFormat } from '../utils/format.js?v=202605120200';
+import { apiFetch, showToast } from '../api.js';
+import { nf, dateFormat } from '../utils/format.js';
 
 const DAY_NAMES  = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 const DAY_SHORT  = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];

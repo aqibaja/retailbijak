@@ -3,7 +3,7 @@
  * Fase 15.5 — Full-Screen Chart & Drawing Tools
  * Fase 30.2.2 — Chart View Enhance: indicators, SR lines, alert shortcut, fullscreen
  */
-import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js?v=202605120200';
+import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js';
 
 let activeTicker = null;
 let activeTf = '1M';

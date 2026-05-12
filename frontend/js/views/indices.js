@@ -2,7 +2,7 @@
  * Indices View — Track IDX index constituents (LQ45, IDX30, KOMPAS100, IDX80, IDXESGL)
  * Fase 28.3.1 — Enhanced with grid cards, filter, sort, sparkline, refresh
  */
-import { showToast, apiFetch } from '../api.js?v=202605120200';
+import { showToast, apiFetch } from '../api.js';
 
 let indicesData = [];
 let currentIndex = null;

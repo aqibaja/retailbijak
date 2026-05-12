@@ -1,7 +1,7 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, fetchPortfolioDividends, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=202605120200';
-import { money, nf, pf } from '../utils/format.js?v=202605120200';
-import { observeElements, flashUpdate } from '../utils/helpers.js?v=202605120200';
-import { exportCSV as expCSV } from '../utils/export.js?v=202605120200';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, fetchPortfolioDividends, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js';
+import { money, nf, pf } from '../utils/format.js';
+import { observeElements, flashUpdate } from '../utils/helpers.js';
+import { exportCSV as expCSV } from '../utils/export.js';
 
 // ─── SSE State ──────────────────────────────
 let _wlEventSource = null;   // Watchlist SSE connection
@@ -1093,7 +1093,7 @@ async function loadTransactionHistory(el) {
 }
 
 async function showTransactionForm(el) {
-  const { showModal } = await import('./portfolio.js?v=202605120200');
+  const { showModal } = await import('./portfolio.js');
   showModal({
     title: 'Catat Transaksi',
     fields: [

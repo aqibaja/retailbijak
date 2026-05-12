@@ -2,8 +2,8 @@
 // 31.3.2 Enhanced: sector filter, timeframe toggle, volume filter, sort toggle
 // API: GET /api/top-movers?limit=&sort=gainers|losers
 
-import { apiFetch, showToast } from '../api.js?v=202605120200';
-import { nf, pf } from '../utils/format.js?v=202605120200';
+import { apiFetch, showToast } from '../api.js';
+import { nf, pf } from '../utils/format.js';
 
 // ─── IDX Sector List ──────────────────────────────────────────
 const IDX_SECTORS = [

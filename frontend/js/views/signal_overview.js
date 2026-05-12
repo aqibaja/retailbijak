@@ -2,7 +2,7 @@
 // Route: #signal-overview
 // Fase 28.3.1 — Enhanced: filter chips, timeframe, search, sort, pagination, color coding
 
-import { apiFetch } from '../api.js?v=202605120200';
+import { apiFetch } from '../api.js';
 
 let currentSignalType = '';
 let currentTimeframe  = '';

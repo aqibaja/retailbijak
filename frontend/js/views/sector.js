@@ -3,9 +3,9 @@
 // 11.4.3: Industry accordion in sector detail page
 // 30.2.1: Top stocks per sector, mini heatmap, rotation scatter chart, filter bar
 
-import { apiFetch, showToast } from '../api.js?v=202605120200';
-import { __ } from '../i18n.js?v=202605120200';
-import { nf, pf } from '../utils/format.js?v=202605120200';
+import { apiFetch, showToast } from '../api.js';
+import { __ } from '../i18n.js';
+import { nf, pf } from '../utils/format.js';
 
 let sectorData = null;
 let _filterState = 'all'; // all | up | down | strongest | weakest

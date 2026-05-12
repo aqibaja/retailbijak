@@ -2,7 +2,7 @@
  * Corporate Actions View — IPO, Rights, Dividends, Stock Split tracker
  * Fase 28.3.1 — Enhanced with search, filter chips, sort, table view
  */
-import { showToast, apiFetch } from '../api.js?v=202605120200';
+import { showToast, apiFetch } from '../api.js';
 
 let activeFilter = 'all';
 let activeSort = 'terbaru';

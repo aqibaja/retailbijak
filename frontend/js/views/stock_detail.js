@@ -1,7 +1,7 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=202605120200';
-import { observeElements, flashUpdate } from '../utils/helpers.js?v=202605120200';
-import { nf, pct, pf, money, fmtRp, renderMarkdown } from '../utils/format.js?v=202605120200';
-import { ssGet, ssSet, ssRemove } from '../utils/storage.js?v=202605120200';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js';
+import { observeElements, flashUpdate } from '../utils/helpers.js';
+import { nf, pct, pf, money, fmtRp, renderMarkdown } from '../utils/format.js';
+import { ssGet, ssSet, ssRemove } from '../utils/storage.js';
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
 const TAB_STORAGE_KEY = 'retailbijak.stock_tab';
@@ -495,7 +495,7 @@ export async function renderStockDetail(root, ticker, initialTab) {
             <div class="stock-side-panel hidden" id="depth-panel"></div>
             <div class="stock-side-panel hidden" id="foreign-flow-panel"></div>
             <div class="stock-side-panel hidden" id="peer-comparison-panel"></div>
-            <div class="stock-side-panel"><div class="stock-actions"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button><button id="btn-report-pdf" type="button" class="btn btn-sm" title="Download Laporan PDF"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button><button id="btn-share-link" type="button" class="btn btn-sm" title="Salin link saham ini"><i data-lucide="share-2" style="width:14px;height:14px"></i> Salin</button><button id="btn-add-portfolio" type="button" class="btn btn-sm" title="Tambah ke Portfolio"><i data-lucide="briefcase" style="width:14px;height:14px"></i> Portfolio</button></div></div>
+            <div class="stock-side-panel"><div class="stock-actions" style="flex-wrap:wrap"><button id="btn-add-watchlist" type="button" class="btn btn-primary">+ Pantau</button><button id="btn-set-alert" type="button" class="btn">Peringatan</button><button id="btn-add-compare" type="button" class="btn">Bandingkan</button><a href="#screener" class="btn">Pindai</a><button id="ai-summary-btn" type="button" class="btn btn-sm" title="Analisis AI"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Analisis</button><button id="btn-report-pdf" type="button" class="btn btn-sm" title="Download Laporan PDF"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button><button id="btn-share-link" type="button" class="btn btn-sm" title="Salin link saham ini"><i data-lucide="share-2" style="width:14px;height:14px"></i> Salin</button><button id="btn-add-portfolio" type="button" class="btn btn-sm" title="Tambah ke Portfolio"><i data-lucide="briefcase" style="width:14px;height:14px"></i> Portfolio</button></div></div>
           </div>
           <div class="stock-tab-content" data-tab-content="berita">
             <div class="stock-side-panel"><h3 class="stock-side-panel-title">Berita Terkait</h3><div id="stock-news-feed" class="flex-col gap-2"></div></div>
@@ -691,7 +691,7 @@ export async function renderStockDetail(root, ticker, initialTab) {
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
   document.getElementById('btn-add-compare').addEventListener('click', () => {
-    import('./compare.js?v=202605120200').then(m => {
+    import('./compare.js').then(m => {
       m.addToCompare(symbol);
     });
   });

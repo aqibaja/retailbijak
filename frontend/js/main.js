@@ -1,8 +1,8 @@
-import { handleRoute } from './router.js';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js';
-import { initTheme } from './theme.js';
-import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
-import { animateValue, flashUpdate } from './utils/helpers.js';
+// import { handleRoute } from './router.js';
+// import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js';
+// import { initTheme } from './theme.js';
+// import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
+// import { animateValue, flashUpdate } from './utils/helpers.js';
 
 //  ENTRY  main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
@@ -11,6 +11,8 @@ console.log('RBK: main.js module execution started');
 document.documentElement.setAttribute('data-js-loaded', 'true');
 
 // ================= GLOBAL ERROR BOUNDARY =================
+// DISABLED FOR DEBUGGING
+/*
 window.__hermesErrors = [];
 
 window.onerror = function(msg, url, line, col, error) {
@@ -54,6 +56,7 @@ function showErrorFallback(detail) {
     </div>
   `;
 }
+*/
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // Re-exported from utils/view_timers.js for backward compatibility
@@ -1031,32 +1034,24 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
       initTheme();
       setupLucideAutoRender();
-      setupSearchOverlay();
-      setupScrollEffects();
-      setupRunningTicker();
-      refreshTopbarMarket();
-      let _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          clearInterval(_marketIntervalId);
-          _marketIntervalId = null;
-        } else if (!_marketIntervalId) {
-          refreshTopbarMarket();
-          _marketIntervalId = setInterval(refreshTopbarMarket, 60000);
-        }
-      });
-      setupNetworkStatus();
-      setupKeyboardShortcuts();
-      startMarketCountdown();
-      setupLivePriceStream(); // re-enabled — SSE query fixed
-      setupScrollToTop();
-      setupShortcutPanel();
-      setupPageTransitions();
-      setupSwipeNavigation();
-      setupPullToRefresh();
-      setupTouchGestures();
-      showOnboarding();
-      // Service Worker — re-enabled after fixing reload loop
+      // Disable all other setup calls for debugging
+      // setupSearchOverlay();
+      // setupScrollEffects();
+      // setupRunningTicker();
+      // setupNetworkStatus();
+      // setupKeyboardShortcuts();
+      // startMarketCountdown();
+      // setupLivePriceStream();
+      // setupScrollToTop();
+      // setupShortcutPanel();
+      // setupPageTransitions();
+      // setupSwipeNavigation();
+      // setupPullToRefresh();
+      // setupTouchGestures();
+      // showOnboarding();
+      console.log('[main.js] Minimal setup complete');
+      // Service Worker — disabled for debugging
+      /*
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').then(async reg => {
           if (reg.waiting) {
@@ -1078,6 +1073,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }).catch(() => {});
       }
+      */
 
       //  PWA Install Prompt 
       let deferredPrompt = null;
@@ -1214,11 +1210,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 // Routing
-window.addEventListener('hashchange', () => handleRoute(window.location.hash));
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
-  handleRoute(window.location.hash || '#dashboard');
-}, { once: true });
-if (document.readyState !== 'loading') {
-   queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
-}
+// window.addEventListener('hashchange', () => handleRoute(window.location.hash));
+// window.addEventListener('DOMContentLoaded', () => {
+//   console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
+//   handleRoute(window.location.hash || '#dashboard');
+// }, { once: true });
+// if (document.readyState !== 'loading') {
+//    queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
+// }
+console.log('[main.js] Routing disabled for debugging');
