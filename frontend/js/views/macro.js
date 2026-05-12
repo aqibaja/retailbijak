@@ -250,7 +250,7 @@ function renderCards(container, indicators) {
               </div>
               <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
                 Tahun terakhir: ${ind.data && ind.data.length > 0 ? ind.data[ind.data.length - 1].year : '—'}
-                · Diperbarui: ${ind.data && ind.data.length > 0 ? ind.data[ind.data.length - 1].year : '—'}
+                · Diperbarui: ${ind.last_updated || '—'}
               </div>
             </div>
             <div class="freshness-badge" style="background:var(--bg-elevated);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--text-muted);white-space:nowrap">

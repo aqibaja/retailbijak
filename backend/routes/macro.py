@@ -41,8 +41,16 @@ def _indicator_to_dict(rec: MacroIndicator) -> dict:
 @router.get("/api/macro")
 def get_all_macro_indicators(db: Session = Depends(get_db)):
     """Return all macro indicators grouped by name with metadata."""
-    rows = db.query(MacroIndicator).order_by(
-        MacroIndicator.indicator_name, MacroIndicator.year
+    from sqlalchemy import func
+    
+    rows = db.query(
+        MacroIndicator.indicator_name,
+        MacroIndicator.year,
+        MacroIndicator.value,
+        MacroIndicator.updated_at,
+    ).order_by(
+        MacroIndicator.indicator_name,
+        MacroIndicator.year,
     ).all()
 
     # Group by indicator_name
@@ -57,11 +65,16 @@ def get_all_macro_indicators(db: Session = Depends(get_db)):
                 "unit": meta["unit"],
                 "icon": meta["icon"],
                 "data": [],
+                "latest_updated": r.updated_at,  # will keep max
             }
+        # Append data point
         grouped[name]["data"].append({
             "year": r.year,
             "value": r.value,
         })
+        # Update latest_updated to the max
+        if r.updated_at > grouped[name]["latest_updated"]:
+            grouped[name]["latest_updated"] = r.updated_at
 
     # Compute trend arrow (up/down) and current value for each
     result = []
@@ -83,6 +96,8 @@ def get_all_macro_indicators(db: Session = Depends(get_db)):
         info["min"] = min(values) if values else 0
         info["max"] = max(values) if values else 0
         info["data"] = sorted_years  # chronological order
+        # Format last updated as a readable string
+        info["last_updated"] = info["latest_updated"].strftime("%Y-%m-%d %H:%M")
         result.append(info)
 
     # Order: bi_rate, cpi, gdp, trade_balance, fx_reserves

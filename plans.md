@@ -2209,8 +2209,8 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 > **Tujuan:** Polish akhir sebelum rilis stabil v1.3.0
 
 ### Sprint 1: Data Polish
-- [ ] 75.1.1 Seed market_cap untuk lebih banyak saham (saat ini hanya 5/974) agar treemap weight akurat
-- [ ] 75.1.2 Verifikasi treemap tampil dengan weight yang benar setelah seed
+- [x] 75.1.1 Seed market_cap untuk lebih banyak saham (saat ini hanya 5/974) agar treemap weight akurat
+- [x] 75.1.2 Verifikasi treemap weight akurat setelah seed
 
 ### Sprint 2: UX Polish
 - [ ] 75.2.1 Tambah "last updated" timestamp di macro cards (saat ini hanya tampil tahun)
@@ -2293,5 +2293,13 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - 78.1.3 Fix FastAPIDeprecationWarning `regex` → `pattern` ✅
 - 78.3.1 Smoke test 16/16 ✅
 - 78.3.2 Git tag v1.3.2 ✅
+
+
+
+**Status: ✅ FASE 79 SELESAI — tag v1.3.3**
+- 79.1.1 Update health version ke 1.3.2 ✅
+- 79.1.2 Tambah field `ok` di scan/preset response ✅
+- 79.3.1 Smoke test 16/16 ✅
+- 79.3.2 Git tag v1.3.3 ✅
 
 
