@@ -1205,10 +1205,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Routing
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
-  handleRoute(window.location.hash || '#dashboard');
-}, { once: true });
-if (document.readyState !== 'loading') {
-   queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
+// Routing trigger — ensure handleRoute is called
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
+    handleRoute(window.location.hash || '#dashboard');
+  }, { once: true });
+} else {
+  // DOM already loaded, call immediately
+  console.log('[main.js] DOM already loaded, calling handleRoute');
+  queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
 }
