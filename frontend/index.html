@@ -73,30 +73,37 @@
   <!-- Main app bootstrap -->
   <script>
     console.log('[bootstrap] Starting');
-    (async () => {
+    window.addEventListener('load', async () => {
       try {
-        console.log('[bootstrap] Fetching router.js');
-        const routerCode = await fetch('./js/router.js').then(r => r.text());
-        console.log('[bootstrap] Router code fetched, length:', routerCode.length);
-        
-        // Extract handleRoute export
-        const match = routerCode.match(/export\s+function\s+handleRoute\s*\([^)]*\)\s*\{[\s\S]*?\n\}/);
-        if (!match) {
-          console.error('[bootstrap] Could not find handleRoute function');
+        console.log('[bootstrap] Window load event fired');
+        const root = document.getElementById('app-root');
+        if (!root) {
+          console.error('[bootstrap] app-root not found');
           return;
         }
         
-        console.log('[bootstrap] Found handleRoute, executing');
-        // For now, just render a simple dashboard
+        // Dynamic import router
+        console.log('[bootstrap] Importing router module');
+        const routerMod = await import('./js/router.js');
+        console.log('[bootstrap] Router module imported:', Object.keys(routerMod));
+        
+        const { handleRoute } = routerMod;
+        if (typeof handleRoute !== 'function') {
+          console.error('[bootstrap] handleRoute is not a function:', typeof handleRoute);
+          return;
+        }
+        
+        console.log('[bootstrap] Calling handleRoute');
+        handleRoute(window.location.hash || '#dashboard');
+        console.log('[bootstrap] handleRoute called successfully');
+      } catch (e) {
+        console.error('[bootstrap] Error:', e.message, e.stack);
         const root = document.getElementById('app-root');
         if (root) {
-          root.innerHTML = '<div style="padding:20px;color:var(--text-main);">Dashboard Loading...</div>';
-          console.log('[bootstrap] Rendered placeholder');
+          root.innerHTML = `<div style="padding:20px;color:var(--danger-text);">Error: ${e.message}</div>`;
         }
-      } catch (e) {
-        console.error('[bootstrap] Error:', e);
       }
-    })();
+    });
   </script>
 </head>
 <body>
