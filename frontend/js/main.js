@@ -57,8 +57,8 @@ function showErrorFallback(detail) {
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // Re-exported from utils/view_timers.js for backward compatibility
-export { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
-export { observeElements, animateValue, flashUpdate } from './utils/helpers.js';
+import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
+import { observeElements, animateValue, flashUpdate } from './utils/helpers.js';
 //  More Drawer (mobile nav) 
 function closeMoreDrawer() {
   const drawer = document.getElementById('more-drawer');
@@ -545,9 +545,12 @@ document.addEventListener('click', (e) => {
    }
 });
 // Topbar Data Fetch
-async function refreshTopbarMarket() {
-   try {
-       const data = await fetchMarketSummary();
+async function updateTopbarMarket() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const data = await fetchMarketSummary();
+    clearTimeout(timeoutId);
        const valEl = document.getElementById('topbar-ihsg-val');
        const pctEl = document.getElementById('topbar-ihsg-pct');
        const dotEl = document.querySelector('.status-dot');
@@ -1212,7 +1215,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Routing
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
-window.addEventListener('DOMContentLoaded', () => handleRoute(window.location.hash || '#dashboard'), { once: true });
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('[main.js] DOMContentLoaded fired, hash:', window.location.hash);
+  handleRoute(window.location.hash || '#dashboard');
+}, { once: true });
 if (document.readyState !== 'loading') {
    queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
 }

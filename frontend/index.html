@@ -70,18 +70,26 @@
   </script>
   <script src="js/version.js?v=20260512"></script>
 
-  <script type="module" src="js/main.js?v=20260512"></script>
+  <!-- All JS disabled for debugging -->
   
   <script>
-    // Fallback jika module gagal load
-    setTimeout(() => {
+    // Render static content immediately
+    document.addEventListener('DOMContentLoaded', () => {
       const root = document.getElementById('app-root');
-      if (root && root.children.length === 0) {
-        root.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-main)"><h2>⚠️ Gagal Memuat</h2><p>Module JavaScript error. Cek console.</p><button onclick="location.reload()" style="padding:10px 20px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer">Refresh</button></div>';
+      if (root) {
+        root.innerHTML = `
+          <div style="padding:40px 20px;max-width:1200px;margin:0 auto;">
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:16px;padding:30px;text-align:center;">
+              <h1 style="color:var(--text-main);margin:0 0 15px 0;font-size:24px;">🔧 Maintenance Mode</h1>
+              <p style="color:var(--text-muted);margin:0 0 20px 0;font-size:14px;line-height:1.6;">Frontend sedang dalam perbaikan. Sistem backend berjalan normal.</p>
+              <button onclick="location.reload()" style="padding:12px 24px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;">Refresh Halaman</button>
+            </div>
+          </div>
+        `;
         root.classList.remove('page-loading');
         root.style.opacity = '1';
       }
-    }, 3000);
+    });
   </script>
 </head>
 <body>
@@ -200,3 +208,5 @@
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
+</body>
+</html>
