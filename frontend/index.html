@@ -2,6 +2,9 @@
 <html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <!-- CRITICAL: Unregister stale service worker immediately -->
   <script>
     (function(){if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();console.log('[SW-Unreg] Unregistered:',r.scope);});caches.keys().then(function(names){names.forEach(function(n){caches.delete(n);});console.log('[SW-Unreg] Caches cleared');});});}})();
@@ -253,8 +256,8 @@
   </script>
 </head>
 <body>
-<!-- VERSION MARKER: v3.1 build 20260513-0051 -->
-<div id="version-banner" style="background:#10b981;color:#fff;text-align:center;padding:4px;font-size:11px;font-weight:700;position:sticky;top:0;z-index:9999;">RetailBijak v3.1 — Build 20260513-0051 | Jika banner ini tidak terlihat, clear cache (Ctrl+Shift+R)</div>
+<!-- VERSION MARKER: v3.1 build 20260513-005836 -->
+<div id="version-banner" style="background:#10b981;color:#fff;text-align:center;padding:4px;font-size:11px;font-weight:700;position:sticky;top:0;z-index:9999;">RetailBijak v3.1.5079 — Build 1778605079 | Jika banner ini tidak terlihat, clear cache (Ctrl+Shift+R)</div>
 <a href="#app-root" class="skip-link" data-i18n="skip_link">Langsung ke konten</a>
 <header class="topbar">
    <div class="topbar-progress" id="scroll-progress"></div>
