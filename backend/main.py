@@ -174,12 +174,13 @@ async def add_cache_headers(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
 
-    # Cache static files for 24 hours
-    if any(path.endswith(ext) for ext in ('.css', '.js', '.woff2', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp')):
-        if path.endswith('.html') or path == '/' or path == '':
-            response.headers['Cache-Control'] = 'no-cache'
-        else:
-            response.headers['Cache-Control'] = 'public, max-age=86400'
+    # Cache static assets by type
+    if path.endswith('.html') or path == '/' or path == '':
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    elif path.endswith('.js'):
+        response.headers['Cache-Control'] = 'public, max-age=300'  # 5 min for JS (frequent updates)
+    elif any(path.endswith(ext) for ext in ('.css', '.woff2', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp')):
+        response.headers['Cache-Control'] = 'public, max-age=86400'  # 24h for other static assets
     # Cache static-like API endpoints
     elif path.startswith('/api/stocks') and request.method == 'GET':
         response.headers['Cache-Control'] = 'public, max-age=30'
