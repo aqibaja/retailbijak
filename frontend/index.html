@@ -71,6 +71,18 @@
   <script src="js/version.js?v=20260512"></script>
 
   <script type="module" src="js/main.js?v=20260512"></script>
+  
+  <script>
+    // Fallback jika module gagal load
+    setTimeout(() => {
+      const root = document.getElementById('app-root');
+      if (root && root.children.length === 0) {
+        root.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-main)"><h2>⚠️ Gagal Memuat</h2><p>Module JavaScript error. Cek console.</p><button onclick="location.reload()" style="padding:10px 20px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer">Refresh</button></div>';
+        root.classList.remove('page-loading');
+        root.style.opacity = '1';
+      }
+    }, 3000);
+  </script>
 </head>
 <body>
 <a href="#app-root" class="skip-link" data-i18n="skip_link">Langsung ke konten</a>
@@ -121,12 +133,7 @@
     <a href="#calendar" class="nav-item" data-view="calendar" data-tooltip="Kalender" data-i18n-aria="sidebar.calendar"><i data-lucide="calendar" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#treemap" class="nav-item" data-view="treemap" data-tooltip="Treemap" data-i18n-aria="sidebar.treemap"><i data-lucide="grid-3x3" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#indices" class="nav-item" data-view="indices" data-tooltip="Indeks" data-i18n-aria="sidebar.indices"><i data-lucide="layers" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#macro" class="nav-item" data-view="macro" data-tooltip="Makro" data-i18n-aria="sidebar.macro"><i data-lucide="bar-chart-3" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#corporate" class="nav-item" data-view="corporate" data-tooltip="Aksi Korporasi" data-i18n-aria="sidebar.corporate"><i data-lucide="building-2" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#backtest" class="nav-item" data-view="backtest" data-tooltip="Backtest" data-i18n-aria="sidebar.backtest"><i data-lucide="line-chart" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#paper_trades" class="nav-item" data-view="paper_trades" data-tooltip="Paper Trading" data-i18n-aria="sidebar.paper_trades"><i data-lucide="wallet" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#movers" class="nav-item" data-view="movers" data-tooltip="Movers" data-i18n-aria="sidebar.movers"><i data-lucide="trending-up" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks" data-i18n-aria="sidebar.ai_picks"><i data-lucide="sparkles" style="width:20px;" aria-hidden="true"></i></a>
   </nav>
 </aside>
 <main class="main-content" id="app-root" role="main">
@@ -192,35 +199,4 @@
     </div>
   </div>
 </div>
-<!-- More Drawer (Mobile) -->
-<div id="more-drawer" class="more-drawer-overlay" hidden onclick="if(event.target===this||event.target.classList.contains('more-drawer-backdrop'))closeMoreDrawer()">
-  <div class="more-drawer-backdrop"></div>
-  <div class="more-drawer-panel">
-    <div class="more-drawer-header">
-      <span class="more-drawer-title">Menu Lainnya</span>
-      <button class="btn-icon" onclick="closeMoreDrawer()" title="Tutup"><i data-lucide="x" style="width:20px"></i></button>
-    </div>
-    <div class="more-drawer-body">
-      <a href="#market" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="globe"></i><span>Pasar <small>Overview market IDX</small></span></a>
-      <a href="#sector" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="pie-chart"></i><span>Sektor <small>Performa sektor & industri</small></span></a>
-      <a href="#news" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="newspaper"></i><span>Berita <small>News feed & watchlist news</small></span></a>
-      <a href="#signal_overview" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="activity"></i><span>Sinyal <small>Signal overview & TA</small></span></a>
-      <a href="#alerts" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bell"></i><span>Alert <small>Harga & indikator</small></span></a>
-      <a href="#breadth" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bar-chart-3"></i><span>Breadth <small>Market breadth analysis</small></span></a>
-      <a href="#movers" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="trending-up"></i><span>Movers <small>Top gainers & losers</small></span></a>
-      <a href="#treemap" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="grid-3x3"></i><span>Treemap <small>Peta pasar interaktif</small></span></a>
-      <a href="#calendar" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="calendar"></i><span>Kalender <small>Dividen, RUPS, IPO</small></span></a>
-      <a href="#corporate" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="building-2"></i><span>Aksi Korporasi <small>Corporate actions</small></span></a>
-      <a href="#indices" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="layers"></i><span>Indeks <small>IHSG, LQ45, IDX30</small></span></a>
-      <a href="#macro" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bar-chart-3"></i><span>Makro <small>Indikator ekonomi makro</small></span></a>
-      <a href="#dividends" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="banknote"></i><span>Dividen <small>Dashboard & kalkulator dividen</small></span></a>
-      <a href="#compare" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="bar-chart-4"></i><span>Bandingkan <small>Side-by-side stocks</small></span></a>
-      <a href="#backtest" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="line-chart"></i><span>Backtest <small>Uji strategi trading</small></span></a>
-      <a href="#paper_trades" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="wallet"></i><span>Paper Trading <small>Simulasi portfolio</small></span></a>
-      <a href="#ai-picks" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="sparkles"></i><span>AI Picks <small>Rekomendasi AI harian</small></span></a>
-      <a href="#help" class="more-drawer-item" onclick="closeMoreDrawer()"><i data-lucide="help-circle"></i><span>Bantuan <small>Panduan & FAQ</small></span></a>
-    </div>
-  </div>
-</div>
-</body>
-</html>
+<div id="toast-container" class="toast-container"></div>

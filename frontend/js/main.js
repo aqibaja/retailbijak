@@ -1,10 +1,10 @@
-import { handleRoute } from './router.js?v=202605120200';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js?v=202605120200';
-import { initTheme } from './theme.js?v=202605120200';
-import { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120200';
-import { animateValue, flashUpdate } from './utils/helpers.js?v=202605120200';
+import { handleRoute } from './router.js';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync, apiFetch } from './api.js';
+import { initTheme } from './theme.js';
+import { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
+import { animateValue, flashUpdate } from './utils/helpers.js';
 
-// ─── ENTRY ─── main.js
+//  ENTRY  main.js
 window.__rbk_log && window.__rbk_log('main.js module loaded', true);
 console.log('RBK: main.js module execution started');
 
@@ -57,9 +57,9 @@ function showErrorFallback(detail) {
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 // Re-exported from utils/view_timers.js for backward compatibility
-export { registerViewTimer, clearViewTimers } from './utils/view_timers.js?v=202605120200';
-export { observeElements, animateValue, flashUpdate } from './utils/helpers.js?v=202605120200';
-// ─── More Drawer (mobile nav) ────────────────────
+export { registerViewTimer, clearViewTimers } from './utils/view_timers.js';
+export { observeElements, animateValue, flashUpdate } from './utils/helpers.js';
+//  More Drawer (mobile nav) 
 function closeMoreDrawer() {
   const drawer = document.getElementById('more-drawer');
   if (drawer) drawer.hidden = true;
@@ -75,7 +75,7 @@ function openMoreDrawer() {
 window.closeMoreDrawer = closeMoreDrawer;
 window.openMoreDrawer = openMoreDrawer;
 
-// ─── Keyboard Shortcuts Overlay ────────────────
+//  Keyboard Shortcuts Overlay 
 function openShortcuts() {
   const el = document.getElementById('shortcuts-overlay');
   if (el) { el.hidden = false; if (typeof lucide !== 'undefined') lucide.createIcons(); }
@@ -140,7 +140,7 @@ function setupKeyboardShortcuts() {
   });
 }
 
-// ─── Lucide Icons Auto-Render via MutationObserver ───
+//  Lucide Icons Auto-Render via MutationObserver 
 function setupLucideAutoRender() {
   const render = () => {
     if (typeof lucide === 'undefined' || !lucide.createIcons) return;
@@ -354,7 +354,7 @@ function setupSearchOverlay() {
      }
    });
 }
-// ─── Search Filter Chips ───
+//  Search Filter Chips 
 let activeSectorFilter = '';
 function updateFilterChips(res) {
   const bar = document.getElementById('search-filter-bar');
@@ -412,7 +412,7 @@ function setupScrollEffects() {
    }, { passive: true });
 }
 
-// ─── 16.6.5 — Scroll-to-top button ──────────────
+//  16.6.5 — Scroll-to-top button 
 function setupScrollToTop() {
   const btn = document.getElementById('scroll-to-top');
   if (!btn) return;
@@ -430,7 +430,7 @@ function setupScrollToTop() {
   });
 }
 
-// ─── 16.6.3 — Keyboard Shortcut Panel ───────────
+//  16.6.3 — Keyboard Shortcut Panel 
 function setupShortcutPanel() {
   document.addEventListener('keydown', (e) => {
     if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.target.closest('input,textarea,select')) {
@@ -467,7 +467,7 @@ function toggleShortcutModal() {
   document.body.appendChild(overlay);
 }
 
-// ─── 16.6.1 — Page Transition Animation ─────────
+//  16.6.1 — Page Transition Animation 
 function setupPageTransitions() {
   // Add fade-in class to views when they mount
   const observer = new MutationObserver(() => {
@@ -479,7 +479,7 @@ function setupPageTransitions() {
   observer.observe(document.getElementById('app') || document.body, { childList: true, subtree: true });
 }
 
-// ─── 16.6.2 — Swipe Navigation ──────────────────
+//  16.6.2 — Swipe Navigation 
 function setupSwipeNavigation() {
   let startX = 0, startY = 0;
   document.addEventListener('touchstart', (e) => {
@@ -501,7 +501,7 @@ function setupSwipeNavigation() {
   }, { passive: true });
 }
 
-// ─── 16.6.4 — Pull-to-refresh ───────────────────
+//  16.6.4 — Pull-to-refresh 
 function setupPullToRefresh() {
   let startY = 0, pulling = false;
   const indicator = document.createElement('div');
@@ -581,7 +581,7 @@ async function refreshTopbarMarket() {
        console.warn('Gagal memperbarui topbar', e);
    }
 }
-// ─── IDX Market Countdown ─────────────────────────
+//  IDX Market Countdown 
 function updateMarketCountdown() {
   const el = document.getElementById('market-countdown');
   const statusEl = document.getElementById('market-status-text');
@@ -691,7 +691,7 @@ async function setupRunningTicker() {
   }).join('');
 }
 
-// ─── 16.2.2 — Live Price SSE Stream ──────────────
+//  16.2.2 — Live Price SSE Stream 
 let livePriceSource = null;
 
 function setupLivePriceStream() {
@@ -723,7 +723,7 @@ function setupLivePriceStream() {
   }
 }
 
-// ─── 16.2.4 — Live Stock Detail Refresh ──────────
+//  16.2.4 — Live Stock Detail Refresh 
 function setupStockDetailLiveRefresh() { /* called by stock_detail.js */ }
 
 // Network status indicator
@@ -752,7 +752,7 @@ function setupNetworkStatus() {
   // Initial check
   if (!navigator.onLine) show(false);
 }
-// ─── Touch Gestures ──────────────────────────────
+//  Touch Gestures 
 function setupTouchGestures() {
   const root = document.getElementById('app-root');
   if (!root) return;
@@ -818,7 +818,7 @@ function setupTouchGestures() {
   }, { passive: true });
 }
 
-// ─── First-Run Onboarding (3-step) ────────────────
+//  First-Run Onboarding (3-step) 
 function showOnboarding() {
   if (localStorage.getItem('retailbijak.onboarded.v1')) return;
 
@@ -868,7 +868,7 @@ function showOnboarding() {
   document.body.appendChild(overlay);
 }
 
-// ─── Data Freshness ────────────────────────
+//  Data Freshness 
 window.loadFreshness = async function loadFreshness() {
   const textEl = document.getElementById('freshness-text');
   const dotEl = document.querySelector('.freshness-dot');
@@ -900,7 +900,7 @@ window.loadFreshness = async function loadFreshness() {
   }
 };
 
-// ─── Push Notification Polling (14.4.1) ─────────────────
+//  Push Notification Polling (14.4.1) 
 // Upgraded to SSE streaming in 16.3.2 — falls back to polling if SSE fails
 
 let alertEventSource = null;
@@ -1021,7 +1021,7 @@ function setupPushNotifications() {
     setInterval(pollAlerts, 60000);
   }
 }
-// ─── End Push Notification Polling ─────────────────
+//  End Push Notification Polling 
 
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
@@ -1055,7 +1055,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showOnboarding();
       // Service Worker — re-enabled after fixing reload loop
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js?v=202605120200').then(async reg => {
+        navigator.serviceWorker.register('/sw.js').then(async reg => {
           if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
@@ -1067,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             });
           });
-          // ─── Periodic Background Sync for alerts ──
+          //  Periodic Background Sync for alerts 
           if ('periodicSync' in reg) {
             try {
               await reg.periodicSync.register('check-alerts', { minInterval: 15 * 60 * 1000 });
@@ -1076,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(() => {});
       }
 
-      // ─── PWA Install Prompt ────────────────────────
+      //  PWA Install Prompt 
       let deferredPrompt = null;
       window.addEventListener('beforeinstallprompt', (e) => {
         // Prevent Chrome 67+ from automatically showing the prompt
@@ -1166,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(checkTriggeredAlerts, 10000);
       setInterval(checkTriggeredAlerts, 120000);
 
-      // ─── Screener match badge updater ───────
+      //  Screener match badge updater 
       window.updateScreenerMatchBadges = async function() {
         try {
           const res = await apiFetch('/screener/saved');
@@ -1204,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadFreshness();
       setInterval(loadFreshness, 300000);
 
-      // ─── Push Notification Polling (14.4.1) ────────────────
+      //  Push Notification Polling (14.4.1) 
       setupPushNotifications();
   } catch (e) {
       console.error('Init error:', e);

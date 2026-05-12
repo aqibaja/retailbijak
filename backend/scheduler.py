@@ -168,8 +168,8 @@ def init_scheduler():
             logger.info("IDX daily sync done: ok=%s failed=%s date=%s", summary.get('ok'), summary.get('failed'), summary.get('data_date'))
         except Exception as e:
             logger.error("IDX daily sync failed: %s", e)
-    scheduler.add_job(_idx_daily_sync_job, trigger=CronTrigger(hour=18, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
-    # yfinance_daily_sync sudah disabled — OHLCV dari IDX via idx_daily_sync (18:00 WIB)
+    scheduler.add_job(_idx_daily_sync_job, trigger=CronTrigger(hour=6, minute=0, timezone=jkt_tz), id="idx_daily_sync", replace_existing=True)
+    # yfinance_daily_sync sudah disabled — OHLCV dari IDX via idx_daily_sync (06:00 WIB)
     # Telegram daily briefing — Mon-Fri 17:00 WIB (after market briefing at 16:30)
     try:
         from services.telegram_briefing import run_briefing_job as _tg_briefing
