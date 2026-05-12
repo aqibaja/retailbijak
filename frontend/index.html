@@ -115,7 +115,7 @@
             '<div class="panel skeleton" style="padding:16px;height:90px;"></div>'+
             '<div class="panel skeleton" style="padding:16px;height:90px;"></div>'+
           '</div>'+
-          '<div class="panel" style="padding:16px;"><p style="color:var(--text-muted);font-size:13px;margin:0;">Memuat data pasar...</p></div>'+
+          '<div id="loading-panel" class="panel" style="padding:16px;"><p style="color:var(--text-muted);font-size:13px;margin:0;">Memuat data pasar...</p></div>'+
         '</div>';
         R.fetchDashboard();
       },
@@ -153,6 +153,9 @@
           // update freshness
           var f = document.getElementById('topbar-freshness');
           if (f) f.innerHTML = '<span class="freshness-dot" style="background:#10b981;"></span><span class="text-xs text-dim" style="color:#10b981;">Live</span>';
+          // remove loading panel
+          var lp = document.getElementById('loading-panel');
+          if (lp) { lp.style.opacity='0'; setTimeout(function(){ lp.innerHTML = '<p style="color:var(--text-dim);font-size:13px;margin:0;">✅ Data pasar terhubung — ' + total + ' saham IDX</p>'; lp.style.opacity='1'; }, 300); }
         }).catch(function(){
           var grid = document.getElementById('kpi-grid');
           if (grid) grid.innerHTML =
