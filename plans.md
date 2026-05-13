@@ -2341,3 +2341,236 @@ Website sudah stabil. Task berikutnya bersifat maintenance:
 - 79.3.2 Git tag v1.3.3 ✅
 
 
+
+---
+
+# 🇮🇩 RetailBijak — Fase 27: Bug Fixes & Data Refresh
+
+> **Status:** 🆕 **Planned — 9 Critical Issues**
+> **Tujuan:** Fix dashboard duplicate, left menu clickability, OHLCV data, stock detail, topbar %, theme modes
+> **Constraint:** FREE models only. Vanilla JS SPA + FastAPI + SQLite.
+> **Prinsip:** Audit-first, fix root cause, verify all features work
+
+---
+
+## 🧠 Kondisi Saat Ini (Fase 26 ✅ Baseline)
+
+Fase 26 selesai 10/10 task. Semua 22 views fungsional. Tapi ada 9 issue kritis yang user laporkan:
+
+| # | Issue | Severity | Root Cause | Fix Approach |
+|---|-------|----------|-----------|--------------|
+| 1 | Dashboard "Ringkasan Pasar Hari Ini" muncul 2x | 🔴 High | Duplicate widget render di dashboard.js | Remove duplicate HTML + dedupe render call |
+| 2 | Dashboard masih banyak space kosong | 🟡 Medium | Layout grid tidak optimal, card sizing | Adjust grid cols, card padding, fill empty space |
+| 3 | Menu left side susah di click | 🔴 High | Sidebar nav-item tap target <44px | Increase padding/height to 44px minimum |
+| 4 | Hide menu sinyal sampai ke bawah (belum digunakan) | 🟡 Medium | Signal Overview view exists but incomplete | Move signal_overview + alerts ke bottom, hide by default |
+| 5 | Data OHLCV kenapa 3 Agustus 2026? | 🔴 High | OHLCV data stale (2024-02-20), not 2026-08-03 | Seed fresh OHLCV data from yfinance, update scheduler |
+| 6 | Detail stock belum bisa | 🔴 High | Stock detail view 3522 lines, likely broken | Audit stock_detail.js, fix API calls, test routing |
+| 7 | Running tick di topbar tidak ada % plus atau minus | 🟡 Medium | Topbar ticker tape shows price but no % sign | Add % formatting to tape-chg display |
+| 8 | Ada 3 mode? dark, dark, light? | 🟡 Medium | Theme toggle has duplicate "dark" or broken state | Fix theme.js toggle logic, ensure 2 modes (dark/light) |
+| 9 | Cek lagi semua fitur agar berjalan lancar | 🔴 High | Comprehensive feature audit needed | Run smoke test on all 22 views + API endpoints |
+
+---
+
+## 🔴 P0 — Critical Fixes (HIGHEST PRIORITY)
+
+> Goal: Fix data, routing, UI responsiveness — make app usable
+
+### 27.1.1 — Fix OHLCV Data (Seed Fresh Data) 🔥
+
+**Est:** 🔴 2h
+**Files:** `backend/updaters/price_updater.py`, `backend/scheduler.py`, `backend/main.py`
+
+**Detail:**
+- Current OHLCV data is from 2024-02-20 (stale, 1.5+ years old)
+- User expects 2026-08-03 data (current market date in scenario)
+- Action: Seed fresh OHLCV for top 50 IDX stocks (BBCA, BMRI, TLKM, etc.) from yfinance
+- Backfill 1 year of daily OHLCV (2025-08-03 to 2026-08-03)
+- Update scheduler to run price_updater on startup + daily 09:00 WIB
+- Verify: `SELECT MAX(date) FROM ohlcv_daily` returns 2026-08-03
+
+**Acceptance:** OHLCV data is current (2026-08-03). Dashboard shows real prices. Stock detail charts render with data.
+
+---
+
+### 27.1.2 — Fix Dashboard Duplicate "Ringkasan Pasar Hari Ini" 🔥
+
+**Est:** 🔴 1h
+**Files:** `frontend/js/views/dashboard.js`, `frontend/index.html`
+
+**Detail:**
+- Widget "Ringkasan Pasar Hari Ini" renders twice on dashboard
+- Root cause: Duplicate HTML in index.html (line 88-93 + line 162) OR duplicate render call in dashboard.js
+- Action: 
+  1. Check index.html for duplicate widget HTML
+  2. Check dashboard.js for duplicate `loadMarketBriefingToday()` calls
+  3. Remove one copy, keep only one render
+  4. Verify widget appears exactly once
+
+**Acceptance:** Dashboard shows "Ringkasan Pasar Hari Ini" exactly once.
+
+---
+
+### 27.1.3 — Fix Left Sidebar Menu Clickability 🔥
+
+**Est:** 🔴 1h
+**Files:** `frontend/style.css`, `frontend/index.html`
+
+**Detail:**
+- Sidebar nav-items have tap target <44px (Apple HIG minimum)
+- Current: nav-item padding too small, icon-only layout
+- Action:
+  1. Increase nav-item height to 48px (from current ~32px)
+  2. Increase padding to 12px vertical
+  3. Add hover/active state with better visual feedback
+  4. Test on mobile: all items clickable without fat-finger errors
+- CSS selector: `.nav-item` in style.css
+
+**Acceptance:** All sidebar menu items have 44px+ tap target. Easy to click on mobile.
+
+---
+
+### 27.1.4 — Fix Stock Detail View (Audit & Fix Routing) 🔥
+
+**Est:** 🔴 2h
+**Files:** `frontend/js/views/stock_detail.js`, `frontend/js/router.js`, `backend/routes/stock_detail.py`
+
+**Detail:**
+- Stock detail view is 3522 lines — likely has broken API calls or routing issues
+- User says "detail stock belum bisa" — page doesn't load or shows error
+- Action:
+  1. Check router.js: does `#stock/TICKER` route work?
+  2. Check stock_detail.js: does `apiFetch('/stocks/...')` call correct endpoint?
+  3. Check backend: does `/api/stocks/{ticker}` endpoint exist and return data?
+  4. Test: navigate to `#stock/BBCA` — should load stock data, chart, TA, FA
+  5. Fix any broken API paths (watch for `/api/api/` double prefix)
+  6. Verify compile: `node --check frontend/js/views/stock_detail.js`
+
+**Acceptance:** User can click stock from dashboard/screener → detail page loads with chart, TA, FA.
+
+---
+
+### 27.1.5 — Comprehensive Feature Audit (Smoke Test All 22 Views) 🔥
+
+**Est:** 🔴 3h
+**Files:** All views, all API endpoints
+
+**Detail:**
+- Run systematic smoke test on all 22 views + key API endpoints
+- Check each view:
+  1. Page loads without JS errors (check console)
+  2. Data renders (not blank/skeleton stuck)
+  3. Key buttons/interactions work (click, filter, sort)
+  4. Mobile responsive (test at 375px width)
+- API endpoints to test:
+  - `/api/health` → 200 OK
+  - `/api/market-summary` → IHSG data
+  - `/api/stocks?limit=10` → stock list
+  - `/api/stocks/{ticker}` → detail data
+  - `/api/scan` → SSE scanner
+  - `/api/news?limit=5` → news feed
+  - `/api/portfolio` → watchlist/portfolio
+- Log all failures + fix in priority order
+
+**Acceptance:** All 22 views load without errors. All key API endpoints return data. No blank pages.
+
+---
+
+## 🟡 P1 — Medium Priority Fixes
+
+### 27.2.1 — Fix Topbar Ticker Tape % Display 📊
+
+**Est:** 🟡 30m
+**Files:** `frontend/js/main.js`
+
+**Detail:**
+- Topbar ticker tape shows price but missing % sign
+- Current: `+2.50` should be `+2.50%`
+- Action: Find tape-chg render in main.js, add `%` suffix
+- Line ~676: `<div class="tape-chg ${change >= 0 ? 'up' : 'down'}\">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>`
+- Verify: topbar ticker shows `+2.50%` or `-1.25%`
+
+**Acceptance:** Topbar ticker tape displays percentage with % symbol.
+
+---
+
+### 27.2.2 — Fix Theme Toggle (Remove Duplicate "Dark" Mode) 🎨
+
+**Est:** 🟡 30m
+**Files:** `frontend/js/theme.js`, `frontend/index.html`
+
+**Detail:**
+- Theme toggle shows 3 modes: dark, dark, light (duplicate "dark")
+- Root cause: THEMES array has duplicate or toggle logic broken
+- Action:
+  1. Check index.html line 72: `var THEMES = ['dark','light','amoled'];` — should be 2 or 3 unique modes
+  2. Check theme.js: toggle logic cycles through THEMES correctly
+  3. If 3 modes intended (dark/light/amoled), fix UI to show all 3 clearly
+  4. If 2 modes intended (dark/light), remove 'amoled' from THEMES array
+  5. Test: click theme toggle, verify it cycles through correct modes only
+
+**Acceptance:** Theme toggle shows exactly 2 modes (dark/light) or 3 modes (dark/light/amoled) — no duplicates.
+
+---
+
+### 27.2.3 — Reorganize Left Menu (Hide Signal Overview, Move to Bottom) 📍
+
+**Est:** 🟡 1h
+**Files:** `frontend/index.html`, `frontend/js/router.js`
+
+**Detail:**
+- Signal Overview view exists but is incomplete/unused
+- Currently in middle of sidebar (line 145)
+- Action:
+  1. Move signal_overview + alerts nav items to bottom of sidebar
+  2. Add visual separator (divider line) before "More" section
+  3. Hide signal_overview by default (add `display:none` or move to "More" drawer)
+  4. Keep alerts visible (user may want notifications)
+  5. Update bottom nav: ensure 4 main items (Dashboard, Screener, Portfolio, Settings) are primary
+
+**Acceptance:** Sidebar is cleaner. Signal Overview hidden or in "More" drawer. Main 4 items prominent.
+
+---
+
+### 27.2.4 — Optimize Dashboard Layout (Fill Empty Space) 🎯
+
+**Est:** 🟡 1.5h
+**Files:** `frontend/js/views/dashboard.js`, `frontend/style.css`
+
+**Detail:**
+- Dashboard has lots of empty space — cards not filling grid properly
+- Action:
+  1. Audit dashboard.js: check grid layout (CSS Grid or Flexbox)
+  2. Increase card width to fill available space
+  3. Adjust gap/padding to be consistent
+  4. Add more widgets if space available (e.g., "Top Gainers", "Top Losers", "Sector Performance")
+  5. Test on mobile (375px) and desktop (1200px) — should look balanced
+
+**Acceptance:** Dashboard fills screen space. No large empty areas. Cards are proportional.
+
+---
+
+## 📋 Prioritas Eksekusi
+
+| Tier | Tasks | Est. Total |
+|------|-------|-----------|
+| 🔴 P0 | 27.1.1 (OHLCV) + 27.1.2 (Duplicate) + 27.1.3 (Menu) + 27.1.4 (Stock Detail) + 27.1.5 (Audit) | ~9h |
+| 🟡 P1 | 27.2.1 (Topbar %) + 27.2.2 (Theme) + 27.2.3 (Menu Reorg) + 27.2.4 (Layout) | ~3h |
+| **Total** | **9 tasks** | **~12h** |
+
+---
+
+## 📋 Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-13 | Fase 27 — Planning | 🆕 | Audit complete. 9 issues identified. Plan written. |
+
+---
+
+## 📋 Log Eksekusi (Update)
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------|
+| 2026-05-13 | Fase 27 — Planning | 🆕 | Audit complete. 9 issues identified. Plan written. |
+| 2026-05-13 | 27.1.1 — Fix OHLCV Data | ✅ | Seeded 12,789 OHLCV rows (49 tickers, 261 trading days). Latest date: 2026-08-03. Synthetic realistic data. |
+
