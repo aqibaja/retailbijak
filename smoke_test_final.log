@@ -1,0 +1,141 @@
+
+============================================================
+RETAILBIJAK COMPREHENSIVE SMOKE TEST
+============================================================
+Start time: 2026-05-13T10:15:52.891517
+Backend URL: http://localhost:8000
+
+Waiting for backend to be ready...
+✓ Backend is ready!
+
+============================================================
+TESTING API ENDPOINTS
+============================================================
+
+Testing GET /api/health... ✓ PASS (OK)
+
+Testing GET /api/market-summary... ✓ PASS (OK)
+
+Testing GET /api/stocks?limit=10... ✓ PASS (OK)
+
+Testing GET /api/stocks/AAPL... ✓ PASS (OK)
+
+Testing GET /api/scan... ✓ PASS (OK (non-JSON))
+
+Testing GET /api/news?limit=5... ✓ PASS (OK)
+
+Testing GET /api/portfolio... ✓ PASS (OK)
+
+============================================================
+TESTING FRONTEND VIEWS
+============================================================
+
+Testing view: dashboard... ✓ PASS (OK)
+
+Testing view: market... ✓ PASS (OK)
+
+Testing view: screener... ✓ PASS (OK)
+
+Testing view: stock_detail... ✓ PASS (OK)
+
+Testing view: portfolio... ✓ PASS (OK)
+
+Testing view: alerts... ✓ PASS (OK)
+
+Testing view: news... ✓ PASS (OK)
+
+Testing view: indices... ✓ PASS (OK)
+
+Testing view: sector... ✓ PASS (OK)
+
+Testing view: macro... ✓ PASS (OK)
+
+Testing view: calendar... ✓ PASS (OK)
+
+Testing view: dividend... ✓ PASS (OK)
+
+Testing view: ipo... ✓ PASS (OK)
+
+Testing view: corporate... ✓ PASS (OK)
+
+Testing view: chart... ✓ PASS (OK)
+
+Testing view: compare... ✓ PASS (OK)
+
+Testing view: paper_trades... ✓ PASS (OK)
+
+Testing view: signal_overview... ✓ PASS (OK)
+
+Testing view: ai_picks... ✓ PASS (OK)
+
+Testing view: backtest... ✓ PASS (OK)
+
+Testing view: treemap... ✓ PASS (OK)
+
+Testing view: breadth... ✓ PASS (OK)
+
+Testing view: movers... ✓ PASS (OK)
+
+Testing view: help... ✓ PASS (OK)
+
+Testing view: settings... ✓ PASS (OK)
+
+============================================================
+SMOKE TEST COMPLETE
+============================================================
+# RetailBijak Smoke Test Report
+
+**Timestamp:** 2026-05-13T10:15:52.891353
+
+**Backend URL:** http://localhost:8000
+
+## Summary
+- **Views Tested:** 25 (✓ 25 | ✗ 0)
+- **APIs Tested:** 7 (✓ 7 | ✗ 0)
+- **Overall Pass Rate:** 100.0%
+
+## API Endpoints
+| Endpoint | Method | Status | Message |
+|----------|--------|--------|---------|
+| /api/health | GET | ✓ PASS | OK |
+| /api/market-summary | GET | ✓ PASS | OK |
+| /api/stocks?limit=10 | GET | ✓ PASS | OK |
+| /api/stocks/AAPL | GET | ✓ PASS | OK |
+| /api/scan | GET | ✓ PASS | OK (non-JSON) |
+| /api/news?limit=5 | GET | ✓ PASS | OK |
+| /api/portfolio | GET | ✓ PASS | OK |
+
+## Frontend Views
+| View | Status | Message |
+|------|--------|---------|
+| dashboard | ✓ PASS | OK |
+| market | ✓ PASS | OK |
+| screener | ✓ PASS | OK |
+| stock_detail | ✓ PASS | OK |
+| portfolio | ✓ PASS | OK |
+| alerts | ✓ PASS | OK |
+| news | ✓ PASS | OK |
+| indices | ✓ PASS | OK |
+| sector | ✓ PASS | OK |
+| macro | ✓ PASS | OK |
+| calendar | ✓ PASS | OK |
+| dividend | ✓ PASS | OK |
+| ipo | ✓ PASS | OK |
+| corporate | ✓ PASS | OK |
+| chart | ✓ PASS | OK |
+| compare | ✓ PASS | OK |
+| paper_trades | ✓ PASS | OK |
+| signal_overview | ✓ PASS | OK |
+| ai_picks | ✓ PASS | OK |
+| backtest | ✓ PASS | OK |
+| treemap | ✓ PASS | OK |
+| breadth | ✓ PASS | OK |
+| movers | ✓ PASS | OK |
+| help | ✓ PASS | OK |
+| settings | ✓ PASS | OK |
+
+## Failures
+✓ No failures detected!
+
+✓ Report saved to SMOKE_TEST_REPORT.md
+✓ JSON results saved to smoke_test_results.json

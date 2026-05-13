@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/rich27/retailbijak/backend/main.py", line 76, in <module>
+    from backend.routes.user import router as user_router
+ModuleNotFoundError: No module named 'backend'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rich27/retailbijak/backend/routes/scanner_stream.py", line 44, in <module>
+    from indicators_extended import get_ohlcv_dataframe
+  File "/home/rich27/retailbijak/backend/indicators_extended.py", line 3, in <module>
+    import ta
+ModuleNotFoundError: No module named 'ta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rich27/retailbijak/backend/main.py", line 101, in <module>
+    from routes.scanner_stream import router as scanner_stream_router
+  File "/home/rich27/retailbijak/backend/routes/scanner_stream.py", line 46, in <module>
+    from backend.indicators_extended import get_ohlcv_dataframe
+ModuleNotFoundError: No module named 'backend'
