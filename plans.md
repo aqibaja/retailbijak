@@ -2574,3 +2574,5 @@ Fase 26 selesai 10/10 task. Semua 22 views fungsional. Tapi ada 9 issue kritis y
 | 2026-05-13 | Fase 27 — Planning | 🆕 | Audit complete. 9 issues identified. Plan written. |
 | 2026-05-13 | 27.1.1 — Fix OHLCV Data | ✅ | Seeded 12,789 OHLCV rows (49 tickers, 261 trading days). Latest date: 2026-08-03. Synthetic realistic data. |
 
+| 2026-05-13 | Mobile Nav Tap Targets | ✅ | Fixed left sidebar menu clickability. Updated .nav-item: width 44px→48px, height 44px→48px, added 12px padding. Enhanced hover (rgba(16,185,129,.12)) and active states. CSS verified. Meets Apple HIG 44px minimum standard. |
+|| 2026-05-13 | Fix Dashboard Duplicate Widget | ✅ | Removed duplicate 'Ringkasan Pasar Hari Ini' widget. Deleted: HTML widget (lines 157-169), loadMarketBriefing() function, duplicate render call, old refresh handler. Kept: loadMarketBriefingToday() (newer, feature-rich version). File compiles: node --check ✅ |

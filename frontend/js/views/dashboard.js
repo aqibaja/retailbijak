@@ -153,20 +153,6 @@ export async function renderDashboard(root) {
         </div>
       </div>
     </div>
-    <!-- AI Market Briefing Widget (18.3) -->
-    <div class="panel market-narrative-panel" id="market-briefing-card" style="margin-top:14px">
-      <div class="market-narrative-inner">
-        <div class="market-narrative-icon">🤖</div>
-        <div class="market-narrative-body">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <h3 class="panel-title" style="margin:0 0 4px;font-size:13px">AI Ringkasan Pasar</h3>
-            <button class="btn btn-sm" id="briefing-refresh-btn" style="font-size:10px;padding:2px 8px" title="Refresh">🔄</button>
-          </div>
-          <div class="market-narrative-text" id="market-briefing-text" style="font-size:13px">Memuat ringkasan pasar...</div>
-          <div class="market-narrative-meta" id="market-briefing-meta"></div>
-        </div>
-      </div>
-    </div>
     <!-- Quick Screener Presets (61.3.2) -->
     <div class="panel" style="margin-top:14px;padding:12px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -228,7 +214,6 @@ export async function renderDashboard(root) {
   loadMarketNarrative();
   loadPnlWidget();  // P&L widget (async)
   loadMiniHeatmapWidget(); // Mini heatmap widget (async)
-  loadMarketBriefing(); // AI Briefing widget (18.3)
   loadMarketBriefingToday(); // 32.2.2 — Ringkasan Pasar Hari Ini
   // Lazy load Chart.js — dengan timeout (biar ga hang kalo CDN diblokir)
   if (typeof Chart === 'undefined' && document.getElementById('ihsgMainChart')) {
@@ -1130,32 +1115,6 @@ async function loadMiniHeatmapWidget() {
     console.warn('loadMiniHeatmapWidget failed', e);
   }
 }
-// ─── Market Briefing Widget (18.3) ──────────────
-async function loadMarketBriefing() {
-  const textEl = document.getElementById('market-briefing-text');
-  const metaEl = document.getElementById('market-briefing-meta');
-  if (!textEl) return;
-  try {
-    const res = await apiFetch('/market/briefing');
-    if (res?.ok && res?.content) {
-      textEl.textContent = res.content;
-      const sent = res.sentiment || 'neutral';
-      const sentEmoji = sent === 'bullish' ? '🟢' : sent === 'bearish' ? '🔴' : '⚪';
-      const source = res.source === 'cache' ? 'cached' : 'AI';
-      if (metaEl) metaEl.innerHTML = `<span class="badge badge-${sent === 'bullish' ? 'up' : sent === 'bearish' ? 'down' : 'neutral'} badge-mini" style="font-size:10px">${sentEmoji} ${sent}</span> <span class="text-dim">${source} • ${res.date || ''}</span>`;
-    } else if (res?.state === 'disabled') {
-      textEl.textContent = '🔑 Atur API key OpenRouter di Settings > AI untuk mengaktifkan ringkasan pasar.';
-      if (metaEl) metaEl.innerHTML = '';
-    } else {
-      textEl.textContent = 'Ringkasan pasar belum tersedia. Coba refresh.';
-      if (metaEl) metaEl.innerHTML = '<span class="text-dim">Belum ada data</span>';
-    }
-  } catch (e) {
-    console.warn('loadMarketBriefing failed', e);
-    textEl.textContent = 'Gagal memuat ringkasan pasar.';
-    if (metaEl) metaEl.innerHTML = '<span class="text-dim">Error</span>';
-  }
-}
 // ─── 32.2.2 — Ringkasan Pasar Hari Ini ──────────────
 async function loadMarketBriefingToday() {
   const bodyEl = document.getElementById('briefing-today-body');
@@ -1206,16 +1165,5 @@ document.addEventListener('click', (e) => {
       if (bodyEl) bodyEl.innerHTML = '<p style="margin:0;color:var(--text-dim)">Gagal memperbarui. Coba lagi.</p>';
     });
     return;
-  }
-  const btn = e.target.closest('#briefing-refresh-btn');
-  if (btn) {
-    const textEl = document.getElementById('market-briefing-text');
-    if (textEl) textEl.textContent = 'Memperbarui ringkasan...';
-    apiFetch('/market/briefing', { method: 'POST' }).then(res => {
-      if (res?.ok) loadMarketBriefing();
-      else {
-        if (textEl) textEl.textContent = 'Gagal memperbarui. Coba lagi.';
-      }
-    });
   }
 });
