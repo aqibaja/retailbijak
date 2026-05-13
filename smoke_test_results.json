@@ -1,0 +1,151 @@
+{
+  "views": {
+    "dashboard": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "market": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "screener": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "stock_detail": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "portfolio": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "alerts": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "news": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "indices": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "sector": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "macro": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "calendar": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "dividend": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "ipo": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "corporate": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "chart": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "compare": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "paper_trades": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "signal_overview": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "ai_picks": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "backtest": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "treemap": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "breadth": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "movers": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "help": {
+      "status": "PASS",
+      "message": "OK"
+    },
+    "settings": {
+      "status": "PASS",
+      "message": "OK"
+    }
+  },
+  "apis": {
+    "/api/health": {
+      "status": "PASS",
+      "message": "OK",
+      "method": "GET"
+    },
+    "/api/market-summary": {
+      "status": "PASS",
+      "message": "OK",
+      "method": "GET"
+    },
+    "/api/stocks?limit=10": {
+      "status": "PASS",
+      "message": "OK",
+      "method": "GET"
+    },
+    "/api/stocks/AAPL": {
+      "status": "PASS",
+      "message": "OK",
+      "method": "GET"
+    },
+    "/api/scan": {
+      "status": "PASS",
+      "message": "OK (non-JSON)",
+      "method": "GET"
+    },
+    "/api/news?limit=5": {
+      "status": "PASS",
+      "message": "OK",
+      "method": "GET"
+    },
+    "/api/portfolio": {
+      "status": "PASS",
+      "message": "OK",
+      "method": "GET"
+    }
+  },
+  "summary": {
+    "total_views": 25,
+    "passed_views": 25,
+    "failed_views": 0,
+    "total_apis": 7,
+    "passed_apis": 7,
+    "failed_apis": 0
+  },
+  "timestamp": "2026-05-13T09:57:07.485758",
+  "failures": []
+}

@@ -1223,8 +1223,8 @@ export async function renderStockDetail(root, ticker, initialTab) {
   // Phase 0: Try full-detail composite endpoint (reduces 8+ calls to 1)
   let fullDetail = null;
   try {
-    const fdRes = await fetch(`/api/stocks/${encodeURIComponent(symbol)}/full-detail`);
-    if (fdRes.ok) fullDetail = await fdRes.json();
+    const fdRes = await apiFetch(`/stocks/${encodeURIComponent(symbol)}/full-detail`);
+    if (fdRes) fullDetail = fdRes;
   } catch (e) { /* fall through to phased loading */ }
 
   // Phase 1: Load critical data FIRST (price + chart) — show immediately
@@ -1601,8 +1601,7 @@ const INDEX_BADGE_CONFIG = {
 async function loadIndexBadges(container, ticker) {
   if (!container || !ticker) return;
   try {
-    const res = await fetch(`/api/stocks/${ticker}/indices`);
-    const data = await res.json();
+    const data = await apiFetch(`/stocks/${ticker}/indices`);
     if (data && data.indices && data.indices.length > 0) {
       const badges = data.indices.map(idx => {
         const cfg = INDEX_BADGE_CONFIG[idx.index_name] || { bg: '#666', label: idx.index_name };
