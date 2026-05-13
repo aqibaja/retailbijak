@@ -1,0 +1,201 @@
+================================================================================
+TASK: Fix Theme Mode Toggle — RetailBijak (32.3.2)
+================================================================================
+
+OBJECTIVE:
+  Fix theme mode toggle to show only 2 modes (light/dark) instead of 3,
+  ensure persistence across reloads, and verify CSS variables apply correctly.
+
+STATUS: ✅ COMPLETE
+
+================================================================================
+WHAT WAS ACCOMPLISHED
+================================================================================
+
+1. AUDITED theme.js FOR DUPLICATE DEFINITIONS ✅
+   ─────────────────────────────────────────────
+   • Found: THEMES = ['dark', 'light', 'amoled'] (3 modes)
+   • Issue: Toggle cycled through all 3 modes
+   • User report: "ada 3 mode? dark, dark, light?"
+   • Root cause: Modulo cycling logic with 3-element array
+
+2. FIXED TOGGLE LOGIC TO CYCLE light ↔ dark ✅
+   ──────────────────────────────────────────
+   • Before: saved = THEMES[(idx + 1) % THEMES.length]
+   • After:  saved = saved === 'dark' ? 'light' : 'dark'
+   • Result: Simple binary toggle, no amoled mode
+   • Icon: Sun (dark) ↔ Moon (light)
+
+3. VERIFIED localStorage PERSISTENCE ✅
+   ────────────────────────────────────
+   • Canonical key: 'retailbijak.theme' (primary)
+   • Legacy key: 'retail-theme' (kept in sync)
+   • Pre-load script: Applies theme before first paint (no flash)
+   • Fallback chain: canonical → legacy → 'dark'
+   • Migration: Legacy 'amoled' → 'dark'
+
+4. TESTED CSS VARIABLE APPLICATION ✅
+   ──────────────────────────────────
+   • Dark theme: 20+ CSS variables in :root
+   • Light theme: 20+ CSS variables in [data-theme="light"]
+   • Component overrides: 60+ rules in style.css (lines 763-832)
+   • All variables apply correctly
+   • No missing definitions
+
+5. UPDATED plans.md EXECUTION LOG ✅
+   ────────────────────────────────
+   • Added entry: 2026-05-13 | Theme Toggle Fix (32.3.2) | ✅
+   • Documented: 2-mode fix, persistence, CSS variables
+
+================================================================================
+FILES MODIFIED
+================================================================================
+
+frontend/js/theme.js
+  • Line 3-4: Changed THEMES from 3 modes to 2 modes
+  • Line 11-19: Added migration logic for legacy 'amoled'
+  • Line 24-25: Updated icon definitions (removed amoled icon)
+  • Line 44-45: Fixed toggle logic to binary switch
+
+frontend/index.html
+  • Line 69: Updated comment to reference 32.3.2
+  • Line 72: Changed THEMES to 2 modes in pre-load script
+  • Line 74-75: Added migration for legacy 'amoled'
+
+plans.md
+  • Line 392: Added execution log entry for theme toggle fix
+
+================================================================================
+FILES CREATED
+================================================================================
+
+test_theme_toggle.html
+  • Comprehensive test suite with 5 automated tests
+  • Manual controls for theme switching
+  • localStorage inspection
+  • CSS variable verification
+  • Legacy 'amoled' migration test
+
+THEME_TOGGLE_FIX.md
+  • Detailed documentation of the fix
+  • Issues found and solutions
+  • Testing procedures
+  • Verification checklist
+
+COMPLETION_SUMMARY.md
+  • Executive summary of all changes
+  • Code review results
+  • Test suite documentation
+  • Impact analysis
+
+================================================================================
+VERIFICATION RESULTS
+================================================================================
+
+✅ THEMES array: 2 modes only (dark, light)
+✅ Toggle logic: Binary switch (dark ↔ light)
+✅ localStorage: Both keys persist correctly
+✅ Pre-load script: Applies theme before first paint
+✅ CSS variables: All defined for both themes
+✅ Migration: Legacy 'amoled' converts to 'dark'
+✅ Icon toggle: Sun (dark) ↔ Moon (light)
+✅ Test suite: 5 tests + manual controls
+✅ Documentation: Complete and detailed
+✅ Execution log: Updated
+
+================================================================================
+BEHAVIOR AFTER FIX
+================================================================================
+
+Toggle Sequence:
+  dark → light → dark → light → ...
+  (2-mode cycle, no amoled)
+
+Icon Indicator:
+  Dark mode: ☀️ Sun icon (click to switch to light)
+  Light mode: 🌙 Moon icon (click to switch to dark)
+
+Persistence:
+  • Theme preference saved to localStorage
+  • Persists across browser sessions
+  • Pre-load script prevents flash on page load
+
+Migration:
+  • Users with old 'amoled' setting automatically migrated to 'dark'
+  • No user action required
+  • Backward compatible
+
+================================================================================
+TESTING
+================================================================================
+
+Test Suite: test_theme_toggle.html
+
+5 Automated Tests:
+  1. Initial Theme Load
+  2. Toggle Logic (2 modes only)
+  3. localStorage Persistence
+  4. CSS Variables Application
+  5. Legacy 'amoled' Migration
+
+Manual Controls:
+  • Set Dark / Set Light buttons
+  • Toggle Theme button
+  • Toggle 3x button (verify cycle)
+  • Clear Storage button
+  • Run All Tests button
+
+Usage:
+  open test_theme_toggle.html
+  or
+  firefox test_theme_toggle.html
+
+================================================================================
+IMPACT ANALYSIS
+================================================================================
+
+Before:
+  • 3 theme modes (dark, light, amoled)
+  • 3-step toggle cycle
+  • User confusion: "ada 3 mode?"
+
+After:
+  • 2 theme modes (dark, light)
+  • 2-step binary toggle
+  • Clear, intuitive behavior
+  • Backward compatible
+
+Breaking Changes: NONE
+Backward Compatibility: ✅ MAINTAINED
+
+================================================================================
+CHECKLIST
+================================================================================
+
+[✅] Audit theme.js for duplicate definitions
+[✅] Fix toggle logic to cycle light ↔ dark
+[✅] Verify localStorage persistence
+[✅] Test CSS variable application
+[✅] Update plans.md execution log
+[✅] Create test suite
+[✅] Create documentation
+[✅] Verify no breaking changes
+[✅] Confirm backward compatibility
+
+================================================================================
+CONCLUSION
+================================================================================
+
+Task completed successfully. All requirements met.
+
+• Theme toggle now shows only 2 modes (light/dark)
+• Toggle logic fixed to cycle dark ↔ light
+• localStorage persistence verified
+• CSS variables apply correctly
+• Backward compatible with legacy 'amoled' setting
+• Comprehensive test suite created
+• Complete documentation provided
+
+Ready for deployment.
+
+================================================================================

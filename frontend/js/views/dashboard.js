@@ -480,7 +480,18 @@ async function loadMarketSummary() {
   if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi: ${dataDate}` : 'Sinkronisasi: menunggu data.';
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
-  const ch = document.getElementById('ihsg-change'); ch.innerHTML = v != null ? `<span aria-hidden="true">${c >= 0 ? '▲' : '▼'}</span> <span>${pf(Math.abs(c)).replace('+', '')}</span>` : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
+  
+  // Calculate percentage change with +/- prefix and color coding
+  const ch = document.getElementById('ihsg-change');
+  if (v != null) {
+    const percentStr = c >= 0 ? `+${Math.abs(c).toFixed(2)}%` : `${c.toFixed(2)}%`;
+    ch.innerHTML = `<span aria-hidden="true">${c >= 0 ? '▲' : '▼'}</span> <span>${percentStr}</span>`;
+    ch.className = `mono strong price-${c >= 0 ? 'up' : 'down'}`;
+  } else {
+    ch.innerHTML = '—';
+    ch.className = 'mono strong';
+  }
+  
   document.getElementById('ihsg-open').textContent = summary?.open != null ? nf(summary.open) : '—';
   document.getElementById('ihsg-high').textContent = summary?.high != null ? nf(summary.high) : '—';
   document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';

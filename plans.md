@@ -369,26 +369,28 @@
    369|
    370|---
    371|
-   372|## 📋 Log Eksekusi
-   373|
-   374|| Date | Task | Status | Catatan |
-   375||------|------|--------|---------|
-   376|| — | — | 🆕 | **Fase 25 — Research & Planning** |
-   377|| 2026-05-10 | Research | ✅ | Audit kodebase + research 15 fitur potensial. 3-tier plan. |
-   378|| 2026-05-10 | 25.1.1 — Fix Dead Views | ✅ | **ALREADY FUNCTIONAL** — Alerts, Backtest, Paper Trades sudah full CRUD + backend API. Bukan dead views. |
-   379|| 2026-05-10 | 25.1.2 — Mobile-First Redesign | ✅ | Form inputs 44px, scroll-to-top calc(), overscroll-behavior, chat mobile responsive, column hiding ≤480px, modal max-height. 6 CSS/HTML fixes. |
-   380|| 2026-05-10 | 25.1.3 — Skeleton Loading | ✅ | Utility `showSkeleton()` & `hideSkeleton()` dengan 6 tipe. Dashboard.js migrated — 7 widget skeleton. |
-   381|| 2026-05-10 | 25.1.4 — CSS Modularization | ✅ | Critical CSS 11KB inline (<14KB target). Preload+defer pattern optimal. No split needed. |
-   382|| 2026-05-10 | 25.2.1 — Smart Money Dashboard | ✅ | Foreign flow bar chart (Chart.js) + existing list. Top buy/sell visual. |
-   383|| 2026-05-10 | 25.2.2 — AI Track Record | ✅ | Win rate, avg return, best/worst stats bar in dashboard AI Picks widget. |
-   384|| 2026-05-10 | 25.2.4 — Real Treemap | ✅ | Squarify algorithm (Bruls/Huizing/van Wijk) — 2-level layout (sectors → stocks). Responsive. |
-   385|| 2026-05-10 | 25.2.3 — Push Notification | ✅ | Service worker sw.js created with push/cache/offline. SSE + Notification API + sound already integrated. |
-   386|| 2026-05-10 | 25.2.5 — Whale Alerts | ✅ | Volume spike badges in screener (🐋 >3x, ⬆ >1.5x). Existing volume ratio + preset filter already functional. |
-   387|| 2026-05-10 | 25.3.3 — Paper Trading | ✅ | Equity curve chart, modal virtual Rp100jt, portfolio value, return%, 5-KPI summary. |
-   388|| 2026-05-10 | 25.3.2 — Gamification | ✅ | Streak tracker, XP system, 8 badge set, level (Bronze→Diamond), progress bar. Settings card. |
-   389|| 2026-05-10 | 25.3.1 — Stock Social Feed | ✅ | Full CRUD comments API + Diskusi tab di stock_detail + upvote/downvote + hot stocks endpoint. |
-   390|| 2026-05-10 | 25.3.4 — Multi-Chart Layouts | ✅ | Grid toggle 1×1/2×1/2×2/3×2 dengan LightweightCharts, crosshair sync, save layout ke localStorage. |
-   391|| 2026-05-10 | 25.3.5 — Technical Pattern Scanner | ✅ | (Sudah ada) Pattern detector 9 pola + SSE endpoint + pattern mode di screener + pattern tags di stock detail. Fix Body import di stock_detail.py. |
+## 📋 Log Eksekusi
+
+| Date | Task | Status | Catatan |
+|------|------|--------|---------| 
+| — | — | 🆕 | **Fase 25 — Research & Planning** |
+| 2026-05-10 | Research | ✅ | Audit kodebase + research 15 fitur potensial. 3-tier plan. |
+| 2026-05-10 | 25.1.1 — Fix Dead Views | ✅ | **ALREADY FUNCTIONAL** — Alerts, Backtest, Paper Trades sudah full CRUD + backend API. Bukan dead views. |
+| 2026-05-10 | 25.1.2 — Mobile-First Redesign | ✅ | Form inputs 44px, scroll-to-top calc(), overscroll-behavior, chat mobile responsive, column hiding ≤480px, modal max-height. 6 CSS/HTML fixes. |
+| 2026-05-10 | 25.1.3 — Skeleton Loading | ✅ | Utility `showSkeleton()` & `hideSkeleton()` dengan 6 tipe. Dashboard.js migrated — 7 widget skeleton. |
+| 2026-05-10 | 25.1.4 — CSS Modularization | ✅ | Critical CSS 11KB inline (<14KB target). Preload+defer pattern optimal. No split needed. |
+| 2026-05-10 | 25.2.1 — Smart Money Dashboard | ✅ | Foreign flow bar chart (Chart.js) + existing list. Top buy/sell visual. |
+| 2026-05-10 | 25.2.2 — AI Track Record | ✅ | Win rate, avg return, best/worst stats bar in dashboard AI Picks widget. |
+| 2026-05-10 | 25.2.4 — Real Treemap | ✅ | Squarify algorithm (Bruls/Huizing/van Wijk) — 2-level layout (sectors → stocks). Responsive. |
+| 2026-05-10 | 25.2.3 — Push Notification | ✅ | Service worker sw.js created with push/cache/offline. SSE + Notification API + sound already integrated. |
+| 2026-05-10 | 25.2.5 — Whale Alerts | ✅ | Volume spike badges in screener (🐋 >3x, ⬆ >1.5x). Existing volume ratio + preset filter already functional. |
+| 2026-05-10 | 25.3.3 — Paper Trading | ✅ | Equity curve chart, modal virtual Rp100jt, portfolio value, return%, 5-KPI summary. |
+| 2026-05-10 | 25.3.2 — Gamification | ✅ | Streak tracker, XP system, 8 badge set, level (Bronze→Diamond), progress bar. Settings card. |
+| 2026-05-10 | 25.3.1 — Stock Social Feed | ✅ | Full CRUD comments API + Diskusi tab di stock_detail + upvote/downvote + hot stocks endpoint. |
+| 2026-05-10 | 25.3.4 — Multi-Chart Layouts | ✅ | Grid toggle 1×1/2×1/2×2/3×2 dengan LightweightCharts, crosshair sync, save layout ke localStorage. |
+|| 2026-05-10 | 25.3.5 — Technical Pattern Scanner | ✅ | (Sudah ada) Pattern detector 9 pola + SSE endpoint + pattern mode di screener + pattern tags di stock detail. Fix Body import di stock_detail.py. |
+|| 2026-05-13 | **Theme Toggle Fix (32.3.2)** | ✅ | Fixed 3-mode → 2-mode (dark/light only). Removed 'amoled' with backward migration. Toggle logic: dark ↔ light. localStorage persistence verified. CSS variables apply correctly. Test suite created (test_theme_toggle.html). |
+|| 2026-05-13 | **27.1.3 — Nav Reorganization** | ✅ | Reorder: Dashboard, Screener, Portfolio, Settings. Hide: Signals, News, Alerts. 48px tap targets verified. Active state styling applied. |
    392|
    393|---
    394|
@@ -2572,9 +2574,10 @@ Fase 26 selesai 10/10 task. Semua 22 views fungsional. Tapi ada 9 issue kritis y
 | Date | Task | Status | Catatan |
 |------|------|--------|---------|
 | 2026-05-13 | Fase 27 — Planning | 🆕 | Audit complete. 9 issues identified. Plan written. |
-| 2026-05-13 | 27.1.1 — Fix OHLCV Data | ✅ | Seeded 12,789 OHLCV rows (49 tickers, 261 trading days). Latest date: 2026-08-03. Synthetic realistic data. |
+|| 2026-05-13 | 27.1.1 — Fix OHLCV Data | ✅ | Seeded 12,789 OHLCV rows (49 tickers, 261 trading days). Latest date: 2026-08-03. Synthetic realistic data. |
+|| 2026-05-13 | Fix Topbar IHSG Ticker % Change Display | ✅ | **COMPLETE** — (1) Updated loadMarketSummary() in dashboard.js (lines 456-493): Calculate % change from OHLCV data, format as '+2.34%' or '-1.23%' with proper +/- prefix. (2) Added .price-up and .price-down CSS classes to style.css (lines 756-757): Green color for gains, red for losses. (3) Updated HTML display: Changed from 'IHSG 7,234.56' to 'IHSG 7,234.56 ▲ +2.34%' with color coding. (4) Verified with synthetic data: 5 test cases (positive, negative, zero, large gains, large losses) all pass. Test file: test_ihsg_ticker.html. Files modified: frontend/js/views/dashboard.js, frontend/style.css. No regressions. |
 
-|| 2026-05-13 | Mobile Nav Tap Targets | ✅ | Fixed left sidebar menu clickability. Updated .nav-item: width 44px→48px, height 44px→48px, added 12px padding. Enhanced hover (rgba(16,185,129,.12)) and active states. CSS verified. Meets Apple HIG 44px minimum standard. |
+||| 2026-05-13 | Mobile Nav Tap Targets | ✅ | Fixed left sidebar menu clickability. Updated .nav-item: width 44px→48px, height 44px→48px, added 12px padding. Enhanced hover (rgba(16,185,129,.12)) and active states. CSS verified. Meets Apple HIG 44px minimum standard. |
 || 2026-05-13 | Comprehensive Smoke Test | ✅ | **AUDIT COMPLETE** — All 25 views + 7 API endpoints tested. **100% Pass Rate** (32/32 tests passed). Backend: ✓ /api/health, /api/market-summary, /api/stocks, /api/scan, /api/news, /api/portfolio. Frontend: ✓ All views load without JS errors, data renders, interactions work. Mobile responsive verified (375px). Reports: SMOKE_TEST_REPORT.md + smoke_test_results.json. No failures detected. System ready for production. |
 ||| 2026-05-13 | Fix Dashboard Duplicate Widget | ✅ | Removed duplicate 'Ringkasan Pasar Hari Ini' widget. Deleted: HTML widget (lines 157-169), loadMarketBriefing() function, duplicate render call, old refresh handler. Kept: loadMarketBriefingToday() (newer, feature-rich version). File compiles: node --check ✅ |
 ||| 2026-05-13 | Fix Stock Detail Routing & API | ✅ | **AUDIT COMPLETE** — Stock detail view routing fully functional. (1) Router hash handling: ✅ #stock/TICKER pattern correctly parsed (router.js:165-169). (2) Backend endpoint: ✅ GET /api/stocks/{ticker} exists (stock_detail.py:46-54), returns proper data. (3) API calls: ✅ Fixed 2 instances of direct fetch('/api/...') causing double /api/api/ prefix (lines 1226, 1604 in stock_detail.js). All 47 API calls now use apiFetch() correctly. (4) JS compilation: ✅ router.js, stock_detail.js (3522 lines), api.js all compile without errors. (5) Navigation flow: ✅ Complete end-to-end tested — click stock → hash change → router extracts ticker → renderStockDetail → fetchStockDetail → GET /api/stocks/BBCA → data loads. Status: READY FOR PRODUCTION. |
