@@ -1,0 +1,63 @@
+{
+  "app": {
+    "title": "Retail Bijak",
+    "description": "Platform investasi saham Indonesia"
+  },
+  "nav": {
+    "dashboard": "Dasbor",
+    "screener": "Pemindai",
+    "portfolio": "Portofolio",
+    "market": "Pasar",
+    "news": "Berita",
+    "settings": "Pengaturan",
+    "help": "Bantuan"
+  },
+  "dashboard": {
+    "title": "Dasbor",
+    "market_overview": "Ringkasan Pasar",
+    "current_holdings": "Kepemilikan Saat Ini",
+    "my_watchlist": "Daftar Pantau"
+  },
+  "screener": {
+    "title": "Pemindai Saham",
+    "search_placeholder": "Cari ticker, perusahaan, atau sektor...",
+    "results": "Hasil Pencarian"
+  },
+  "portfolio": {
+    "title": "Portofolio",
+    "total_value": "Nilai Total",
+    "total_gain": "Keuntungan Total",
+    "holdings": "Kepemilikan"
+  },
+  "stockDetail": {
+    "title": "Detail Saham",
+    "price": "Harga",
+    "change": "Perubahan",
+    "volume": "Volume",
+    "market_cap": "Kapitalisasi Pasar"
+  },
+  "common": {
+    "search": "Cari",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "retry": "Coba Lagi",
+    "close": "Tutup",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Edit",
+    "add": "Tambah",
+    "no_data": "Tidak ada data",
+    "workspace_controls": "Kontrol Ruang Kerja",
+    "interface_engine": "Mesin Antarmuka",
+    "terminal_notes": "Catatan Terminal",
+    "skip_link": "Langsung ke konten"
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "language": "Bahasa",
+    "theme": "Tema",
+    "notifications": "Notifikasi",
+    "account": "Akun"
+  }
+}

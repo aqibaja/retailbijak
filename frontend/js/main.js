@@ -1,6 +1,7 @@
 import { handleRoute } from './router.js?v=20260507G';
 import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507G';
 import { initTheme } from './theme.js?v=20260507G';
+import { initI18n } from './i18n.js?v=20260507G';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -295,8 +296,9 @@ function setupNetworkStatus() {
   if (!navigator.onLine) show(false);
 }
 // INIT
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   try {
+      await initI18n();
       initTheme();
       if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
       setupSearchOverlay();

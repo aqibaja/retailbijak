@@ -1,0 +1,63 @@
+{
+  "app": {
+    "title": "Retail Bijak",
+    "description": "Indonesian stock investment platform"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "screener": "Screener",
+    "portfolio": "Portfolio",
+    "market": "Market",
+    "news": "News",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "market_overview": "Market Overview",
+    "current_holdings": "Current Holdings",
+    "my_watchlist": "My Watchlist"
+  },
+  "screener": {
+    "title": "Stock Screener",
+    "search_placeholder": "Search ticker, company, or sector...",
+    "results": "Search Results"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "total_value": "Total Value",
+    "total_gain": "Total Gain",
+    "holdings": "Holdings"
+  },
+  "stockDetail": {
+    "title": "Stock Detail",
+    "price": "Price",
+    "change": "Change",
+    "volume": "Volume",
+    "market_cap": "Market Cap"
+  },
+  "common": {
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "no_data": "No data available",
+    "workspace_controls": "Workspace Controls",
+    "interface_engine": "Interface Engine",
+    "terminal_notes": "Terminal Notes",
+    "skip_link": "Skip to content"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "account": "Account"
+  }
+}
