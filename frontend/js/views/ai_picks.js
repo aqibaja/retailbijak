@@ -1,11 +1,11 @@
-import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js';
-import { observeElements } from '../utils/helpers.js';
-import { nf, pct } from '../utils/format.js';
-import { ssSet } from '../utils/storage.js';
+import { fetchAiPicks, saveWatchlistItem, showToast } from '../api.js?v=20260507G';
+import { observeElements } from '../main.js?v=20260507G';
 
 const AI_PICKS_MODE_KEY = 'retailbijak.ai_picks.mode';
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
-let currentMode = 'momentum';
+const nf = (n, d = 0) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: d });
+const pct = (n) => `${Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
+
 // ─── In-memory mode cache ──────────────────────────────────
 const modeCache = {};
 
@@ -15,6 +15,10 @@ function safeLocalStorageGet(key, fallback = null) {
 }
 function safeLocalStorageSet(key, value) {
   try { localStorage.setItem(key, value); }
+  catch { /* ignore */ }
+}
+function safeSessionStorageSet(key, value) {
+  try { sessionStorage.setItem(key, value); }
   catch { /* ignore */ }
 }
 
@@ -213,7 +217,7 @@ function wireActions(root, mode, picks, loadFn) {
       const ticker = btn.getAttribute('data-open-detail');
       const item = picks.find(c => c.ticker === ticker);
       if (!ticker || !item) return;
-      ssSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
+      safeSessionStorageSet(AI_PICKS_CONTEXT_KEY, buildAiPickContext(item, mode));
       window.location.hash = `#stock/${ticker}`;
     });
   });
@@ -269,6 +273,7 @@ export async function renderAiPicks(root) {
     </section>`;
 
   observeElements();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   const listEl = root.querySelector('#ai-picks-list');
   const modeSwitch = root.querySelector('#ai-picks-mode-switch');
@@ -298,6 +303,7 @@ export async function renderAiPicks(root) {
       listEl.innerHTML = renderCardList(cached.data, mode);
       setActiveMode(mode);
       wireActions(root, mode, cached.data || [], loadMode);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
       return;
     }
 
@@ -323,17 +329,14 @@ export async function renderAiPicks(root) {
 
       // Render cards
       if (!picks.length) {
-        const source = payload?.source || '';
-        const isFallback = source === 'no_data';
-        listEl.innerHTML = isFallback
-          ? renderErrorState('Data pasar belum cukup', 'Data akumulasi institusi IDX belum tersedia untuk hari ini. Signal akan muncul setelah sesi berjalan.')
-          : renderEmptyState('Belum ada kandidat', 'Mode ini belum menemukan kandidat cukup kuat. Coba mode lain atau tunggu briefing berikutnya.');
+        listEl.innerHTML = renderEmptyState('Belum ada kandidat', 'Mode ini belum menemukan kandidat cukup kuat. Coba mode lain atau tunggu briefing berikutnya.');
       } else {
         listEl.innerHTML = renderCardList(picks, mode);
       }
 
       setActiveMode(mode);
       wireActions(root, mode, picks, loadMode);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch (e) {
       console.error('AI Picks load error:', e);
       if (!listEl) return;

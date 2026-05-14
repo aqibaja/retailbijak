@@ -8,10 +8,13 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
-from sqlalchemy import text
+try:
+    from backend.database import DailyAIPickReport, SessionLocal
+    from backend.services.openrouter_llm import build_ai_picks_llm_payload
+except ModuleNotFoundError:
+    from database import DailyAIPickReport, SessionLocal
+    from services.openrouter_llm import build_ai_picks_llm_payload
 
-from database import DailyAIPickReport, SessionLocal, Signal
-from services.openrouter_llm import build_ai_picks_llm_payload, get_openrouter_config
 VALID_AI_PICK_MODES = {"swing", "defensive", "catalyst"}
 MODE_WEIGHTS = {
     "swing": {
@@ -521,208 +524,38 @@ def _serialize_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _generate_fallback_picks_from_signals(db: Session, mode: str, limit: int = 5) -> list[dict[str, Any]]:
-    """Generate picks from BUY signals in the database when LLM is unavailable."""
-    safe_mode = normalize_ai_pick_mode(mode)
-    # Get latest BUY signals per ticker, ordered by most recent
-    buy_signals = (
-        db.query(Signal)
-        .filter(Signal.signal_type == 'buy')
-        .order_by(Signal.signal_date.desc())
-        .all()
-    )
-    # Deduplicate: keep only the latest signal per ticker
-    seen: set[str] = set()
-    unique_signals: list = []
-    for s in buy_signals:
-        if s.ticker not in seen:
-            seen.add(s.ticker)
-            unique_signals.append(s)
-            if len(unique_signals) >= max(limit * 2, 10):
-                break
-
-    if not unique_signals:
-        return []
-
-    picks: list[dict[str, Any]] = []
-    for idx, sig in enumerate(unique_signals[:limit]):
-        close_val = float(sig.close or 0)
-        sl_val = float(sig.stop_loss or 0)
-        risk_pct = float(sig.sl_pct or 0.05)
-        if sl_val <= 0:
-            sl_val = round(close_val * (1 - risk_pct), 2)
-        tp_val = round(close_val + (close_val - sl_val) * 2, 2)
-        score = round(max(50, min(85, 65 + (1 - risk_pct) * 20)), 1)
-        confidence = int(round(max(50, min(90, score - 5))))
-        factors = {
-            'technical': round(0.65 + (1 - risk_pct) * 0.2, 3),
-            'liquidity': 0.5,
-            'fundamental': 0.5,
-            'catalyst': 0.3,
-            'risk': round(risk_pct, 3),
-            'volume_ratio': 1.0,
-            'trend_ok': True,
-            'rr_ok': risk_pct <= 0.05,
-            'quality_ok': False,
-            'catalyst_ok': False,
-        }
-        picks.append({
-            'ticker': sig.ticker,
-            'name': sig.ticker,
-            'rank': idx + 1,
-            'score': score,
-            'confidence': confidence,
-            'horizon': safe_mode,
-            'fit_label': FIT_LABELS.get(safe_mode, 'signal-based'),
-            'reason_codes': ['signal_buy', 'teknikal_terjaga'],
-            'reason_labels': ['signal beli terkonfirmasi', 'teknikal masih terjaga'],
-            'risk_note': 'gunakan stop loss disiplin',
-            'entry_style': 'boleh cicil bertahap',
-            'entry_zone': f'{int(close_val * 0.98)}-{int(close_val * 1.02)}',
-            'stop_loss': int(sl_val),
-            'take_profit': int(tp_val),
-            'risk_reward': f'1:{round((tp_val - close_val) / max(close_val - sl_val, 1), 2)}' if close_val > sl_val else 'n/a',
-            'invalidation': int(sl_val),
-            'target_zone': int(tp_val),
-            'latest_close': round(close_val, 2),
-            'change_pct': 0.0,
-            'volume_ratio': 1.0,
-            'bars_count': 30,
-            'factor_scores': {k: round(v, 3) for k, v in factors.items()},
-            'comparison_points': {
-                'headline': 'signal beli dari sistem',
-                'technical_label': 'teknikal terkonfirmasi',
-                'liquidity_label': 'likuiditas memadai',
-                'fundamental_label': 'data fundamental terbatas',
-                'catalyst_label': 'katalis tidak tersedia',
-                'risk_label': 'risiko terkontrol',
-                'timing_label': 'entry tersedia',
-            },
-            'catalyst': {'available': False, 'label': 'katalis eksplisit belum dominan'},
-            'catalysts': ['signal sistem terkonfirmasi'],
-            'thesis': f'{sig.ticker} memiliki signal BUY terbaru. Cocok untuk mode {safe_mode} dengan struktur risiko yang terkontrol.',
-            'risk_notes': 'gunakan stop loss disiplin',
-            'source': 'signal',
-        })
-    return picks
-
-
 def generate_and_store_daily_ai_pick_report(mode: str = 'swing', limit: int = 5, db: Session | None = None) -> dict[str, Any]:
     owns_session = db is None
     db = db or SessionLocal()
-    trading_date = datetime.utcnow().date().isoformat()
-    safe_mode = normalize_ai_pick_mode(mode)
-    error_message = ''
     try:
         payload = build_ai_picks_payload(mode=mode, limit=limit)
-        picks_data = payload.get('data') or []
-
-        # Fallback: if no picks from candidate universe, use BUY signals
-        if not picks_data:
-            signal_picks = _generate_fallback_picks_from_signals(db, safe_mode, limit=limit)
-            if signal_picks:
-                picks_data = signal_picks
-                payload['data'] = signal_picks
-                payload['source'] = 'signal'
-                payload['summary']['candidates_analyzed'] = len(signal_picks)
-                payload['summary']['eligible_count'] = len(signal_picks)
-                payload['summary']['featured_ticker'] = signal_picks[0]['ticker'] if signal_picks else None
-
         llm = build_ai_picks_llm_payload(
-            mode=safe_mode,
-            picks=picks_data,
+            mode=payload.get('mode') or normalize_ai_pick_mode(mode),
+            picks=payload.get('data') or [],
             market_context=payload.get('market_context') or {},
             db=db,
         )
         payload['llm'] = llm
-
-        # If LLM is disabled or errored, generate a fallback summary
-        llm_state = (llm or {}).get('runtime_state', '')
-        if llm_state in ('disabled', 'error', 'unknown', 'rate_limited') or not (llm or {}).get('summary'):
-            if picks_data:
-                summary_parts = []
-                for p in picks_data[:3]:
-                    summary_parts.append(f"{p.get('ticker')} (skor {p.get('score')}, confidence {p.get('confidence')}%)")
-                fallback_summary = f"AI Pick {safe_mode} — {trading_date}: " + ', '.join(summary_parts) + '. Data dihasilkan dari sinyal sistem.'
-                payload['llm'] = payload.get('llm') or {}
-                if not payload['llm'].get('summary'):
-                    payload['llm']['summary'] = fallback_summary
-                if not payload['llm'].get('status'):
-                    payload['llm']['status'] = 'fallback'
-                if not payload['llm'].get('runtime_state'):
-                    payload['llm']['runtime_state'] = 'fallback'
-                if not payload['llm'].get('runtime_message'):
-                    payload['llm']['runtime_message'] = 'LLM tidak dikonfigurasi — fallback ke data sinyal'
-        elif llm_state == 'ok' and (llm or {}).get('summary'):
-            payload['llm']['runtime_state'] = 'ok'
-            payload['llm']['runtime_message'] = ''
-
-        trading_date = payload.get('trading_date') or trading_date
+        trading_date = payload.get('trading_date') or datetime.utcnow().date().isoformat()
         report = db.query(DailyAIPickReport).filter(
             DailyAIPickReport.trading_date == trading_date,
-            DailyAIPickReport.mode == safe_mode,
+            DailyAIPickReport.mode == payload.get('mode'),
         ).order_by(DailyAIPickReport.generated_at.desc()).first()
         if report is None:
-            report = DailyAIPickReport(trading_date=trading_date, mode=safe_mode)
+            report = DailyAIPickReport(trading_date=trading_date, mode=payload.get('mode') or normalize_ai_pick_mode(mode))
             db.add(report)
         report.generated_at = datetime.utcnow()
         report.market_bias = str(payload.get('market_bias') or '')
         report.summary = str((llm or {}).get('summary') or '')
-        llm_runtime_state = str((llm or {}).get('runtime_state') or '')
-        if not llm_runtime_state or llm_runtime_state in ('fallback', 'unknown'):
-            llm_runtime_state = 'ok' if picks_data else 'no_data'
-        report.runtime_state = llm_runtime_state
-        report.runtime_message = str((llm or {}).get('runtime_message') or error_message)
-        report.model = str((llm or {}).get('model') or 'fallback')
+        report.runtime_state = str((llm or {}).get('runtime_state') or 'unknown')
+        report.runtime_message = str((llm or {}).get('runtime_message') or '')
+        report.model = str((llm or {}).get('model') or '')
         payload['generated_at'] = report.generated_at.isoformat()
         payload['freshness'] = _build_freshness(report.generated_at)
         report.payload_json = _serialize_report_payload(payload)
         db.commit()
         db.refresh(report)
         return hydrate_ai_pick_report(report)
-    except Exception as exc:
-        error_message = str(exc)
-        import traceback
-        traceback.print_exc()
-        # Always write a minimal record to DB on failure
-        try:
-            report = db.query(DailyAIPickReport).filter(
-                DailyAIPickReport.trading_date == trading_date,
-                DailyAIPickReport.mode == safe_mode,
-            ).order_by(DailyAIPickReport.generated_at.desc()).first()
-            if report is None:
-                report = DailyAIPickReport(trading_date=trading_date, mode=safe_mode)
-                db.add(report)
-            report.generated_at = datetime.utcnow()
-            report.market_bias = ''
-            report.summary = f'Gagal generate AI pick: {error_message[:200]}'
-            report.runtime_state = 'error'
-            report.runtime_message = error_message[:300]
-            report.model = 'error'
-            report.payload_json = {
-                'mode': safe_mode,
-                'trading_date': trading_date,
-                'generated_at': datetime.utcnow().isoformat(),
-                'source': 'error',
-                'market_context': {},
-                'market_bias': '',
-                'data': [],
-                'llm': {'runtime_state': 'error', 'runtime_message': error_message[:300]},
-            }
-            db.commit()
-            db.refresh(report)
-            return hydrate_ai_pick_report(report)
-        except Exception as db_exc:
-            logger.exception('Failed to write error record to daily_ai_pick_reports')
-            return {
-                'mode': safe_mode,
-                'trading_date': trading_date,
-                'generated_at': datetime.utcnow().isoformat(),
-                'source': 'error',
-                'data': [],
-                '_error': str(exc),
-                '_db_error': str(db_exc),
-            }
     finally:
         if owns_session:
             db.close()

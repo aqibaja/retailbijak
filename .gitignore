@@ -2,52 +2,22 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-*.egg-info/
-dist/
-build/
-.eggs/
-*.egg
-.venv/
 venv/
-env/
+.env
 
 # Database
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-
-# CSS build artifacts
-frontend/style.min.css
-frontend/style.csso.css
-frontend/style.cleancss.css
-
-# Service Worker cache
-frontend/sw.js
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+backend/swingaq.db
+swingaq.db
+*.sqlite3
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Environment
-.env
-.env.local
-frontend/CRITICAL_FINDINGS.md
-frontend/DIAGNOSIS.md
-frontend/SOLUTION_SUMMARY.md
-frontend/FRONTEND_AUDIT_REPORT.md
-frontend/i18n_audit_report.md
-frontend/diag.html
-frontend/index.full.html
-frontend/test*.html
-frontend/minimal.html
-frontend/assets/temp_*
-frontend/js/test_*.js
+# IDE
+.vscode/
+.idea/
+.gemini/
+
+# Local agent planning artifacts
+.hermes/plans/

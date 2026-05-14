@@ -1,25 +1,18 @@
 const API_BASE = '/api';
 
 // ─── Fetch Wrappers ────────────────────────────────────
-export async function apiFetch(endpoint, options = {}, _retries = 2) {
-    const timeoutMs = options.timeout || 10000;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const opts = { ...options, signal: controller.signal };
-    delete opts.timeout;
+export async function apiFetch(endpoint, options = {}) {
     try {
+        const timeoutMs = options.timeout || 8000;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        const opts = { ...options, signal: controller.signal };
+        delete opts.timeout;
         const res = await fetch(`${API_BASE}${endpoint}`, opts);
-        clearTimeout(timer);
+        clearTimeout(timeout);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (e) {
-        clearTimeout(timer);
-        // Retry on network errors only (not AbortError/timeout, not HTTP 4xx/5xx)
-        if (_retries > 0 && e.name !== 'AbortError' && !(e.message?.startsWith('HTTP'))) {
-            const delay = (3 - _retries) * 1000; // 1s, then 2s
-            await new Promise(r => setTimeout(r, delay));
-            return apiFetch(endpoint, options, _retries - 1);
-        }
         console.error(`API error: ${endpoint}`, e);
         // Only show toast for non-abort errors (timeout = silent)
         if (e.name !== 'AbortError') {
@@ -29,17 +22,9 @@ export async function apiFetch(endpoint, options = {}, _retries = 2) {
     }
 }
 
-export async function fetchNews(limit = 6, ticker = '', offset = 0, source = '', sentiment = '', category = '') {
-    let q = `/news?limit=${limit}&offset=${offset}`;
-    if (ticker) q += `&ticker=${encodeURIComponent(ticker)}`;
-    if (source) q += `&source=${encodeURIComponent(source)}`;
-    if (sentiment) q += `&sentiment=${encodeURIComponent(sentiment)}`;
-    if (category) q += `&category=${encodeURIComponent(category)}`;
-    return apiFetch(q) || { count: 0, total: 0, data: [] };
-}
-
-export async function summarizeNews(id) {
-    return apiFetch(`/news/${id}/summarize`, { method: 'POST' });
+export async function fetchNews(limit = 6, ticker = '') {
+    const q = ticker ? `/news?limit=${limit}&ticker=${encodeURIComponent(ticker)}` : `/news?limit=${limit}`;
+    return apiFetch(q) || { count: 0, data: [] };
 }
 
 export async function fetchFundamental(ticker) {
@@ -56,8 +41,8 @@ export async function fetchAnalysis(ticker, options = {}) {
 }
 
 
-export async function fetchChartData(ticker, limit = 100, timeframe = '1D') {
-    return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}&timeframe=${timeframe}`);
+export async function fetchChartData(ticker, limit = 100) {
+    return apiFetch(`/stocks/${ticker}/chart-data?limit=${limit}`);
 }
 
 export async function fetchMarketSummary() {
@@ -77,10 +62,9 @@ export async function fetchStockDetail(ticker) {
     return apiFetch(`/stocks/${ticker}`);
 }
 
-export async function searchStocks(query = '', limit = 8, sector = '') {
+export async function searchStocks(query = '', limit = 8) {
     const q = encodeURIComponent(query || '');
-    const sec = sector ? `&sector=${encodeURIComponent(sector)}` : '';
-    return apiFetch(`/stocks/search?q=${q}&limit=${limit}${sec}`) || { count: 0, data: [] };
+    return apiFetch(`/stocks/search?q=${q}&limit=${limit}`) || { count: 0, data: [] };
 }
 
 export async function fetchTopMovers(limit = 10, sort = 'gainers') {
@@ -138,10 +122,6 @@ export async function fetchPortfolio() {
     return apiFetch('/portfolio') || { count: 0, data: [] };
 }
 
-export async function fetchPortfolioDividends() {
-    return apiFetch('/portfolio/dividends');
-}
-
 export async function fetchAiPicks(mode = 'swing', limit = 5) {
     const safeMode = encodeURIComponent(mode || 'swing');
     const safeLimit = Number(limit || 5);
@@ -172,69 +152,20 @@ export async function deletePortfolioPosition(ticker) {
     return apiFetch(`/portfolio/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
 }
 
-// ─── Chart Drawings API ────────────────────────────
-export async function fetchDrawings(ticker) {
-    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings`);
-}
-
-export async function saveDrawing(ticker, type, data) {
-    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, data }),
-    });
-}
-
-export async function deleteDrawing(ticker, id) {
-    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings/${id}`, { method: 'DELETE' });
-}
-
-export async function clearBackendDrawings(ticker) {
-    return apiFetch(`/chart/${encodeURIComponent(ticker)}/drawings`, { method: 'DELETE' });
-}
-
 // ─── SSE URL (relative for production) ─────────────────
 export function getScanEventSourceUrl(timeframe) {
     return `${window.location.origin}/api/scan?timeframe=${timeframe}`;
 }
 
-// ─── Toast Notification System V2 ─────────────────
-const MAX_TOASTS = 3;
-
-// Track active messages to prevent duplicates
-const activeToastMessages = new Set();
-let _toastLastTs = 0;
-
+// ─── Toast Notification System ─────────────────────────
 export function showToast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
-
-    // Rate limit: max 1 toast per 1.5s
-    const now = Date.now();
-    if (now - _toastLastTs < 1500) return;
-    _toastLastTs = now;
-
-    // Prevent duplicate messages
-    const dedupKey = `${type}:${message}`;
-    if (activeToastMessages.has(dedupKey)) return;
-    activeToastMessages.add(dedupKey);
-    setTimeout(() => activeToastMessages.delete(dedupKey), duration + 500);
-
-    // Limit visible toasts: if already at max, dismiss oldest
-    while (container.children.length >= MAX_TOASTS) {
-        const oldest = container.children[0];
-        if (oldest && oldest.classList) {
-            dismissToast(oldest);
-        } else {
-            break;
-        }
-    }
-
+    
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.style.pointerEvents = 'auto';
     toast.setAttribute('role', 'alert');
-    toast.dataset.dedup = dedupKey;
     toast.innerHTML = `
         <div class="toast-body">
             <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ'}</span>
@@ -243,51 +174,27 @@ export function showToast(message, type = 'info', duration = 4000) {
         </div>
         <div class="toast-progress" style="animation-duration:${duration}ms"></div>
     `;
-
-    // Stagger: offset each toast slightly
-    const idx = container.children.length;
-    toast.style.marginTop = idx > 0 ? '8px' : '0';
-
+    
     toast.style.animation = 'toastSlideIn 0.35s cubic-bezier(0.16,1,0.3,1)';
     container.appendChild(toast);
-
+    
     // Manual dismiss
     toast.querySelector('.toast-close-btn').onclick = function(e) {
         e.stopPropagation();
-        activeToastMessages.delete(dedupKey);
         dismissToast(toast);
     };
-
-    // Auto dismiss with pause-on-hover support
-    let remaining = duration;
-    let startTime = Date.now();
-    let timer = setTimeout(() => {
-        activeToastMessages.delete(dedupKey);
-        dismissToast(toast);
-    }, remaining);
-
-    toast.addEventListener('mouseenter', () => {
-        clearTimeout(timer);
-        remaining -= Date.now() - startTime;
-        toast.querySelector('.toast-progress')?.style.setProperty('animation-play-state', 'paused');
-    });
-    toast.addEventListener('mouseleave', () => {
-        startTime = Date.now();
-        timer = setTimeout(() => {
-            activeToastMessages.delete(dedupKey);
-            dismissToast(toast);
-        }, Math.max(remaining, 500));
-        toast.querySelector('.toast-progress')?.style.setProperty('animation-play-state', 'running');
-    });
-
+    
+    // Auto dismiss
+    const timer = setTimeout(() => dismissToast(toast), duration);
+    
     // Store timer reference for cleanup
-    toast._dismissTimer = { timer, remaining, startTime };
+    toast._dismissTimer = timer;
 }
 
 function dismissToast(toast) {
     // Clear timer if still active
     if (toast._dismissTimer) {
-        clearTimeout(toast._dismissTimer.timer);
+        clearTimeout(toast._dismissTimer);
         toast._dismissTimer = null;
     }
     toast.classList.add('toast-exit');
@@ -297,41 +204,6 @@ function dismissToast(toast) {
 }
 
 /* cache-bust: 20260507C */
-
-// ─── Page Meta Tags (SEO: description, OG, canonical) ────
-export function setPageMeta(title, description, path) {
-  const baseUrl = 'https://retailbijak.rich27.my.id';
-  const fullPath = path ? `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}` : baseUrl;
-  const defaultDesc = 'Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker, technical & fundamental analysis real-time.';
-
-  // Title
-  document.title = title || 'RetailBijak — IDX Stock Intelligence';
-
-  // Meta description
-  let el = document.querySelector('meta[name="description"]');
-  if (!el) { el = document.createElement('meta'); el.name = 'description'; document.head.appendChild(el); }
-  el.content = description || defaultDesc;
-
-  // OG title
-  let ogTitle = document.querySelector('meta[property="og:title"]');
-  if (!ogTitle) { ogTitle = document.createElement('meta'); ogTitle.setAttribute('property', 'og:title'); document.head.appendChild(ogTitle); }
-  ogTitle.content = title || 'RetailBijak — IDX Stock Intelligence';
-
-  // OG description
-  let ogDesc = document.querySelector('meta[property="og:description"]');
-  if (!ogDesc) { ogDesc = document.createElement('meta'); ogDesc.setAttribute('property', 'og:description'); document.head.appendChild(ogDesc); }
-  ogDesc.content = description || defaultDesc;
-
-  // OG url
-  let ogUrl = document.querySelector('meta[property="og:url"]');
-  if (!ogUrl) { ogUrl = document.createElement('meta'); ogUrl.setAttribute('property', 'og:url'); document.head.appendChild(ogUrl); }
-  ogUrl.content = fullPath;
-
-  // Canonical URL
-  let canonical = document.querySelector('link[rel="canonical"]');
-  if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
-  canonical.href = fullPath;
-}
 
 // ─── TradingView Embed Widget Loader ────────────────────
 export function loadTVWidget(containerId, widgetType, config) {

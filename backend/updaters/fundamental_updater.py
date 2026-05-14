@@ -63,7 +63,6 @@ def fetch_and_store_fundamentals(db: Session, batch_size=50):
                     "revenue": info.get("totalRevenue"),
                     "net_income": info.get("netIncomeToCommon"),
                     "free_cashflow": info.get("freeCashflow"),
-                    "market_cap": info.get("marketCap"),
                     "updated_at": datetime.utcnow()
                 }
                 
@@ -89,7 +88,6 @@ def fetch_and_store_fundamentals(db: Session, batch_size=50):
                     "revenue": stmt.excluded.revenue,
                     "net_income": stmt.excluded.net_income,
                     "free_cashflow": stmt.excluded.free_cashflow,
-                    "market_cap": stmt.excluded.market_cap,
                     "updated_at": stmt.excluded.updated_at
                 }
             )

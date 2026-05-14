@@ -1,67 +1,13 @@
-window.__rbk_log && window.__rbk_log('router.js module loaded', true);
-import { clearViewTimers } from './utils/view_timers.js';
-import { setPageMeta } from './api.js';
-
-// Route meta descriptions
-const ROUTE_META = {
-  dashboard: { title: 'RetailBijak — Dashboard Pasar IDX', desc: 'Pantau IHSG, breadth pasar, top movers, dan AI Picks dalam satu layar. Dashboard real-time untuk analisis saham IDX.' },
-  screener: { title: 'RetailBijak — Pemindai Saham IDX', desc: 'Scan saham IDX dengan filter teknikal real-time. Temukan peluang trading berdasarkan RSI, MACD, volume, dan pola harga.' },
-  market: { title: 'RetailBijak — Ikhtisar Pasar IDX', desc: 'Lihat pergerakan IHSG, sektoral, top movers, breadth, dan data pasar saham Indonesia secara lengkap.' },
-  treemap: { title: 'RetailBijak — Treemap Pasar IDX', desc: 'Visualisasi treemap seluruh pasar IDX berdasarkan sektor — ukuran = kapitalisasi pasar, warna = perubahan harga.' },
-  portfolio: { title: 'RetailBijak — Portofolio & Watchlist', desc: 'Kelola portofolio saham IDX, catat transaksi, pantau P&L, dan tracking watchlist saham pilihan Anda.' },
-  watchlist: { title: 'RetailBijak — Watchlist', desc: 'Daftar pantauan saham IDX. Pantau harga dan sinyal saham favorit dalam satu tempat.' },
-  news: { title: 'RetailBijak — Berita Pasar', desc: 'Berita pasar saham Indonesia dan IDX terbaru. Update berita emiten, sektor, dan analisa pasar.' },
-  settings: { title: 'RetailBijak — Pengaturan', desc: 'Atur preferensi tampilan, API key OpenRouter, dan konfigurasi platform RetailBijak.' },
-  help: { title: 'RetailBijak — Bantuan', desc: 'Panduan penggunaan RetailBijak: cara menggunakan screener, portfolio, AI analysis, dan fitur lainnya.' },
-  ai_picks: { title: 'RetailBijak — AI Picks', desc: 'Rekomendasi saham IDX berbasis AI. Temukan kandidat saham swing trading dengan analisis otomatis.' },
-  compare: { title: 'RetailBijak — Perbandingan Saham', desc: 'Bandingkan kinerja saham IDX secara side-by-side. Lihat perbandingan teknikal dan fundamental.' },
-  backtest: { title: 'RetailBijak — Backtesting', desc: 'Uji strategi trading saham IDX dengan data historis. Backtest sinyal teknikal untuk optimasi entry dan exit.' },
-  paper_trades: { title: 'RetailBijak — Paper Trading', desc: 'Simulasi trading saham IDX tanpa risiko. Latih strategi dengan modal virtual dan pantau performa.' },
-  sector: { title: 'RetailBijak — Sektor Saham', desc: 'Lihat daftar saham IDX berdasarkan sektor. Analisis performa sektoral dan daftar emiten.' },
-  breadth: { title: 'RetailBijak — Market Breadth', desc: 'Analisis market breadth IDX: advance-decline line, cumulative breadth, gainers/decliners ratio.' },
-  signal_overview: { title: 'RetailBijak — Signal Overview', desc: 'Pantau semua sinyal trading terkini dari seluruh saham IDX. Filter BUY/SELL berdasarkan data teknikal.' },
-  alerts: { title: 'RetailBijak — Alert Harga', desc: 'Buat dan kelola alert harga saham IDX. Dapatkan notifikasi otomatis saat harga atau RSI mencapai level tertentu.' },
-  movers: { title: 'RetailBijak — Market Movers', desc: 'Lihat saham IDX dengan pergerakan terbesar: gainers, losers, dan most active dengan multi-timeframe performance.' },
-  calendar: { title: 'RetailBijak — Kalender Pasar', desc: 'Kalender dividen, laba, dan aksi korporasi saham IDX.' },
-  corporate: { title: 'RetailBijak — Aksi Korporasi', desc: 'IPO, rights issue, stock split, dividen, dan aksi korporasi saham IDX.' },
-  ipo: { title: 'RetailBijak — IPO Pipeline Tracker', desc: 'Pantau IPO saham IDX — listing mendatang dan performa pasca-listing.' },
-  chart: { title: 'RetailBijak — Chart', desc: 'Full-screen chart saham IDX dengan drawing tools dan multiple timeframe.' },
-  macro: { title: 'RetailBijak — Macro & Ekonomi', desc: 'Indikator makroekonomi Indonesia: BI Rate, Inflasi, GDP, Neraca Dagang, dan Cadangan Devisa.' },
-  indices: { title: 'RetailBijak — Indeks IDX', desc: 'Pantau konstituen dan performa indeks saham IDX: LQ45, IDX30, KOMPAS100, IDX80, IDXESGL.' },
-  dividends: { title: 'RetailBijak — Dividend Dashboard & Kalkulator', desc: 'Pantau dividen saham IDX, hitung estimasi pendapatan dividen, dan temukan dividend aristocrats.' },
-  sector_rotation: { title: 'RetailBijak — Rotasi Sektor Heatmap', desc: 'Heatmap rotasi sektor IDX — lihat perbandingan performa 1d, 5d, 1m, 3m dan momentum score antar sektor.' },
-};
-
-// Dynamic view registry — lazy import per route (1.7.1)
-const viewModules = {
-  dashboard: () => import('./views/dashboard.js'),
-  stock_detail: () => import('./views/stock_detail.js'),
-  screener: () => import('./views/screener.js'),
-  portfolio: () => import('./views/portfolio.js'),
-  market: () => import('./views/market.js'),
-  treemap: () => import('./views/treemap.js'),
-  compare: () => import('./views/compare.js'),
-  backtest: () => import('./views/backtest.js'),
-  paper_trades: () => import('./views/paper_trades.js'),
-  news: () => import('./views/news.js'),
-  settings: () => import('./views/settings.js'),
-  help: () => import('./views/help.js'),
-  ai_picks: () => import('./views/ai_picks.js'),
-  sector: () => import('./views/sector.js'),
-  breadth: () => import('./views/breadth.js'),
-  signal_overview: () => import('./views/signal_overview.js'),
-  alerts: () => import('./views/alerts.js'),
-  movers: () => import('./views/movers.js'),
-  calendar: () => import('./views/calendar.js'),
-  corporate: () => import('./views/corporate.js'),
-  ipo: () => import('./views/ipo.js'),
-  chart: () => import('./views/chart.js'),
-  indices: () => import('./views/indices.js'),
-  dividends: () => import('./views/dividend.js'),
-  macro: () => import('./views/macro.js'),
-  sector_rotation: () => import('./views/sector.js'),
-};
-const viewCache = {};
+import { renderDashboard } from './views/dashboard.js?v=20260507G';
+import { renderStockDetail } from './views/stock_detail.js?v=20260507G';
+import { renderScreener } from './views/screener.js?v=20260507G';
+import { renderPortfolio } from './views/portfolio.js?v=20260507G';
+import { renderMarket } from './views/market.js?v=20260507G';
+import { renderNews } from './views/news.js?v=20260507G';
+import { renderSettings } from './views/settings.js?v=20260507G';
+import { renderHelp } from './views/help.js?v=20260507G';
+import { renderAiPicks } from './views/ai_picks.js?v=20260507G';
+import { clearViewTimers } from './main.js?v=20260507G';
 
 let routeToken = 0;
 
@@ -72,43 +18,23 @@ function normalizeRoute(hash) {
     return cleanPath;
 }
 
-// Map route name with dashes to underscore keys in viewModules/ROUTE_META
-function routeToViewKey(route) {
-    return route.replace(/-/g, '_');
-}
-
 export function handleRoute(hash) {
-  console.log('[router.js] handleRoute called with hash:', hash);
-  const root = document.getElementById('app-root');
-  if (!root) return;
-
+    const root = document.getElementById('app-root');
+    if (!root) return;
+    
     // Clear any view-specific timers/intervals from previous view
     clearViewTimers();
 
     const cleanPath = normalizeRoute(hash);
     const [view, ...rest] = cleanPath.split('/');
-    let baseRoute = view || 'dashboard';
-    const viewKey = routeToViewKey(baseRoute);
+    const baseRoute = view || 'dashboard';
     const currentToken = ++routeToken;
-
-    // Set page meta tags (SEO description, OG, canonical)
-    const stockTicker = viewKey === 'stock' ? (rest[0] || '').toUpperCase() : null;
-    if (stockTicker) {
-      setPageMeta(
-        `RetailBijak — ${stockTicker}`,
-        `Analisis saham ${stockTicker} IDX: harga real-time, technical analysis RSI/MACD, data fundamental, broker activity, dan sinyal trading terbaru.`,
-        `/stock/${stockTicker}`
-      );
-    } else {
-      const routeMeta = ROUTE_META[viewKey] || ROUTE_META.dashboard;
-      setPageMeta(routeMeta.title, routeMeta.desc, cleanPath);
-    }
 
     // Update active state in desktop and mobile nav
     document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
         const targetView = el.getAttribute('data-view');
         if (targetView) {
-            const isActive = targetView === viewKey;
+            const isActive = targetView === baseRoute;
             el.classList.toggle('active', isActive);
             if (isActive) el.setAttribute('aria-current', 'page');
             else el.removeAttribute('aria-current');
@@ -118,112 +44,50 @@ export function handleRoute(hash) {
     // Fade out transition
     root.classList.add('page-loading');
     root.dataset.routePath = cleanPath;
-    root.dataset.activeView = viewKey;
-
+    root.dataset.activeView = baseRoute;
+    
     // Safety: force-remove page-loading after 3s to prevent stuck blank
     const safetyTimer = setTimeout(() => {
         root.classList.remove('page-loading');
     }, 3000);
-
-    window.setTimeout(async () => {
+    
+    window.setTimeout(() => {
         if (currentToken !== routeToken) return;
         // Clear the safety timer since we're about to remove it ourselves
         clearTimeout(safetyTimer);
-        // Hapus page-loading SEBELUM render — konten & skeleton langsung kelihatan
-        root.classList.remove('page-loading');
-
         try {
             window.scrollTo({ top: 0, behavior: 'instant' });
         } catch {
             window.scrollTo(0, 0);
         }
-
+        
         try {
-            // Dynamic import per route (1.7.1)
-            const loadAndRender = async () => {
-              // Portfolio covers both #portfolio and #watchlist
-              if (viewKey === 'portfolio' || viewKey === 'watchlist') {
-                const mod = viewCache.portfolio || await viewModules.portfolio();
-                viewCache.portfolio = mod;
-                return mod.renderPortfolio(root, viewKey);
-              }
-              if (viewKey === 'paper_trades') {
-                const mod = viewCache.paper_trades || await viewModules.paper_trades();
-                viewCache.paper_trades = mod;
-                return mod.renderPaperTrades(root);
-              }
-              if (viewKey === 'sector' && rest[0]) {
-                const mod = viewCache.sector || await viewModules.sector();
-                viewCache.sector = mod;
-                return mod.renderSector(root, rest[0]);
-              }
-              if (viewKey === 'sector') {
-                const mod = viewCache.sector || await viewModules.sector();
-                viewCache.sector = mod;
-                return mod.renderSectors(root);
-              }
-              if (viewKey === 'stock' && rest[0]) {
-                const mod = viewCache.stock_detail || await viewModules.stock_detail();
-                viewCache.stock_detail = mod;
-                return mod.renderStockDetail(root, rest[0], rest[1] || null);
-              }
-              if (viewKey === 'chart' && rest[0]) {
-                const mod = viewCache.chart || await viewModules.chart();
-                viewCache.chart = mod;
-                return mod.renderChart(root, rest[0]);
-              }
-              if (viewKey === 'screener') {
-                const mod = viewCache.screener || await viewModules.screener();
-                return mod.renderScreener(root);
-              }
-              // Generic handler for any registered view module
-              const loadView = viewModules[viewKey];
-              if (loadView) {
-                const mod = viewCache[viewKey] || await loadView();
-                viewCache[viewKey] = mod;
-                const renderFnName = `render${viewKey.charAt(0).toUpperCase() + viewKey.slice(1).replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`;
-                const renderFn = mod[renderFnName];
-                if (renderFn) return renderFn(root);
-              }
-              // Fallback: 404 page jika route tidak dikenal
-              root.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:16px;padding:40px">
-                  <div style="font-size:64px">🔍</div>
-                  <h2 style="font-size:24px;font-weight:700;color:var(--text-main);margin:0">Halaman Tidak Ditemukan</h2>
-                  <p style="color:var(--text-muted);font-size:14px;margin:0">Route <code style="background:var(--bg-card);padding:2px 8px;border-radius:4px">#${cleanPath}</code> tidak dikenal.</p>
-                  <a href="#dashboard" class="btn btn-primary" style="margin-top:8px">← Kembali ke Dashboard</a>
-                </div>
-              `;
-              return;
-            };
-            await loadAndRender();
-
+            if (baseRoute === 'dashboard') renderDashboard(root);
+            else if (baseRoute === 'stock' && rest[0]) renderStockDetail(root, rest[0]);
+            else if (baseRoute === 'market') renderMarket(root);
+            else if (baseRoute === 'screener') renderScreener(root);
+            else if (baseRoute === 'portfolio' || baseRoute === 'watchlist') renderPortfolio(root, baseRoute);
+            else if (baseRoute === 'news') renderNews(root);
+            else if (baseRoute === 'ai-picks') renderAiPicks(root);
+            else if (baseRoute === 'settings') renderSettings(root);
+            else if (baseRoute === 'help') renderHelp(root);
+            else renderDashboard(root); // Fallback
+            
             // Re-initialize icons for newly injected HTML
-
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
             // View content entrance animation
             if (currentToken === routeToken) root.classList.add('view-content');
-
-        } catch (err) {
-            console.error(`[Router] Failed to render ${viewKey}:`, err);
-            root.classList.remove('page-loading');
-            root.innerHTML = `
-              <div class="empty-state-card" style="min-height:60vh">
-                <div class="empty-state-icon">⚠️</div>
-                <strong class="empty-state-title">Gagal Memuat ${routeToViewKey(baseRoute) || 'Halaman'}</strong>
-                <span class="empty-state-desc">${err.message || 'Terjadi kesalahan saat memuat halaman.'}</span>
-                <button type="button" class="empty-state-action" onclick="location.reload()">
-                  <i data-lucide="refresh-cw" class="lucide-md"></i> Coba Lagi
-                </button>
-              </div>
-            `;
+            
+        } catch (e) {
+            console.error("Routing error:", e);
+            root.innerHTML = `<div class="p-4 text-down">Gagal memuat tampilan.</div>`;
         }
 
         // Fade in
-        if (root.classList.contains('page-loading')) {
-          requestAnimationFrame(() => {
-              if (currentToken === routeToken) root.classList.remove('page-loading');
-          });
-        }
-
+        requestAnimationFrame(() => {
+            if (currentToken === routeToken) root.classList.remove('page-loading');
+        });
+        
     }, 60); // Minimal wait — views render instantly with skeletons
 }

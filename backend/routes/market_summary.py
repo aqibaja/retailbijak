@@ -7,8 +7,16 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from database import OHLCVDaily, Stock, UserSetting, get_db
-from routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
+try:
+    from database import OHLCVDaily, Stock, UserSetting, get_db
+except ModuleNotFoundError:
+    from backend.database import OHLCVDaily, Stock, UserSetting, get_db
+
+try:
+    from routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
+except ModuleNotFoundError:
+    from backend.routes.shared_market_summary_helpers import _load_period_for_ihsg, _parse_sector_snapshot_payload, _safe_pct
+
 router = APIRouter()
 
 
@@ -152,113 +160,3 @@ def get_sector_summary(db: Session = Depends(get_db)):
             'change_pct': round(change_pct, 2),
         })
     return {'count': len(data), 'data': data, 'source': 'db', 'status': 'ok'}
-
-
-@router.get('/api/sectors/{sector_name}/stocks')
-def get_sector_stocks(sector_name: str, db: Session = Depends(get_db)):
-    from sqlalchemy import func
-    sector_name = sector_name.replace('-', ' ').upper()
-    stocks = db.query(Stock).filter(func.upper(Stock.sector) == sector_name).order_by(Stock.market_cap.desc().nullslast()).limit(100).all()
-    tickers = [s.ticker for s in stocks]
-    # Get latest OHLCV for each ticker
-    latest = db.query(
-        OHLCVDaily.ticker,
-        func.max(OHLCVDaily.date).label('max_date')
-    ).filter(OHLCVDaily.ticker.in_(tickers)).group_by(OHLCVDaily.ticker).subquery()
-    prices = db.query(OHLCVDaily).join(
-        latest,
-        (OHLCVDaily.ticker == latest.c.ticker) & (OHLCVDaily.date == latest.c.max_date)
-    ).all()
-    price_map = {p.ticker: {'close': p.close, 'volume': p.volume} for p in prices}
-    # Get previous day close for change calculation
-    prev_data = db.query(OHLCVDaily).filter(
-        OHLCVDaily.ticker.in_(tickers)
-    ).order_by(OHLCVDaily.ticker, OHLCVDaily.date.desc()).all()
-    # Build map: ticker -> [most_recent_close, prev_close]
-    ticker_closes = {}
-    for row in prev_data:
-        if row.ticker not in ticker_closes:
-            ticker_closes[row.ticker] = []
-        if len(ticker_closes[row.ticker]) < 2:
-            ticker_closes[row.ticker].append(row.close)
-    result = []
-    for s in stocks:
-        p = price_map.get(s.ticker, {})
-        close_val = p.get('close')
-        closes = ticker_closes.get(s.ticker, [])
-        change_val = (closes[0] - closes[1]) if len(closes) >= 2 and closes[0] is not None and closes[1] is not None else None
-        result.append({
-            'ticker': s.ticker,
-            'name': s.name or '',
-            'market_cap': s.market_cap,
-            'sector': s.sector,
-            'industry': s.industry,
-            'price': close_val,
-            'change': change_val,
-            'volume': p.get('volume'),
-        })
-    return {'count': len(result), 'data': result, 'sector': sector_name}
-
-
-@router.get('/api/market/heatmap')
-def sector_heatmap(db: Session = Depends(get_db)):
-    """Return sector-level heatmap: per-sector change%, market cap, stock count."""
-    from collections import defaultdict
-
-    # Get all stocks with sector
-    stocks = db.query(Stock).filter(Stock.sector.isnot(None), Stock.sector != '').all()
-
-    # Get latest two OHLCV dates for each ticker to compute change%
-    sector_data = defaultdict(lambda: {'tickers': [], 'total_market_cap': 0.0, 'total_value': 0.0, 'changes': []})
-
-    for s in stocks:
-        sec = s.sector.strip()
-        sec = 'Infrastructure' if sec == 'Infrastructures' else sec  # normalise typo
-        latest = db.query(OHLCVDaily).filter(
-            OHLCVDaily.ticker == s.ticker
-        ).order_by(OHLCVDaily.date.desc()).first()
-        prev = db.query(OHLCVDaily).filter(
-            OHLCVDaily.ticker == s.ticker
-        ).order_by(OHLCVDaily.date.desc()).offset(1).first()
-
-        close = float(latest.close) if latest and latest.close else None
-        prev_close = float(prev.close) if prev and prev.close else None
-        change = (close - prev_close) if close is not None and prev_close is not None else None
-        change_pct = round((change / prev_close) * 100, 2) if change is not None and prev_close else None
-        mc = float(s.market_cap or 0)
-
-        sector_data[sec]['tickers'].append(s.ticker)
-        sector_data[sec]['total_market_cap'] += mc
-        if close is not None:
-            sector_data[sec]['total_value'] += close
-        if change_pct is not None:
-            sector_data[sec]['changes'].append(change_pct)
-
-    result = []
-    for sec, data in sorted(sector_data.items(), key=lambda x: -x[1]['total_market_cap']):
-        avg_change = round(sum(data['changes']) / len(data['changes']), 2) if data['changes'] else None
-        result.append({
-            'name': sec,
-            'change_pct': avg_change,
-            'stock_count': len(data['tickers']),
-            'total_market_cap': round(data['total_market_cap'], 2),
-            'strength': _strength_label(avg_change),
-        })
-
-    return {'count': len(result), 'data': result}
-
-
-def _strength_label(pct):
-    if pct is None:
-        return 'neutral'
-    if pct >= 2:
-        return 'very_strong'
-    if pct >= 1:
-        return 'strong'
-    if pct >= 0:
-        return 'positive'
-    if pct >= -1:
-        return 'negative'
-    if pct >= -2:
-        return 'weak'
-    return 'very_weak'

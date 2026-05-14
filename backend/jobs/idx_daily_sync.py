@@ -6,10 +6,17 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from sqlalchemy.dialects.sqlite import insert
 
-from database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
-from services.idx_api_client import get_idx_client, parse_idx_number
-from services.idx_normalizer import normalize_stock_payload
-from stocks import get_all_tickers
+try:
+    from database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
+    from services.idx_api_client import get_idx_client, parse_idx_number
+    from services.idx_normalizer import normalize_stock_payload
+    from stocks import get_all_tickers
+except ModuleNotFoundError:
+    from backend.database import Fundamental, OHLCVDaily, SessionLocal, Stock, UserSetting
+    from backend.services.idx_api_client import get_idx_client, parse_idx_number
+    from backend.services.idx_normalizer import normalize_stock_payload
+    from backend.stocks import get_all_tickers
+
 logger = logging.getLogger(__name__)
 
 
@@ -197,7 +204,7 @@ def sync_idx_index_chart(client=None, periods: list[str] | None = None) -> dict:
 # ---------------------------------------------------------------------------
 # Multi-day stock summary sync: fetches 30 trading days of OHLCV
 # ---------------------------------------------------------------------------
-def sync_idx_stock_summary(client=None, target_date: date | None = None, fallback_days: int = 7, multi_day: bool = True, max_days: int = 250, progress_cb=None) -> dict:
+def sync_idx_stock_summary(client=None, target_date: date | None = None, fallback_days: int = 7, multi_day: bool = True) -> dict:
     client = client or get_idx_client()
     target_date = target_date or date.today()
 
@@ -257,27 +264,11 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
             ok += 1
         total_days = 1
 
-        # Multi-day backfill: fetch older days beyond what we already have
+        # Multi-day backfill: loop through last 30 calendar days
         if multi_day and ok > 0:
-            # Count how many trading days we already have per ticker
-            from sqlalchemy import text as _sql_text
-            exist_dates = max(
-                db.execute(_sql_text("SELECT COUNT(DISTINCT date) FROM ohlcv_daily")).scalar() or 49,
-                30
-            )
-            # Start from a point PAST our existing data.
-            # Skip `exist_dates` trading days (~exist_dates * 7/5 calendar days)
-            skip_calendar = int(exist_dates * 7 / 5) + 10
-            past_end = data_date - timedelta(days=skip_calendar)
-            past_start = past_end - timedelta(days=int(max_days * 7 / 5) + 10)
-            logger.info(
-                "Multi-day sync: existing=%s days, fetching %s to %s (max_days=%s)",
-                exist_dates, past_start, past_end, max_days
-            )
-            multi = client.get_stock_summary_multi_day(
-                past_start, past_end, max_days=max_days, delay=0.3, progress_cb=progress_cb
-            )
-            day_count = 0
+            start_date = data_date - timedelta(days=70)
+            logger.info("Multi-day sync: fetching %s to %s", start_date, data_date)
+            multi = client.get_stock_summary_multi_day(start_date, data_date, max_days=45)
             for day_str, day_rows in multi.items():
                 if day_str == data_date.isoformat():
                     continue  # already synced above
@@ -294,10 +285,6 @@ def sync_idx_stock_summary(client=None, target_date: date | None = None, fallbac
                         "market_cap": parse_idx_number(row.get("MarketCapital")),
                     })
                     _upsert_ohlcv(db, ticker, row, day_date)
-                day_count += 1
-                # Commit every 5 days to avoid holding write lock too long
-                if day_count % 5 == 0:
-                    db.commit()
                 total_days += 1
 
         db.commit()

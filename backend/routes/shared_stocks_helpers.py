@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from routes.shared_stock_fallbacks import _ticker_base
+try:
+    from routes.shared_stock_fallbacks import _ticker_base
+except ModuleNotFoundError:
+    from backend.routes.shared_stock_fallbacks import _ticker_base
+
 COMPANY_NAMES = {
     "BBCA": "Bank Central Asia Tbk.", "BMRI": "Bank Mandiri (Persero) Tbk.",
     "BBRI": "Bank Rakyat Indonesia Tbk.", "TLKM": "Telkom Indonesia Tbk.", "ASII": "Astra International Tbk.",

@@ -10,7 +10,11 @@ import feedparser
 import requests
 from sqlalchemy.orm import Session
 
-from database import UserSetting
+try:
+    from database import UserSetting
+except ModuleNotFoundError:
+    from backend.database import UserSetting
+
 OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 DEFAULT_STOCK_ANALYSIS_MODEL = 'google/gemma-4-26b-a4b-it'
 DEFAULT_AI_PICKS_MODEL = 'google/gemma-4-26b-a4b-it'
@@ -162,8 +166,7 @@ def _fetch_web_news(ticker: str, company_name: str | None = None) -> list[dict[s
 def build_stock_chat_llm_payload(*, ticker: str, message: str, technical: dict | None = None,
                                    fundamental: dict | None = None, news: list | None = None,
                                    db: Session | None = None,
-                                   company_name: str | None = None,
-                                   chat_history: list[dict] | None = None) -> dict[str, Any]:
+                                   company_name: str | None = None) -> dict[str, Any]:
     """Chat AI untuk stock detail — tanya apa saja tentang saham."""
     config = get_openrouter_config(db)
     model = config['stock_analysis_model']
@@ -216,16 +219,6 @@ def build_stock_chat_llm_payload(*, ticker: str, message: str, technical: dict |
         context_parts.append(f'BERITA DARI DATABASE: {news_str}')
 
     context = '\n'.join(context_parts) if context_parts else 'Data saham terbatas.'
-
-    # Inject chat history for context-aware replies
-    if chat_history:
-        hist_lines = []
-        for h in chat_history[-6:]:  # last 6 messages (3 exchanges)
-            prefix = 'Kamu sebelumnya' if h['role'] == 'assistant' else 'User bertanya'
-            hist_lines.append(f'{prefix}: {h["message"][:200]}')
-        if hist_lines:
-            context += '\n\nRIWAYAT PERCAKAPAN SEBELUMNYA:\n' + '\n'.join(hist_lines)
-            context += '\n\nGunakan riwayat ini untuk jawaban yang kontekstual. Jangan ulangi informasi yang sudah diberikan.'
 
     system_prompt = (
         f'Kamu analis saham IDX yang ramah dan ringkas. Jawab dalam Bahasa Indonesia. '

@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import Any
 import math
 
-from services.scoring import score_swing, score_valuation, score_gorengan, score_dividend
+try:
+    from backend.services.scoring import score_swing, score_valuation, score_gorengan, score_dividend
+except ModuleNotFoundError:
+    from services.scoring import score_swing, score_valuation, score_gorengan, score_dividend
+
+
 PRESET_RULES = {
     "swing_breakout": lambda s: s["swing"]["score"] >= 70,
     "value_cheap": lambda s: s["valuation"]["score"] >= 70,

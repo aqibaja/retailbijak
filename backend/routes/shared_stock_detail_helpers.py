@@ -14,14 +14,11 @@ def _serialize_signal_rows(signals) -> list[dict[str, Any]]:
             'timeframe': signal.timeframe,
             'signal_type': signal.signal_type,
             'signal_date': signal.signal_date.isoformat() if signal.signal_date else None,
-            'price': signal.close,          # Signal model uses 'close' not 'price'
-            'entry_price': signal.close,    # no entry_price field — use close
-            'target_price': None,           # no target_price field in model
+            'price': signal.price,
+            'entry_price': signal.entry_price,
+            'target_price': signal.target_price,
             'stop_loss': signal.stop_loss,
-            'sl_pct': signal.sl_pct,
-            'magic_line': signal.magic_line,
-            'cci': signal.cci,
-            'rationale': None,              # no rationale field in model
+            'rationale': signal.rationale,
         })
     return data
 

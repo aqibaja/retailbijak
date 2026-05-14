@@ -1,32 +1,23 @@
-import { setLanguage, applyTranslations } from './i18n.js';
-
-// 32.3.2 — Fixed: 2 modes only (light/dark), no amoled
-const THEMES = ['dark', 'light'];
+import { setLanguage, applyTranslations } from './i18n.js?v=20260507G';
 
 export function initTheme() {
     const themeToggleBtn = document.getElementById('theme-toggle');
     const langToggleBtn = document.getElementById('lang-toggle');
     const htmlEl = document.documentElement;
 
-    // 32.3.2 — read from canonical key 'retailbijak.theme', fall back to legacy 'retail-theme'
-    // Migrate old 'amoled' to 'dark' for backward compatibility
-    let saved = localStorage.getItem('retailbijak.theme')
-             || localStorage.getItem('retail-theme')
-             || 'dark';
-    if (!THEMES.includes(saved)) {
-        // Migrate legacy 'amoled' to 'dark'
-        saved = saved === 'amoled' ? 'dark' : 'dark';
-    }
+    let isDark = localStorage.getItem('retail-theme') === 'dark' || localStorage.getItem('retail-theme') === null;
     let currentLang = localStorage.getItem('retail-lang') || 'id';
 
     function applyTheme() {
-        htmlEl.setAttribute('data-theme', saved);
-        // 32.3.2 — icon toggle: sun for dark mode, moon for light mode
-        const icons = { dark: '<i data-lucide="sun"></i>', light: '<i data-lucide="moon"></i>' };
-        if (themeToggleBtn) themeToggleBtn.innerHTML = icons[saved] || icons.dark;
-        // 32.3.2 — persist to canonical key
-        localStorage.setItem('retailbijak.theme', saved);
-        localStorage.setItem('retail-theme', saved); // keep legacy key in sync
+        if (isDark) {
+            htmlEl.setAttribute('data-theme', 'dark');
+            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="sun"></i>';
+        } else {
+            htmlEl.setAttribute('data-theme', 'light');
+            if (themeToggleBtn) themeToggleBtn.innerHTML = '<i data-lucide="moon"></i>';
+        }
+        localStorage.setItem('retail-theme', isDark ? 'dark' : 'light');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function updateLangBtn() {
@@ -41,8 +32,7 @@ export function initTheme() {
 
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
-            // 32.3.2 — toggle between dark ↔ light only
-            saved = saved === 'dark' ? 'light' : 'dark';
+            isDark = !isDark;
             applyTheme();
         });
     }
