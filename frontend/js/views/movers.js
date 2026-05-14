@@ -4,6 +4,7 @@
 
 import { apiFetch, showToast } from '../api.js';
 import { nf, pf } from '../utils/format.js';
+import { t } from '../i18n.js';
 
 // ─── IDX Sector List ──────────────────────────────────────────
 const IDX_SECTORS = [

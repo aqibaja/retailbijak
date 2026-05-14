@@ -6,6 +6,7 @@
 
 import { apiFetch, showToast } from '../api.js';
 import { nf, pct, money, fmt } from '../utils/format.js';
+import { t } from '../i18n.js';
 
 // ─── Module State ─────────────────────────────────────────────
 let dividendsData = [];

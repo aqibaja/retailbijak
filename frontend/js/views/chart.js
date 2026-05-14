@@ -4,6 +4,7 @@
  * Fase 30.2.2 — Chart View Enhance: indicators, SR lines, alert shortcut, fullscreen
  */
 import { showToast, apiFetch, fetchDrawings, saveDrawing } from '../api.js';
+import { t } from '../i18n.js';
 
 let activeTicker = null;
 let activeTf = '1M';

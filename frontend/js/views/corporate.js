@@ -3,6 +3,7 @@
  * Fase 28.3.1 — Enhanced with search, filter chips, sort, table view
  */
 import { showToast, apiFetch } from '../api.js';
+import { t } from '../i18n.js';
 
 let activeFilter = 'all';
 let activeSort = 'terbaru';

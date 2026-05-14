@@ -1,6 +1,7 @@
 import { apiFetch, showToast } from '../api.js';
 import { nf, pf, fmtRp } from '../utils/format.js';
 import { observeElements } from '../utils/helpers.js';
+import { t } from '../i18n.js';
 
 let _compareTickers = [];
 let _chartInstance = null;

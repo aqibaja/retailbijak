@@ -3,6 +3,7 @@
  * Fase 28.3.1 — Enhanced with grid cards, filter, sort, sparkline, refresh
  */
 import { showToast, apiFetch } from '../api.js';
+import { t } from '../i18n.js';
 
 let indicesData = [];
 let currentIndex = null;

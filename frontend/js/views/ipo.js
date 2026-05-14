@@ -4,6 +4,7 @@
 
 import { apiFetch, showToast } from '../api.js';
 import { nf, pf, money, fmt } from '../utils/format.js';
+import { t } from '../i18n.js';
 
 // ─── Module State ─────────────────────────────────────────────
 let ipoData = { upcoming: [], past: [] };

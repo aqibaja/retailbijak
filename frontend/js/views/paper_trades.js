@@ -1,6 +1,7 @@
 import { apiFetch, showToast } from '../api.js';
 import { nf, pf, money } from '../utils/format.js';
 import { observeElements } from '../utils/helpers.js';
+import { t } from '../i18n.js';
 
 const INITIAL_CAPITAL = 100_000_000; // Rp 100 juta virtual cash
 

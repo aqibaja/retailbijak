@@ -4,6 +4,7 @@
 
 import { apiFetch, showToast } from '../api.js';
 import { nf, dateFormat } from '../utils/format.js';
+import { t } from '../i18n.js';
 
 const DAY_NAMES  = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 const DAY_SHORT  = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];

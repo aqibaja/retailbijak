@@ -3,6 +3,7 @@
 // 31.1.3 — Added skeleton loading
 
 import { apiFetch, showToast } from '../api.js';
+import { t } from '../i18n.js';
 
 let breadthChart = null;
 

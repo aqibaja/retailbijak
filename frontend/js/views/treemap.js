@@ -1,5 +1,6 @@
 import { apiFetch } from '../api.js';
 import { fmt, pct, fmtRp, nf } from '../utils/format.js';
+import { t } from '../i18n.js';
 
 // ─── Squarify Treemap Algorithm (Bruls/Huizing/van Wijk) ─────
 // Pure JS, zero deps. Produces optimal aspect ratio rectangles.

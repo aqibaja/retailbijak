@@ -3,6 +3,7 @@
  * Fase 28.3.1 — Enhanced: inline form, toggle, filter, delete, validation
  */
 import { apiFetch, showToast } from '../api.js';
+import { t } from '../i18n.js';
 
 let allAlerts     = [];
 let allTriggered  = [];

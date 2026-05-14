@@ -2,6 +2,7 @@ import { apiFetch, showToast } from '../api.js';
 import { nf, pf, money } from '../utils/format.js';
 import { observeElements } from '../utils/helpers.js';
 import { exportCSV } from '../utils/export.js';
+import { t } from '../i18n.js';
 
 // ─── State ──────────────────────────────────────────────
 let activeTab = 'strategy'; // 'strategy' | 'pattern'

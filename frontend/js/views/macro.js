@@ -4,6 +4,7 @@
 // Chart.js line chart per indicator with card layout
 
 import { apiFetch } from '../api.js';
+import { t } from '../i18n.js';
 
 // ─── Module State ──────────────────────────────────────────
 let macroData = [];
