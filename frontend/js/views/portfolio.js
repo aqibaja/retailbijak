@@ -1,5 +1,6 @@
 import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507G';
 import { observeElements } from '../main.js?v=20260507G';
+import { t } from '../i18n.js';
 
 // ─── Focus Trap ──────────────────────────────
 function trapFocus(container) {

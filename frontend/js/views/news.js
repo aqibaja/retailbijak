@@ -1,5 +1,6 @@
 import { fetchNews } from '../api.js?v=20260507G';
 import { observeElements } from '../main.js?v=20260507G';
+import { t } from '../i18n.js';
 
 const NEWS_CACHE_KEY = 'retailbijak.news.cache';
 
@@ -41,14 +42,14 @@ export async function renderNews(root) {
       <section class="market-overview-page stagger-reveal">
         <div class="market-overview-head">
           <div class="market-head-copy">
-            <div class="market-row-kicker">Intel Pasar</div>
-            <h1 class="news-hero-title">Berita & Intelijen Pasar</h1>
-            <p class="news-hero-sub">Ringkasan berita pasar, pengumuman emiten, dan intelijen data IDX dalam satu aliran.</p>
+            <div class="market-row-kicker">${t('news.market_intel')}</div>
+            <h1 class="news-hero-title">${t('news.news_intelligence')}</h1>
+            <p class="news-hero-sub">${t('news.news_summary')}</p>
             <div class="market-meta-rail mt-10">
-              <div class="market-session-pill is-muted" id="news-count">Memuat...</div>
+              <div class="market-session-pill is-muted" id="news-count">${t('common.loading')}</div>
               <div class="news-search-wrap">
-                <input type="text" id="news-search-input" class="news-search" placeholder="Cari berita (BBCA, BMRI...)" />
-                <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="Hapus filter">&times;</button>
+                <input type="text" id="news-search-input" class="news-search" placeholder="${t('news.search_news')}" />
+                <button id="news-search-clear" type="button" class="news-search-clear hidden" aria-label="${t('news.clear_filter')}">&times;</button>
               </div>
             </div>
           </div>
@@ -66,8 +67,8 @@ export async function renderNews(root) {
         </div>
         <div class="market-section-group">
           <div class="market-section-group-head">
-            <div class="market-section-group-title">Aliran Berita <span id="news-filter-label"></span></div>
-            <p>Semua berita dan pengumuman dari berbagai sumber terintegrasi.</p>
+            <div class="market-section-group-title">${t('news.news_stream')} <span id="news-filter-label"></span></div>
+            <p>${t('news.all_news')}</p>
           </div>
           <div id="news-stream" class="news-stream-grid-v2">
             <div class="skeleton skeleton-card skeleton-h-80"></div>
@@ -82,11 +83,11 @@ export async function renderNews(root) {
         const res = await fetchNews(30);
         const items = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data.slice(0, 30) : [];
 
-        document.getElementById('news-count').textContent = `${items.length} ITEM INTEL`;
+        document.getElementById('news-count').textContent = `${items.length} ${t('news.items_intel')}`;
 
         if (!items.length) {
           document.querySelectorAll('[id^=news-]').forEach(el => {
-            if (el.id !== 'news-count') el.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Belum ada berita</h3><p>Berita akan muncul setelah scheduler berjalan.</p></div>';
+            if (el.id !== 'news-count') el.innerHTML = `<div class="empty-state-v2 grid-full"><h3>${t('news.no_news')}</h3><p>${t('news.news_coming')}</p></div>`;
           });
           return;
         }
@@ -148,10 +149,10 @@ export async function renderNews(root) {
               (n.title || '').toUpperCase().includes(q) ||
               (n.summary || '').toUpperCase().includes(q)
             );
-            if (label) label.textContent = filtered.length ? `· filter "${this.value}" (${filtered.length})` : '· tidak ditemukan';
+            if (label) label.textContent = filtered.length ? t('news.filter_label', { query: this.value, count: filtered.length }) : t('news.not_found_label');
             document.getElementById('news-stream').innerHTML = filtered.length
               ? filtered.map((n, i) => streamCardHtml(n, i)).join('')
-              : '<div class="empty-state-v2 grid-full"><h3>Tidak ditemukan</h3><p>Coba kata kunci lain.</p></div>';
+              : `<div class="empty-state-v2 grid-full"><h3>${t('news.not_found')}</h3><p>${t('news.try_keyword')}</p></div>`;
           });
           if (clearBtn) {
             clearBtn.addEventListener('click', function() {
@@ -165,9 +166,9 @@ export async function renderNews(root) {
         observeElements();
 
     } catch (err) {
-        document.getElementById('news-count').textContent = 'GAGAL';
+        document.getElementById('news-count').textContent = t('news.failed');
         const stream = document.getElementById('news-stream');
-        if (stream) stream.innerHTML = '<div class="empty-state-v2 grid-full"><h3>Gagal memuat berita</h3><p>Coba refresh halaman.</p></div>';
+        if (stream) stream.innerHTML = `<div class="empty-state-v2 grid-full"><h3>${t('news.failed_load')}</h3><p>${t('news.try_refresh')}</p></div>`;
     }
 }
 
