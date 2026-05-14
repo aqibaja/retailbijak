@@ -105,6 +105,7 @@
     "dashboard_label": "Dasbor RetailBijak",
     "search_label": "Cari",
     "language_label": "Ganti bahasa",
+    "language_toggle": "ID/EN",
     "theme_label": "Ubah tema",
     "settings_label": "Pengaturan",
     "market_closed": "IDX TUTUP",
@@ -120,5 +121,11 @@
   },
   "loader": {
     "loading_text": "Memuat data pasar..."
+  },
+  "error": {
+    "title": "⚠️ JavaScript Error",
+    "message": "Coba refresh halaman atau hubungi admin.",
+    "browser_unsupported": "⚠️ Browser tidak mendukung ES Modules.",
+    "browser_hint": "Gunakan Chrome/Safari/Edge terbaru."
   }
 }

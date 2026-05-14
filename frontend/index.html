@@ -61,7 +61,7 @@
   <div class="topbar-ticker-wrap"><div class="tape-row" id="running-ticker"></div></div>
    <div class="topbar-actions flex items-center gap-4">
     <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari" data-i18n-title="topbar.search_label"><i data-lucide="search" style="width:18px;"></i></button>
-    <button class="btn btn-icon" id="lang-toggle" aria-label="Ganti bahasa" title="ID/EN" data-i18n-title="topbar.language_label"><span class="lang-toggle-text">ID</span></button>
+    <button class="btn btn-icon" id="lang-toggle" aria-label="Ganti bahasa" data-i18n-title="topbar.language_toggle"><span class="lang-toggle-text">ID</span></button>
     <button class="btn btn-icon" id="theme-toggle" aria-label="Ubah tema" data-i18n-title="topbar.theme_label"><i data-lucide="moon" style="width:18px;"></i></button>
      <a href="#settings" class="btn btn-icon" aria-label="Pengaturan" data-i18n-title="topbar.settings_label"><i data-lucide="settings" style="width:18px;"></i></a>
    </div>
@@ -114,11 +114,22 @@
    if (!el) return;
    e.preventDefault();
    el.classList.remove('page-loading');
-   el.innerHTML = '<div style="padding:20px;color:#f87171;font-family:monospace;font-size:13px;">' +
-     '<strong style="color:#fff;">⚠️ JavaScript Error</strong><br>' +
-     (e.message || e.error?.message || String(e)) +
-     '<br><small style="color:#94a3b8;">' + (e.filename||'') + ':' + (e.lineno||'') + ':' + (e.colno||'') + '</small>' +
-     '<br><small style="color:#fbbf24;margin-top:8px;display:block;">Coba refresh halaman atau hubungi admin.</small></div>';
+   // Dynamically import i18n to get t() function
+   import('./js/i18n.js').then(module => {
+     const t = module.t;
+     el.innerHTML = '<div style="padding:20px;color:#f87171;font-family:monospace;font-size:13px;">' +
+       '<strong style="color:#fff;">' + t('error.title') + '</strong><br>' +
+       (e.message || e.error?.message || String(e)) +
+       '<br><small style="color:#94a3b8;">' + (e.filename||'') + ':' + (e.lineno||'') + ':' + (e.colno||'') + '</small>' +
+       '<br><small style="color:#fbbf24;margin-top:8px;display:block;">' + t('error.message') + '</small></div>';
+   }).catch(() => {
+     // Fallback if i18n fails to load
+     el.innerHTML = '<div style="padding:20px;color:#f87171;font-family:monospace;font-size:13px;">' +
+       '<strong style="color:#fff;">⚠️ JavaScript Error</strong><br>' +
+       (e.message || e.error?.message || String(e)) +
+       '<br><small style="color:#94a3b8;">' + (e.filename||'') + ':' + (e.lineno||'') + ':' + (e.colno||'') + '</small>' +
+       '<br><small style="color:#fbbf24;margin-top:8px;display:block;">Coba refresh halaman atau hubungi admin.</small></div>';
+   });
   });
   // Safety: force-remove page-loading setelah 5 detik (anti stuck blank)
   setTimeout(function() {
@@ -129,10 +140,19 @@
  <script type="module" src="js/main.js?v=20260507G"></script>
  <script nomodule>
   // Fallback untuk browser tanpa ES module support
-  document.getElementById('app-root').innerHTML =
-    '<div style="padding:20px;color:#f87171;font-family:sans-serif;">' +
-    '<strong>⚠️ Browser tidak mendukung ES Modules.</strong><br>' +
-    '<small>Gunakan Chrome/Safari/Edge terbaru.</small></div>';
+  import('./js/i18n.js').then(module => {
+    const t = module.t;
+    document.getElementById('app-root').innerHTML =
+      '<div style="padding:20px;color:#f87171;font-family:sans-serif;">' +
+      '<strong>' + t('error.browser_unsupported') + '</strong><br>' +
+      '<small>' + t('error.browser_hint') + '</small></div>';
+  }).catch(() => {
+    // Fallback if i18n fails to load
+    document.getElementById('app-root').innerHTML =
+      '<div style="padding:20px;color:#f87171;font-family:sans-serif;">' +
+      '<strong>⚠️ Browser tidak mendukung ES Modules.</strong><br>' +
+      '<small>Gunakan Chrome/Safari/Edge terbaru.</small></div>';
+  });
  </script>
 </body>
 </html>
