@@ -1,10 +1,11 @@
 import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507G';
 import { observeElements } from '../main.js?v=20260507G';
+import { t } from '../i18n.js';
 
 const renderEmptyState = ({
-  title = 'Belum ada hasil scan',
-  body = 'Pilih timeframe lalu klik Jalankan Pemindaian SwingAQ untuk melihat sinyal beli institusional secara live.',
-  action = 'Pengurutan tersedia setelah hasil scan muncul.',
+  title = t('screener.not_scanned'),
+  body = t('screener.run_scan'),
+  action = t('screener.sort_cci'),
 } = {}) => `
   <div class="empty-state-v2">
     <div class="empty-icon"><i data-lucide="radar" class="lucide-lg"></i></div>
@@ -69,35 +70,35 @@ export async function renderScreener(root) {
       <section class="stagger-reveal">
         <div class="mb-6 screener-hero">
           <div class="screener-kicker">SwingAQ Intelligence</div>
-          <h1 class="text-3xl strong mb-2 tracking-tight">Pemindai Akumulasi Institusi</h1>
+          <h1 class="text-3xl strong mb-2 tracking-tight">${t('screener.title')}</h1>
         </div>
         <div class="scanner-layout">
           <div class="scanner-form flex-col gap-5">
-            <div class="scanner-header-text">PUSAT KONTROL</div>
-            <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">Timeframe:</span><span class="badge badge-primary">Harian (1D)</span></div>
-            <p class="scanner-form-note">Jalankan Pemindaian SwingAQ untuk mengecek kandidat akumulasi institusi berbasis stream live backend.</p>
-            <button id="btn-run-screener" type="button" class="scanner-btn-primary">Jalankan Pemindaian SwingAQ</button>
+            <div class="scanner-header-text">${t('screener.control_center')}</div>
+            <div class="flex items-center gap-2"><span class="text-xs text-dim uppercase strong">${t('screener.timeframe')}:</span><span class="badge badge-primary">${t('screener.daily')}</span></div>
+            <p class="scanner-form-note">${t('screener.run_scan')}</p>
+            <button id="btn-run-screener" type="button" class="scanner-btn-primary">${t('screener.run_scan')}</button>
             <div id="screener-progress" class="hidden panel-lite p-4 scanner-progress">
-              <div class="flex justify-between text-xs mb-2"><span id="sp-text">Sedang menganalisis...</span><span id="sp-percent">0%</span></div>
+              <div class="flex justify-between text-xs mb-2"><span id="sp-text">${t('screener.analyzing')}</span><span id="sp-percent">0%</span></div>
               <div class="screener-progress-track"><div id="sp-fill" class="screener-progress-fill"></div></div>
             </div>
           </div>
           <div class="scanner-results flex-col">
             <div class="flex justify-between items-center p-5 border-b border-subtle">
               <div class="flex items-center gap-3">
-                <h3 class="text-xs strong uppercase m-0 screener-signal-title">Sinyal Live</h3>
-                <span class="badge" id="screener-count">BELUM SCAN</span>
+                <h3 class="text-xs strong uppercase m-0 screener-signal-title">${t('screener.live_signals')}</h3>
+                <span class="badge" id="screener-count">${t('screener.not_scanned')}</span>
               </div>
               <div id="screener-toolbar" class="flex gap-2 screener-toolbar hidden">
                 <div class="scanner-control-stack">
                   <select id="screener-sort" class="scanner-select screener-control-select">
-                      <option value="cci">Urut: CCI</option>
-                      <option value="volume">Urut: Volume</option>
-                      <option value="ma">Urut: MA</option>
+                      <option value="cci">${t('screener.sort_cci')}</option>
+                      <option value="volume">${t('screener.sort_volume')}</option>
+                      <option value="ma">${t('screener.sort_ma')}</option>
                   </select>
                 </div>
                 <div class="scanner-control-stack">
-                  <input type="text" id="screener-search" placeholder="Cari kode..." class="scanner-select screener-control-search">
+                  <input type="text" id="screener-search" placeholder="${t('screener.search_code')}" class="scanner-select screener-control-search">
                 </div>
               </div>
             </div>
@@ -107,8 +108,8 @@ export async function renderScreener(root) {
       </section>
       <section class="market-section-group market-section-group-heatmap mt-6">
         <header class="market-section-group-head">
-          <div class="market-section-group-title">Pemindai Saham TradingView</div>
-          <p>Screen saham IDX secara real-time — filter berdasarkan performa, volume, fundamental, dan lainnya.</p>
+          <div class="market-section-group-title">${t('screener.tv_screener')}</div>
+          <p>${t('screener.tv_screener_desc')}</p>
         </header>
         <div id="tv-screener" class="market-heatmap-wrap" style="min-height:580px;"></div>
       </section>`;
@@ -165,9 +166,9 @@ function renderList(results) {
         return;
     } else {
         contentArea.innerHTML = renderEmptyState({
-            title: 'Tidak ada sinyal terdeteksi',
-            body: 'Scan selesai tetapi belum ada kandidat yang lolos rule SwingAQ pada timeframe ini.',
-            action: 'Coba jalankan scan lagi nanti.',
+            title: t('screener.no_signals'),
+            body: t('screener.no_candidates'),
+            action: t('screener.try_again'),
         });
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -192,7 +193,7 @@ function runScreener() {
     if (toolbar) toolbar.style.display = 'none';
     const searchInput = document.getElementById('screener-search');
     if (searchInput) searchInput.value = '';
-    countBadge.textContent = 'MEMINDAI...';
+    countBadge.textContent = t('screener.scanning');
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
     progBox.style.display = 'block';
@@ -222,9 +223,9 @@ function runScreener() {
             btn.disabled = false;
             btn.classList.remove('btn-loading');
             progBox.style.display = 'none';
-            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERDETEKSI` : 'TIDAK ADA SINYAL';
+            countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} ${t('screener.detected')}` : t('screener.no_signals');
             renderList(currentResults);
-            showToast(`Pemindaian selesai. Ditemukan ${currentResults.length} sinyal.`, 'success');
+            showToast(t('screener.scan_complete', { count: currentResults.length }), 'success');
             scanEventSource.close();
             scanEventSource = null;
         }
@@ -240,14 +241,14 @@ function runScreener() {
         btn.disabled = false;
         btn.classList.remove('btn-loading');
         progBox.style.display = 'none';
-        countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} TERPUTUS` : 'GAGAL';
+        countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} ${t('screener.disconnected')}` : t('screener.failed');
         if (currentResults.length > 0) {
             // Keep partial results visible
             renderList(currentResults);
-            showToast('Pemindaian terputus. Hasil parsial ditampilkan.', 'warning');
+            showToast(t('screener.scan_interrupted'), 'warning');
         } else {
             renderList([]);
-            showToast('Pemindaian gagal.', 'error');
+            showToast(t('screener.scan_failed'), 'error');
         }
     };
 }
