@@ -811,7 +811,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .scanner-select:disabled,
 .scanner-btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none;
@@ -1091,14 +1091,14 @@ button, input, select { font-family: inherit; border: none; background: none; co
 
 /* Disabled states */
 .btn:disabled, button:disabled, input:disabled, select:disabled, textarea:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
   color: var(--text-dim);
 }
 .btn:disabled:hover, button:disabled:hover, a[aria-disabled="true"] {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
   transform: none !important;
 }
@@ -3349,7 +3349,7 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 ::selection { background: rgba(16,185,129,.25); color: #fff; }
 html[data-theme="light"] ::selection { background: rgba(16,185,129,.2); color: var(--text-main); }
 /* Consistent placeholder across all inputs */
-::placeholder { color: var(--text-dim); font-size: 12px; opacity: .75; }
+::placeholder { color: var(--text-dim); font-size: 12px; opacity: 1; }
 /* Smooth theme transition on themed containers */
 body, .panel, .topbar, .sidebar, .bottom-nav, .market-card, .stock-side-panel,
 .stock-chart-card, .search-overlay, .modal-panel {
