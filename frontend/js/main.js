@@ -1,7 +1,7 @@
 import { handleRoute } from './router.js?v=20260507G';
 import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507G';
 import { initTheme } from './theme.js?v=20260507G';
-import { initI18n } from './i18n.js?v=20260507G';
+import { initI18n, t } from './i18n.js?v=20260507G';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -97,7 +97,7 @@ function setupSearchOverlay() {
        currentItems = items;
        activeIndex = items.length ? 0 : -1;
        if (!items.length) {
-           suggestions.innerHTML = '<div class="text-sm text-muted p-3">Tidak ada hasil yang benar-benar cocok.</div>';
+           suggestions.innerHTML = `<div class="text-sm text-muted p-3">${t('empty_states.no_search_results')}</div>`;
            return;
        }
        const groups = { ticker: [], company: [], sector: [] };
@@ -112,7 +112,7 @@ function setupSearchOverlay() {
           <span class="search-suggestion-label">${escapeHtml(item.bucket || item.source || '')}</span>
         </a>`;
        suggestions.innerHTML = [
-        groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Kode Saham</div>${groups.ticker.map(renderRow).join('')}` : '',
+        groups.ticker.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">${t('search.search_dialog_label')}</div>${groups.ticker.map(renderRow).join('')}` : '',
         groups.company.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Emiten</div>${groups.company.map(renderRow).join('')}` : '',
         groups.sector.length ? `<div class="px-3 pt-2 pb-1 text-xs uppercase text-dim strong">Sektor</div>${groups.sector.map(renderRow).join('')}` : '',
 ].filter(Boolean).join('');
@@ -121,7 +121,7 @@ function setupSearchOverlay() {
    const refreshSuggestions = async () => {
        const q = input.value.trim();
        if (!q) {
-           suggestions.innerHTML = '<div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div>';
+           suggestions.innerHTML = `<div class="text-sm text-muted p-3">${t('search.search_input_hint')}</div>`;
            currentItems = [];
            activeIndex = -1;
            return;
@@ -237,11 +237,11 @@ async function refreshTopbarMarket() {
            if (dotEl && txtEl) {
                const isOpen = data.status === 'ok';
                dotEl.classList.toggle('live', isOpen);
-               txtEl.textContent = isOpen ? 'IDX BUKA' : 'IDX TUTUP';
+               txtEl.textContent = isOpen ? t('status_messages.market_open') : t('status_messages.market_closed');
            }
        }
    } catch (e) {
-       console.warn('Gagal memperbarui topbar', e);
+       console.warn(t('errors.failed_load'), e);
    }
 }
 // Running Ticker Setup — data dari API (tetap di website)
@@ -285,7 +285,7 @@ function setupNetworkStatus() {
   const el = document.getElementById('network-status');
   if (!el) return;
   const show = (online) => {
-    el.textContent = online ? 'Koneksi tersambung kembali.' : 'Koneksi terputus — beberapa fitur mungkin tidak berfungsi.';
+    el.textContent = online ? t('status_messages.reconnected') : t('status_messages.disconnected');
     el.className = `network-status ${online ? 'online' : ''}`;
     el.classList.remove('hidden');
     if (online) setTimeout(() => el.classList.add('hidden'), 3000);

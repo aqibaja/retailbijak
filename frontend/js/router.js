@@ -8,6 +8,7 @@ import { renderSettings } from './views/settings.js?v=20260507G';
 import { renderHelp } from './views/help.js?v=20260507G';
 import { renderAiPicks } from './views/ai_picks.js?v=20260507G';
 import { clearViewTimers } from './main.js?v=20260507G';
+import { t } from './i18n.js?v=20260507G';
 
 let routeToken = 0;
 
@@ -81,7 +82,7 @@ export function handleRoute(hash) {
             
         } catch (e) {
             console.error("Routing error:", e);
-            root.innerHTML = `<div class="p-4 text-down">Gagal memuat tampilan.</div>`;
+            root.innerHTML = `<div class="p-4 text-down">${t('errors.view_load_failed')}</div>`;
         }
 
         // Fade in

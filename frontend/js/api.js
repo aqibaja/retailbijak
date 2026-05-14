@@ -1,5 +1,7 @@
 const API_BASE = '/api';
 
+import { t } from './i18n.js?v=20260507G';
+
 // ─── Fetch Wrappers ────────────────────────────────────
 export async function apiFetch(endpoint, options = {}) {
     try {
@@ -16,7 +18,7 @@ export async function apiFetch(endpoint, options = {}) {
         console.error(`API error: ${endpoint}`, e);
         // Only show toast for non-abort errors (timeout = silent)
         if (e.name !== 'AbortError') {
-            showToast('Gagal mengambil data. Coba lagi.', 'error', 3000);
+            showToast(t('errors.failed_load'), 'error', 3000);
         }
         return null;
     }
@@ -170,7 +172,7 @@ export function showToast(message, type = 'info', duration = 4000) {
         <div class="toast-body">
             <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ'}</span>
             <span class="toast-message">${message}</span>
-            <button class="toast-close-btn" aria-label="Tutup">&times;</button>
+            <button class="toast-close-btn" aria-label="${t('common.close')}">&times;</button>
         </div>
         <div class="toast-progress" style="animation-duration:${duration}ms"></div>
     `;
