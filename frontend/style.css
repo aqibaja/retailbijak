@@ -1175,7 +1175,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .col-span-3 { grid-column: span 3; }
 
 /* ================= LAYOUT ================= */
-.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: rgba(11, 18, 32, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); padding: 0 24px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px; z-index: 1000; transition: background var(--duration-normal) var(--ease-out); }
+.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: rgba(11, 18, 32, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-subtle); padding: 0 var(--gap-xl) 0 var(--gap-md); display: flex; justify-content: space-between; align-items: center; gap: var(--gap-lg); z-index: 1000; transition: background var(--duration-normal) var(--ease-out); }
 .topbar.scrolled { background: rgba(8, 17, 31, 0.95); border-bottom-color: rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
 /* Scroll Progress Bar */
 .topbar-progress {
@@ -1300,13 +1300,13 @@ button, input, select { font-family: inherit; border: none; background: none; co
 .sidebar {
   position: fixed; top: var(--header-h); left: 0; bottom: 0; width: var(--sidebar-w);
   background: rgba(11, 18, 32, 0.95); border-right: 1px solid var(--border-subtle);
-  display: flex; flex-direction: column; align-items: center; padding: 24px 0;
+  display: flex; flex-direction: column; align-items: center; padding: var(--gap-2xl) 0;
   z-index: 900; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 
 .main-content {
   margin-left: 64px; margin-top: var(--header-h);
-  padding: 32px 32px 48px; min-height: calc(100vh - var(--header-h));
+  padding: var(--gap-2xl) var(--gap-2xl) var(--gap-3xl); min-height: calc(100vh - var(--header-h));
   position: relative;
   width: calc(100% - 64px);
 }
@@ -1577,7 +1577,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 /* Navigation Items */
 .nav-item {
   position: relative; display: flex; justify-content: center; align-items: center;
-  min-width: 44px; min-height: 44px; border-radius: 10px; margin-bottom: 12px;
+  min-width: 44px; min-height: 44px; border-radius: 10px; margin-bottom: var(--gap-md);
   color: var(--text-muted); transition: all var(--duration-fast) var(--ease-out);
   cursor: pointer;
 }
@@ -1618,8 +1618,8 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 
 /* Chips & Badges */
 .badge {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-sm);
+  padding: var(--gap-xs) var(--gap-sm); border-radius: 6px; font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--border-strong);
   background: var(--bg-panel); color: var(--text-main);
   transition: all .2s;
@@ -1659,15 +1659,15 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   background: var(--bg-elevated); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px;
   overflow: hidden; display: flex; flex-direction: column; height: 100%;
   text-decoration: none; position: relative;
-  transition: transform var(--duration-normal) var(--ease-out), 
-              border-color var(--duration-normal) var(--ease-out), 
-              box-shadow var(--duration-normal) var(--ease-out);
-  cursor: pointer;
+  transition: transform .3s, border-color .3s, box-shadow .3s;
 }
 .news-card:hover {
-  transform: translateY(-6px); 
-  border-color: rgba(99,102,241,0.3);
-  box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 24px rgba(99,102,241,0.12);
+  transform: translateY(-4px); border-color: rgba(99,102,241,0.3);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(99,102,241,0.1);
+}
+.news-meta {
+  margin-top: auto; padding-top: var(--gap-lg); font-size: 12px; color: var(--text-muted);
+  display: flex; align-items: center; gap: var(--gap-sm); font-weight: 500;
 }
 .news-card:focus-within {
   border-color: rgba(16,185,129,0.3);
