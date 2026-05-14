@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Contrast Verification Test</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding: 40px 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .test-container {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      color: var(--text-main);
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .theme-toggle button {
+      padding: 8px 16px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 150ms ease-out;
+    }
+
+    .theme-toggle button.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .theme-toggle button:hover {
+      border-color: var(--primary-color);
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .color-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      transition: all 150ms ease-out;
+    }
+
+    .color-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .color-swatch {
+      width: 100%;
+      height: 80px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .color-name {
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .color-hex {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .contrast-tests {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .contrast-test {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 8px;
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+    }
+
+    .contrast-test.pass {
+      border-left: 3px solid var(--up-color);
+    }
+
+    .contrast-test.fail {
+      border-left: 3px solid var(--down-color);
+    }
+
+    .contrast-icon {
+      font-size: 14px;
+      min-width: 20px;
+    }
+
+    .contrast-label {
+      flex: 1;
+      color: var(--text-muted);
+    }
+
+    .contrast-ratio {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-main);
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .contrast-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+
+    .contrast-table thead {
+      background: var(--bg-elevated);
+      border-bottom: 2px solid var(--border-strong);
+    }
+
+    .contrast-table th {
+      padding: 12px;
+      text-align: left;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .contrast-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .contrast-table code {
+      background: var(--bg-base);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      color: var(--accent-text);
+    }
+
+    .contrast-table strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .summary-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .summary-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 4px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .section-title {
+      color: var(--text-main);
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 32px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge.pass {
+      background: rgba(52, 211, 153, 0.2);
+      color: var(--up-color);
+    }
+
+    .status-badge.fail {
+      background: rgba(248, 113, 113, 0.2);
+      color: var(--down-color);
+    }
+
+    .status-badge.aaa {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--primary-color);
+    }
+
+    @media (prefers-color-scheme: light) {
+      html[data-theme="light"] .color-swatch {
+        color: rgba(15, 23, 42, 0.5);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🎨 Color Contrast Verification</h1>
+    <p class="subtitle">WCAG 2.1 Accessibility Compliance Testing</p>
+
+    <div class="theme-toggle">
+      <button class="active" data-theme="dark">Dark Theme</button>
+      <button data-theme="light">Light Theme</button>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="section-title">Text Colors vs Background</div>
+    <div class="contrast-table-container" id="textContrastTable"></div>
+
+    <div class="section-title">Trading Accent Colors vs Background</div>
+    <div class="contrast-table-container" id="tradingContrastTable"></div>
+
+    <div class="section-title">Color Palette Swatches</div>
+    <div class="color-grid" id="colorGrid"></div>
+  </div>
+
+  <script src="verify_contrast.js"></script>
+  <script>
+    // Color palettes from style.css
+    const darkThemeColors = {
+      'Text Main': '#e5edf8',
+      'Text Muted': '#94a3b8',
+      'Text Dim': '#6b7a8f',
+      'Primary': '#10b981',
+      'Primary Dark': '#059669',
+      'Accent Indigo': '#6366f1',
+      'Accent Text': '#a5b4fc',
+      'Up Color': '#34d399',
+      'Down Color': '#f87171',
+      'Warn Color': '#fcd34d',
+      'Danger Text': '#fca5a5'
+    };
+
+    const lightThemeColors = {
+      'Text Main': '#0f172a',
+      'Text Muted': '#475569',
+      'Text Dim': '#64748b',
+      'Primary': '#10b981',
+      'Primary Dark': '#059669',
+      'Accent Indigo': '#6366f1',
+      'Accent Text': '#4f46e5',
+      'Up Color': '#059669',
+      'Down Color': '#dc2626',
+      'Warn Color': '#d97706',
+      'Danger Text': '#dc2626'
+    };
+
+    const darkBg = '#0b1220';
+    const lightBg = '#f4f7fc';
+
+    let currentTheme = 'dark';
+
+    // Theme toggle
+    document.querySelectorAll('.theme-toggle button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelectorAll('.theme-toggle button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateAllTests();
+      });
+    });
+
+    function updateAllTests() {
+      const colors = currentTheme === 'dark' ? darkThemeColors : lightThemeColors;
+      const bg = currentTheme === 'dark' ? darkBg : lightBg;
+      
+      renderSummary(colors, bg);
+      renderTextContrastTable(colors, bg);
+      renderTradingContrastTable(colors, bg);
+      renderColorGrid(colors, bg);
+    }
+
+    function renderSummary(colors, bg) {
+      let passCount = 0;
+      let aaaCount = 0;
+
+      for (const [name, hex] of Object.entries(colors)) {
+        const ratio = getContrastRatio(hex, bg);
+        if (ratio >= 4.5) passCount++;
+        if (ratio >= 7) aaaCount++;
+      }
+
+      const summary = document.getElementById('summary');
+      summary.innerHTML = `
+        <div class="summary-card">
+          <div class="summary-value">${passCount}/${Object.keys(colors).length}</div>
+          <div class="summary-label">WCAG AA Compliant</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value">${aaaCount}/${Object.keys(colors).length}</div>
+          <div class="summary-label">WCAG AAA Compliant</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value">${currentTheme === 'dark' ? 'Dark' : 'Light'}</div>
+          <div class="summary-label">Current Theme</div>
+        </div>
+      `;
+    }
+
+    function renderTextContrastTable(colors, bg) {
+      const textColors = {
+        'Text Main': colors['Text Main'],
+        'Text Muted': colors['Text Muted'],
+        'Text Dim': colors['Text Dim'],
+        'Accent Text': colors['Accent Text']
+      };
+
+      let html = '<table class="contrast-table"><thead><tr><th>Color</th><th>Hex</th><th>Ratio</th><th>AA (4.5:1)</th><th>AAA (7:1)</th></tr></thead><tbody>';
+
+      for (const [name, hex] of Object.entries(textColors)) {
+        const ratio = getContrastRatio(hex, bg);
+        const aaPass = ratio >= 4.5 ? '✅' : '❌';
+        const aaaPass = ratio >= 7 ? '✅' : '❌';
+
+        html += `<tr>
+          <td>${name}</td>
+          <td><code>${hex}</code></td>
+          <td><strong>${ratio.toFixed(2)}:1</strong></td>
+          <td>${aaPass}</td>
+          <td>${aaaPass}</td>
+        </tr>`;
+      }
+
+      html += '</tbody></table>';
+      document.getElementById('textContrastTable').innerHTML = html;
+    }
+
+    function renderTradingContrastTable(colors, bg) {
+      const tradingColors = {
+        'Up Color': colors['Up Color'],
+        'Down Color': colors['Down Color'],
+        'Warn Color': colors['Warn Color'],
+        'Primary': colors['Primary']
+      };
+
+      let html = '<table class="contrast-table"><thead><tr><th>Color</th><th>Hex</th><th>Ratio</th><th>AA (4.5:1)</th><th>AAA (7:1)</th></tr></thead><tbody>';
+
+      for (const [name, hex] of Object.entries(tradingColors)) {
+        const ratio = getContrastRatio(hex, bg);
+        const aaPass = ratio >= 4.5 ? '✅' : '❌';
+        const aaaPass = ratio >= 7 ? '✅' : '❌';
+
+        html += `<tr>
+          <td>${name}</td>
+          <td><code>${hex}</code></td>
+          <td><strong>${ratio.toFixed(2)}:1</strong></td>
+          <td>${aaPass}</td>
+          <td>${aaaPass}</td>
+        </tr>`;
+      }
+
+      html += '</tbody></table>';
+      document.getElementById('tradingContrastTable').innerHTML = html;
+    }
+
+    function renderColorGrid(colors, bg) {
+      const grid = document.getElementById('colorGrid');
+      grid.innerHTML = '';
+
+      for (const [name, hex] of Object.entries(colors)) {
+        const ratio = getContrastRatio(hex, bg);
+        const aaPass = ratio >= 4.5;
+        const aaaPass = ratio >= 7;
+
+        const card = document.createElement('div');
+        card.className = 'color-card';
+        card.innerHTML = `
+          <div class="color-swatch" style="background-color: ${hex}; color: ${hex};">
+            ${hex}
+          </div>
+          <div class="color-name">${name}</div>
+          <div class="color-hex">${hex}</div>
+          <div class="contrast-tests">
+            <div class="contrast-test ${aaPass ? 'pass' : 'fail'}">
+              <span class="contrast-icon">${aaPass ? '✅' : '❌'}</span>
+              <span class="contrast-label">WCAG AA</span>
+              <span class="contrast-ratio">${ratio.toFixed(2)}:1</span>
+            </div>
+            <div class="contrast-test ${aaaPass ? 'pass' : 'fail'}">
+              <span class="contrast-icon">${aaaPass ? '✅' : '❌'}</span>
+              <span class="contrast-label">WCAG AAA</span>
+              <span class="contrast-ratio">${ratio.toFixed(2)}:1</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+    }
+
+    // Initial render
+    updateAllTests();
+  </script>
+</body>
+</html>
