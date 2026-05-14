@@ -217,5 +217,259 @@
     "message": "Coba refresh halaman atau hubungi admin.",
     "browser_unsupported": "⚠️ Browser tidak mendukung ES Modules.",
     "browser_hint": "Gunakan Chrome/Safari/Edge terbaru."
+  },
+  "page_titles": {
+    "ai_picks": "RetailBijak — AI Picks",
+    "alerts": "RetailBijak — Alert Harga",
+    "backtest": "RetailBijak — Backtesting",
+    "compare": "RetailBijak — Perbandingan Saham",
+    "dividend": "RetailBijak — Dividend Dashboard & Kalkulator",
+    "help": "RetailBijak — Bantuan",
+    "indices": "RetailBijak — Indeks",
+    "ipo": "RetailBijak — IPO Pipeline Tracker",
+    "market": "RetailBijak — Pasar",
+    "movers": "RetailBijak — Market Movers",
+    "news": "RetailBijak — Berita",
+    "paper_trades": "RetailBijak — Paper Trading",
+    "screener": "RetailBijak — Pemindai",
+    "settings": "RetailBijak — Pengaturan",
+    "treemap": "RetailBijak — Treemap Pasar"
+  },
+  "buttons": {
+    "factor_expand": "▸ Faktor",
+    "factor_collapse": "▾ Faktor",
+    "loading": "Memuat...",
+    "saving": "Menyimpan…",
+    "save": "Simpan",
+    "processing": "Memproses…",
+    "run": "Jalankan",
+    "refresh_loading": "⟳ Memuat...",
+    "refresh": "⟳ Refresh",
+    "opening": "Membuka...",
+    "open_position": "Buka Posisi",
+    "close": "✕ Tutup",
+    "show": "🔄 Tampilkan",
+    "loading_spinner": "⏳...",
+    "rotate": "🤖 Rotasi",
+    "close_table": "✕ Tutup Tabel Saham",
+    "toggle_theme": "S / T",
+    "save_config": "Simpan Konfigurasi",
+    "watched": "✓ Dipantau",
+    "watch": "+ Pantau"
+  },
+  "placeholders": {
+    "example_stock": "Contoh: BBCA",
+    "example_price": "Contoh: 9500",
+    "stock_code": "BBCA",
+    "search_stocks": "Ketik kode saham (BBCA, BMRI...)",
+    "search_company": "Cari ticker atau nama perusahaan…",
+    "example_stocks": "Contoh: BBCA, TLKM, ASII",
+    "search_constituents": "Cari konstituen…",
+    "auto_from_data": "Otomatis dari data",
+    "strategy_notes": "Strategi, alasan, dll",
+    "search_code_name": "🔍 Cari kode/nama...",
+    "search_sector": "🔍 Cari sektor...",
+    "api_key": "sk-or-...",
+    "api_url": "https://retailbijak.rich27.my.id",
+    "app_name": "RetailBijak",
+    "search_ticker": "Cari ticker…"
+  },
+  "errors": {
+    "unknown_error": "Error tidak diketahui",
+    "failed_load": "Gagal memuat",
+    "backtest_no_response": "Backtest engine tidak merespon.",
+    "backtest_failed": "Gagal menjalankan backtest",
+    "backtest_pattern_no_response": "Backtest pola tidak merespon.",
+    "backtest_pattern_failed": "Gagal menjalankan backtest pola",
+    "no_data": "Tidak Ada Data",
+    "insufficient_data": "Tidak cukup data historis...",
+    "breadth_load_failed": "⚠️ Gagal memuat data breadth",
+    "chart_library_not_loaded": "Chart library not loaded",
+    "data_unavailable": "Data tidak tersedia",
+    "no_price_data": "Tidak ada data harga untuk timeframe ini.",
+    "chart_load_failed": "Gagal memuat chart",
+    "try_other_timeframe": "Coba timeframe lain.",
+    "chart_data_load_failed": "Gagal memuat data",
+    "compare_data_failed": "Gagal memuat data",
+    "compare_data_unavailable": "Data perbandingan tidak tersedia...",
+    "compare_load_failed": "Gagal memuat",
+    "compare_error": "Terjadi kesalahan saat mengambil data...",
+    "chart_render_failed": "Gagal render chart",
+    "view_load_failed": "Gagal memuat tampilan.",
+    "sector_error": "Gagal: {{error}}",
+    "no_sector_stocks": "Tidak ada data saham untuk sektor ini.",
+    "signal_load_failed": "Gagal memuat sinyal. Coba refresh.",
+    "no_related_news": "Belum ada berita terkait",
+    "news_not_available": "Berita spesifik untuk saham ini...",
+    "no_announcements": "Belum ada pengumuman",
+    "announcements_not_available": "Pengumuman IDX untuk saham ini...",
+    "treemap_unavailable": "Data Belum Tersedia",
+    "try_again_later": "Silakan coba lagi nanti.",
+    "treemap_load_failed": "Gagal Memuat Treemap",
+    "treemap_error": "Terjadi kesalahan saat mengambil data..."
+  },
+  "empty_states": {
+    "loading_picks": "Memuat pick unggulan",
+    "loading_picks_desc": "Menarik kandidat untuk mode...",
+    "no_candidates": "Belum ada kandidat",
+    "no_candidates_desc": "Mode ini belum menemukan kandidat...",
+    "load_failed": "Gagal memuat",
+    "connection_error": "Koneksi atau API sedang bermasalah...",
+    "no_alerts": "Belum ada alert. Buat alert pertama kamu!",
+    "no_alerts_filtered": "Tidak ada alert",
+    "no_alerts_filtered_desc": "Tidak ada alert untuk filter...",
+    "run_backtest": "Jalankan Backtest",
+    "run_backtest_desc": "Pilih saham dan strategi...",
+    "backtest_pattern": "Backtest Pola Candlestick",
+    "backtest_pattern_desc": "Klik \"Jalankan Backtest Pola\"...",
+    "no_trades": "Tidak Ada Trade",
+    "no_trades_desc": "Strategi {{strategies}}...",
+    "select_date": "Pilih tanggal untuk melihat event",
+    "no_search_results": "Tidak ada hasil yang benar-benar cocok.",
+    "search_hint": "Ketik kode saham atau nama emiten.",
+    "open_positions_failed": "Gagal memuat posisi terbuka",
+    "history_failed": "Gagal memuat riwayat",
+    "rotation_unavailable": "Data rotasi belum tersedia",
+    "waiting_catalyst": "Menunggu katalis terbaru",
+    "waiting_catalyst_desc": "Belum ada berita atau pengumuman...",
+    "no_active_alerts": "Belum ada peringatan aktif."
+  },
+  "tooltips": {
+    "disable": "Nonaktifkan",
+    "enable": "Aktifkan",
+    "delete_alert": "Hapus alert",
+    "export_csv": "Export CSV",
+    "refresh": "Refresh",
+    "export_calendar": "Export kalender bulan ini sebagai .ics",
+    "grid_view": "Grid",
+    "list_view": "List",
+    "trend_line": "Trend Line",
+    "horizontal_line": "Horizontal Line",
+    "fibonacci": "Fibonacci Retracement",
+    "support_resistance": "Support/Resistance Line",
+    "clear_drawings": "Clear Drawings",
+    "save_drawings": "Save Drawings",
+    "load_drawings": "Load Drawings",
+    "download_png": "Download PNG",
+    "set_price_alert": "Set Price Alert",
+    "fullscreen": "Fullscreen",
+    "exit_fullscreen": "Exit Fullscreen",
+    "refresh_data": "Refresh data",
+    "refresh_macro": "Refresh data makro",
+    "delete": "Hapus",
+    "sector_analysis": "Analisis Rotasi Sektor",
+    "sector_count": "{{sector}} — {{count}} saham",
+    "ticker_value": "{{ticker}}: {{value}}%",
+    "stock_name": "{{name}}",
+    "back_to_sectors": "Kembali ke Sektor",
+    "show_hide_key": "Tampilkan/sembunyikan key",
+    "hide_key": "Sembunyikan key",
+    "show_key": "Tampilkan key",
+    "runtime_message": "{{message}}",
+    "news_tab": "Berita",
+    "announcements_tab": "Pengumuman Perusahaan",
+    "pulse_tab": "Pulse Pasar"
+  },
+  "status_messages": {
+    "ihsg_pending": "Data IHSG menunggu scheduler.",
+    "empty_dash": "—",
+    "data_load_failed": "Gagal memuat data",
+    "market_open": "IDX BUKA",
+    "market_closed": "IDX TUTUP",
+    "reconnected": "Koneksi tersambung kembali.",
+    "disconnected": "Koneksi terputus — beberapa fitur...",
+    "broker_activity_label": "Aktivitas Broker (5 hari)",
+    "active_alerts": "Peringatan Aktif",
+    "peer_comparison": "Peer Comparison",
+    "price_label": "Harga: {{price}}",
+    "change_label": "Perubahan: {{change}}",
+    "market_cap_label": "Kap: {{market_cap}}",
+    "wib_time": "WIB {{time}}",
+    "tradingview_live": "{{symbol}} · live dari TradingView",
+    "chart_range": "{{start}} → {{end}} · {{count}} candle · LightweightCharts",
+    "neutral_signal": "NETRAL",
+    "no_technical_summary": "Ringkasan teknikal belum tersedia lengkap.",
+    "entry_zone": "Zona Entry",
+    "stop_area": "Area Stop",
+    "near_target": "Target Dekat"
+  },
+  "form_labels": {
+    "alert_count": "{{count}} alert",
+    "config_label": "{{label}}",
+    "placeholder_text": "{{placeholder}}",
+    "suggestion_chips": "Saran",
+    "stat_tiles": "Statistik",
+    "stat_with_label": "{{label}}: {{value}}",
+    "catalyst_cards": "Kartu Katalis",
+    "analysis_panel": "Panel Analisis",
+    "insight_cards": "Kartu Insight"
+  },
+  "views": {
+    "ai_picks": {
+      "title": "AI Picks"
+    },
+    "alerts": {
+      "title": "Alert Harga"
+    },
+    "backtest": {
+      "title": "Backtesting"
+    },
+    "calendar": {
+      "title": "Kalender"
+    },
+    "chart": {
+      "title": "Chart"
+    },
+    "compare": {
+      "title": "Perbandingan Saham"
+    },
+    "corporate": {
+      "title": "Pengumuman Korporasi"
+    },
+    "dividend": {
+      "title": "Dividend Dashboard"
+    },
+    "help": {
+      "title": "Bantuan"
+    },
+    "indices": {
+      "title": "Indeks"
+    },
+    "ipo": {
+      "title": "IPO Pipeline"
+    },
+    "macro": {
+      "title": "Makro"
+    },
+    "market": {
+      "title": "Pasar"
+    },
+    "movers": {
+      "title": "Market Movers"
+    },
+    "news": {
+      "title": "Berita"
+    },
+    "paper_trades": {
+      "title": "Paper Trading"
+    },
+    "screener": {
+      "title": "Pemindai"
+    },
+    "sector": {
+      "title": "Sektor"
+    },
+    "signal_overview": {
+      "title": "Sinyal"
+    },
+    "stock_detail": {
+      "title": "Detail Saham"
+    },
+    "treemap": {
+      "title": "Treemap Pasar"
+    },
+    "breadth": {
+      "title": "Breadth"
+    }
   }
 }
