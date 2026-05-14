@@ -10,105 +10,105 @@ function normalizeMaskedKey(value) {
 }
 
 export async function renderSettings(root) {
-    document.title = 'RetailBijak — Pengaturan';
+    document.title = `RetailBijak — ${t('settings_view.title')}`;
     root.innerHTML = `
       <section class="settings-page-pro stagger-reveal">
         <div class="settings-hero">
           <div class="settings-hero-copy">
-            <div class="settings-meta-pill">PUSAT PENGATURAN</div>
-            <h1>Kontrol Ruang Kerja</h1>
-            <p>Atur densitas data, perilaku pembaruan, dan preferensi antarmuka dengan tampilan yang lebih tenang.</p>
+            <div class="settings-meta-pill">${t('settings_view.meta_pill')}</div>
+            <h1>${t('settings_view.heading')}</h1>
+            <p>${t('settings_view.description')}</p>
           </div>
           <div class="settings-status-rail">
-            <div class="settings-status-label">Tersambung</div>
-            <div class="settings-status-value">Sinkron ke layanan lokal</div>
+            <div class="settings-status-label">${t('settings_view.status_label')}</div>
+            <div class="settings-status-value">${t('settings_view.status_value')}</div>
           </div>
         </div>
 
         <div class="settings-layout">
           <div class="settings-toggle-panel panel flex-col gap-6">
             <div class="settings-section-head">
-              <h2>Mesin Antarmuka</h2>
-              <span>Kontrol yang tersimpan di basis data</span>
+              <h2>${t('settings_view.interface_engine_section')}</h2>
+              <span>${t('settings_view.interface_engine_desc')}</span>
             </div>
             
             <div class="settings-toggle-grid">
                 <label class="settings-toggle-card">
                     <div>
-                        <div class="strong mb-1 text-main text-base">Tabel Lebih Rapat</div>
-                        <div class="text-sm text-muted">Padatkan tinggi baris tabel agar lebih banyak data langsung terlihat.</div>
+                        <div class="strong mb-1 text-main text-base">${t('settings_view.compact_table_label')}</div>
+                        <div class="text-sm text-muted">${t('settings_view.compact_table_desc')}</div>
                     </div>
                     <input id="setting-compact" type="checkbox" class="settings-checkbox" />
                 </label>
                 
                 <label class="settings-toggle-card">
                     <div>
-                        <div class="strong mb-1 text-main text-base">Pembaruan Otomatis Pemindai</div>
-                        <div class="text-sm text-muted">Minta layanan lokal memperbarui sinyal institusi secara berkala saat filter berubah.</div>
+                        <div class="strong mb-1 text-main text-base">${t('settings_view.auto_refresh_label')}</div>
+                        <div class="text-sm text-muted">${t('settings_view.auto_refresh_desc')}</div>
                     </div>
                     <input id="setting-refresh" type="checkbox" class="settings-checkbox" />
                 </label>
             </div>
 
             <div class="settings-section-head mt-8">
-              <h2>OpenRouter AI</h2>
-              <span>Aktifkan ringkasan AI untuk analisis saham dan AI Picks dengan model gratis default.</span>
+              <h2>${t('settings_view.openrouter_section')}</h2>
+              <span>${t('settings_view.openrouter_desc')}</span>
             </div>
 
             <div class="settings-openrouter-stack">
               <label class="settings-field-card" for="setting-openrouter-key">
-                <span class="settings-field-label">API key OpenRouter</span>
+                <span class="settings-field-label">${t('settings_view.api_key_label')}</span>
                 <div class="pos-relative">
-                  <input id="setting-openrouter-key" class="settings-text-input" type="password" placeholder="sk-or-..." autocomplete="off" />
-                  <button id="toggle-key-visibility" type="button" class="btn btn-icon settings-key-toggle" title="Tampilkan/sembunyikan key">T</button>
+                  <input id="setting-openrouter-key" class="settings-text-input" type="password" placeholder="${t('settings_view.api_key_placeholder')}" autocomplete="off" />
+                  <button id="toggle-key-visibility" type="button" class="btn btn-icon settings-key-toggle" title="${t('settings_view.key_toggle_title_show')}">T</button>
                 </div>
-                <small class="text-xs text-dim">Key disimpan di server · simpan dengan kosong untuk mempertahankan key yang sudah ada.</small>
+                <small class="text-xs text-dim">${t('settings_view.api_key_hint')}</small>
               </label>
 
               <label class="settings-field-card" for="setting-openrouter-site-url">
-                <span class="settings-field-label">Site URL</span>
-                <input id="setting-openrouter-site-url" class="settings-text-input" type="text" placeholder="https://retailbijak.rich27.my.id" autocomplete="off" />
+                <span class="settings-field-label">${t('settings_view.site_url_label')}</span>
+                <input id="setting-openrouter-site-url" class="settings-text-input" type="text" placeholder="${t('settings_view.site_url_placeholder')}" autocomplete="off" />
               </label>
 
               <label class="settings-field-card" for="setting-openrouter-app-name">
-                <span class="settings-field-label">Nama Aplikasi</span>
-                <input id="setting-openrouter-app-name" class="settings-text-input" type="text" placeholder="RetailBijak" autocomplete="off" />
+                <span class="settings-field-label">${t('settings_view.app_name_label')}</span>
+                <input id="setting-openrouter-app-name" class="settings-text-input" type="text" placeholder="${t('settings_view.app_name_placeholder')}" autocomplete="off" />
               </label>
 
               <label class="settings-field-card" for="setting-openrouter-stock-model">
-                <span class="settings-field-label">Model Analisis Saham</span>
+                <span class="settings-field-label">${t('settings_view.stock_model_label')}</span>
                 <input id="setting-openrouter-stock-model" class="settings-text-input" type="text" placeholder="${DEFAULT_STOCK_MODEL}" autocomplete="off" />
               </label>
 
               <label class="settings-field-card" for="setting-openrouter-picks-model">
-                <span class="settings-field-label">Model AI Picks</span>
+                <span class="settings-field-label">${t('settings_view.picks_model_label')}</span>
                 <input id="setting-openrouter-picks-model" class="settings-text-input" type="text" placeholder="${DEFAULT_PICKS_MODEL}" autocomplete="off" />
               </label>
             </div>
 
             <div class="settings-actions-row">
-                <span id="settings-status" class="text-xs text-dim mono strong settings-status-text">TERSAMBUNG KE LAYANAN LOKAL</span>
-                <button id="save-settings" type="button" class="btn btn-primary settings-save-btn">Simpan Konfigurasi</button>
+                <span id="settings-status" class="text-xs text-dim mono strong settings-status-text">${t('settings_view.status_connected')}</span>
+                <button id="save-settings" type="button" class="btn btn-primary settings-save-btn">${t('settings_view.save_button')}</button>
             </div>
           </div>
 
           <div class="settings-note-rail panel flex-col gap-4">
-            <h2 class="settings-note-title"><i data-lucide="terminal" class="lucide-sm"></i> Catatan Terminal</h2>
+            <h2 class="settings-note-title"><i data-lucide="terminal" class="lucide-sm"></i> ${t('settings_view.terminal_notes_title')}</h2>
             <div class="settings-note-stack">
                 <div class="settings-note-card">
-                    <strong class="settings-note-strong">⌘K / Ctrl+K</strong> membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.
+                    <strong class="settings-note-strong">⌘K / Ctrl+K</strong> ${t('settings_view.terminal_note_1').replace('⌘K / Ctrl+K membuka palet perintah dari mana saja untuk pencarian kode saham yang lebih cepat.', '').trim()}
                 </div>
                 <div class="settings-note-card">
-                    Tema menyesuaikan otomatis. Penyesuaian manual tetap tersedia di pojok kanan atas.
+                    ${t('settings_view.terminal_note_2')}
                 </div>
                 <div class="settings-note-card">
-                    Hasil pemindai tertunda 15 menit kecuali ruang kerja terhubung ke aliran data premium lanjutan.
+                    ${t('settings_view.terminal_note_3')}
                 </div>
               <div class="settings-note-card">
-                  Model gratis default: <strong>${DEFAULT_STOCK_MODEL}</strong> untuk analisis saham dan <strong>${DEFAULT_PICKS_MODEL}</strong> untuk AI Picks.
+                  ${t('settings_view.terminal_note_4', { stock_model: DEFAULT_STOCK_MODEL, picks_model: DEFAULT_PICKS_MODEL })}
               </div>
               <div class="settings-note-card">
-                  Jika status berubah jadi <strong>OpenRouter perlu dicek</strong>, biasanya provider membalas pesan seperti <strong>API key OpenRouter ditolak provider</strong> dan key perlu diganti.
+                  ${t('settings_view.terminal_note_5')}
               </div>
             </div>
           </div>
@@ -140,7 +140,7 @@ export async function renderSettings(root) {
         const isPassword = openrouterKey.type === 'password';
         openrouterKey.type = isPassword ? 'text' : 'password';
         toggleBtn.textContent = isPassword ? 'S' : 'T';
-        toggleBtn.title = isPassword ? 'Sembunyikan key' : 'Tampilkan key';
+        toggleBtn.title = isPassword ? t('settings_view.key_toggle_title_hide') : t('settings_view.key_toggle_title_show');
       });
     }
 
@@ -155,20 +155,20 @@ export async function renderSettings(root) {
       const runtimeState = settings?.openrouter_runtime_state || 'disabled';
       status.textContent = settings
         ? (runtimeState === 'ok'
-          ? 'OPENROUTER AKTIF'
+          ? t('settings_view.status_openrouter_ok')
           : runtimeState === 'invalid'
-            ? 'OpenRouter perlu dicek'
-            : 'TERSAMBUNG KE LAYANAN LOKAL')
-        : 'MEMAKAI PENGATURAN CADANGAN';
+            ? t('settings_view.status_openrouter_invalid')
+            : t('settings_view.status_connected'))
+        : t('settings_view.status_fallback');
       status.title = settings?.openrouter_runtime_message || '';
     }
 
-    if (!settings) showToast('Sedang memakai pengaturan cadangan', 'info');
+    if (!settings) showToast(t('settings_view.toast_fallback'), 'info');
     
     document.getElementById('save-settings').addEventListener('click', async () => {
         const btn = document.getElementById('save-settings');
         btn.disabled = true;
-        btn.textContent = 'Sedang menyimpan...';
+        btn.textContent = t('settings_view.saving_button');
         
         const payload = {
             compact_table_rows: compact.checked,
@@ -182,30 +182,30 @@ export async function renderSettings(root) {
         const saved = await updateSettings(payload).catch(e => {
             console.warn('updateSettings failed', e);
             btn.disabled = false;
-            btn.textContent = 'Simpan Konfigurasi';
-            showToast('Gagal menyimpan konfigurasi', 'error');
+            btn.textContent = t('settings_view.save_button');
+            showToast(t('settings_view.toast_save_failed'), 'error');
             return null;
         });
         
         btn.disabled = false;
-        btn.textContent = 'Simpan Konfigurasi';
+        btn.textContent = t('settings_view.save_button');
         
         if (!saved || saved.ok !== true) {
-            showToast('Konfigurasi gagal disinkronkan', 'error');
+            showToast(t('settings_view.toast_sync_failed'), 'error');
             return;
         }
-
+        
         openrouterKey.value = normalizeMaskedKey(saved?.openrouter_api_key_masked || payload.openrouter_api_key);
         if (status) {
           const runtimeState = saved?.openrouter_runtime_state || 'disabled';
           status.textContent = runtimeState === 'ok'
-            ? 'OPENROUTER AKTIF'
+            ? t('settings_view.status_openrouter_ok')
             : runtimeState === 'invalid'
-              ? 'OpenRouter perlu dicek'
-              : 'TERSAMBUNG KE LAYANAN LOKAL';
+              ? t('settings_view.status_openrouter_invalid')
+              : t('settings_view.status_connected');
           status.title = saved?.openrouter_runtime_message || '';
         }
-        showToast('Konfigurasi berhasil disinkronkan', 'success');
+        showToast(t('settings_view.toast_save_success'), 'success');
     });
 }
 
