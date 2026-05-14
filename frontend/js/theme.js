@@ -1,4 +1,4 @@
-import { setLanguage, applyTranslations } from './i18n.js?v=20260507G';
+import { setLocale, applyTranslations } from './i18n.js?v=20260507G';
 
 export function initTheme() {
     const themeToggleBtn = document.getElementById('theme-toggle');
@@ -40,7 +40,7 @@ export function initTheme() {
     if (langToggleBtn) {
         langToggleBtn.addEventListener('click', () => {
             currentLang = currentLang === 'en' ? 'id' : 'en';
-            setLanguage(currentLang);
+            setLocale(currentLang);
             updateLangBtn();
         });
     }

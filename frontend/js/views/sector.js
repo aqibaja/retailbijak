@@ -4,7 +4,7 @@
 // 30.2.1: Top stocks per sector, mini heatmap, rotation scatter chart, filter bar
 
 import { apiFetch, showToast } from '../api.js';
-import { __ } from '../i18n.js';
+import { t } from '../i18n.js';
 import { nf, pf } from '../utils/format.js';
 
 let sectorData = null;
@@ -21,8 +21,8 @@ export async function renderSectors(root) {
         <div class="view-content sectors-page">
             <div class="page-header">
                 <div>
-                    <h1>${__('sektor_title', 'Sektor')}</h1>
-                    <p class="page-subtitle">${__('sektor_subtitle', 'Performa sektor IDX berdasarkan data harga')}</p>
+                    <h1>${t('sektor_title')}</h1>
+                    <p class="page-subtitle">${t('sektor_subtitle')}</p>
                 </div>
                 <div class="page-actions">
                     <button class="btn btn-sm btn-icon" id="refreshSectors" title="Refresh">
@@ -57,7 +57,7 @@ export async function renderSectors(root) {
             <div id="sectorCarousel" class="sector-carousel">
                 <div class="sector-loading">
                     <div class="loading-spinner"></div>
-                    <span>${__('loading', 'Memuat data sektor...')}</span>
+                    <span>${t('loading')}</span>
                 </div>
             </div>
 
@@ -103,7 +103,7 @@ async function loadSectors() {
     const grid = document.getElementById('sectorDetailGrid');
     if (!carousel || !grid) return;
 
-    carousel.innerHTML = `<div class="sector-loading"><div class="loading-spinner"></div><span>${__('loading', 'Memuat...')}</span></div>`;
+    carousel.innerHTML = `<div class="sector-loading"><div class="loading-spinner"></div><span>${t('loading')}</span></div>`;
     grid.innerHTML = '';
 
     try {
@@ -113,8 +113,8 @@ async function loadSectors() {
         if (!data.sectors || data.sectors.length === 0) {
             carousel.innerHTML = `<div class="sector-empty">
                 <div class="sector-empty-icon">📊</div>
-                <h3>${__('sektor_empty', 'Belum ada data sektor')}</h3>
-                <p>${__('sektor_empty_desc', 'Data sektor hanya tersedia untuk saham yang terklasifikasi.')}</p>
+                <h3>${t('sektor_empty')}</h3>
+                <p>${t('sektor_empty_desc')}</p>
             </div>`;
             return;
         }
@@ -125,10 +125,10 @@ async function loadSectors() {
         lucide.createIcons();
     } catch (e) {
         carousel.innerHTML = `<div class="sector-error">
-            <span>⚠️ ${__('error', 'Gagal memuat data sektor')}</span>
-            <button class="btn btn-sm" onclick="location.reload()">${__('retry', 'Coba lagi')}</button>
+            <span>⚠️ ${t('error')}</span>
+            <button class="btn btn-sm" onclick="location.reload()">${t('retry')}</button>
         </div>`;
-        showToast('Gagal memuat data sektor', 'error');
+        showToast('Gagal memuat data sektor');
     }
 }
 
@@ -171,8 +171,8 @@ function renderCarousel(sectors) {
 
     carousel.innerHTML = `
         <div class="sector-carousel-header">
-            <span class="sector-carousel-title">${__('sektor_today', 'Performa Hari Ini')}</span>
-            <span class="sector-carousel-count">${sectors.length} ${__('sektor_count', 'sektor')}</span>
+            <span class="sector-carousel-title">${t('sektor_today')}</span>
+            <span class="sector-carousel-count">${sectors.length} ${t('sektor_count')}</span>
         </div>
         <div class="sector-chips">${chips}</div>
     `;
@@ -244,7 +244,7 @@ function renderDetailGrid(sectors) {
             <div class="sector-card-header">
                 <div class="sector-card-title-row">
                     <h2 class="sector-card-title">${s.sector}</h2>
-                    <span class="sector-card-count">${s.count} ${__('saham', 'saham')}</span>
+                    <span class="sector-card-count">${s.count} ${t('saham')}</span>
                 </div>
                 <div class="sector-card-returns">
                     <div class="sector-ret-item ${r1d >= 0 ? 'up' : 'down'}">
@@ -269,12 +269,12 @@ function renderDetailGrid(sectors) {
             <div class="sector-card-body">
                 <div class="sector-topbot">
                     ${top ? `<div class="sector-topbot-item">
-                        <span class="sector-topbot-label">${__('top', 'Teratas')}</span>
+                        <span class="sector-topbot-label">${t('top')}</span>
                         <a href="#/stock/${top.ticker.replace('.JK', '')}" class="sector-topbot-ticker">${top.ticker.replace('.JK', '')}</a>
                         <span class="sector-topbot-ret up">+${top.returns['1d'].toFixed(1)}%</span>
                     </div>` : ''}
                     ${bot ? `<div class="sector-topbot-item">
-                        <span class="sector-topbot-label">${__('bottom', 'Terbawah')}</span>
+                        <span class="sector-topbot-label">${t('bottom')}</span>
                         <a href="#/stock/${bot.ticker.replace('.JK', '')}" class="sector-topbot-ticker">${bot.ticker.replace('.JK', '')}</a>
                         <span class="sector-topbot-ret down">${bot.returns['1d'].toFixed(1)}%</span>
                     </div>` : ''}
@@ -328,7 +328,7 @@ export async function renderSector(root, sectorName) {
         <div class="view-content sector-detail-view">
             <a href="#sector" class="sector-detail-back">
                 <i data-lucide="arrow-left" style="width:14px;height:14px"></i>
-                ${__('back_to_sectors', 'Kembali ke daftar sektor')}
+                ${t('back_to_sectors')}
             </a>
             <div class="sector-detail-loading">
                 <div class="sector-detail-skeleton">
@@ -367,13 +367,13 @@ export async function renderSector(root, sectorName) {
                 <div class="view-content sector-detail-view">
                     <a href="#sector" class="sector-detail-back">
                         <i data-lucide="arrow-left" style="width:14px;height:14px"></i>
-                        ${__('back_to_sectors', 'Kembali ke daftar sektor')}
+                        ${t('back_to_sectors')}
                     </a>
                     <div class="sector-detail-error">
                         <div style="font-size:48px;margin-bottom:8px">📭</div>
-                        <h3>${__('sector_not_found', 'Sektor tidak ditemukan')}</h3>
-                        <p>${__('sector_not_found_desc', 'Sektor "' + sector + '" tidak memiliki data atau tidak ditemukan.')}</p>
-                        <a href="#sector" class="btn btn-sm">${__('back_to_sectors', 'Kembali ke daftar sektor')}</a>
+                        <h3>${t('sector_not_found')}</h3>
+                        <p>${t('sector_not_found_desc', 'Sektor "' + sector + '" tidak memiliki data atau tidak ditemukan.')}</p>
+                        <a href="#sector" class="btn btn-sm">${t('back_to_sectors')}</a>
                     </div>
                 </div>
             `;
@@ -392,13 +392,13 @@ export async function renderSector(root, sectorName) {
             <div class="view-content sector-detail-view">
                 <a href="#sector" class="sector-detail-back">
                     <i data-lucide="arrow-left" style="width:14px;height:14px"></i>
-                    ${__('back_to_sectors', 'Kembali ke daftar sektor')}
+                    ${t('back_to_sectors')}
                 </a>
                 <div class="sector-detail-error">
                     <div style="font-size:48px;margin-bottom:8px">⚠️</div>
-                    <h3>${__('error', 'Gagal memuat detail sektor')}</h3>
-                    <p>${e.message || __('unknown_error', 'Terjadi kesalahan yang tidak diketahui.')}</p>
-                    <button class="btn btn-sm" onclick="window.location.hash='#sector/${encodeURIComponent(sectorName)}'">${__('retry', 'Coba lagi')}</button>
+                    <h3>${t('error')}</h3>
+                    <p>${e.message || t('unknown_error')}</p>
+                    <button class="btn btn-sm" onclick="window.location.hash='#sector/${encodeURIComponent(sectorName)}'">${t('retry')}</button>
                 </div>
             </div>
         `;
@@ -441,15 +441,15 @@ function renderSectorDetail(app, sectorName, breakdown, sectorReturn, totalStock
         <div class="view-content sector-detail-view">
             <a href="#sector" class="sector-detail-back">
                 <i data-lucide="arrow-left" style="width:14px;height:14px"></i>
-                ${__('back_to_sectors', 'Kembali ke daftar sektor')}
+                ${t('back_to_sectors')}
             </a>
 
             <div class="sector-detail-header">
                 <div class="sector-detail-header-top">
                     <div>
-                        <h1>${__('sector_label', 'Sektor')} ${sectorName}</h1>
+                        <h1>${t('sector_label')} ${sectorName}</h1>
                         <div class="sector-detail-count">
-                            ${totalStocks || 0} ${__('saham', 'saham')} · ${breakdown.length} ${__('industries', 'industri')}
+                            ${totalStocks || 0} ${t('saham')} · ${breakdown.length} ${t('industries')}
                         </div>
                     </div>
                     <div class="sector-detail-returns">
@@ -500,7 +500,7 @@ function renderSectorDetail(app, sectorName, breakdown, sectorReturn, totalStock
 }
 
 function renderIndustryItem(ind, idx) {
-    const name = ind.industry || __('unknown', 'Tidak diketahui');
+    const name = ind.industry || t('unknown');
     const count = ind.count || 0;
     const avgRet = ind.avg_returns || {};
     const stocks = ind.stocks || [];
@@ -534,18 +534,18 @@ function renderIndustryItem(ind, idx) {
     }).join('');
 
     const emptyRow = !stocks.length
-        ? `<div class="industry-empty">${__('no_stocks', 'Tidak ada data saham untuk industri ini.')}</div>`
+        ? `<div class="industry-empty">${t('no_stocks')}</div>`
         : '';
 
     return `
         <div class="industry-item">
-            <button class="industry-header" aria-expanded="false" aria-label="${__('expand_industry', 'Buka industri')} ${name}">
+            <button class="industry-header" aria-expanded="false" aria-label="${t('expand_industry')} ${name}">
                 <div class="industry-header-icon">
                     <i data-lucide="building-2" style="width:18px;height:18px"></i>
                 </div>
                 <div class="industry-header-info">
                     <div class="industry-header-name">${name}</div>
-                    <div class="industry-header-meta">${count} ${__('stocks_count', 'saham')}</div>
+                    <div class="industry-header-meta">${count} ${t('stocks_count')}</div>
                 </div>
                 <div class="industry-header-returns">${retBadges}</div>
                 <i data-lucide="chevron-down" class="industry-header-chevron" style="width:20px;height:20px"></i>
@@ -553,10 +553,10 @@ function renderIndustryItem(ind, idx) {
             <div class="industry-body">
                 <div class="industry-stock-list">
                     <div class="industry-stock-header">
-                        <span class="stock-col-ticker">${__('ticker', 'Kode')}</span>
-                        <span class="stock-col-name">${__('company', 'Perusahaan')}</span>
-                        <span class="stock-col-price">${__('price', 'Harga')}</span>
-                        <span class="stock-col-change">${__('change', 'Perubahan')}</span>
+                        <span class="stock-col-ticker">${t('ticker')}</span>
+                        <span class="stock-col-name">${t('company')}</span>
+                        <span class="stock-col-price">${t('price')}</span>
+                        <span class="stock-col-change">${t('change')}</span>
                     </div>
                     ${stockRows}
                     ${emptyRow}
@@ -569,7 +569,7 @@ function renderIndustryItem(ind, idx) {
 // ─── 15.9.1 — AI Sector Rotation Analysis ────────
 async function runSectorRotationAnalysis() {
     if (!sectorData?.sectors?.length) {
-        showToast('Tidak ada data sektor untuk analisis', 'warning');
+        showToast('Tidak ada data sektor untuk analisis');
         return;
     }
     const btn = document.getElementById('ai-sector-analysis');
@@ -927,8 +927,8 @@ export async function renderSectorRotation(root) {
     <div class="view-content sector-rotation-page">
       <div class="page-header">
         <div>
-          <h1>🔄 ${__('Rotasi Sektor', 'Rotasi Sektor')}</h1>
-          <p class="page-subtitle">${__('sector_rotation_subtitle', 'Heatmap performa sektor IDX — diurutkan berdasarkan momentum')}</p>
+          <h1>🔄 ${t('Rotasi Sektor')}</h1>
+          <p class="page-subtitle">${t('sector_rotation_subtitle')}</p>
         </div>
         <div class="page-actions">
           <a href="#sector" class="btn btn-sm btn-icon" title="Kembali ke Sektor">
@@ -946,7 +946,7 @@ export async function renderSectorRotation(root) {
       <div id="rotationHeatmapContainer">
         <div class="sector-loading">
           <div class="loading-spinner"></div>
-          <span>${__('loading', 'Memuat data rotasi sektor...')}</span>
+          <span>${t('loading')}</span>
         </div>
       </div>
     </div>
@@ -960,8 +960,8 @@ export async function renderSectorRotation(root) {
       document.getElementById('rotationHeatmapContainer').innerHTML = `
         <div class="sector-empty">
           <div class="sector-empty-icon">📊</div>
-          <h3>${__('rotation_empty', 'Belum ada data rotasi')}</h3>
-          <p>${__('rotation_empty_desc', 'Data rotasi sektor belum tersedia.')}</p>
+          <h3>${t('rotation_empty')}</h3>
+          <p>${t('rotation_empty_desc')}</p>
         </div>`;
       return;
     }
@@ -1005,10 +1005,10 @@ export async function renderSectorRotation(root) {
   } catch (e) {
     document.getElementById('rotationHeatmapContainer').innerHTML = `
       <div class="sector-error">
-        <span>⚠️ ${__('error', 'Gagal memuat data rotasi sektor')}</span>
-        <button class="btn btn-sm" onclick="location.reload()">${__('retry', 'Coba lagi')}</button>
+        <span>⚠️ ${t('error')}</span>
+        <button class="btn btn-sm" onclick="location.reload()">${t('retry')}</button>
       </div>`;
-    showToast('Gagal memuat data rotasi sektor', 'error');
+    showToast('Gagal memuat data rotasi sektor');
   }
 }
 

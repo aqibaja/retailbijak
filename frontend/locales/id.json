@@ -59,5 +59,41 @@
     "theme": "Tema",
     "notifications": "Notifikasi",
     "account": "Akun"
-  }
+  },
+  "sector": {
+    "sektor_title": "Sektor",
+    "sektor_subtitle": "Performa sektor IDX berdasarkan data harga",
+    "sektor_today": "Performa Hari Ini",
+    "sektor_count": "sektor",
+    "sektor_empty": "Belum ada data sektor",
+    "sektor_empty_desc": "Data sektor hanya tersedia untuk saham yang terklasifikasi.",
+    "sector_label": "Sektor",
+    "sector_not_found": "Sektor tidak ditemukan",
+    "sector_not_found_desc": "Sektor tidak memiliki data atau tidak ditemukan.",
+    "sector_rotation_subtitle": "Heatmap performa sektor IDX — diurutkan berdasarkan momentum",
+    "rotation_empty": "Belum ada data rotasi",
+    "rotation_empty_desc": "Data rotasi sektor belum tersedia.",
+    "back_to_sectors": "Kembali ke daftar sektor",
+    "saham": "saham",
+    "industries": "industri",
+    "stocks_count": "saham",
+    "ticker": "Kode",
+    "company": "Perusahaan",
+    "price": "Harga",
+    "change": "Perubahan",
+    "top": "Teratas",
+    "bottom": "Terbawah",
+    "expand_industry": "Buka industri",
+    "no_stocks": "Tidak ada data saham untuk industri ini.",
+    "unknown": "Tidak diketahui",
+    "unknown_error": "Terjadi kesalahan yang tidak diketahui."
+  },
+  "search": {
+    "search_placeholder": "Cari kode saham, emiten, atau sektor..."
+  },
+  "scanner": "Pindai",
+  "market": "Pasar",
+  "news": "Berita",
+  "portfolio": "Aset",
+  "dashboard": "Beranda"
 }

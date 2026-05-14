@@ -59,5 +59,41 @@
     "theme": "Theme",
     "notifications": "Notifications",
     "account": "Account"
-  }
+  },
+  "sector": {
+    "sektor_title": "Sectors",
+    "sektor_subtitle": "IDX sector performance based on price data",
+    "sektor_today": "Today's Performance",
+    "sektor_count": "sectors",
+    "sektor_empty": "No sector data available",
+    "sektor_empty_desc": "Sector data is only available for classified stocks.",
+    "sector_label": "Sector",
+    "sector_not_found": "Sector not found",
+    "sector_not_found_desc": "The sector has no data or was not found.",
+    "sector_rotation_subtitle": "IDX sector performance heatmap — sorted by momentum",
+    "rotation_empty": "No rotation data available",
+    "rotation_empty_desc": "Sector rotation data is not yet available.",
+    "back_to_sectors": "Back to sector list",
+    "saham": "stocks",
+    "industries": "industries",
+    "stocks_count": "stocks",
+    "ticker": "Code",
+    "company": "Company",
+    "price": "Price",
+    "change": "Change",
+    "top": "Top",
+    "bottom": "Bottom",
+    "expand_industry": "Expand industry",
+    "no_stocks": "No stock data available for this industry.",
+    "unknown": "Unknown",
+    "unknown_error": "An unknown error occurred."
+  },
+  "search": {
+    "search_placeholder": "Search stock code, company, or sector..."
+  },
+  "scanner": "Scan",
+  "market": "Market",
+  "news": "News",
+  "portfolio": "Assets",
+  "dashboard": "Home"
 }

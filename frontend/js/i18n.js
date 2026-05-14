@@ -9,7 +9,13 @@ let translations = {};
 export async function initI18n() {
   try {
     // Get saved locale or default to 'id'
-    currentLocale = localStorage.getItem('retailbijak.locale') || 'id';
+    try {
+      currentLocale = localStorage.getItem('retailbijak.locale') || 'id';
+    } catch (e) {
+      // localStorage not available (private browsing mode)
+      console.warn('localStorage not available, using default locale');
+      currentLocale = 'id';
+    }
     
     // Load translations for current locale
     await loadLocale(currentLocale);
@@ -76,9 +82,20 @@ export function t(key, params = {}) {
 export function setLocale(locale) {
   if (locale !== currentLocale) {
     currentLocale = locale;
-    localStorage.setItem('retailbijak.locale', locale);
+    try {
+      localStorage.setItem('retailbijak.locale', locale);
+    } catch (e) {
+      // localStorage not available (private browsing mode)
+      console.warn('localStorage not available, locale not persisted');
+    }
     // Reload translations and apply
-    loadLocale(locale).then(() => applyTranslations());
+    loadLocale(locale)
+      .then(() => applyTranslations())
+      .catch(error => {
+        console.error('Failed to load locale:', error);
+        // Fallback: keep current locale
+        currentLocale = locale;
+      });
   }
 }
 
@@ -103,7 +120,7 @@ export function getLocales() {
  * - data-i18n-placeholder="key" for input placeholders
  * - data-i18n-title="key" for title attributes
  */
-function applyTranslations() {
+export function applyTranslations() {
   // Update html lang attribute
   document.documentElement.setAttribute('lang', currentLocale);
   
