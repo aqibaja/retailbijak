@@ -29,24 +29,24 @@ const renderRow = (r) => `
         <div class="scanner-row-title">
           <div class="text-main scanner-row-ticker">${r.ticker}</div>
         </div>
-        <div class="scanner-row-name">${r.name || 'Ekuitas IDX'}</div>
+        <div class="scanner-row-name">${r.name || t('screener.default_company')}</div>
       </div>
     </div>
     <div class="scanner-row-stats">
       <div class="scanner-row-stat">
-        <span>Harga</span>
+        <span>${t('screener.price_label')}</span>
         <strong class="mono">${Number(r.close || 0).toLocaleString('id-ID')}</strong>
       </div>
       <div class="scanner-row-stat">
-        <span>CCI</span>
+        <span>${t('screener.cci_label')}</span>
         <strong class="mono">${r.cci ?? '—'}</strong>
       </div>
       <div class="scanner-row-stat">
-        <span>MA</span>
+        <span>${t('screener.ma_label')}</span>
         <strong class="mono">${r.magic_line ?? '—'}</strong>
       </div>
       <div class="scanner-row-stat">
-        <span>Vol</span>
+        <span>${t('screener.volume_label')}</span>
         <strong class="mono">${r.volume_spike ? r.volume_spike.toFixed(1) + 'x' : '—'}</strong>
       </div>
     </div>
@@ -65,7 +65,7 @@ export async function renderScreener(root) {
     }
     scanErrorHandled = false;
     currentResults = [];
-    document.title = 'RetailBijak — Pemindai';
+    document.title = t('screener.page_title');
     root.innerHTML = `
       <section class="stagger-reveal">
         <div class="mb-6 screener-hero">
@@ -209,7 +209,7 @@ function runScreener() {
             const spText = document.getElementById('sp-text');
             const spPercent = document.getElementById('sp-percent');
             const spFill = document.getElementById('sp-fill');
-            if (spText) spText.textContent = `Memindai ${data.ticker}...`;
+            if (spText) spText.textContent = `${t('screener.scanning_ticker', { ticker: data.ticker })}`;
             if (spPercent) spPercent.textContent = `${data.percent}%`;
             if (spFill) spFill.style.width = `${data.percent}%`;
         } else if (data.type === 'result') {
@@ -217,7 +217,7 @@ function runScreener() {
             if (!currentResults.some(r => r.ticker === data.data.ticker)) {
                 currentResults.push(data.data);
             }
-            countBadge.textContent = `${currentResults.length} TERDETEKSI`;
+            countBadge.textContent = `${currentResults.length} ${t('screener.detected')}`;
             renderList(currentResults);
         } else if (data.type === 'done') {
             btn.disabled = false;
