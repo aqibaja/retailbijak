@@ -89,11 +89,36 @@
     "unknown_error": "Terjadi kesalahan yang tidak diketahui."
   },
   "search": {
-    "search_placeholder": "Cari kode saham, emiten, atau sektor..."
+    "search_placeholder": "Cari kode saham, emiten, atau sektor...",
+    "search_dialog_label": "Cari saham",
+    "search_hint_select": "↵ pilih",
+    "search_hint_close": "Esc tutup",
+    "search_hint_cmd": "Cmd+K",
+    "search_input_hint": "Ketik kode saham atau nama emiten."
   },
   "scanner": "Pindai",
   "market": "Pasar",
   "news": "Berita",
   "portfolio": "Aset",
-  "dashboard": "Beranda"
+  "dashboard": "Beranda",
+  "topbar": {
+    "dashboard_label": "Dasbor RetailBijak",
+    "search_label": "Cari",
+    "language_label": "Ganti bahasa",
+    "theme_label": "Ubah tema",
+    "settings_label": "Pengaturan",
+    "market_closed": "IDX TUTUP",
+    "market_open": "IDX BUKA"
+  },
+  "sidebar": {
+    "dashboard_tooltip": "Dasbor",
+    "screener_tooltip": "Pemindai",
+    "market_tooltip": "Pasar",
+    "portfolio_tooltip": "Aset",
+    "news_tooltip": "Berita",
+    "ai_picks_tooltip": "AI Picks"
+  },
+  "loader": {
+    "loading_text": "Memuat data pasar..."
+  }
 }

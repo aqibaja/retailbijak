@@ -43,7 +43,7 @@
 <header class="topbar">
    <div class="topbar-progress" id="scroll-progress"></div>
    <div class="topbar-brand">
-     <a href="#dashboard" class="topbar-brand-link" aria-label="RetailBijak dashboard">
+     <a href="#dashboard" class="topbar-brand-link" aria-label="RetailBijak dashboard" data-i18n-title="topbar.dashboard_label">
        <img class="site-logo-img" src="assets/site-logo.png" alt="RetailBijak logo" onerror="this.style.display='none'">
        <strong class="logo">RetailBijak</strong>
      </a>
@@ -55,25 +55,25 @@
     </div>
     <div class="topbar-market-status">
       <span class="status-dot" id="market-dot"></span>
-      <span class="text-xs text-dim" id="market-status-text">IDX TUTUP</span>
+      <span class="text-xs text-dim" id="market-status-text" data-i18n="topbar.market_closed">IDX TUTUP</span>
     </div>
   </div>
   <div class="topbar-ticker-wrap"><div class="tape-row" id="running-ticker"></div></div>
    <div class="topbar-actions flex items-center gap-4">
-    <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari"><i data-lucide="search" style="width:18px;"></i></button>
-    <button class="btn btn-icon" id="lang-toggle" aria-label="Ganti bahasa" title="ID/EN"><span class="lang-toggle-text">ID</span></button>
-    <button class="btn btn-icon" id="theme-toggle" aria-label="Ubah tema"><i data-lucide="moon" style="width:18px;"></i></button>
-     <a href="#settings" class="btn btn-icon" aria-label="Pengaturan"><i data-lucide="settings" style="width:18px;"></i></a>
+    <button class="btn btn-icon" id="cmd-k-trigger" aria-label="Cari" data-i18n-title="topbar.search_label"><i data-lucide="search" style="width:18px;"></i></button>
+    <button class="btn btn-icon" id="lang-toggle" aria-label="Ganti bahasa" title="ID/EN" data-i18n-title="topbar.language_label"><span class="lang-toggle-text">ID</span></button>
+    <button class="btn btn-icon" id="theme-toggle" aria-label="Ubah tema" data-i18n-title="topbar.theme_label"><i data-lucide="moon" style="width:18px;"></i></button>
+     <a href="#settings" class="btn btn-icon" aria-label="Pengaturan" data-i18n-title="topbar.settings_label"><i data-lucide="settings" style="width:18px;"></i></a>
    </div>
  </header>
 <aside class="sidebar" role="navigation" aria-label="Navigasi utama">
   <nav class="flex-col items-center gap-2" style="width:100%;">
-    <a href="#dashboard" class="nav-item active" data-view="dashboard" data-tooltip="Dashboard" aria-current="page"><i data-lucide="layout-grid" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#screener" class="nav-item" data-view="screener" data-tooltip="Pemindai"><i data-lucide="radar" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#market" class="nav-item" data-view="market" data-tooltip="Pasar"><i data-lucide="globe" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#portfolio" class="nav-item" data-view="portfolio" data-tooltip="Aset"><i data-lucide="briefcase" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#news" class="nav-item" data-view="news" data-tooltip="Berita"><i data-lucide="newspaper" style="width:20px;" aria-hidden="true"></i></a>
-    <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks"><i data-lucide="sparkles" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#dashboard" class="nav-item active" data-view="dashboard" data-tooltip="Dashboard" data-i18n-title="sidebar.dashboard_tooltip" aria-current="page"><i data-lucide="layout-grid" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#screener" class="nav-item" data-view="screener" data-tooltip="Pemindai" data-i18n-title="sidebar.screener_tooltip"><i data-lucide="radar" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#market" class="nav-item" data-view="market" data-tooltip="Pasar" data-i18n-title="sidebar.market_tooltip"><i data-lucide="globe" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#portfolio" class="nav-item" data-view="portfolio" data-tooltip="Aset" data-i18n-title="sidebar.portfolio_tooltip"><i data-lucide="briefcase" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#news" class="nav-item" data-view="news" data-tooltip="Berita" data-i18n-title="sidebar.news_tooltip"><i data-lucide="newspaper" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks" data-i18n-title="sidebar.ai_picks_tooltip"><i data-lucide="sparkles" style="width:20px;" aria-hidden="true"></i></a>
   </nav>
 </aside>
 <main class="main-content" id="app-root" role="main">
@@ -82,7 +82,7 @@
       <div class="initial-loader-logo">📈</div>
       <div class="initial-loader-brand">RetailBijak</div>
       <div class="initial-loader-bar"><div class="initial-loader-shimmer"></div></div>
-      <div class="initial-loader-text">Memuat data pasar...</div>
+      <div class="initial-loader-text" data-i18n="loader.loading_text">Memuat data pasar...</div>
     </div>
   </div>
 </main>
@@ -92,16 +92,16 @@
   <a href="#market" class="bottom-nav-item" data-view="market"><i data-lucide="globe" aria-hidden="true"></i><span data-i18n="market">Pasar</span></a>
   <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper" aria-hidden="true"></i><span data-i18n="news">Berita</span></a>
   <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase" aria-hidden="true"></i><span data-i18n="portfolio">Aset</span></a>
-  <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;" aria-hidden="true"></i><span>AI</span></a>
+  <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;" aria-hidden="true"></i><span data-i18n="sidebar.ai_picks_tooltip">AI</span></a>
 </nav>
- <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham">
+ <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham" data-i18n-title="search.search_dialog_label">
   <div class="search-modal">
     <div class="search-input-wrap">
       <i data-lucide="search" style="width:18px;flex-shrink:0;color:var(--text-muted)"></i>
-      <input type="text" id="global-search-input" data-i18n="search_placeholder" placeholder="Cari kode saham, emiten, atau sektor..." aria-label="Kata kunci pencarian" autocomplete="off" />
+      <input type="text" id="global-search-input" data-i18n-placeholder="search.search_placeholder" placeholder="Cari kode saham, emiten, atau sektor..." aria-label="Kata kunci pencarian" autocomplete="off" />
     </div>
-    <div class="search-hints"><span>Cmd+K</span><span>↵ pilih</span><span>Esc tutup</span></div>
-    <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3">Ketik kode saham atau nama emiten.</div></div>
+    <div class="search-hints"><span data-i18n="search.search_hint_cmd">Cmd+K</span><span data-i18n="search.search_hint_select">↵ pilih</span><span data-i18n="search.search_hint_close">Esc tutup</span></div>
+    <div id="search-suggestions" class="search-suggestions"><div class="text-sm text-muted p-3" data-i18n="search.search_input_hint">Ketik kode saham atau nama emiten.</div></div>
   </div>
 </div>
  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
