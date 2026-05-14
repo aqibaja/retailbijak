@@ -27,7 +27,7 @@ function trapFocus(container) {
 }
 
 // ─── Shared Modal ──────────────────────────────
-export function showModal({ title, fields = [], confirmText = 'Simpan', cancelText = 'Batal', onConfirm }) {
+export function showModal({ title, fields = [], confirmText = t('common.save'), cancelText = t('common.cancel'), onConfirm }) {
   const existing = document.getElementById('stock-modal-overlay');
   if (existing) existing.remove();
 
@@ -38,7 +38,7 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
     <div class="modal-panel">
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-sm strong m-0 text-main">${title}</h3>
-        <button class="btn btn-icon modal-close-btn" type="button" aria-label="Tutup"><i data-lucide="x"></i></button>
+        <button class="btn btn-icon modal-close-btn" type="button" aria-label="${t('common.close')}"><i data-lucide="x"></i></button>
       </div>
       <form class="modal-fields" onsubmit="return false">${fields.map((f, i) => `
         <div class="mb-4">
@@ -103,7 +103,7 @@ export function showModal({ title, fields = [], confirmText = 'Simpan', cancelTe
 }
 
 // ─── Confirm Dialog ────────────────────────────
-export function showConfirm({ title, message, confirmText = 'Yakin', cancelText = 'Batal', danger = false }) {
+export function showConfirm({ title, message, confirmText = t('common.delete'), cancelText = t('common.cancel'), danger = false }) {
   const existing = document.getElementById('stock-modal-overlay');
   if (existing) existing.remove();
 
@@ -149,19 +149,19 @@ export function showConfirm({ title, message, confirmText = 'Yakin', cancelText 
 // ─── Render ────────────────────────────────────
 export async function renderPortfolio(root, activeTab) {
     const isPort = activeTab === 'portfolio';
-    document.title = 'RetailBijak — Portofolio';
+    document.title = `RetailBijak — ${t('portfolio.title')}`;
     root.innerHTML = `
       <section class="grid grid-cols-12 stagger-reveal portfolio-page-pro">
         <div class="col-span-12 portfolio-header">
           <div class="portfolio-header-copy">
-            <div class="portfolio-kicker">Pusat Portofolio</div>
-            <h1>Aset & Daftar Pantau</h1>
-            <p>Kelola posisi aktif dan pantau aset kandidat.</p>
+            <div class="portfolio-kicker">${t('portfolio.center_title')}</div>
+            <h1>${t('portfolio.assets_watchlist')}</h1>
+            <p>${t('portfolio.manage_positions')}</p>
           </div>
           <div class="portfolio-meta-rail">
             <div class="portfolio-tab-switch flex p-1">
-              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">Portofolio</a>
-              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">Pantauan</a>
+              <a href="#portfolio" class="btn ${isPort ? 'btn-primary' : ''} portfolio-tab-btn">${t('portfolio.portfolio_tab')}</a>
+              <a href="#watchlist" class="btn ${!isPort ? 'btn-primary' : ''} portfolio-tab-btn">${t('portfolio.watchlist_tab')}</a>
             </div>
           </div>
         </div>
@@ -181,13 +181,13 @@ async function renderWatchlistTab(el) {
 
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
-        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Daftar Pantau <span class="badge badge-primary ml-2">${rows.length} ENTRI</span></h3>
-        <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">${t('portfolio.watchlist_entries')} <span class="badge badge-primary ml-2">${rows.length} ${t('portfolio.entries')}</span></h3>
+        <button id="add-watchlist" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> ${t('portfolio.add_btn')}</button>
       </div>
       ${rows.length ? `
       <div class="table-wrapper">
         <table class="table">
-          <thead><tr><th>Kode Saham</th><th>Catatan</th><th class="text-right">Aksi</th></tr></thead>
+          <thead><tr><th>${t('portfolio.stock_code')}</th><th>${t('portfolio.notes')}</th><th class="text-right">${t('portfolio.actions')}</th></tr></thead>
           <tbody>${rows.map(r => `
             <tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
@@ -199,22 +199,22 @@ async function renderWatchlistTab(el) {
       <div id="watchlist-mini-charts" class="portfolio-mini-grid mt-3"></div>` : `
       <div class="empty-state-v2">
         <div class="empty-icon"><i data-lucide="eye" class="watchlist-empty-icon"></i></div>
-        <h3>Daftar Pantau Kosong</h3>
-        <p>Tambahkan saham untuk mulai memantau pergerakan dan sinyal.</p>
-        <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Sekarang</button>
+        <h3>${t('portfolio.empty_watchlist')}</h3>
+        <p>${t('portfolio.add_stocks_monitor')}</p>
+        <button id="add-watchlist-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> ${t('portfolio.add_now')}</button>
       </div>`}`;
 
     // Watchlist add
     const addBtn = el.querySelector('#add-watchlist') || el.querySelector('#add-watchlist-empty');
     if (addBtn) addBtn.addEventListener('click', async () => {
         const vals = await showModal({
-            title: 'Tambah Saham ke Pantauan',
-            fields: [{ label: 'Kode Saham', placeholder: 'BBCA' }, { label: 'Catatan (opsional)', placeholder: 'Target swing' }],
-            confirmText: 'Tambah',
+            title: t('portfolio.add_to_watchlist_title'),
+            fields: [{ label: t('portfolio.stock_code_label'), placeholder: t('portfolio.stock_code_placeholder') }, { label: t('portfolio.notes_label'), placeholder: t('portfolio.notes_placeholder') }],
+            confirmText: t('portfolio.add_btn'),
             onConfirm: async ([ticker, notes]) => {
-                if (!ticker || !ticker.trim()) { showToast('Kode saham wajib diisi', 'error'); return false; }
+                if (!ticker || !ticker.trim()) { showToast(t('portfolio.ticker_required'), 'error'); return false; }
                 await saveWatchlistItem({ ticker: ticker.toUpperCase().trim(), notes: notes || '' });
-                showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
+                showToast(`${ticker.toUpperCase()} ${t('portfolio.ticker_added')}`, 'success');
             }
         });
         if (vals) { await renderWatchlistTab(el); if (typeof lucide !== 'undefined') lucide.createIcons(); }
@@ -224,16 +224,16 @@ async function renderWatchlistTab(el) {
     el.querySelectorAll('.delete-watchlist').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const ticker = e.currentTarget.getAttribute('data-ticker');
-            const ok = await showConfirm({ title: 'Hapus dari Pantauan?', message: `Yakin ingin menghapus ${ticker} dari daftar pantau?`, confirmText: 'Hapus', danger: true });
+            const ok = await showConfirm({ title: t('portfolio.delete_from_watchlist'), message: `${t('portfolio.confirm_delete_watchlist', { ticker })}`, confirmText: t('portfolio.delete_btn'), danger: true });
             if (ok) {
                 try {
                     await deleteWatchlistItem(ticker);
-                    showToast(`${ticker} dihapus`, 'success');
+                    showToast(`${ticker} ${t('portfolio.ticker_removed')}`, 'success');
                     await renderWatchlistTab(el);
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                 } catch (e) {
                     console.warn('deleteWatchlistItem failed', e);
-                    showToast(`Gagal menghapus ${ticker}`, 'error');
+                    showToast(t('portfolio.failed_delete_watchlist', { ticker }), 'error');
                 }
             }
         });
@@ -269,13 +269,13 @@ async function renderPortfolioTab(el) {
 
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
-        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">Posisi Aktif <span class="badge badge-primary ml-2">${rows.length} POS</span></h3>
-        <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> Tambah</button>
+        <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">${t('portfolio.active_positions')} <span class="badge badge-primary ml-2">${rows.length} ${t('portfolio.positions')}</span></h3>
+        <button id="add-portfolio" type="button" class="btn btn-primary portfolio-action-btn"><i data-lucide="plus" class="lucide-sm"></i> ${t('portfolio.add_btn')}</button>
       </div>
       ${rows.length ? `
       <div class="table-wrapper">
         <table class="table">
-          <thead><tr><th>Kode Saham</th><th>Lot</th><th>Harga Rata-Rata</th><th class="text-right">Aksi</th></tr></thead>
+          <thead><tr><th>${t('portfolio.stock_code')}</th><th>${t('portfolio.lots')}</th><th>${t('portfolio.avg_price')}</th><th class="text-right">${t('portfolio.actions')}</th></tr></thead>
           <tbody>${rows.map(r => `
             <tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
@@ -287,27 +287,27 @@ async function renderPortfolioTab(el) {
       </div>` : `
       <div class="empty-state-v2">
         <div class="empty-icon"><i data-lucide="briefcase" class="watchlist-empty-icon"></i></div>
-        <h3>Belum Ada Posisi</h3>
-        <p>Mulai catat posisi saham Anda untuk melacak portofolio.</p>
-        <button id="add-portfolio-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> Tambah Posisi</button>
+        <h3>${t('portfolio.no_positions_yet')}</h3>
+        <p>${t('portfolio.start_tracking')}</p>
+        <button id="add-portfolio-empty" type="button" class="btn btn-primary mt-12"><i data-lucide="plus" class="lucide-md"></i> ${t('portfolio.add_position_btn')}</button>
       </div>`}`;
 
     // Portfolio add
     const addBtn = el.querySelector('#add-portfolio') || el.querySelector('#add-portfolio-empty');
     if (addBtn) addBtn.addEventListener('click', async () => {
         const vals = await showModal({
-            title: 'Tambah Posisi Portofolio',
+            title: t('portfolio.add_position_title'),
             fields: [
-                { label: 'Kode Saham', placeholder: 'BBCA' },
-                { label: 'Jumlah Lot', type: 'number', value: '1', step: '1', min: '1' },
-                { label: 'Harga Rata-Rata (Rp)', type: 'number', value: '1000', step: '100', min: '1' }
+                { label: t('portfolio.stock_code_label'), placeholder: t('portfolio.stock_code_placeholder') },
+                { label: t('portfolio.lots_label'), type: 'number', value: '1', step: '1', min: '1' },
+                { label: t('portfolio.avg_price_label'), type: 'number', value: '1000', step: '100', min: '1' }
             ],
-            confirmText: 'Simpan',
+            confirmText: t('portfolio.save_btn'),
             onConfirm: async ([ticker, lots, avgPrice]) => {
-                if (!ticker || !ticker.trim()) { showToast('Kode saham wajib diisi', 'error'); return false; }
-                if (isNaN(lots) || isNaN(avgPrice) || lots <= 0 || avgPrice <= 0) { showToast('Lot atau harga tidak valid', 'error'); return false; }
+                if (!ticker || !ticker.trim()) { showToast(t('portfolio.ticker_required'), 'error'); return false; }
+                if (isNaN(lots) || isNaN(avgPrice) || lots <= 0 || avgPrice <= 0) { showToast(t('portfolio.invalid_lots_price'), 'error'); return false; }
                 await savePortfolioPosition({ ticker: ticker.toUpperCase().trim(), lots, avg_price: avgPrice });
-                showToast(`${ticker.toUpperCase()} ditambahkan`, 'success');
+                showToast(`${ticker.toUpperCase()} ${t('portfolio.ticker_added')}`, 'success');
             }
         });
         if (vals) { await renderPortfolioTab(el); if (typeof lucide !== 'undefined') lucide.createIcons(); }
@@ -317,16 +317,16 @@ async function renderPortfolioTab(el) {
     el.querySelectorAll('.delete-portfolio').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const ticker = e.currentTarget.getAttribute('data-ticker');
-            const ok = await showConfirm({ title: 'Hapus Posisi?', message: `Yakin ingin menghapus ${ticker} dari portofolio?`, confirmText: 'Hapus', danger: true });
+            const ok = await showConfirm({ title: t('portfolio.delete_position_confirm'), message: `${t('portfolio.confirm_delete_position', { ticker })}`, confirmText: t('portfolio.delete_btn'), danger: true });
             if (ok) {
                 try {
                     await deletePortfolioPosition(ticker);
-                    showToast(`${ticker} dihapus`, 'success');
+                    showToast(`${ticker} ${t('portfolio.ticker_removed')}`, 'success');
                     await renderPortfolioTab(el);
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                 } catch (e) {
                     console.warn('deletePortfolioPosition failed', e);
-                    showToast(`Gagal menghapus ${ticker}`, 'error');
+                    showToast(t('portfolio.failed_delete_position', { ticker }), 'error');
                 }
             }
         });

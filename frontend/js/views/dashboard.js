@@ -30,72 +30,72 @@ function buildAiPickContext(item, mode = 'swing') {
 }
 
 export async function renderDashboard(root) {
-  document.title = 'RetailBijak — Dashboard';
+  document.title = `RetailBijak — ${t('dashboard.title')}`;
   root.innerHTML = `
-  <section class="dashboard-pro stagger-reveal" aria-label="Dashboard Pasar">
+  <section class="dashboard-pro stagger-reveal" aria-label="${t('dashboard.market_dashboard')}">
     <div class="dash-hero-pro panel">
       <div class="dash-copy">
-        <div class="screener-kicker">RUANG KERJA IDX</div>
-        <h1>Dashboard Pasar</h1>
-        <p class="dash-hero-lead">Pantau IHSG, breadth, dan penggerak utama dalam satu layar.</p>
+        <div class="screener-kicker">${t('dashboard.workspace')}</div>
+        <h1>${t('dashboard.market_dashboard')}</h1>
+        <p class="dash-hero-lead">${t('dashboard.monitor_ihsg')}</p>
         <div class="dash-actions dash-actions-compact">
-          <a href="#screener" class="btn btn-primary dash-primary-cta">Jalankan Pemindai</a>
-          <a href="#market" class="btn dash-secondary-cta">Ikhtisar Pasar</a>
+          <a href="#screener" class="btn btn-primary dash-primary-cta">${t('dashboard.run_screener')}</a>
+          <a href="#market" class="btn dash-secondary-cta">${t('dashboard.market_overview')}</a>
         </div>
         <div class="dash-summary-strip dash-summary-strip-compact dash-mobile-stack" aria-live="polite" aria-atomic="true">
           <div class="dash-summary-card">
-            <span>Bias Pasar</span>
-            <strong id="dash-bias-label">Memuat...</strong>
-            <small id="dash-bias-note">Menyiapkan breadth dan konteks tape.</small>
+            <span>${t('dashboard.market_bias')}</span>
+            <strong id="dash-bias-label">${t('dashboard.loading_data')}</strong>
+            <small id="dash-bias-note">${t('dashboard.preparing_breadth')}</small>
           </div>
           <div class="dash-summary-card">
-            <span>Penguat Utama</span>
-            <strong id="dash-lead-gainer">Memuat...</strong>
-            <small id="dash-lead-gainer-note">Menunggu top movers valid.</small>
+            <span>${t('dashboard.top_gainer')}</span>
+            <strong id="dash-lead-gainer">${t('dashboard.loading_data')}</strong>
+            <small id="dash-lead-gainer-note">${t('dashboard.waiting_movers')}</small>
           </div>
           <div class="dash-summary-card">
-            <span>Sektor Utama</span>
-            <strong id="dash-lead-sector">Memuat...</strong>
-            <small id="dash-lead-sector-note">Snapshot rotasi sektor.</small>
+            <span>${t('dashboard.top_sector')}</span>
+            <strong id="dash-lead-sector">${t('dashboard.loading_data')}</strong>
+            <small id="dash-lead-sector-note">${t('dashboard.sector_rotation')}</small>
           </div>
         </div>
       </div>
       <div class="dash-quote-card dash-mobile-status" aria-live="polite" aria-atomic="true">
-        <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">SYNC</span><span class="mono text-xs text-dim" id="market-fold-status">loading...</span></div>
-        <div class="text-xs text-dim mb-2" id="market-data-date">Data IDX: loading...</div>
-        <div class="text-xs text-dim uppercase strong">IHSG</div>
+        <div class="dash-quote-meta"><span class="badge" id="market-fold-badge">${t('dashboard.syncing')}</span><span class="mono text-xs text-dim" id="market-fold-status">${t('dashboard.loading_data')}</span></div>
+        <div class="text-xs text-dim mb-2" id="market-data-date">${t('dashboard.ihsg_data')}</div>
+        <div class="text-xs text-dim uppercase strong">${t('dashboard.ihsg')}</div>
         <div class="flex justify-between items-end gap-3" role="group" aria-label="IHSG nilai dan perubahan"><div class="mono strong dash-big" id="ihsg-value">—</div><div class="mono strong text-up" id="ihsg-change">—</div></div>
-        <div class="dashboard-metrics mt-3"><div><span>Open</span><strong id="ihsg-open">—</strong></div><div><span>High</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>Low</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
-        <div class="dash-quote-freshness" id="dash-quote-freshness">Sinkronisasi: menunggu ringkasan pasar.</div>
+        <div class="dashboard-metrics mt-3"><div><span>${t('dashboard.open')}</span><strong id="ihsg-open">—</strong></div><div><span>${t('dashboard.high')}</span><strong id="ihsg-high" class="text-up">—</strong></div><div><span>${t('dashboard.low')}</span><strong id="ihsg-low" class="text-down">—</strong></div></div>
+        <div class="dash-quote-freshness" id="dash-quote-freshness">${t('dashboard.sync_status')}</div>
       </div>
     </div>
 
     <div class="dash-grid-pro dash-mobile-shell">
       <div class="panel dash-chart-panel">
         <div class="flex justify-between items-center mb-3">
-          <div><h3 class="panel-title">IHSG Chart</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">Data dari IDX</p></div>
+          <div><h3 class="panel-title">${t('dashboard.ihsg_chart')}</h3><p class="text-xs text-dim" id="ihsg-chart-subtitle">${t('dashboard.chart_data')}</p></div>
           <div class="dashboard-chip-row" role="group" aria-label="Rentang waktu grafik">
-            <button class="btn btn-mini ihsg-range" data-range="1W" aria-pressed="false">1W</button>
-            <button class="btn btn-primary btn-mini ihsg-range" data-range="1M" aria-pressed="true">1M</button>
-            <button class="btn btn-mini ihsg-range" data-range="1Q" aria-pressed="false">1Q</button>
+            <button class="btn btn-mini ihsg-range" data-range="1W" aria-pressed="false">${t('dashboard.chart_range_1w')}</button>
+            <button class="btn btn-primary btn-mini ihsg-range" data-range="1M" aria-pressed="true">${t('dashboard.chart_range_1m')}</button>
+            <button class="btn btn-mini ihsg-range" data-range="1Q" aria-pressed="false">${t('dashboard.chart_range_1q')}</button>
           </div>
         </div>
-        <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">Bias dihitung</span><strong id="dash-chart-readout">IHSG readout menunggu data.</strong></div>
+        <div class="dash-chart-context"><span class="dash-chart-context-chip" id="dash-chart-bias-chip">${t('dashboard.bias_calculated')}</span><strong id="dash-chart-readout">${t('dashboard.ihsg_readout')}</strong></div>
         <div class="dashboard-chart-wrap"><div class="skeleton skeleton-chart" aria-hidden="true"></div><canvas id="ihsgMainChart" role="img" aria-label="Grafik pergerakan IHSG"></canvas></div>
       </div>
       <div class="panel dash-movers-panel">
         <div class="flex justify-between items-center mb-3">
-          <div><h3 class="panel-title">Penggerak Teratas</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">Tape dimuat</span></div></div>
-          <a href="#market" class="text-xs text-primary strong">Lihat Semua</a>
+          <div><h3 class="panel-title">${t('dashboard.top_movers')}</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">${t('dashboard.tape_loaded')}</span></div></div>
+          <a href="#market" class="text-xs text-primary strong">${t('dashboard.view_all')}</a>
         </div>
-        <div id="movers-list" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyiapkan data</strong></div></div>
+        <div id="movers-list" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.preparing_data')}</strong></div></div>
       </div>
     </div>
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
-      <div class="panel"><h3 class="panel-title mb-3">Intelijen Pasar</h3><div id="market-intel" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Menyusun ringkasan</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">AI Picks</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">Menyiapkan pick unggulan...</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengambil pick</strong><span class="dashboard-widget-state-note">Menarik kandidat dengan score tertinggi.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">Berita Terbaru</h3><div id="news-container" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Mengumpulkan berita</strong><span class="dashboard-widget-state-note">Menarik berita terbaru dari feed.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.market_intel')}</h3><div id="market-intel" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.preparing_data')}</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.ai_picks')}</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">${t('dashboard.preparing_picks')}</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.getting_picks')}</strong><span class="dashboard-widget-state-note">${t('dashboard.pulling_candidates')}</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.latest_news')}</h3><div id="news-container" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.gathering_news')}</strong><span class="dashboard-widget-state-note">${t('dashboard.pulling_news')}</span></div></div></div>
     </div>
   </section>`;
   observeElements();
@@ -113,9 +113,9 @@ async function loadMarketSummary() {
   document.getElementById('market-fold-badge').textContent = isLive ? 'DB' : 'REF';
   const dataDate = summary?.data_date || (summary?.updated_at ? String(summary.updated_at).slice(0,10) : null);
   const dateEl = document.getElementById('market-data-date');
-  if (dateEl) dateEl.textContent = dataDate ? `Data ${dataDate} · sync 18:00 WIB` : 'Data belum tersedia';
+  if (dateEl) dateEl.textContent = dataDate ? t('dashboard.data_date', { date: dataDate }) : t('dashboard.data_unavailable');
   const freshnessEl = document.getElementById('dash-quote-freshness');
-  if (freshnessEl) freshnessEl.textContent = dataDate ? `Sinkronisasi: ${dataDate}` : 'Sinkronisasi: menunggu data.';
+  if (freshnessEl) freshnessEl.textContent = dataDate ? t('dashboard.sync_date', { date: dataDate }) : t('dashboard.sync_waiting');
   const v = summary?.value ?? null, c = Number(summary?.change_pct ?? 0);
   document.getElementById('ihsg-value').textContent = v != null ? nf(v, 2) : '—';
   const ch = document.getElementById('ihsg-change'); ch.innerHTML = v != null ? `<span aria-hidden="true">${c >= 0 ? '▲' : '▼'}</span> <span>${pf(Math.abs(c)).replace('+', '')}</span>` : '—'; ch.className = `mono strong ${c>=0?'text-up':'text-down'}`;
@@ -124,8 +124,8 @@ async function loadMarketSummary() {
   document.getElementById('ihsg-low').textContent = summary?.low != null ? nf(summary.low) : '—';
   const biasLabel = document.getElementById('dash-bias-label');
   const biasNote = document.getElementById('dash-bias-note');
-  if (biasLabel) biasLabel.textContent = v == null ? 'Menunggu snapshot' : c >= 0 ? 'Tape Berisiko' : 'Tape Defensif';
-  if (biasNote) biasNote.textContent = v == null ? 'Ringkasan belum lengkap.' : c >= 0 ? `IHSG ${pf(c)} dengan bias momentum bertahan.` : `IHSG ${pf(c)} defensif, selektivitas lebih penting.`;
+  if (biasLabel) biasLabel.textContent = v == null ? t('dashboard.waiting_snapshot') : c >= 0 ? t('dashboard.risky_tape') : t('dashboard.defensive_tape');
+  if (biasNote) biasNote.textContent = v == null ? t('dashboard.summary_incomplete') : c >= 0 ? t('dashboard.momentum_bias', { change: pf(c) }) : t('dashboard.defensive_bias', { change: pf(c) });
   return summary;
 } catch (e) { console.warn('loadMarketSummary failed',e); return null; }
 }
@@ -159,18 +159,18 @@ async function loadIntel(){
   const leadSectorNoteEl = document.getElementById('dash-lead-sector-note');
   const chartBiasChip = document.getElementById('dash-chart-bias-chip');
   const chartReadout = document.getElementById('dash-chart-readout');
-  if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? 'Butuh breadth' : adv >= dec ? 'Tape Berisiko' : 'Tape Defensif';
-  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || 'Belum ada';
-  if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin hari ini.` : 'Top movers belum lengkap.';
+  if (biasLabel) biasLabel.textContent = adv === 0 && dec === 0 ? t('dashboard.need_breadth') : adv >= dec ? t('dashboard.risky_tape') : t('dashboard.defensive_tape');
+  if (leadGainerEl) leadGainerEl.textContent = leadGainer?.ticker || t('dashboard.no_data_yet');
+  if (leadGainerNoteEl) leadGainerNoteEl.textContent = leadGainer ? `${pf(leadGainer.change_pct ?? 0)} ${t('dashboard.leading_today')}` : t('dashboard.waiting_movers');
   if (leadSectorEl) leadSectorEl.textContent = best?.sector || best?.name || 'Finance';
-  if (leadSectorNoteEl) leadSectorNoteEl.textContent = `${best?.sector||'Sektor'} rotasi ${pf(best?.change_pct ?? 1.2)}.`;
-  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? 'Data breadth belum tersedia' : adv >= dec ? 'Breadth mendukung' : 'Breadth melemah';
+  if (leadSectorNoteEl) leadSectorNoteEl.textContent = `${best?.sector||'Sektor'} ${t('dashboard.sector_rotation_label')} ${pf(best?.change_pct ?? 1.2)}.`;
+  if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? t('dashboard.data_unavailable') : adv >= dec ? 'Breadth mendukung' : 'Breadth melemah';
   if (chartReadout) chartReadout.textContent = `IHSG ${pf(Number(summary?.change_pct ?? 0))} · ${adv} adv vs ${dec} dec · ${planLine}`;
   document.getElementById('market-intel').innerHTML = [
-    { kicker: 'Breadth', value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? 'Snapshot belum valid.' : `${tapeBias} untuk first glance.` },
-    { kicker: 'Leader', value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin.` : 'Fallback sektoral.' },
-    { kicker: 'Sektor', value: best?.sector||best?.name||'Finance', note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
-    { kicker: 'Plan', value: Number(summary?.change_pct ?? 0) >= 0 ? 'Selektif' : 'Defensif', note: planLine }
+    { kicker: t('dashboard.breadth_label'), value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? t('dashboard.data_unavailable') : `${tapeBias} untuk first glance.` },
+    { kicker: t('dashboard.leader_label'), value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin.` : t('dashboard.leader_fallback') },
+    { kicker: t('dashboard.sector_label'), value: best?.sector||best?.name||'Finance', note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
+    { kicker: t('dashboard.plan_label'), value: Number(summary?.change_pct ?? 0) >= 0 ? t('dashboard.plan_selective') : t('dashboard.plan_defensive'), note: planLine }
   ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
 }
 
@@ -181,17 +181,17 @@ async function loadMovers() {
   const moversSummaryChip = document.getElementById('dash-movers-summary-chip');
   if (items.length) {
     const positiveCount = items.filter(item => Number(item.change_pct ?? 0) >= 0).length;
-    if (moversSummaryChip) moversSummaryChip.textContent = `${positiveCount}/${items.length} positif`;
+    if (moversSummaryChip) moversSummaryChip.textContent = t('dashboard.positive_count', { positive: positiveCount, total: items.length });
     document.getElementById('movers-list').innerHTML = items.slice(0,4).map((r, index) => row({
-      ticker: r.ticker, name: r.name || r.sector || 'Ekuitas IDX', price: r.price ?? 0,
+      ticker: r.ticker, name: r.name || r.sector || t('dashboard.equity_idx'), price: r.price ?? 0,
       change: r.change_pct ?? 0, rank: index + 1,
     })).join('');
   } else {
-    if (moversSummaryChip) moversSummaryChip.textContent = 'Data belum tersedia';
-    document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Belum ada data penggerak</strong><span class="dashboard-widget-state-note">Top movers akan muncul setelah scheduler memperbarui basis data.</span></div>';
+    if (moversSummaryChip) moversSummaryChip.textContent = t('dashboard.data_unavailable');
+    document.getElementById('movers-list').innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.no_movers_data')}</strong><span class="dashboard-widget-state-note">${t('dashboard.movers_after_scheduler')}</span></div>`;
   }
   } catch (e) { console.warn('loadMovers failed', e);
-    document.getElementById('movers-list').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat data</strong><span class="dashboard-widget-state-note">Terjadi kesalahan saat mengambil data penggerak pasar.</span></div>';
+    document.getElementById('movers-list').innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.load_failed')}</strong><span class="dashboard-widget-state-note">${t('dashboard.error_loading_movers')}</span></div>`;
   }
 }
 
@@ -230,31 +230,31 @@ async function loadAiPickWidget() {
   const featured = picks[0];
 
   if (!featured) {
-    if (summaryEl) summaryEl.textContent = 'Belum ada pick unggulan.';
-    mount.innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">AI Picks sementara kosong</strong><span class="dashboard-widget-state-note">Universe kandidat sedang tipis. Buka AI Picks untuk hasil lebih lengkap.</span><a href="#ai-picks" class="btn btn-secondary portfolio-action-btn mt-10">Buka AI Picks</a></div>';
+    if (summaryEl) summaryEl.textContent = t('dashboard.no_featured_pick');
+    mount.innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.ai_picks_empty')}</strong><span class="dashboard-widget-state-note">${t('dashboard.ai_picks_thin_universe')}</span><a href="#ai-picks" class="btn btn-secondary portfolio-action-btn mt-10">${t('dashboard.open_ai_picks')}</a></div>`;
     return;
   }
 
-  if (summaryEl) summaryEl.textContent = `${payload?.summary?.eligible_count || picks.length} kandidat lolos filter.`;
+  if (summaryEl) summaryEl.textContent = t('dashboard.candidates_passed', { count: payload?.summary?.eligible_count || picks.length });
   const alternatives = picks.slice(1, 3);
   mount.innerHTML = `
     <div class="dash-ai-pick-featured">
       <a href="#ai-picks" class="dash-ai-pick-featured-link">
         <div class="dash-ai-pick-head">
           <div>
-            <span class="dash-intel-kicker">Featured · ${featured.ticker}</span>
+            <span class="dash-intel-kicker">${t('dashboard.featured')} · ${featured.ticker}</span>
             <strong>${featured.name || featured.ticker}</strong>
           </div>
           <div class="dash-ai-pick-score">${nf(featured.score, 1)}</div>
         </div>
-        <p class="dash-ai-pick-fit">${featured.fit_label || 'Kandidat terbaik untuk mode swing.'}</p>
+        <p class="dash-ai-pick-fit">${featured.fit_label || t('dashboard.best_candidate_swing')}</p>
         <div class="dash-ai-pick-metrics">
-          <div><span>Keyakinan</span><strong>${featured.confidence || '-'}</strong></div>
-          <div><span>Change</span><strong>${pf(featured.change_pct ?? 0)}</strong></div>
-          <div><span>Vol</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
+          <div><span>${t('dashboard.confidence')}</span><strong>${featured.confidence || '-'}</strong></div>
+          <div><span>${t('dashboard.change')}</span><strong>${pf(featured.change_pct ?? 0)}</strong></div>
+          <div><span>${t('dashboard.volume')}</span><strong>${nf(featured.volume_ratio, 2)}x</strong></div>
         </div>
         <div class="dash-ai-pick-summary">
-          <span>${featured.reason_labels?.[0] || 'Likuiditas dan teknikal mendukung.'}</span>
+          <span>${featured.reason_labels?.[0] || t('dashboard.liquidity_technical_support')}</span>
         </div>
       </a>
       ${alternatives.length ? `
@@ -267,8 +267,8 @@ async function loadAiPickWidget() {
             </button>`).join('')}
         </div>` : ''}
       <div class="dash-ai-pick-cta-row">
-        <button class="btn" data-dash-ai-pick-open-detail="${featured.ticker}">Buka Detail</button>
-        <a href="#ai-picks" class="dash-ai-pick-cta">Buka AI Picks</a>
+        <button class="btn" data-dash-ai-pick-open-detail="${featured.ticker}">${t('dashboard.open_detail')}</button>
+        <a href="#ai-picks" class="dash-ai-pick-cta">${t('dashboard.open_ai_picks')}</a>
       </div>
     </div>`;
   wireFeaturedPickDetail(featured, payload?.mode || 'swing');
@@ -284,15 +284,15 @@ async function loadNews(){
         <a href="${n.link && n.link.startsWith('http') ? n.link : '#news'}" ${n.link && n.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="intel-item dash-news-card ${index===0?'dash-news-card-featured':''}">
           <span class="badge">${n.source||'NEWS'}</span>
           <b>${n.title}</b>
-          <span class="dash-news-meta">${index===0?'Headline':'Brief'} · ${n.source||'NEWS'}</span>
+          <span class="dash-news-meta">${index===0?t('dashboard.headline'):t('dashboard.brief')} · ${n.source||'NEWS'}</span>
           ${n.summary ? `<small>${String(n.summary).replace(/<[^>]+>/g,'').slice(0,72)}</small>` : ''}
         </a>`).join('');
     } else {
-      document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Berita belum tersedia</strong><span class="dashboard-widget-state-note">Feed berita akan muncul setelah scheduler berjalan. Cek halaman Berita untuk update.</span></div>';
+      document.getElementById('news-container').innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.news_unavailable')}</strong><span class="dashboard-widget-state-note">${t('dashboard.news_after_scheduler')}</span></div>`;
     }
   } catch (e) {
     console.warn('loadNews failed', e);
-    document.getElementById('news-container').innerHTML = '<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">Gagal memuat berita</strong><span class="dashboard-widget-state-note">Terjadi kesalahan saat mengambil feed berita. Silakan coba lagi.</span></div>';
+    document.getElementById('news-container').innerHTML = `<div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.load_failed')}</strong><span class="dashboard-widget-state-note">${t('dashboard.error_loading_news')}</span></div>`;
   }
 }
 

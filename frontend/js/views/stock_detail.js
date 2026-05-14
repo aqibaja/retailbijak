@@ -34,7 +34,7 @@ function renderAiPickContextBanner(symbol) {
     if (!data || String(data.ticker || '').toUpperCase() !== String(symbol || '').toUpperCase()) return '';
     safeSessionStorageRemove(AI_PICKS_CONTEXT_KEY);
     const labels = Array.isArray(data.reason_labels) ? data.reason_labels.filter(Boolean).slice(0, 2).join(' · ') : '';
-    const fit = data.fit_label || 'Explainable candidate siap ditelaah lebih dalam.';
+    const fit = data.fit_label || t('stock_detail.explainable_candidate');
     const levels = [
       `Entry ${money(data.entry_zone)}`,
       `Target ${money(data.target_zone)}`,
@@ -44,7 +44,7 @@ function renderAiPickContextBanner(symbol) {
     const returnHref = data.source_route || '#ai-picks';
     const heroBackHref = returnHref;
     return {
-      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">Datang dari AI Picks</div><strong>${symbol} masuk radar mode ${data.mode || 'swing'}.</strong></div><span class="badge badge-up">Score ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">Asal shortlist: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>Keyakinan ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || 'Tetap validasi risk/reward sebelum eksekusi.'}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">Kembali ke shortlist asal</a></div></div>`,
+      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">${t('stock_detail.from_ai_picks')}</div><strong>${symbol} ${t('stock_detail.entered_radar', { mode: data.mode || 'swing' })}</strong></div><span class="badge badge-up">${t('stock_detail.score')} ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">${t('stock_detail.origin_shortlist')}: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>${t('stock_detail.confidence')} ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || t('stock_detail.validate_risk_reward')}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">${t('stock_detail.back_to_shortlist')}</a></div></div>`,
       heroBackHref,
     };
   } catch {
@@ -71,7 +71,7 @@ export async function renderStockDetail(root, ticker) {
               <h1>${symbol}</h1>
               <div class="stock-hero-badges"><span class="badge">IDX</span><span class="badge" id="live-badge">DB</span></div>
             </div>
-            <div class="stock-hero-name" id="stock-name">Memuat data emiten...</div>
+            <div class="stock-hero-name" id="stock-name">${t('stock_detail.loading_data')}</div>
           </div>
         </div>
         <div class="stock-hero-price-area">
@@ -85,7 +85,7 @@ export async function renderStockDetail(root, ticker) {
       <div class="stock-layout">
         <div class="panel chart-card-v2">
           <div class="flex justify-between items-center mb-3">
-            <div><h3 class="panel-title">Grafik Harga</h3><p class="text-xs text-dim" id="chart-subtitle">Memuat chart...</p></div>
+            <div><h3 class="panel-title">${t('stock_detail.price_chart')}</h3><p class="text-xs text-dim" id="chart-subtitle">${t('stock_detail.loading_chart')}</p></div>
           </div>
           <div class="chart-toolbar" id="chart-toolbar">
             <label class="indicator-toggle active" data-indicator="sma"><span>SMA</span></label>
@@ -117,13 +117,13 @@ export async function renderStockDetail(root, ticker) {
                 </div>
               </div>
               <div class="sample-prompts" id="chat-quick-prompts">
-                <button type="button" class="stat-tile metric-neutral chat-prompt" data-prompt="Apa sinyal teknikal?"><span>Teknikal</span><strong>Sinyal hari ini?</strong><small>RSI, MACD, trend</small></button>
-                <button type="button" class="stat-tile metric-good chat-prompt" data-prompt="Apa level support dan resistance?"><span>Level</span><strong>S/R terdekat?</strong><small>support + resistance</small></button>
-                <button type="button" class="stat-tile metric-warn chat-prompt" data-prompt="Apa rekomendasi entry plan?"><span>Trading</span><strong>Entry plan</strong><small>level + target</small></button>
-                <button type="button" class="stat-tile metric-neutral chat-prompt" data-prompt="Apa berita terbaru?"><span>Berita</span><strong>Berita terkini</strong><small>katalis terbaru</small></button>
+                <button type="button" class="stat-tile metric-neutral chat-prompt" data-prompt="Apa sinyal teknikal?"><span>${t('stock_detail.technical')}</span><strong>${t('stock_detail.signal_today')}</strong><small>RSI, MACD, trend</small></button>
+                <button type="button" class="stat-tile metric-good chat-prompt" data-prompt="Apa level support dan resistance?"><span>${t('stock_detail.level')}</span><strong>${t('stock_detail.nearest_sr')}</strong><small>support + resistance</small></button>
+                <button type="button" class="stat-tile metric-warn chat-prompt" data-prompt="Apa rekomendasi entry plan?"><span>${t('stock_detail.trading')}</span><strong>${t('stock_detail.entry_plan')}</strong><small>level + target</small></button>
+                <button type="button" class="stat-tile metric-neutral chat-prompt" data-prompt="Apa berita terbaru?"><span>${t('stock_detail.news')}</span><strong>${t('stock_detail.latest_news')}</strong><small>katalis terbaru</small></button>
               </div>
               <div class="chat-input-area">
-                <input type="text" id="stock-chat-input" class="form-input" placeholder="Tanya: risiko, entry, berita, atau analisis..." />
+                <input type="text" id="stock-chat-input" class="form-input" placeholder="${t('stock_detail.chat_placeholder')}" />
                 <button id="stock-chat-send" type="button" class="btn btn-primary chat-send-btn"><i data-lucide="send"></i></button>
               </div>
             </div>
@@ -162,17 +162,17 @@ export async function renderStockDetail(root, ticker) {
     try {
       const res = isWatched
         ? await deleteWatchlistItem(symbol)
-        : await saveWatchlistItem({ ticker: symbol, notes: 'Ditambahkan dari halaman detail' });
+        : await saveWatchlistItem({ ticker: symbol, notes: t('stock_detail.added_from_detail') });
       if (res && res.ok !== false) {
         isWatched = !isWatched;
         updateWatchlistBtn();
-        showToast(isWatched ? `${symbol} ditambahkan ke Daftar Pantau` : `${symbol} dihapus dari Daftar Pantau`, 'success');
+        showToast(isWatched ? t('stock_detail.added_to_watchlist', { symbol }) : t('stock_detail.removed_from_watchlist', { symbol }), 'success');
       } else {
-        showToast(`Gagal ${isWatched ? 'menghapus' : 'menambahkan'} ${symbol}`, 'error');
+        showToast(t('stock_detail.watchlist_action_failed', { action: isWatched ? t('common.remove') : t('common.add'), symbol }), 'error');
       }
     } catch (e) {
       console.warn('watchlist toggle failed', e);
-      showToast(`Gagal ${isWatched ? 'menghapus' : 'menambahkan'} ${symbol}`, 'error');
+      showToast(t('stock_detail.watchlist_action_failed', { action: isWatched ? t('common.remove') : t('common.add'), symbol }), 'error');
     }
   });
   document.getElementById('btn-set-alert').addEventListener('click', () => showAlertModal(symbol));
@@ -237,7 +237,7 @@ export async function renderStockDetail(root, ticker) {
         timeout: 30000,
       });
       loadingEl.remove();
-      const reply = res?.reply || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
+      const reply = res?.reply || t('stock_detail.ai_unable_respond');
       const aiBubble = document.createElement('div');
       aiBubble.className = 'chat-bubble ai-bubble';
       aiBubble.textContent = reply;
@@ -249,7 +249,7 @@ export async function renderStockDetail(root, ticker) {
       loadingEl.remove();
       const errEl = document.createElement('div');
       errEl.className = 'chat-bubble ai-bubble chat-error';
-      errEl.textContent = 'Gagal terhubung ke asisten AI. Coba lagi.';
+      errEl.textContent = t('stock_detail.ai_connection_failed');
       chatMessages.appendChild(errEl);
     } finally {
       if (chatInput) chatInput.disabled = false;
@@ -967,14 +967,14 @@ function showAlertModal(symbol) {
   document.getElementById('alert-save-btn').addEventListener('click', async () => {
     const atype = document.getElementById('alert-type').value;
     const avalue = parseFloat(document.getElementById('alert-value').value);
-    if (!avalue || avalue <= 0) return showToast('Masukkan nilai yang valid', 'error');
+      if (!avalue || avalue <= 0) return showToast(t('stock_detail.enter_valid_value'), 'error');
     try {
       const res = await apiFetch('/alerts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ticker:symbol, alert_type:atype, value:avalue}) });
       if (res?.ok) { showToast(res.message, 'success'); loadAlertList(symbol); }
-      else showToast('Gagal membuat alert', 'error');
+      else showToast(t('stock_detail.alert_create_failed'), 'error');
     } catch (e) {
       console.warn('alert creation failed', e);
-      showToast('Gagal membuat alert', 'error');
+      showToast(t('stock_detail.alert_create_failed'), 'error');
     }
   });
   loadAlertList(symbol);
@@ -995,16 +995,16 @@ async function loadAlertList(symbol) {
         try {
           const del = await apiFetch(`/alerts/${id}`, { method: 'DELETE' });
           if (del?.ok) { showToast(del.message, 'success'); loadAlertList(symbol); }
-          else showToast('Gagal menghapus alert', 'error');
+          else showToast(t('stock_detail.alert_delete_failed'), 'error');
         } catch (e) {
           console.warn('alert deletion failed', e);
-          showToast('Gagal menghapus alert', 'error');
+          showToast(t('stock_detail.alert_delete_failed'), 'error');
         }
     });
   });
   } catch (e) {
     console.warn('loadAlertList failed', e);
-    el.innerHTML = '<div class="text-xs text-dim mt-2">Gagal memuat peringatan.</div>';
+    el.innerHTML = `<div class="text-xs text-dim mt-2">${t('stock_detail.failed_load_alerts')}</div>`;
   }
 }
 

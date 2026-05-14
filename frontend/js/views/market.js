@@ -34,12 +34,12 @@ const compactSource = (value) => String(value || '').toLowerCase().replace(/_/g,
 const emptyState = (title, note, cta = 'Muat ulang data') => `<div class=\"market-empty market-empty-rich\"><div class=\"market-empty-icon\">\u26a0\ufe0f</div><strong>${title}</strong><span>${note}</span><button class=\"market-empty-refresh\" type=\"button\" data-market-refresh=\"1\">${cta}</button></div>`;
 const freshnessTone = (sources = []) => {
   const cleaned = sources.filter(Boolean).map((item) => String(item).toLowerCase());
-  if (!cleaned.length || cleaned.every((item) => item === 'no_data')) return { label: 'Data Parsial', tone: 'is-muted', note: 'Sebagian panel belum memiliki snapshot valid.' };
-  if (cleaned.some((item) => item === 'no_data')) return { label: 'Sumber Campuran', tone: 'is-warn', note: 'Sebagian panel live, sebagian masih fallback atau kosong.' };
-  if (cleaned.some((item) => item.includes('live'))) return { label: 'Sesi Live', tone: 'is-up', note: 'Mayoritas panel sudah memakai feed sesi berjalan.' };
-  return { label: 'Data Tertunda', tone: 'is-down', note: 'Snapshot tersedia, tetapi belum seluruhnya live sesi berjalan.' };
+  if (!cleaned.length || cleaned.every((item) => item === 'no_data')) return { label: t('market.data_partial'), tone: 'is-muted', note: t('market.partial_snapshot') };
+  if (cleaned.some((item) => item === 'no_data')) return { label: t('market.mixed_sources'), tone: 'is-warn', note: t('market.mixed_live_fallback') };
+  if (cleaned.some((item) => item.includes('live'))) return { label: t('market.live_session'), tone: 'is-up', note: t('market.majority_live') };
+  return { label: t('market.delayed_data'), tone: 'is-down', note: t('market.snapshot_available') };
 };
-const dataQualityMarkup = (freshness, sourcesLabel) => `<div class=\"market-data-quality ${freshness.tone}\"><div class=\"market-data-quality-label\">Kualitas Data</div><strong>${freshness.label}</strong><span>${freshness.note}</span><small>${sourcesLabel}</small></div>`;
+const dataQualityMarkup = (freshness, sourcesLabel) => `<div class="market-data-quality ${freshness.tone}"><div class="market-data-quality-label">${t('market.data_quality')}</div><strong>${freshness.label}</strong><span>${freshness.note}</span><small>${sourcesLabel}</small></div>`;
 const marketMood = (summaryValue, breadthValue, topWinner, topLoser) => {
   const adv = Number(breadthValue?.advancing ?? 0);
   const dec = Number(breadthValue?.declining ?? 0);
@@ -67,13 +67,13 @@ const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
     </header>
     <div class=\"market-card-body\">${body}</div>
   </section>`;
-const skeletonCard = () => `<div class=\"market-card-skeleton\"><div class=\"skeleton-shimmer skeleton-title\"></div><div class=\"skeleton-shimmer skeleton-text\"></div><div class=\"skeleton-shimmer skeleton-block\"></div></div>`;
-const loadingShell = (label = 'Memuat intel pasar...') => `
-  <div class=\"market-loading-shell\" role=\"status\" aria-live=\"polite\" aria-busy=\"true\">
-    <div class=\"market-loading-pulse\"><div class=\"market-loading-pulse-inner\"></div></div>
-    <div class=\"market-loading-copy\">
+const emptyState = (title, note, cta = t('market.reload_data')) => `<div class="market-empty market-empty-rich"><div class="market-empty-icon">⚠️</div><strong>${title}</strong><span>${note}</span><button class="market-empty-refresh" type="button" data-market-refresh="1">${cta}</button></div>`;
+const loadingShell = (label = t('market.loading_intel')) => `
+  <div class="market-loading-shell" role="status" aria-live="polite" aria-busy="true">
+    <div class="market-loading-pulse"><div class="market-loading-pulse-inner"></div></div>
+    <div class="market-loading-copy">
       <strong>${label}</strong>
-      <span>Menyiapkan breadth, movers, flows, dan corporate intelligence.</span>
+      <span>${t('market.preparing_breadth')}</span>
     </div>
   </div>`;
 
