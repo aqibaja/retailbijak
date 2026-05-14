@@ -88,14 +88,26 @@ export async function renderDashboard(root) {
           <div><h3 class="panel-title">${t('dashboard.top_movers')}</h3><div class="dash-movers-summary"><span class="dash-movers-summary-chip" id="dash-movers-summary-chip">${t('dashboard.tape_loaded')}</span></div></div>
           <a href="#market" class="text-xs text-primary strong">${t('dashboard.view_all')}</a>
         </div>
-        <div id="movers-list" class="flex-col gap-2" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.preparing_data')}</strong></div></div>
+        <div id="movers-list" class="flex-col gap-2" aria-live="polite">
+          <div class="skeleton skeleton-card skeleton-h-80"></div>
+          <div class="skeleton skeleton-card skeleton-h-80"></div>
+          <div class="skeleton skeleton-card skeleton-h-80"></div>
+        </div>
       </div>
     </div>
 
     <div class="dash-bottom-grid dash-bottom-grid-phase2 dash-bottom-grid-mobile">
-      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.market_intel')}</h3><div id="market-intel" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.preparing_data')}</strong><span class="dashboard-widget-state-note">Merangkum breadth, sektor, dan rencana intraday.</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.ai_picks')}</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">${t('dashboard.preparing_picks')}</div><div id="dash-ai-pick-widget" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.getting_picks')}</strong><span class="dashboard-widget-state-note">${t('dashboard.pulling_candidates')}</span></div></div></div>
-      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.latest_news')}</h3><div id="news-container" class="intel-list" aria-live="polite"><div class="dashboard-widget-state"><strong class="dashboard-widget-state-title">${t('dashboard.gathering_news')}</strong><span class="dashboard-widget-state-note">${t('dashboard.pulling_news')}</span></div></div></div>
+      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.market_intel')}</h3><div id="market-intel" class="intel-list" aria-live="polite">
+        <div class="skeleton skeleton-card skeleton-h-80"></div>
+        <div class="skeleton skeleton-card skeleton-h-80"></div>
+      </div></div>
+      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.ai_picks')}</h3><div id="dash-ai-pick-summary" class="text-xs text-muted mb-2" aria-live="polite">${t('dashboard.preparing_picks')}</div><div id="dash-ai-pick-widget" aria-live="polite">
+        <div class="skeleton skeleton-card skeleton-h-110"></div>
+      </div></div>
+      <div class="panel"><h3 class="panel-title mb-3">${t('dashboard.latest_news')}</h3><div id="news-container" class="intel-list" aria-live="polite">
+        <div class="skeleton skeleton-card skeleton-h-80"></div>
+        <div class="skeleton skeleton-card skeleton-h-80"></div>
+      </div></div>
     </div>
   </section>`;
   observeElements();

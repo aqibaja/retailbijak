@@ -94,7 +94,9 @@ export async function renderStockDetail(root, ticker) {
             <label class="indicator-toggle active" data-indicator="vol"><span>Vol</span></label>
           </div>
           <div class="chart-top-spacing"></div>
-          <div id="tvchart" class="stock-chart-wrap"><div class="skeleton skeleton-chart stock-chart-skeleton"></div></div>
+          <div id="tvchart" class="stock-chart-wrap">
+            <div class="skeleton skeleton-chart stock-chart-skeleton"></div>
+          </div>
           <div id="level-suggestions" class="level-suggestions"></div>
           <div id="decision-panel" class="decision-panel mt-3"></div>
           <div id="trade-plan" class="trade-plan-grid mt-4"></div>

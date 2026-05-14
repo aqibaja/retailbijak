@@ -166,7 +166,11 @@ export async function renderPortfolio(root, activeTab) {
           </div>
         </div>
         <div id="tab-content" class="col-span-12 panel flex-col portfolio-card">
-            <div class="p-4 text-center"><div class="skeleton skel-text skeleton-center"></div></div>
+            <div class="p-4">
+              <div class="skeleton skel-text"></div>
+              <div class="skeleton skel-text skeleton-text.long"></div>
+              <div class="skeleton skeleton-card skeleton-h-80 mt-4"></div>
+            </div>
         </div>
       </section>`;
     observeElements();

@@ -70,11 +70,8 @@ const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
 const emptyState = (title, note, cta = t('market.reload_data')) => `<div class="market-empty market-empty-rich"><div class="market-empty-icon">⚠️</div><strong>${title}</strong><span>${note}</span><button class="market-empty-refresh" type="button" data-market-refresh="1">${cta}</button></div>`;
 const loadingShell = (label = t('market.loading_intel')) => `
   <div class="market-loading-shell" role="status" aria-live="polite" aria-busy="true">
-    <div class="market-loading-pulse"><div class="market-loading-pulse-inner"></div></div>
-    <div class="market-loading-copy">
-      <strong>${label}</strong>
-      <span>${t('market.preparing_breadth')}</span>
-    </div>
+    <div class="skeleton skeleton-card skeleton-h-80"></div>
+    <div class="skeleton skeleton-card skeleton-h-80"></div>
   </div>`;
 
 const moverRow = (r, rank = null) => `<a href=\"#stock/${r.ticker || ''}\" class=\"market-row-link market-ranked-row\"><div class=\"market-row\"><div class=\"market-row-main\"><div class=\"market-rank-badge\">${rank != null ? `#${rank}` : '#'}</div><div><div class=\"market-code\">${r.ticker || '-'}</div><div class=\"market-sub market-sub-clamp\">${r.name || ''}</div></div></div><div class=\"market-right\"><div class=\"market-change ${Number(r.change_pct ?? 0) >= 0 ? 'is-up' : 'is-down'}\">${Number(r.change_pct ?? 0) >= 0 ? '▲' : '▼'} ${pct(r.change_pct).replace('+','')}</div><div class=\"market-sub\">${r.price != null ? fmt(r.price) : '--'}</div></div></div></a>`;
