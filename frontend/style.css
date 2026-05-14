@@ -231,7 +231,7 @@ html[data-theme="light"] {
 [data-theme="light"] .nav-item:hover { color: var(--text-main); background: rgba(16,185,129,0.08); }
 [data-theme="light"] .nav-item.active { background: rgba(16,185,129,0.14); color: var(--up-color); }
 [data-theme="light"] .btn-primary { box-shadow: 0 8px 24px rgba(16,185,129,0.16); }
-[data-theme="light"] .btn-icon { color: var(--text-muted); }
+[data-theme="light"] .btn-icon { color: var(--text-main); }
 [data-theme="light"] .market-card,
 [data-theme="light"] .panel,
 [data-theme="light"] .card,
@@ -811,10 +811,11 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .scanner-select:disabled,
 .scanner-btn-primary:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
+  transform: none !important;
   box-shadow: none;
+  color: var(--text-dim);
 }
 .scanner-btn-primary:disabled:hover {
   transform: none;
@@ -944,8 +945,8 @@ button, input, select { font-family: inherit; border: none; background: none; co
 [data-theme="light"] .logo { color: var(--text-main); text-shadow: 0 1px 0 rgba(255,255,255,0.7); }
 [data-theme="light"] .topbar-brand-link { color: var(--text-main); }
 [data-theme="light"] .topbar-brand-link:hover { color: var(--text-main); }
-[data-theme="light"] .topbar-actions .btn-icon { background: rgba(15,23,42,0.03); }
-[data-theme="light"] .topbar-actions .btn-icon:hover { background: rgba(16,185,129,0.10); }
+[data-theme="light"] .topbar-actions .btn-icon { background: rgba(15,23,42,0.05); color: var(--text-main); }
+[data-theme="light"] .topbar-actions .btn-icon:hover { background: rgba(16,185,129,0.12); color: var(--text-main); }
 @media (max-width: 767px) {
   .topbar-brand { min-width: 0; }
   .site-logo-img { width: 30px; height: 30px; border-radius: 9px; }
@@ -1066,7 +1067,7 @@ button, input, select { font-family: inherit; border: none; background: none; co
   box-shadow: 0 0 16px var(--primary-glow);
 }
 .btn-primary:hover { background: linear-gradient(135deg,var(--primary-color),var(--primary-dark)); box-shadow: 0 0 24px rgba(16,185,129,0.4); border-color: transparent; color: #fff;}
-.btn-icon { min-height: 44px; min-width: 44px; padding: 8px; border-radius: 8px; color: var(--text-muted); border: 1px solid transparent; height: auto;}
+.btn-icon { min-height: 44px; min-width: 44px; padding: 8px; border-radius: 8px; color: var(--text-main); border: 1px solid transparent; height: auto;}
 .btn-icon:hover { color: var(--text-main); background: var(--bg-panel-hover); border-color: var(--border-strong); }
 .btn-icon:active { transform: scale(0.94); background: var(--bg-panel); }
 .btn-primary:active { transform: scale(0.97); box-shadow: 0 0 12px rgba(16,185,129,0.25); }
@@ -1090,13 +1091,14 @@ button, input, select { font-family: inherit; border: none; background: none; co
 
 /* Disabled states */
 .btn:disabled, button:disabled, input:disabled, select:disabled, textarea:disabled {
-  opacity: 0.45;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
+  color: var(--text-dim);
 }
 .btn:disabled:hover, button:disabled:hover, a[aria-disabled="true"] {
-  opacity: 0.45;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
@@ -1246,13 +1248,13 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 .badge {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--border-subtle);
-  background: var(--bg-panel); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--border-strong);
+  background: var(--bg-panel); color: var(--text-main);
   transition: all .2s;
 }
-.badge-up { background: var(--up-bg); color: var(--up-color); border-color: rgba(16,185,129,0.2); }
-.badge-down { background: var(--down-bg); color: var(--danger-text); border-color: rgba(244,63,94,0.2); }
-.badge-primary { background: var(--accent-badge-bg); color: var(--accent-text); border-color: rgba(99,102,241,0.2); }
+.badge-up { background: var(--up-bg); color: #10b981; border-color: rgba(16,185,129,0.3); }
+.badge-down { background: var(--down-bg); color: #f87171; border-color: rgba(248,113,113,0.3); }
+.badge-primary { background: var(--accent-badge-bg); color: #6366f1; border-color: rgba(99,102,241,0.3); }
 
 /* Data Tables */
 .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -1291,7 +1293,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 .news-card:hover .news-image-wrap img { transform: scale(1.05); }
 .news-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
 .news-badge {
-  display: inline-block; background: rgba(99,102,241,0.15); color: var(--accent-text); font-size: 11px;
+  display: inline-block; background: rgba(99,102,241,0.15); color: #6366f1; font-size: 11px;
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px;
   border-radius: 6px; margin-bottom: 12px; width: fit-content;
 }
@@ -2305,11 +2307,11 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .market-section-group:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
 
 /* ===== Badge System (E4) ===== */
-.badge-live { background: rgba(74,222,128,.15); color: var(--up-color); }
-.badge-corporate { background: rgba(96,165,250,.15); color: var(--accent-text); }
-.badge-news { background: rgba(251,191,36,.15); color: var(--warn-color); }
-.badge-warn { background: rgba(251,146,60,.15); color: var(--danger-text); }
-.badge-dim { background: rgba(148,163,184,.12); color: var(--text-muted); }
+.badge-live { background: rgba(74,222,128,.15); color: #22c55e; }
+.badge-corporate { background: rgba(96,165,250,.15); color: #3b82f6; }
+.badge-news { background: rgba(251,191,36,.15); color: #f59e0b; }
+.badge-warn { background: rgba(251,146,60,.15); color: #f97316; }
+.badge-dim { background: rgba(148,163,184,.15); color: var(--text-main); }
 
 /* Badge classes on market-tag */
 .market-tag.badge-live { border-color: rgba(74,222,128,.25); }
