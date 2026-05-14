@@ -37,7 +37,7 @@
   --up-bg: rgba(16, 185, 129, 0.15);
   --down-color: #f87171;
   --down-bg: rgba(248, 113, 113, 0.15);
-  --warn-color: #fbbf24;
+  --warn-color: #fcd34d;
   --warn-bg: rgba(251, 191, 36, 0.15);
   
   /* Accent Utility Colors */
@@ -1252,8 +1252,8 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
   background: var(--bg-panel); color: var(--text-main);
   transition: all .2s;
 }
-.badge-up { background: var(--up-bg); color: #10b981; border-color: rgba(16,185,129,0.3); }
-.badge-down { background: var(--down-bg); color: #f87171; border-color: rgba(248,113,113,0.3); }
+.badge-up { background: var(--up-bg); color: var(--up-color); border-color: rgba(16,185,129,0.3); }
+.badge-down { background: var(--down-bg); color: var(--down-color); border-color: rgba(248,113,113,0.3); }
 .badge-primary { background: var(--accent-badge-bg); color: #6366f1; border-color: rgba(99,102,241,0.3); }
 
 /* Data Tables */
