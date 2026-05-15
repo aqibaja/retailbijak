@@ -31,7 +31,6 @@ const badge = (label, cls = '') => {
 const statBox = (label, value, tone = '', valueClass = '', labelClass = '') => `<div class=\"market-stat-box ${tone}\"><div class=\"market-stat-label ${labelClass}\">${label}</div><div class=\"market-stat-value ${valueClass}\">${value}</div></div>`;
 const breadthStatBox = (advancing, declining) => `<div class=\"market-stat-box market-stat-box-breadth\"><div class=\"market-stat-label\">Breadth</div><div class=\"market-stat-value market-stat-value-breadth\"><span>${advancing ?? 0}</span><span class=\"market-breadth-separator\">/</span><span class=\"market-breadth-secondary\">${declining ?? 0}</span></div><div class=\"market-stat-footnote\">${breadthInsight(advancing, declining)}</div></div>`;
 const compactSource = (value) => String(value || '').toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-const emptyState = (title, note, cta = 'Muat ulang data') => `<div class=\"market-empty market-empty-rich\"><div class=\"market-empty-icon\">\u26a0\ufe0f</div><strong>${title}</strong><span>${note}</span><button class=\"market-empty-refresh\" type=\"button\" data-market-refresh=\"1\">${cta}</button></div>`;
 const freshnessTone = (sources = []) => {
   const cleaned = sources.filter(Boolean).map((item) => String(item).toLowerCase());
   if (!cleaned.length || cleaned.every((item) => item === 'no_data')) return { label: t('market.data_partial'), tone: 'is-muted', note: t('market.partial_snapshot') };
