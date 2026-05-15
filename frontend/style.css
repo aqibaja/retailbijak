@@ -8,9 +8,9 @@
   --bg-mobile-surface: #111a2e;
   
   /* Glowing / Neon Accents (from kun.pro) */
-  --primary-color: #10b981; /* Emerald */
-  --primary-glow: rgba(16, 185, 129, 0.15);
-  --primary-dark: #059669;
+  --primary-color: #00d084; /* Softer Emerald */
+  --primary-glow: rgba(0, 208, 132, 0.12);
+  --primary-dark: #00a86b;
   --accent-indigo: #6366f1; /* Indigo */
   --accent-glow: rgba(99, 102, 241, 0.15);
 
@@ -548,10 +548,10 @@ textarea:focus-visible {
   html { font-size: 15px; }
   
   h1, .h1 { font-size: clamp(24px, 6vw, 36px); }
-  h2, .h2 { font-size: clamp(20px, 5vw, 28px); }
-  h3, .h3 { font-size: clamp(16px, 4vw, 22px); }
-  h4, .h4 { font-size: 16px; }
-  h5, .h5 { font-size: 15px; }
+  h2, .h2 { font-size: clamp(20px, 5vw, 28px); font-weight: 700; }
+  h3, .h3 { font-size: clamp(16px, 4vw, 22px); font-weight: 600; }
+  h4, .h4 { font-size: 16px; font-weight: 600; }
+  h5, .h5 { font-size: 15px; font-weight: 500; }
   h6, .h6 { font-size: 13px; }
   
   p { font-size: 14px; }
@@ -1443,6 +1443,49 @@ button, input, select { font-family: inherit; border: none; background: none; co
 }
 .btn-sm:active { transform: scale(0.96); }
 
+/* Loading states */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, var(--bg-panel) 0%, var(--bg-panel-hover) 50%, var(--bg-panel) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.data-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.data-loading::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
 /* Disabled states */
 .btn:disabled, button:disabled, input:disabled, select:disabled, textarea:disabled {
   opacity: 0.7;
@@ -2090,11 +2133,11 @@ textarea:disabled,
     flex-direction: column; 
     align-items: center; 
     justify-content: center;
-    gap: 4px;
-    color: rgba(226,232,240,.58); 
+    gap: 6px;
+    color: rgba(226,232,240,.72); 
     padding: 8px 12px; 
-    font-size: 10px; 
-    font-weight: 700;
+    font-size: 11px; 
+    font-weight: 600;
     transition: color var(--duration-fast) var(--ease-out), 
                 text-shadow var(--duration-fast) var(--ease-out),
                 transform var(--duration-fast) var(--ease-out);
