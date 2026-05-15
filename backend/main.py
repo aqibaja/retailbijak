@@ -124,6 +124,31 @@ app.add_middleware(
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 
+# --- Cache Control Middleware ---
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        
+        # No cache for HTML (SPA shell)
+        if path.endswith('.html') or path == '/':
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        # Short cache for versioned assets (CSS, JS with ?v=)
+        elif '?v=' in str(request.url):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        # API: no cache
+        elif path.startswith('/api/'):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        
+        return response
+
+app.add_middleware(CacheControlMiddleware)
+
 # --- Static files ---
 # Root / and SPA fallback are handled by StaticFiles(html=True) below.
 
