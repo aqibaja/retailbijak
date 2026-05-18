@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetailBijak - Minimal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #0b1220; 
+      color: #e5edf8; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #10b981; margin-bottom: 20px; }
+    .card { 
+      background: #1a2332; 
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 20px;
+    }
+    .status { 
+      padding: 10px 16px; 
+      border-radius: 8px; 
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .ok { background: rgba(16,185,129,0.15); color: #10b981; }
+    .error { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .info { background: rgba(99,102,241,0.15); color: #6366f1; }
+    pre { 
+      background: #0f1629; 
+      padding: 12px; 
+      border-radius: 8px; 
+      overflow-x: auto;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #10b981;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #059669; }
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+      gap: 16px; 
+      margin-top: 20px;
+    }
+    .kpi {
+      background: #1a2332;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .kpi-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; }
+    .kpi-value { font-size: 24px; font-weight: 700; color: #e5edf8; margin-top: 8px; }
+    .loading { 
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 RetailBijak - Minimal Mode</h1>
+    
+    <div class="card">
+      <h2>Status Sistem</h2>
+      <div id="status">
+        <div class="status info">
+          <span class="loading"></span> Memuat...
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Data Pasar</h2>
+      <div id="market-data">
+        <div class="status info">
+          <span class="loading"></span> Mengambil data IHSG...
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Top Movers</h2>
+      <div id="movers">
+        <div class="status info">
+          <span class="loading"></span> Mengambil data saham...
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Navigasi</h2>
+      <a href="/" class="btn">🏠 Halaman Utama</a>
+      <a href="/test_simple.html" class="btn">🧪 Test Simple</a>
+      <a href="/debug_console.html" class="btn">🔍 Debug Console</a>
+    </div>
+  </div>
+  
+  <script>
+    const status = document.getElementById('status');
+    const marketData = document.getElementById('market-data');
+    const movers = document.getElementById('movers');
+    
+    // Test 1: Backend health
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => {
+        status.innerHTML = '<div class="status ok">✓ Backend API: ' + data.status + ' (v' + data.version + ')</div>';
+        
+        // Test 2: Market data
+        return fetch('/api/market-summary');
+      })
+      .then(res => res.json())
+      .then(data => {
+        const change = data.change_pct || 0;
+        const color = change >= 0 ? '#10b981' : '#ef4444';
+        marketData.innerHTML = `
+          <div class="grid">
+            <div class="kpi">
+              <div class="kpi-label">IHSG</div>
+              <div class="kpi-value">${data.value?.toLocaleString('id-ID') || 'N/A'}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Perubahan</div>
+              <div class="kpi-value" style="color:${color}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">High</div>
+              <div class="kpi-value">${data.high?.toLocaleString('id-ID') || 'N/A'}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Low</div>
+              <div class="kpi-value">${data.low?.toLocaleString('id-ID') || 'N/A'}</div>
+            </div>
+          </div>
+          <div class="status ok" style="margin-top:16px">✓ Data update: ${data.updated_at || 'N/A'}</div>
+        `;
+        
+        // Test 3: Top movers
+        return fetch('/api/top-movers?limit=5');
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.data && data.data.length > 0) {
+          let html = '<div class="grid">';
+          data.data.forEach(stock => {
+            const change = stock.change_pct || 0;
+            const color = change >= 0 ? '#10b981' : '#ef4444';
+            html += `
+              <div class="kpi">
+                <div class="kpi-label">${stock.ticker}</div>
+                <div class="kpi-value">${stock.price?.toLocaleString('id-ID') || 'N/A'}</div>
+                <div style="color:${color};font-size:14px;margin-top:4px;font-weight:600">
+                  ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
+                </div>
+              </div>
+            `;
+          });
+          html += '</div>';
+          movers.innerHTML = html;
+        } else {
+          movers.innerHTML = '<div class="status error">✗ Tidak ada data</div>';
+        }
+      })
+      .catch(err => {
+        status.innerHTML = '<div class="status error">✗ Error: ' + err.message + '</div>';
+        marketData.innerHTML = '<div class="status error">✗ Gagal mengambil data pasar</div>';
+        movers.innerHTML = '<div class="status error">✗ Gagal mengambil data saham</div>';
+      });
+    
+    // Browser info
+    setTimeout(() => {
+      const info = document.createElement('div');
+      info.className = 'card';
+      info.innerHTML = `
+        <h2>Info Browser</h2>
+        <pre>User Agent: ${navigator.userAgent}
+Screen: ${window.screen.width}x${window.screen.height}
+Viewport: ${window.innerWidth}x${window.innerHeight}
+Time: ${new Date().toLocaleString('id-ID')}</pre>
+      `;
+      document.querySelector('.container').appendChild(info);
+    }, 1000);
+  </script>
+</body>
+</html>

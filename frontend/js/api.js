@@ -1,6 +1,6 @@
 const API_BASE = '/api';
 
-import { t } from './i18n.js?v=20260518H';
+import { t } from './i18n.js?v=20260518I';
 
 // ─── Fetch Wrappers ────────────────────────────────────
 export async function apiFetch(endpoint, options = {}) {

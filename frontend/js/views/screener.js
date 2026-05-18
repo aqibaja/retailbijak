@@ -1,6 +1,6 @@
-import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518H';
-import { observeElements } from '../main.js?v=20260518H';
-import { t as _t } from '../i18n.js?v=20260518H';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518I';
+import { observeElements } from '../main.js?v=20260518I';
+import { t as _t } from '../i18n.js?v=20260518I';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const renderEmptyState = ({
@@ -122,26 +122,12 @@ export async function renderScreener(root) {
 
     // TV Screener Widget — inject script to head (innerHTML can't execute scripts)
     setTimeout(() => {
-      const tvContainer = document.getElementById('tv-screener');
+            const tvContainer = document.getElementById('tv-screener');
       if (!tvContainer) return;
       const theme = getTVTheme();
 
-      // Create widget structure
-      tvContainer.innerHTML = `
-        <div class="tradingview-widget-container" style="height:600px;width:100%">
-          <div class="tradingview-widget-container__widget" id="tv-screener-widget"></div>
-        </div>`;
-
-      // Inject script via createElement (innerHTML doesn't execute scripts)
-      const existing = document.getElementById('tv-screener-script');
-      if (existing) existing.remove();
-
-      const script = document.createElement('script');
-      script.id = 'tv-screener-script';
-      script.type = 'text/javascript';
-      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
-      script.async = true;
-      script.textContent = JSON.stringify({
+      // Embed via iframe langsung — cara paling reliable untuk TradingView widget
+      const config = encodeURIComponent(JSON.stringify({
         width: '100%',
         height: 600,
         defaultColumn: 'change',
@@ -153,8 +139,17 @@ export async function renderScreener(root) {
         utm_source: 'retailbijak.rich27.my.id',
         utm_medium: 'widget_new',
         utm_campaign: 'screener',
-      });
-      tvContainer.querySelector('.tradingview-widget-container').appendChild(script);
+      }));
+
+      tvContainer.innerHTML = `
+        <iframe
+          id="tv-screener-iframe"
+          src="https://www.tradingview-widget.com/embed-widget/screener/?locale=id_ID#${config}"
+          style="width:100%;height:620px;border:none;display:block;"
+          allowtransparency="true"
+          frameborder="0"
+          scrolling="no"
+        ></iframe>`;
     }, 500);
 }
 
