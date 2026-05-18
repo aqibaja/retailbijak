@@ -210,6 +210,36 @@ export async function renderStockDetail(root, ticker) {
   const chatMessages = document.getElementById('stock-chat-messages');
   const quickPrompts = document.getElementById('chat-quick-prompts');
 
+  // Format AI response: markdown-like → readable HTML
+  function formatAIResponse(text) {
+    if (!text) return '';
+    return text
+      // Bold: **text** or *text*
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Headers: ## or ### → styled div
+      .replace(/^###\s+(.+)$/gm, '<div class="ai-section-title">$1</div>')
+      .replace(/^##\s+(.+)$/gm, '<div class="ai-section-title">$1</div>')
+      .replace(/^#\s+(.+)$/gm, '<div class="ai-section-title">$1</div>')
+      // Bullet points: - item or • item
+      .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+      // Numbered list: 1. item
+      .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+      // Wrap consecutive <li> in <ul>
+      .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul class="ai-list">${m}</ul>`)
+      // Double newline → paragraph break
+      .replace(/\n{2,}/g, '</p><p class="ai-para">')
+      // Single newline → line break
+      .replace(/\n/g, '<br>')
+      // Wrap in paragraph
+      .replace(/^(.+)/, '<p class="ai-para">$1')
+      .replace(/(.+)$/, '$1</p>')
+      // Clean up empty paragraphs
+      .replace(/<p class="ai-para"><\/p>/g, '')
+      .replace(/<p class="ai-para">(<div|<ul)/g, '$1')
+      .replace(/(<\/div>|<\/ul>)<\/p>/g, '$1');
+  }
+
   async function sendChatMessage(msg) {
     if (!msg || !msg.trim() || !chatMessages) return;
     // Disable input & send button during request
@@ -243,7 +273,7 @@ export async function renderStockDetail(root, ticker) {
       const reply = res?.reply || t('stock_detail.ai_unable_respond');
       const aiBubble = document.createElement('div');
       aiBubble.className = 'chat-bubble ai-bubble';
-      aiBubble.textContent = reply;
+      aiBubble.innerHTML = formatAIResponse(reply);
       chatMessages.appendChild(aiBubble);
       if (res?.status === 'error' || res?.status === 'disabled') {
         aiBubble.classList.add('chat-error');

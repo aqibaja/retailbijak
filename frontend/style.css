@@ -2754,6 +2754,14 @@ html[data-theme="light"] .stock-ai-pick-context-meta span { background: rgba(15,
 .chat-bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.55;word-wrap:break-word;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .user-bubble{align-self:flex-end;background:rgba(16,185,129,.15);color:var(--text-main);border-bottom-right-radius:4px}
 .ai-bubble{align-self:flex-start;background:rgba(30,41,59,.7);color:var(--text-muted);border:1px solid var(--border-subtle);border-bottom-left-radius:4px;max-width:85%}
+.ai-bubble .ai-para{margin:0 0 8px;line-height:1.65;color:var(--text-main)}
+.ai-bubble .ai-para:last-child{margin-bottom:0}
+.ai-bubble .ai-section-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border-subtle)}
+.ai-bubble .ai-section-title:first-child{margin-top:0}
+.ai-bubble .ai-list{margin:4px 0 8px 0;padding-left:16px;list-style:disc}
+.ai-bubble .ai-list li{margin-bottom:4px;line-height:1.55;color:var(--text-main)}
+.ai-bubble strong{color:var(--text-main);font-weight:600}
+.ai-bubble em{color:var(--accent);font-style:normal}
 .chat-error{background:rgba(248,113,113,.12) !important;color: var(--danger-text) !important;border-color:rgba(248,113,113,.2) !important}
 .chat-loading{min-height:36px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
 .chat-loading-dot{width:6px;height:6px;border-radius:50%;background:var(--text-dim);animation:chatTyping 1.4s ease-in-out infinite}
