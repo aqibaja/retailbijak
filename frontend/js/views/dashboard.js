@@ -1,6 +1,6 @@
-import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260518K';
-import { observeElements, animateValue } from '../main.js?v=20260518K';
-import { t as _t } from '../i18n.js?v=20260518K';
+import { fetchNews, fetchMarketSummary, fetchSectorSummary, fetchTopMovers, fetchIhsgChart, fetchMarketBreadth, fetchAiPicks } from '../api.js?v=20260518L';
+import { observeElements, animateValue } from '../main.js?v=20260518L';
+import { t as _t } from '../i18n.js?v=20260518L';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -161,10 +161,10 @@ async function loadIntel(){
   const losers = Array.isArray(losersRes?.data) ? losersRes.data : [];
   const leadGainer = gainers[0] || null;
   const leadLoser = losers[0] || null;
-  const tapeBias = adv === 0 && dec === 0 ? 'menunggu data' : adv >= dec ? 'bias positif' : 'tekanan dominan';
+  const tapeBias = adv === 0 && dec === 0 ? t('dashboard.waiting_data') : adv >= dec ? t('dashboard.positive_bias') : t('dashboard.pressure_dominant');
   const planLine = Number(summary?.change_pct ?? 0) >= 0
-    ? 'Fokus ke saham pemimpin sektor, validasi volume sebelum entry.'
-    : 'Prioritaskan defense, entry bertahap, hindari chasing.';
+    ? t('dashboard.plan_focus_leaders')
+    : t('dashboard.plan_prioritize_defense');
   const biasLabel = document.getElementById('dash-bias-label');
   const leadGainerEl = document.getElementById('dash-lead-gainer');
   const leadGainerNoteEl = document.getElementById('dash-lead-gainer-note');
@@ -180,9 +180,9 @@ async function loadIntel(){
   if (chartBiasChip) chartBiasChip.textContent = adv === 0 && dec === 0 ? t('dashboard.data_unavailable') : adv >= dec ? 'Breadth mendukung' : 'Breadth melemah';
   if (chartReadout) chartReadout.textContent = `IHSG ${pf(Number(summary?.change_pct ?? 0))} · ${adv} adv vs ${dec} dec · ${planLine}`;
   document.getElementById('market-intel').innerHTML = [
-    { kicker: t('dashboard.breadth_label'), value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? t('dashboard.data_unavailable') : `${tapeBias} untuk first glance.` },
-    { kicker: t('dashboard.leader_label'), value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} memimpin.` : t('dashboard.leader_fallback') },
-    { kicker: t('dashboard.sector_label'), value: best?.sector||best?.name||'Finance', note: `${best?.sector||''} rotasi ${pf(best?.change_pct ?? 1.2)}.` },
+    { kicker: t('dashboard.breadth_label'), value: `${adv} vs ${dec}`, note: adv === 0 && dec === 0 ? t('dashboard.data_unavailable') : `${tapeBias} ${t('dashboard.breadth_first_glance')}` },
+    { kicker: t('dashboard.leader_label'), value: leadGainer?.ticker || best?.sector || 'N/A', note: leadGainer ? `${pf(leadGainer.change_pct ?? 0)} ${t('dashboard.leading_today')}` : t('dashboard.leader_fallback') },
+    { kicker: t('dashboard.sector_label'), value: best?.sector||best?.name||'Finance', note: `${best?.sector||best?.name||''} ${t('dashboard.sector_rotation_label')} ${pf(best?.change_pct ?? 1.2)}.` },
     { kicker: t('dashboard.plan_label'), value: Number(summary?.change_pct ?? 0) >= 0 ? t('dashboard.plan_selective') : t('dashboard.plan_defensive'), note: planLine }
   ].map(({ kicker, value, note }, idx)=>`<div class="dash-intel-card ${idx===0?'dash-intel-card-primary':''}"><span class="dash-intel-kicker">${kicker}</span><strong>${value}</strong><small>${note}</small></div>`).join('');
 }

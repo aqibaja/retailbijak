@@ -3,7 +3,7 @@
 // Fase 28.3.1 — Enhanced: filter chips, timeframe, search, sort, pagination, color coding
 
 import { apiFetch } from '../api.js';
-import { t as _t } from '../i18n.js?v=20260518K';
+import { t as _t } from '../i18n.js?v=20260518L';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 let currentSignalType = '';
