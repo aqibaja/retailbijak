@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Simple - RetailBijak</title>
+  <style>
+    body { 
+      background: #0b1220; 
+      color: #e5edf8; 
+      font-family: monospace; 
+      padding: 20px;
+      margin: 0;
+    }
+    #status { 
+      padding: 20px; 
+      background: #1a2332; 
+      border-radius: 12px; 
+      margin-bottom: 20px;
+    }
+    .ok { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #6366f1; }
+    pre { 
+      background: #0f1629; 
+      padding: 12px; 
+      border-radius: 8px; 
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>RetailBijak - Simple Test</h1>
+  <div id="status">Loading...</div>
+  <div id="data"></div>
+  
+  <script>
+    const status = document.getElementById('status');
+    const data = document.getElementById('data');
+    
+    // Test 1: JS execution
+    status.innerHTML = '<span class="ok">✓ JavaScript berjalan</span>';
+    
+    // Test 2: Fetch API
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(json => {
+        status.innerHTML += '<br><span class="ok">✓ Backend API OK: ' + JSON.stringify(json) + '</span>';
+        
+        // Test 3: Market data
+        return fetch('/api/market-summary');
+      })
+      .then(res => res.json())
+      .then(json => {
+        status.innerHTML += '<br><span class="ok">✓ Market data OK</span>';
+        data.innerHTML = '<h3>IHSG Data:</h3><pre>' + JSON.stringify(json, null, 2) + '</pre>';
+        
+        // Test 4: Lucide CDN
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/lucide@latest/dist/umd/lucide.min.js';
+        script.onload = () => {
+          status.innerHTML += '<br><span class="ok">✓ Lucide CDN loaded</span>';
+          
+          // Create test icon
+          const icon = document.createElement('i');
+          icon.setAttribute('data-lucide', 'check-circle');
+          icon.style.cssText = 'width:24px;height:24px;color:#10b981;display:inline-block;vertical-align:middle;margin-left:8px';
+          document.body.appendChild(icon);
+          
+          if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+            status.innerHTML += '<br><span class="ok">✓ Lucide icons rendered</span>';
+          }
+        };
+        script.onerror = () => {
+          status.innerHTML += '<br><span class="error">✗ Lucide CDN gagal load</span>';
+        };
+        document.head.appendChild(script);
+      })
+      .catch(err => {
+        status.innerHTML += '<br><span class="error">✗ Error: ' + err.message + '</span>';
+        data.innerHTML = '<pre>' + err.stack + '</pre>';
+      });
+    
+    // Test 5: Browser info
+    setTimeout(() => {
+      const info = document.createElement('div');
+      info.innerHTML = `
+        <h3 class="info">Browser Info:</h3>
+        <pre>User Agent: ${navigator.userAgent}
+ES6 Modules: ${typeof Symbol !== 'undefined' && typeof Symbol.iterator !== 'undefined' ? 'Supported' : 'NOT SUPPORTED'}
+Fetch API: ${typeof fetch !== 'undefined' ? 'Supported' : 'NOT SUPPORTED'}
+Screen: ${window.screen.width}x${window.screen.height}
+Viewport: ${window.innerWidth}x${window.innerHeight}</pre>
+      `;
+      document.body.appendChild(info);
+    }, 1000);
+  </script>
+</body>
+</html>

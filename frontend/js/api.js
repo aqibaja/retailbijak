@@ -1,6 +1,6 @@
 const API_BASE = '/api';
 
-import { t } from './i18n.js?v=20260518F';
+import { t } from './i18n.js?v=20260518H';
 
 // ─── Fetch Wrappers ────────────────────────────────────
 export async function apiFetch(endpoint, options = {}) {
@@ -70,11 +70,11 @@ export async function searchStocks(query = '', limit = 8) {
 }
 
 export async function fetchTopMovers(limit = 10, sort = 'gainers') {
-    return apiFetch(`/top-movers?limit=${limit}&sort=${encodeURIComponent(sort)}`) || { count: 0, data: [] };
+    return apiFetch(`/top-movers?limit=${limit}&sort=${encodeURIComponent(sort)}`, { timeout: 15000 }) || { count: 0, data: [] };
 }
 
 export async function fetchMarketBreadth() {
-    return apiFetch('/market-breadth') || { status: 'ok', source: 'no_data', count: 0, data: { latest_date: null, advancing: 0, declining: 0, unchanged: 0, advancers: [], decliners: [] } };
+    return apiFetch('/market-breadth', { timeout: 15000 }) || { status: 'ok', source: 'no_data', count: 0, data: { latest_date: null, advancing: 0, declining: 0, unchanged: 0, advancers: [], decliners: [] } };
 }
 
 export async function fetchScan(timeframe = '1d') {

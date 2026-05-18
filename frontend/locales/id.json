@@ -88,8 +88,8 @@
     "volume": "Volume",
     "change": "Perubahan",
     "positive_count": "{positive}/{total} positif",
-    "momentum_bias": "Momentum {change}",
-    "defensive_bias": "Defensif {change}",
+    "momentum_bias": "Momentum {{change}}",
+    "defensive_bias": "Defensif {{change}}",
     "candidates_passed": "{{count}} kandidat lolos filter"
   },
   "screener": {
