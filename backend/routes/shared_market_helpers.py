@@ -1,9 +1,23 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+# ─── In-memory cache (TTL 60s) ───────────────────────────
+_cache: dict[str, tuple[float, Any]] = {}
+_CACHE_TTL = 60  # seconds
+
+def _cache_get(key: str) -> Any:
+    entry = _cache.get(key)
+    if entry and (time.time() - entry[0]) < _CACHE_TTL:
+        return entry[1]
+    return None
+
+def _cache_set(key: str, value: Any) -> None:
+    _cache[key] = (time.time(), value)
 
 try:
     from database import BrokerSummary, OHLCVDaily, Stock, UserSetting
@@ -31,6 +45,10 @@ def _latest_ohlcv_snapshot(db: Session) -> tuple[Any, list[OHLCVDaily]]:
 
 
 def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+    cached = _cache_get('ohlcv_pairs')
+    if cached is not None:
+        return cached
+
     latest_date, _ = _latest_ohlcv_snapshot(db)
     if not latest_date:
         return None, []
@@ -58,10 +76,16 @@ def _latest_ohlcv_pairs(db: Session) -> tuple[Any, list[dict[str, Any]]]:
          AND prev.date = picked.prev_date
         WHERE prev.close IS NOT NULL AND curr.close IS NOT NULL
     """)
-    return latest_date, db.execute(sql, {'latest_date': latest_date_sql}).mappings().all()
+    result = (latest_date, list(db.execute(sql, {'latest_date': latest_date_sql}).mappings().all()))
+    _cache_set('ohlcv_pairs', result)
+    return result
 
 
 def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
+    cached = _cache_get('top_mover_rows')
+    if cached is not None:
+        return cached
+
     latest_date, pairs = _latest_ohlcv_pairs(db)
     if not latest_date or not pairs:
         return latest_date, []
@@ -83,7 +107,9 @@ def _top_mover_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:
             'date': latest_date.isoformat() if hasattr(latest_date, 'isoformat') else str(latest_date),
             'source': 'db',
         })
-    return latest_date, rows
+    result = (latest_date, rows)
+    _cache_set('top_mover_rows', result)
+    return result
 
 
 def _derived_broker_activity_rows(db: Session) -> tuple[Any, list[dict[str, Any]]]:

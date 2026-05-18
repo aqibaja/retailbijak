@@ -1,6 +1,6 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518L';
-import { observeElements } from '../main.js?v=20260518L';
-import { t as _t } from '../i18n.js?v=20260518L';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518M';
+import { observeElements } from '../main.js?v=20260518M';
+import { t as _t } from '../i18n.js?v=20260518M';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 // ─── Focus Trap ──────────────────────────────

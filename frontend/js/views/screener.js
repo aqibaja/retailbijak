@@ -186,7 +186,10 @@ function renderList(results) {
     const contentArea = document.getElementById('screener-content');
     const toolbar = document.getElementById('screener-toolbar');
     const hasResults = results.length > 0;
-    if (toolbar) toolbar.style.display = hasResults ? 'flex' : 'none';
+    if (toolbar) {
+        toolbar.classList.toggle('hidden', !hasResults);
+        toolbar.style.display = hasResults ? 'flex' : 'none';
+    }
     const sc = document.getElementById('screener-search');
     if (hasResults) {
         contentArea.innerHTML = `<div class="flex-col gap-3">${results.map(r => renderRow(r)).join('')}</div>`;
@@ -221,12 +224,13 @@ function runScreener() {
 
     btn.disabled = true;
     btn.classList.add('btn-loading');
-    if (toolbar) toolbar.style.display = 'none';
+    if (toolbar) { toolbar.classList.add('hidden'); toolbar.style.display = 'none'; }
     const searchInput = document.getElementById('screener-search');
     if (searchInput) searchInput.value = '';
     countBadge.textContent = t('screener.scanning');
     currentResults = [];
     contentArea.innerHTML = renderSkeleton();
+    progBox.classList.remove('hidden');
     progBox.style.display = 'block';
 
     // Check if we're still mounted before touching DOM
@@ -253,6 +257,7 @@ function runScreener() {
         } else if (data.type === 'done') {
             btn.disabled = false;
             btn.classList.remove('btn-loading');
+            progBox.classList.add('hidden');
             progBox.style.display = 'none';
             countBadge.textContent = currentResults.length > 0 ? `${currentResults.length} ${t('screener.detected')}` : t('screener.no_signals');
             renderList(currentResults);
