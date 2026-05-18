@@ -440,5 +440,13 @@
     "chat_placeholder": "Ask: risk, entry, news, or analysis...",
     "ai_unable_respond": "Sorry, I cannot respond right now.",
     "ai_connection_failed": "Failed to connect to AI assistant. Try again."
+  },
+  "sidebar": {
+    "dashboard_tooltip": "Dashboard",
+    "screener_tooltip": "Stock Screener",
+    "market_tooltip": "Market",
+    "portfolio_tooltip": "Assets & Watchlist",
+    "news_tooltip": "News",
+    "ai_picks_tooltip": "AI Picks"
   }
 }

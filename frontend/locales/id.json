@@ -735,5 +735,13 @@
     "open_screener_button": "Buka Screener",
     "manage_assets_button": "Kelola Aset",
     "open_settings_button": "Buka Pengaturan"
+  },
+  "sidebar": {
+    "dashboard_tooltip": "Dashboard",
+    "screener_tooltip": "Pemindai Saham",
+    "market_tooltip": "Pasar",
+    "portfolio_tooltip": "Aset & Watchlist",
+    "news_tooltip": "Berita",
+    "ai_picks_tooltip": "AI Picks"
   }
 }
