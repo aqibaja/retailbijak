@@ -1,6 +1,6 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518P';
-import { observeElements, flashUpdate } from '../main.js?v=20260518P';
-import { t as _t } from '../i18n.js?v=20260518P';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518Q';
+import { observeElements, flashUpdate } from '../main.js?v=20260518Q';
+import { t as _t } from '../i18n.js?v=20260518Q';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -45,7 +45,7 @@ function renderAiPickContextBanner(symbol) {
     const returnHref = data.source_route || '#ai-picks';
     const heroBackHref = returnHref;
     return {
-      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">${t('stock_detail.from_ai_picks')}</div><strong>${symbol} ${t('stock_detail.entered_radar', { mode: data.mode || 'swing' })}</strong></div><span class="badge badge-up">${t('stock_detail.score')} ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">${t('stock_detail.origin_shortlist')}: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>${t('stock_detail.confidence')} ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || t('stock_detail.validate_risk_reward')}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">${t('stock_detail.back_to_shortlist')}</a></div></div>`,
+      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">${t('stock_detail.from_ai_picks')}</div><strong>${symbol} ${t('stock_detail.entered_radar', { ticker: symbol, mode: data.mode || 'swing' })}</strong></div><span class="badge badge-up">${t('stock_detail.score')} ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">${t('stock_detail.origin_shortlist')}: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>${t('stock_detail.confidence')} ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || t('stock_detail.validate_risk_reward')}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">${t('stock_detail.back_to_shortlist')}</a></div></div>`,
       heroBackHref,
     };
   } catch {

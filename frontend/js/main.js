@@ -1,7 +1,7 @@
-import { handleRoute } from './router.js?v=20260518P';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260518P';
-import { initTheme } from './theme.js?v=20260518P';
-import { initI18n, t } from './i18n.js?v=20260518P';
+import { handleRoute } from './router.js?v=20260518Q';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260518Q';
+import { initTheme } from './theme.js?v=20260518Q';
+import { initI18n, t } from './i18n.js?v=20260518Q';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
