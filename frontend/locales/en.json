@@ -93,7 +93,7 @@
     "low": "LOW",
     "volume": "VOLUME",
     "change": "CHANGE",
-    "positive_count": "positive",
+    "positive_count": "{{positive}}/{{total}} positive",
     "momentum_bias": "Momentum bias",
     "defensive_bias": "Defensive bias",
     "candidates_passed": "{{count}} candidates passed filter"
