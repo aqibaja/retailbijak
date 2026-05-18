@@ -1,6 +1,6 @@
-import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518I';
-import { observeElements } from '../main.js?v=20260518I';
-import { t as _t } from '../i18n.js?v=20260518I';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518K';
+import { observeElements } from '../main.js?v=20260518K';
+import { t as _t } from '../i18n.js?v=20260518K';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const renderEmptyState = ({
@@ -120,18 +120,17 @@ export async function renderScreener(root) {
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
 
-    // TV Screener Widget — inject script to head (innerHTML can't execute scripts)
+    // TV Screener Widget — direct iframe embed
     setTimeout(() => {
-            const tvContainer = document.getElementById('tv-screener');
+      const tvContainer = document.getElementById('tv-screener');
       if (!tvContainer) return;
       const theme = getTVTheme();
 
-      // Embed via iframe langsung — cara paling reliable untuk TradingView widget
-      const config = encodeURIComponent(JSON.stringify({
+      const cfg = {
         width: '100%',
-        height: 600,
-        defaultColumn: 'change',
-        defaultScreen: 'most_volatile',
+        height: 620,
+        defaultColumn: 'overview',
+        defaultScreen: 'most_capitalized',
         market: 'indonesia',
         showToolbar: true,
         colorTheme: theme,
@@ -139,18 +138,31 @@ export async function renderScreener(root) {
         utm_source: 'retailbijak.rich27.my.id',
         utm_medium: 'widget_new',
         utm_campaign: 'screener',
-      }));
+      };
+      const config = encodeURIComponent(JSON.stringify(cfg));
 
+      // Tampilkan loading placeholder dulu
       tvContainer.innerHTML = `
-        <iframe
-          id="tv-screener-iframe"
-          src="https://www.tradingview-widget.com/embed-widget/screener/?locale=id_ID#${config}"
-          style="width:100%;height:620px;border:none;display:block;"
-          allowtransparency="true"
-          frameborder="0"
-          scrolling="no"
-        ></iframe>`;
-    }, 500);
+        <div id="tv-screener-loading" style="width:100%;height:640px;display:flex;align-items:center;justify-content:center;background:var(--card-bg,#1a1a2e);border-radius:8px;color:var(--text-muted,#888);font-size:14px;gap:10px;">
+          <span style="display:inline-block;width:18px;height:18px;border:2px solid #444;border-top-color:#00d084;border-radius:50%;animation:spin 0.8s linear infinite;"></span>
+          Memuat TradingView Screener...
+        </div>`;
+
+      // Load iframe setelah placeholder tampil
+      setTimeout(() => {
+        tvContainer.innerHTML = `
+          <iframe
+            id="tv-screener-iframe"
+            src="https://www.tradingview-widget.com/embed-widget/screener/?locale=id_ID#${config}"
+            style="width:100%;height:640px;border:none;display:block;border-radius:8px;"
+            allowtransparency="true"
+            allowfullscreen="true"
+            frameborder="0"
+            scrolling="no"
+            loading="eager"
+          ></iframe>`;
+      }, 300);
+    }, 800);
 }
 
 function sortResults() {

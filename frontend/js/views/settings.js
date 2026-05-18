@@ -1,6 +1,6 @@
-import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260518I';
-import { observeElements } from '../main.js?v=20260518I';
-import { t as _t } from '../i18n.js?v=20260518I';
+import { fetchSettings, updateSettings, showToast } from '../api.js?v=20260518K';
+import { observeElements } from '../main.js?v=20260518K';
+import { t as _t } from '../i18n.js?v=20260518K';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const DEFAULT_STOCK_MODEL = 'google/gemma-4-26b-a4b-it';

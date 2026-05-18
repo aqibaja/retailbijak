@@ -3,7 +3,7 @@
  * Fase 28.3.1 — Enhanced with search, filter chips, sort, table view
  */
 import { showToast, apiFetch } from '../api.js';
-import { t as _t } from '../i18n.js?v=20260518I';
+import { t as _t } from '../i18n.js?v=20260518K';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 let activeFilter = 'all';

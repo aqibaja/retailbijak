@@ -1,6 +1,6 @@
-import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260518I';
-import { observeElements, registerViewTimer } from '../main.js?v=20260518I';
-import { t as _t } from '../i18n.js?v=20260518I';
+import { fetchMarketSummary, fetchTopMovers, apiFetch, loadTVWidget, getTVTheme } from '../api.js?v=20260518K';
+import { observeElements, registerViewTimer } from '../main.js?v=20260518K';
+import { t as _t } from '../i18n.js?v=20260518K';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const fmt = (n, digits = 2) => Number(n ?? 0).toLocaleString('id-ID', { maximumFractionDigits: digits });
