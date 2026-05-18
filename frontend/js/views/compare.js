@@ -1,7 +1,8 @@
 import { apiFetch, showToast } from '../api.js';
 import { nf, pf, fmtRp } from '../utils/format.js';
 import { observeElements } from '../utils/helpers.js';
-import { t } from '../i18n.js';
+import { t as _t } from '../i18n.js?v=20260518C';
+const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 let _compareTickers = [];
 let _chartInstance = null;

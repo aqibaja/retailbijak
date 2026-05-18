@@ -1,6 +1,7 @@
-import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260507G';
-import { observeElements } from '../main.js?v=20260507G';
-import { t } from '../i18n.js';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518C';
+import { observeElements } from '../main.js?v=20260518C';
+import { t as _t } from '../i18n.js?v=20260518C';
+const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const renderEmptyState = ({
   title = t('screener.not_scanned'),

@@ -34,7 +34,7 @@ export async function initI18n() {
  */
 async function loadLocale(locale) {
   try {
-    const response = await fetch(`/locales/${locale}.json?v=20260518B`);
+    const response = await fetch(`/locales/${locale}.json?v=20260518C`);
     if (!response.ok) throw new Error(`Failed to load locale: ${locale}`);
     translations = await response.json();
   } catch (error) {

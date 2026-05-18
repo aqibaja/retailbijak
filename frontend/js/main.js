@@ -1,7 +1,7 @@
-import { handleRoute } from './router.js?v=20260507G';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260507G';
-import { initTheme } from './theme.js?v=20260507G';
-import { initI18n, t } from './i18n.js?v=20260507G';
+import { handleRoute } from './router.js?v=20260518C';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260518C';
+import { initTheme } from './theme.js?v=20260518C';
+import { initI18n, t } from './i18n.js?v=20260518C';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -295,10 +295,12 @@ function setupNetworkStatus() {
   // Initial check
   if (!navigator.onLine) show(false);
 }
-// INIT
+// INIT — i18n must finish before first route render
 document.addEventListener('DOMContentLoaded', async () => {
   try {
       await initI18n();
+      // Expose t() globally so view modules with stale module cache still work
+      window.t = t;
       initTheme();
       if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
       setupSearchOverlay();
@@ -308,13 +310,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       setInterval(refreshTopbarMarket, 60000);
       setupNetworkStatus();
       try { initTVThemeSync(); } catch (e) { console.warn('TV theme sync init error', e); }
+      // Route AFTER i18n is ready so t() calls in views return translated strings
+      handleRoute(window.location.hash || '#dashboard');
   } catch (e) {
       console.error('Init error:', e);
+      // Fallback: still try to route even if i18n fails
+      handleRoute(window.location.hash || '#dashboard');
   }
-});
-// Routing
+}, { once: true });
+// Routing on hash change
 window.addEventListener('hashchange', () => handleRoute(window.location.hash));
-window.addEventListener('DOMContentLoaded', () => handleRoute(window.location.hash || '#dashboard'), { once: true });
-if (document.readyState !== 'loading') {
-   queueMicrotask(() => handleRoute(window.location.hash || '#dashboard'));
-}
