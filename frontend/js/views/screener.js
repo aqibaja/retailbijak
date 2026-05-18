@@ -120,30 +120,41 @@ export async function renderScreener(root) {
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
 
-    // TV Screener Widget — official TradingView script embed
+    // TV Screener Widget — inject script to head (innerHTML can't execute scripts)
     setTimeout(() => {
       const tvContainer = document.getElementById('tv-screener');
       if (!tvContainer) return;
       const theme = getTVTheme();
+
+      // Create widget structure
       tvContainer.innerHTML = `
         <div class="tradingview-widget-container" style="height:600px;width:100%">
-          <div class="tradingview-widget-container__widget"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-          {
-            "width": "100%",
-            "height": 600,
-            "defaultColumn": "change",
-            "defaultScreen": "most_volatile",
-            "market": "indonesia",
-            "showToolbar": true,
-            "colorTheme": "${theme}",
-            "locale": "id_ID",
-            "utm_source": "retailbijak.rich27.my.id",
-            "utm_medium": "widget_new",
-            "utm_campaign": "screener"
-          }
-          <\/script>
+          <div class="tradingview-widget-container__widget" id="tv-screener-widget"></div>
         </div>`;
+
+      // Inject script via createElement (innerHTML doesn't execute scripts)
+      const existing = document.getElementById('tv-screener-script');
+      if (existing) existing.remove();
+
+      const script = document.createElement('script');
+      script.id = 'tv-screener-script';
+      script.type = 'text/javascript';
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
+      script.async = true;
+      script.textContent = JSON.stringify({
+        width: '100%',
+        height: 600,
+        defaultColumn: 'change',
+        defaultScreen: 'most_volatile',
+        market: 'indonesia',
+        showToolbar: true,
+        colorTheme: theme,
+        locale: 'id_ID',
+        utm_source: 'retailbijak.rich27.my.id',
+        utm_medium: 'widget_new',
+        utm_campaign: 'screener',
+      });
+      tvContainer.querySelector('.tradingview-widget-container').appendChild(script);
     }, 500);
 }
 
