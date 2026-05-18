@@ -21,3 +21,13 @@ Thumbs.db
 
 # Local agent planning artifacts
 .hermes/plans/
+
+# Temp/debug files
+frontend/*.html
+!frontend/index.html
+frontend/assets/temp_*
+frontend/locales/*.tmp
+frontend/main.js
+frontend/CRITICAL_FINDINGS.md
+frontend/DIAGNOSIS.md
+frontend/SOLUTION_SUMMARY.md
