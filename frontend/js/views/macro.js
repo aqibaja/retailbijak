@@ -4,7 +4,7 @@
 // Chart.js line chart per indicator with card layout
 
 import { apiFetch } from '../api.js';
-import { t as _t } from '../i18n.js?v=20260518C';
+import { t as _t } from '../i18n.js?v=20260518F';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 // ─── Module State ──────────────────────────────────────────
