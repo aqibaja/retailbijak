@@ -125,29 +125,15 @@ export async function renderScreener(root) {
       const tvContainer = document.getElementById('tv-screener');
       if (!tvContainer) return;
       const theme = getTVTheme();
-      const config = encodeURIComponent(JSON.stringify({
-        width: '100%',
-        height: 580,
-        defaultColumn: 'change',
-        defaultScreen: 'most_volatile',
-        market: 'indonesia',
-        showToolbar: true,
-        locale: 'id_ID',
-        colorTheme: theme,
-        enableScrolling: true,
-        utm_source: 'retailbijak.rich27.my.id',
-        utm_medium: 'widget',
-        utm_campaign: 'screener',
-      }));
       tvContainer.innerHTML = `
-        <div class="tradingview-widget-container" style="height:580px;width:100%">
+        <div class="tradingview-widget-container" style="height:600px;width:100%">
           <iframe
             allowtransparency="true"
             frameborder="0"
             scrolling="no"
-            src="https://www.tradingview-widget.com/embed-widget/screener/?locale=id_ID#${config}"
-            style="box-sizing:border-box;height:580px;width:100%;border:none;"
-            title="TradingView Screener"
+            src="https://s.tradingview.com/embed-widget/screener/?locale=id_ID#%7B%22width%22%3A%22100%25%22%2C%22height%22%3A600%2C%22defaultColumn%22%3A%22change%22%2C%22defaultScreen%22%3A%22most_volatile%22%2C%22market%22%3A%22indonesia%22%2C%22showToolbar%22%3Atrue%2C%22colorTheme%22%3A%22${theme}%22%2C%22locale%22%3A%22id_ID%22%7D"
+            style="box-sizing:border-box;height:600px;width:100%;border:none;"
+            title="TradingView Screener IDX"
           ></iframe>
         </div>`;
     }, 500);
