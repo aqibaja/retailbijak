@@ -1,6 +1,6 @@
-import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518M';
-import { observeElements } from '../main.js?v=20260518M';
-import { t as _t } from '../i18n.js?v=20260518M';
+import { fetchWatchlist, saveWatchlistItem, deleteWatchlistItem, fetchPortfolio, savePortfolioPosition, deletePortfolioPosition, showToast, loadTVWidget, getTVTheme, apiFetch } from '../api.js?v=20260518P';
+import { observeElements } from '../main.js?v=20260518P';
+import { t as _t } from '../i18n.js?v=20260518P';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 // ─── Focus Trap ──────────────────────────────
@@ -272,6 +272,30 @@ async function renderPortfolioTab(el) {
     let data; try { data = await fetchPortfolio(); } catch (e) { data = null; console.warn('fetchPortfolio failed', e); }
     const rows = Array.isArray(data?.data) ? data.data : [];
 
+    // Fetch current prices for all tickers
+    const priceMap = {};
+    if (rows.length) {
+        await Promise.all(rows.map(async r => {
+            try {
+                const d = await apiFetch(`/stocks/${r.ticker}`);
+                const price = d?.data?.price ?? d?.price ?? null;
+                if (price) priceMap[r.ticker] = Number(price);
+            } catch (_) {}
+        }));
+    }
+
+    const fmtRp = v => `Rp ${Number(v).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
+    const pnlHtml = (r) => {
+        const cur = priceMap[r.ticker];
+        if (!cur) return '<td class="mono text-dim">—</td><td class="mono text-dim">—</td>';
+        const lotSize = 100;
+        const pnlRp = (cur - r.avg_price) * r.lots * lotSize;
+        const pnlPct = ((cur - r.avg_price) / r.avg_price) * 100;
+        const cls = pnlRp >= 0 ? 'text-up' : 'text-down';
+        const sign = pnlRp >= 0 ? '+' : '';
+        return `<td class="mono font-size-14 ${cls}">${fmtRp(cur)}</td><td class="mono font-size-14 ${cls}">${sign}${fmtRp(pnlRp)}<br><small>${sign}${pnlPct.toFixed(2)}%</small></td>`;
+    };
+
     el.innerHTML = `
       <div class="flex justify-between items-center p-4 border-bottom-subtle">
         <h3 class="text-xs uppercase text-dim strong m-0 portfolio-section-header">${t('portfolio.active_positions')} <span class="badge badge-primary ml-2">${rows.length} ${t('portfolio.positions')}</span></h3>
@@ -280,12 +304,13 @@ async function renderPortfolioTab(el) {
       ${rows.length ? `
       <div class="table-wrapper">
         <table class="table">
-          <thead><tr><th>${t('portfolio.stock_code')}</th><th>${t('portfolio.lots')}</th><th>${t('portfolio.avg_price')}</th><th class="text-right">${t('portfolio.actions')}</th></tr></thead>
+          <thead><tr><th>${t('portfolio.stock_code')}</th><th>${t('portfolio.lots')}</th><th>${t('portfolio.avg_price')}</th><th>Harga Kini</th><th>P&amp;L</th><th class="text-right">${t('portfolio.actions')}</th></tr></thead>
           <tbody>${rows.map(r => `
             <tr>
               <td><a href="#stock/${r.ticker}" class="flex items-center gap-3"><span class="portfolio-row-kicker">${r.ticker.substring(0,2)}</span><span class="mono strong text-main search-suggestion-ticker">${r.ticker}</span></a></td>
               <td class="mono font-size-14">${r.lots}</td>
               <td class="mono font-size-14 text-muted">Rp ${(r.avg_price || 0).toLocaleString()}</td>
+              ${pnlHtml(r)}
               <td class="text-right"><button type="button" class="btn-icon delete-portfolio portfolio-delete-btn" data-ticker="${r.ticker}"><i data-lucide="trash-2" class="lucide-md"></i></button></td>
             </tr>`).join('')}</tbody>
         </table>

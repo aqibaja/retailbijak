@@ -1,6 +1,6 @@
-import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518L';
-import { observeElements } from '../main.js?v=20260518L';
-import { t as _t } from '../i18n.js?v=20260518L';
+import { getScanEventSourceUrl, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518P';
+import { observeElements } from '../main.js?v=20260518P';
+import { t as _t } from '../i18n.js?v=20260518P';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const renderEmptyState = ({
