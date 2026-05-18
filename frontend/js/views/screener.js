@@ -120,9 +120,12 @@ export async function renderScreener(root) {
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
 
-    // TV Screener Widget — load after DOM ready
+    // TV Screener Widget — direct iframe (more reliable than script embed)
     setTimeout(() => {
-      loadTVWidget('tv-screener', 'screener', {
+      const tvContainer = document.getElementById('tv-screener');
+      if (!tvContainer) return;
+      const theme = getTVTheme();
+      const config = encodeURIComponent(JSON.stringify({
         width: '100%',
         height: 580,
         defaultColumn: 'change',
@@ -130,12 +133,23 @@ export async function renderScreener(root) {
         market: 'indonesia',
         showToolbar: true,
         locale: 'id_ID',
-        colorTheme: getTVTheme(),
+        colorTheme: theme,
         enableScrolling: true,
         utm_source: 'retailbijak.rich27.my.id',
         utm_medium: 'widget',
         utm_campaign: 'screener',
-      });
+      }));
+      tvContainer.innerHTML = `
+        <div class="tradingview-widget-container" style="height:580px;width:100%">
+          <iframe
+            allowtransparency="true"
+            frameborder="0"
+            scrolling="no"
+            src="https://www.tradingview-widget.com/embed-widget/screener/?locale=id_ID#${config}"
+            style="box-sizing:border-box;height:580px;width:100%;border:none;"
+            title="TradingView Screener"
+          ></iframe>
+        </div>`;
     }, 500);
 }
 
