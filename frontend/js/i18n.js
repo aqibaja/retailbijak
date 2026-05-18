@@ -85,15 +85,17 @@ export function setLocale(locale) {
     try {
       localStorage.setItem('retailbijak.locale', locale);
     } catch (e) {
-      // localStorage not available (private browsing mode)
       console.warn('localStorage not available, locale not persisted');
     }
     // Reload translations and apply
     loadLocale(locale)
-      .then(() => applyTranslations())
+      .then(() => {
+        applyTranslations();
+        // Update window.t so views using window.t get new locale
+        if (typeof window !== 'undefined') window.t = t;
+      })
       .catch(error => {
         console.error('Failed to load locale:', error);
-        // Fallback: keep current locale
         currentLocale = locale;
       });
   }

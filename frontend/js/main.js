@@ -299,8 +299,9 @@ function setupNetworkStatus() {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
       await initI18n();
-      // Expose t() globally so view modules with stale module cache still work
+      // Expose t() and handleRoute globally
       window.t = t;
+      window.handleRoute = handleRoute;
       initTheme();
       if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
       setupSearchOverlay();
