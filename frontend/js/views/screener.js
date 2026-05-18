@@ -120,21 +120,29 @@ export async function renderScreener(root) {
     root.querySelector('#screener-sort')?.addEventListener('change', sortResults);
     root.querySelector('#screener-search')?.addEventListener('input', filterResults);
 
-    // TV Screener Widget — direct iframe (more reliable than script embed)
+    // TV Screener Widget — official TradingView script embed
     setTimeout(() => {
       const tvContainer = document.getElementById('tv-screener');
       if (!tvContainer) return;
       const theme = getTVTheme();
       tvContainer.innerHTML = `
         <div class="tradingview-widget-container" style="height:600px;width:100%">
-          <iframe
-            allowtransparency="true"
-            frameborder="0"
-            scrolling="no"
-            src="https://s.tradingview.com/embed-widget/screener/?locale=id_ID#%7B%22width%22%3A%22100%25%22%2C%22height%22%3A600%2C%22defaultColumn%22%3A%22change%22%2C%22defaultScreen%22%3A%22most_volatile%22%2C%22market%22%3A%22indonesia%22%2C%22showToolbar%22%3Atrue%2C%22colorTheme%22%3A%22${theme}%22%2C%22locale%22%3A%22id_ID%22%7D"
-            style="box-sizing:border-box;height:600px;width:100%;border:none;"
-            title="TradingView Screener IDX"
-          ></iframe>
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
+          {
+            "width": "100%",
+            "height": 600,
+            "defaultColumn": "change",
+            "defaultScreen": "most_volatile",
+            "market": "indonesia",
+            "showToolbar": true,
+            "colorTheme": "${theme}",
+            "locale": "id_ID",
+            "utm_source": "retailbijak.rich27.my.id",
+            "utm_medium": "widget_new",
+            "utm_campaign": "screener"
+          }
+          <\/script>
         </div>`;
     }, 500);
 }
