@@ -39,25 +39,18 @@ export function initTheme() {
     }
 
     if (langToggleBtn) {
-        langToggleBtn.addEventListener('click', () => {
+        langToggleBtn.addEventListener('click', async () => {
             currentLang = currentLang === 'en' ? 'id' : 'en';
-            // Sync both localStorage keys
             localStorage.setItem('retailbijak.locale', currentLang);
             localStorage.setItem('retail-lang', currentLang);
-            setLocale(currentLang);
+            await setLocale(currentLang);
             updateLangBtn();
-            // Re-render current view after locale loads (wait for fetch)
-            setTimeout(() => {
-                // Update window.t with new locale's t()
-                if (window.__i18n_t) window.t = window.__i18n_t;
-                // Re-render active route
-                if (window.handleRoute) {
-                    window.handleRoute(window.location.hash || '#dashboard');
-                } else {
-                    // Fallback: reload page
-                    window.location.reload();
-                }
-            }, 300);
+            // Re-render active route with new locale
+            if (window.handleRoute) {
+                window.handleRoute(window.location.hash || '#dashboard');
+            } else {
+                window.location.reload();
+            }
         });
     }
 }

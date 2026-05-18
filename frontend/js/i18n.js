@@ -87,11 +87,10 @@ export function setLocale(locale) {
     } catch (e) {
       console.warn('localStorage not available, locale not persisted');
     }
-    // Reload translations and apply
-    loadLocale(locale)
+    // Return promise so callers can await locale load
+    return loadLocale(locale)
       .then(() => {
         applyTranslations();
-        // Update window.t so views using window.t get new locale
         if (typeof window !== 'undefined') window.t = t;
       })
       .catch(error => {
@@ -99,6 +98,7 @@ export function setLocale(locale) {
         currentLocale = locale;
       });
   }
+  return Promise.resolve();
 }
 
 /**
