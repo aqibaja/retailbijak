@@ -1,6 +1,6 @@
-import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518Q';
-import { observeElements, flashUpdate } from '../main.js?v=20260518Q';
-import { t as _t } from '../i18n.js?v=20260518Q';
+import { fetchFundamental, fetchTechnical, fetchAnalysis, fetchChartData, fetchStockDetail, fetchNews, fetchWatchlist, deleteWatchlistItem, apiFetch, saveWatchlistItem, showToast, loadTVWidget, getTVTheme } from '../api.js?v=20260518R';
+import { observeElements, flashUpdate } from '../main.js?v=20260518R';
+import { t as _t } from '../i18n.js?v=20260518R';
 const t = (key, params) => (window.t ? window.t(key, params) : _t(key, params));
 
 const AI_PICKS_CONTEXT_KEY = 'retailbijak.ai_picks.context';
@@ -45,7 +45,7 @@ function renderAiPickContextBanner(symbol) {
     const returnHref = data.source_route || '#ai-picks';
     const heroBackHref = returnHref;
     return {
-      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">${t('stock_detail.from_ai_picks')}</div><strong>${symbol} ${t('stock_detail.entered_radar', { ticker: symbol, mode: data.mode || 'swing' })}</strong></div><span class="badge badge-up">${t('stock_detail.score')} ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">${t('stock_detail.origin_shortlist')}: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>${t('stock_detail.confidence')} ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || t('stock_detail.validate_risk_reward')}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">${t('stock_detail.back_to_shortlist')}</a></div></div>`,
+      bannerHtml: `<div class="panel stock-ai-pick-context"><div class="stock-ai-pick-context-head"><div><div class="screener-kicker">${t('stock_detail.from_ai_picks')}</div><strong>${symbol} masuk radar mode ${data.mode || 'swing'}</strong></div><span class="badge badge-up">${t('stock_detail.score')} ${data.score ?? '—'}</span></div><div class="stock-ai-pick-context-origin">${t('stock_detail.origin_shortlist')}: <strong>${sourceLabel}</strong></div><div class="stock-ai-pick-context-meta"><span>${t('stock_detail.confidence')} ${data.confidence || '—'}</span><span>${labels || fit}</span><span>${levels}</span><span>${data.risk_note || t('stock_detail.validate_risk_reward')}</span></div><div class="stock-ai-pick-context-actions"><a href="${returnHref}" class="btn stock-ai-pick-context-cta">${t('stock_detail.back_to_shortlist')}</a></div></div>`,
       heroBackHref,
     };
   } catch {
@@ -632,14 +632,19 @@ function renderDecisionPanel(candles, tech){
   const levels = getLevels(candles, tech); const rsi = tech?.indicators?.rsi?.value; const rating = tech?.rating || 'NETRAL';
   const ind = tech?.indicators || {};
   const risk = Math.max(levels.entry - levels.stop, 1), reward = Math.max(levels.target - levels.entry, 0); const rr = reward/risk;
-  // Confluence: count bullish/bearish indicators
-  const macdStatus = (ind.macd?.status || '').toLowerCase();
-  const trendStatus = (ind.trend?.status || '').toLowerCase();
-
+  // Confluence: count bullish/bearish indicators (API status strings are Indonesian)
+  const macdHist = Number(ind.macd?.histogram || 0);
+  const macdBull = macdHist > 0;
+  const macdBear = macdHist < 0;
+  const price = candles.length ? Number(candles[candles.length-1]?.close) : 0;
+  const sma20 = Number(ind.trend?.sma_20 || 0);
+  const sma50 = Number(ind.trend?.sma_50 || 0);
+  const trendBull = sma20 > 0 && sma50 > 0 && price > sma20;
+  const trendBear = sma20 > 0 && price < sma20;
   const volRatio = Number(ind.volume?.ratio || 0);
   const stochK = Number(ind.stochastic?.k || 50);
-  const confluenceBull = [rating === 'BULLISH', macdStatus.includes('bull'), trendStatus.includes('bull'), rsi > 50 && rsi < 70, volRatio >= 1].filter(Boolean).length;
-  const confluenceBear = [rating === 'BEARISH', macdStatus.includes('bear'), trendStatus.includes('bear'), rsi >= 70, volRatio < 0.5].filter(Boolean).length;
+  const confluenceBull = [rating === 'BULLISH', macdBull, trendBull, rsi > 50 && rsi < 70, volRatio >= 1].filter(Boolean).length;
+  const confluenceBear = [rating === 'BEARISH', macdBear, trendBear, rsi >= 70, volRatio < 0.5].filter(Boolean).length;
   const totalChecked = 5;
   const netScore = Math.round((confluenceBull / totalChecked) * 100);
   const scoreLabel = netScore >= 70 ? 'Bullish kuat' : netScore >= 50 ? 'Bullish moderat' : netScore >= 30 ? 'Sideways' : 'Bearish';
