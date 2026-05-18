@@ -169,8 +169,38 @@
     "confirm_delete_position": "Apakah Anda yakin ingin menghapus {{ticker}} dari portofolio Anda?",
     "failed_delete_position": "Gagal menghapus {{ticker}} dari portofolio"
   },
-  "market": "Pasar",
-  "news": "Berita",
+  "market": {
+    "data_partial": "Data Parsial",
+    "partial_snapshot": "Sebagian data tidak tersedia",
+    "mixed_sources": "Sumber Campuran",
+    "mixed_live_fallback": "Sebagian live, sebagian snapshot",
+    "live_session": "Sesi Live",
+    "majority_live": "Mayoritas data live",
+    "delayed_data": "Data Tertunda",
+    "snapshot_available": "Snapshot tersedia",
+    "data_quality": "KUALITAS DATA",
+    "reload_data": "Muat Ulang",
+    "loading_intel": "Memuat intelijen pasar..."
+  },
+  "news": {
+    "market_intel": "INTELIJEN PASAR",
+    "news_intelligence": "Intelijen Berita",
+    "news_summary": "Pantau berita pasar IDX terkini dan analisis sentimen",
+    "search_news": "Cari berita...",
+    "clear_filter": "Hapus filter",
+    "news_stream": "ARUS BERITA",
+    "all_news": "Semua berita pasar IDX",
+    "items_intel": "berita ditemukan",
+    "no_news": "Belum ada berita",
+    "news_coming": "Berita akan muncul setelah scheduler berjalan",
+    "filter_label": "{{count}} hasil untuk \"{{query}}\"",
+    "not_found_label": "Tidak ditemukan",
+    "not_found": "Tidak ada hasil",
+    "try_keyword": "Coba kata kunci lain",
+    "failed": "Gagal memuat",
+    "failed_load": "Gagal memuat berita",
+    "try_refresh": "Coba refresh halaman"
+  },
   "stock_detail": {
     "title": "Detail Saham",
     "loading_data": "Memuat data emiten...",
@@ -327,7 +357,16 @@
     "search_hint_cmd": "Cmd+K",
     "search_input_hint": "Ketik kode saham atau nama emiten."
   },
-  "scanner": "Pindai",
+  "scanner": {
+    "title": "Pemindai",
+    "scanning": "Memindai...",
+    "results": "Hasil",
+    "no_results": "Tidak ada hasil",
+    "filter": "Filter",
+    "run": "Jalankan",
+    "stop": "Hentikan",
+    "clear": "Bersihkan"
+  },
   "topbar": {
     "dashboard_label": "Dasbor RetailBijak",
     "search_label": "Cari",
