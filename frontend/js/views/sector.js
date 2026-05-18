@@ -65,7 +65,7 @@ export async function renderSectors(root) {
         </div>
     `;
 
-    lucide.createIcons();
+    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
     document.getElementById('refreshSectors')?.addEventListener('click', loadSectors);
     document.getElementById('ai-sector-analysis')?.addEventListener('click', runSectorRotationAnalysis);
 
@@ -122,7 +122,7 @@ async function loadSectors() {
         _filterState = 'all';
         document.querySelectorAll('.sector-filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
         applyFilterAndRender(data.sectors);
-        lucide.createIcons();
+        if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
     } catch (e) {
         carousel.innerHTML = `<div class="sector-error">
             <span>⚠️ ${t('error')}</span>
@@ -149,7 +149,7 @@ function applyFilterAndRender(sectors) {
 
     renderCarousel(filtered);
     renderDetailGrid(filtered);
-    lucide.createIcons();
+    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
 }
 
 function renderCarousel(sectors) {
@@ -200,7 +200,7 @@ function renderDetailGrid(sectors) {
             const ticker = st.ticker.replace('.JK', '');
             const ret1d = st.returns['1d'];
             const isPos = ret1d >= 0;
-            return `<tr onclick="event.stopPropagation();window.location.hash='#/stock/${ticker}'" style="cursor:pointer">
+            return `<tr onclick="event.stopPropagation();window.location.hash='#stock/${ticker}'" style="cursor:pointer">
                 <td style="padding:3px 6px;font-weight:700;color:var(--primary-color)">${ticker}</td>
                 <td style="padding:3px 6px;text-align:right;font-variant-numeric:tabular-nums">${st.close != null ? st.close.toLocaleString('id-ID') : '—'}</td>
                 <td style="padding:3px 6px;text-align:right;color:${isPos ? '#22c55e' : '#ef4444'};font-weight:600">${isPos ? '+' : ''}${ret1d.toFixed(2)}%</td>
@@ -231,7 +231,7 @@ function renderDetailGrid(sectors) {
             const col = heatColor(val, 5);
             return `<div title="${ticker}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}%"
                 style="width:16px;height:16px;border-radius:3px;background:${col};cursor:pointer;flex-shrink:0"
-                onclick="event.stopPropagation();window.location.hash='#/stock/${ticker}'"></div>`;
+                onclick="event.stopPropagation();window.location.hash='#stock/${ticker}'"></div>`;
         }).join('');
         const heatmapHtml = heatStocks.length ? `
             <div class="sector-heatmap" style="margin-top:10px" onclick="event.stopPropagation()">
@@ -270,12 +270,12 @@ function renderDetailGrid(sectors) {
                 <div class="sector-topbot">
                     ${top ? `<div class="sector-topbot-item">
                         <span class="sector-topbot-label">${t('top')}</span>
-                        <a href="#/stock/${top.ticker.replace('.JK', '')}" class="sector-topbot-ticker">${top.ticker.replace('.JK', '')}</a>
+                        <a href="#stock/${top.ticker.replace('.JK', '')}" class="sector-topbot-ticker">${top.ticker.replace('.JK', '')}</a>
                         <span class="sector-topbot-ret up">+${top.returns['1d'].toFixed(1)}%</span>
                     </div>` : ''}
                     ${bot ? `<div class="sector-topbot-item">
                         <span class="sector-topbot-label">${t('bottom')}</span>
-                        <a href="#/stock/${bot.ticker.replace('.JK', '')}" class="sector-topbot-ticker">${bot.ticker.replace('.JK', '')}</a>
+                        <a href="#stock/${bot.ticker.replace('.JK', '')}" class="sector-topbot-ticker">${bot.ticker.replace('.JK', '')}</a>
                         <span class="sector-topbot-ret down">${bot.returns['1d'].toFixed(1)}%</span>
                     </div>` : ''}
                 </div>
@@ -350,7 +350,7 @@ export async function renderSector(root, sectorName) {
             </div>
         </div>
     `;
-    lucide.createIcons();
+    if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
 
     try {
         // Decode URL-encoded sector name, then re-encode for API
@@ -377,7 +377,7 @@ export async function renderSector(root, sectorName) {
                     </div>
                 </div>
             `;
-            lucide.createIcons();
+            if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
             return;
         }
 
@@ -385,7 +385,7 @@ export async function renderSector(root, sectorName) {
         const sectorReturn = computeSectorReturns(breakdown);
 
         renderSectorDetail(app, sector, breakdown, sectorReturn, data.total_stocks);
-        lucide.createIcons();
+        if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
     } catch (e) {
         console.error('Sector detail error:', e);
         app.innerHTML = `
@@ -402,7 +402,7 @@ export async function renderSector(root, sectorName) {
                 </div>
             </div>
         `;
-        lucide.createIcons();
+        if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
     }
 }
 
@@ -525,7 +525,7 @@ function renderIndustryItem(ind, idx) {
         const changeStr = change != null ? pf(change, 2) : '—';
         const changeCls = change != null ? (change >= 0 ? 'up' : 'down') : '';
 
-        return `<a href="#/stock/${ticker}" class="industry-stock-row">
+        return `<a href="#stock/${ticker}" class="industry-stock-row">
             <span class="stock-ticker">${ticker}</span>
             <span class="stock-name" title="${name}">${name}</span>
             <span class="stock-price">${price}</span>
@@ -825,7 +825,7 @@ function renderSortableTable(el, stocks) {
             const chg1m = st.returns?.['1m'];
             const chg3m = st.returns?.['3m'];
             return `<tr style="border-bottom:1px solid var(--border-subtle);transition:background .1s" onmouseover="this.style.background='var(--bg-panel-hover)'" onmouseout="this.style.background=''">
-              <td style="padding:6px"><a href="#/stock/${ticker}" class="mono strong" style="color:var(--primary-color);text-decoration:none">${ticker}</a></td>
+              <td style="padding:6px"><a href="#stock/${ticker}" class="mono strong" style="color:var(--primary-color);text-decoration:none">${ticker}</a></td>
               <td style="padding:6px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${st.name || ''}">${st.name || ticker}</td>
               <td style="padding:6px;color:var(--text-dim);font-size:10px">${st.industry || '-'}</td>
               <td style="padding:6px;text-align:right" class="mono">${st.close != null ? nf(st.close, 0) : '—'}</td>
@@ -862,7 +862,7 @@ function renderSortableTable(el, stocks) {
           const chg1m = st.returns?.['1m'];
           const chg3m = st.returns?.['3m'];
           return `<tr style="border-bottom:1px solid var(--border-subtle);transition:background .1s" onmouseover="this.style.background='var(--bg-panel-hover)'" onmouseout="this.style.background=''">
-            <td style="padding:6px"><a href="#/stock/${ticker}" class="mono strong" style="color:var(--primary-color);text-decoration:none">${ticker}</a></td>
+            <td style="padding:6px"><a href="#stock/${ticker}" class="mono strong" style="color:var(--primary-color);text-decoration:none">${ticker}</a></td>
             <td style="padding:6px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${st.name || ''}">${st.name || ticker}</td>
             <td style="padding:6px;color:var(--text-dim);font-size:10px">${st.industry || '-'}</td>
             <td style="padding:6px;text-align:right" class="mono">${st.close != null ? nf(st.close, 0) : '—'}</td>
@@ -952,7 +952,7 @@ export async function renderSectorRotation(root) {
     </div>
   `;
 
-  lucide.createIcons();
+  if (typeof lucide !== "undefined" && lucide.createIcons) lucide.createIcons();
 
   try {
     const data = await apiFetch('/sectors/rotation');

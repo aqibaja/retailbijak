@@ -67,6 +67,7 @@ const card = (title, subtitle, body, accent = 'var(--accent-indigo)') => `
     <div class=\"market-card-body\">${body}</div>
   </section>`;
 const emptyState = (title, note, cta = t('market.reload_data')) => `<div class="market-empty market-empty-rich"><div class="market-empty-icon">⚠️</div><strong>${title}</strong><span>${note}</span><button class="market-empty-refresh" type="button" data-market-refresh="1">${cta}</button></div>`;
+const skeletonCard = () => `<div class="skeleton skeleton-card skeleton-h-80"></div>`;
 const loadingShell = (label = t('market.loading_intel')) => `
   <div class="market-loading-shell" role="status" aria-live="polite" aria-busy="true">
     <div class="skeleton skeleton-card skeleton-h-80"></div>

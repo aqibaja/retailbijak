@@ -4,6 +4,15 @@ from apscheduler.triggers.cron import CronTrigger
 import pytz
 
 try:
+    from updaters.price_updater import update_daily_ohlcv
+except ImportError:
+    try:
+        from backend.updaters.price_updater import update_daily_ohlcv
+    except ImportError:
+        def update_daily_ohlcv():
+            pass
+
+try:
     from updaters.signal_updater import update_signals
 except Exception:
     def update_signals():
@@ -45,6 +54,7 @@ scheduler = BackgroundScheduler(timezone=jkt_tz)
 def init_scheduler():
     """Configure and start the background scheduler."""
     logger.info("Initializing APScheduler...")
+    scheduler.add_job(update_daily_ohlcv, trigger=CronTrigger(day_of_week='mon-fri', hour='9,15', minute=30, timezone=jkt_tz), id="price_update", replace_existing=True)
     scheduler.add_job(update_signals, trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz), id="intraday_signal_update", replace_existing=True)
     scheduler.add_job(update_news, trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz), id="news_update", replace_existing=True)
     scheduler.add_job(update_fundamentals, trigger=CronTrigger(hour=2, minute=0, timezone=jkt_tz), id="fundamental_update", replace_existing=True)

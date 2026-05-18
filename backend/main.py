@@ -79,6 +79,7 @@ try:
     from backend.routes.market_summary import router as market_summary_router
     from backend.routes.news import router as news_router
     from backend.routes.scanner_stream import router as scanner_stream_router
+    from backend.routes.sectors import router as sectors_router
 except ModuleNotFoundError:
     from routes.user import router as user_router
     from routes.system import router as system_router
@@ -89,6 +90,7 @@ except ModuleNotFoundError:
     from routes.market_summary import router as market_summary_router
     from routes.news import router as news_router
     from routes.scanner_stream import router as scanner_stream_router
+    from routes.sectors import router as sectors_router
 
 
 @asynccontextmanager
@@ -113,6 +115,7 @@ app.include_router(market_router)
 app.include_router(market_summary_router)
 app.include_router(news_router)
 app.include_router(scanner_stream_router)
+app.include_router(sectors_router)
 
 app.add_middleware(
     CORSMiddleware,

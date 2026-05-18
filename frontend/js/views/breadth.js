@@ -77,8 +77,7 @@ async function loadBreadth() {
     if (chartSkel) chartSkel.style.display = 'block';
 
     try {
-        const res = await apiFetch('/market/breadth?days=50');
-        const data = await res.json();
+        const data = await apiFetch('/market/breadth?days=50');
         if (!data.data || !data.data.length) throw new Error('No data');
 
         // Hide chart skeleton, show canvas
