@@ -229,7 +229,7 @@ export function loadTVWidget(containerId, widgetType, config) {
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.src = `https://s3.tradingview.com/external-embedding/embed-widget-${widgetType}.js`;
-  script.async = false;
+  script.async = true;
   script.textContent = JSON.stringify(config);
   
   wrapper.appendChild(script);

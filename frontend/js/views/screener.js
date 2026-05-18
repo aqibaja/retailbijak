@@ -131,8 +131,12 @@ export async function renderScreener(root) {
         showToolbar: true,
         locale: 'id_ID',
         colorTheme: getTVTheme(),
+        enableScrolling: true,
+        utm_source: 'retailbijak.rich27.my.id',
+        utm_medium: 'widget',
+        utm_campaign: 'screener',
       });
-    }, 300);
+    }, 500);
 }
 
 function sortResults() {
