@@ -1,14 +1,23 @@
 /**
  * bandarmology.js — Halaman Screener Bandarmology
  * Route: #bandarmology
+ * v=20260519C — ganti apiFetch dengan native fetch untuk hindari import cache issue
  */
 
 let _bmCurrentPhase = 'all';
 let _bmCurrentSort = { col: 'phase_confidence', dir: 'desc' };
 let _bmData = [];
 
+// Helper fetch langsung ke backend API
+async function _apiFetch(path) {
+  const url = path.startsWith('/api/') ? path : '/api/' + path.replace(/^\//, '');
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export async function renderBandarmology(params) {
-  const app = document.getElementById('app');
+  const app = document.getElementById('app-root');
   if (!app) return;
 
   app.innerHTML = `
@@ -70,8 +79,8 @@ export async function renderBandarmology(params) {
       <div class="card" style="overflow-x:auto">
         <div id="bm-screener-wrap">
           <div class="bm-screener-empty">
-            <div class="skeleton skeleton-text" style="width:200px;margin:0 auto 8px"></div>
-            <div class="skeleton skeleton-text short" style="width:120px;margin:0 auto"></div>
+            <div class="spinner" style="margin:0 auto 8px"></div>
+            <div class="text-dim text-xs">Memuat data...</div>
           </div>
         </div>
       </div>
@@ -113,18 +122,21 @@ async function loadBmData() {
   wrap.innerHTML = `<div class="bm-screener-empty"><div class="spinner" style="margin:0 auto 8px"></div><div class="text-dim text-xs">Memuat data...</div></div>`;
 
   try {
-    const res = await apiFetch('/bandarmology/screener?limit=100');
+    const res = await _apiFetch('/bandarmology/screener?limit=100');
     if (!res || !res.data) throw new Error('No data');
     _bmData = res.data;
     renderBmTable(_bmData);
   } catch (e) {
-    wrap.innerHTML = `<div class="bm-screener-empty text-down">Gagal memuat data. <button class="btn btn-sm mt-2" onclick="loadBmData()">Coba lagi</button></div>`;
+    console.error('[bandarmology] loadBmData error:', e);
+    wrap.innerHTML = `<div class="bm-screener-empty text-down">Gagal memuat data. <button class="btn btn-sm mt-2" id="bm-retry-btn">Coba lagi</button></div>`;
+    const retryBtn = document.getElementById('bm-retry-btn');
+    if (retryBtn) retryBtn.addEventListener('click', () => loadBmData());
   }
 }
 
 async function loadBmQuota() {
   try {
-    const res = await apiFetch('/bandarmology/quota');
+    const res = await _apiFetch('/bandarmology/quota');
     const bar = document.getElementById('bm-quota-bar');
     if (!bar) return;
     const d = res?.data || res;
@@ -206,7 +218,7 @@ function renderBmTable(data) {
     : '<span class="text-dim text-xs" title="Data simulasi">○</span>';
 
   const rows = filtered.map(r => `
-    <tr data-ticker="${r.ticker}" onclick="window.handleRoute && window.handleRoute('stock/${r.ticker}')">
+    <tr data-ticker="${r.ticker}" style="cursor:pointer" onclick="window.handleRoute && window.handleRoute('stock/${r.ticker}')">
       <td>
         <div class="flex items-center gap-2">
           ${srcDot(r.source)}
