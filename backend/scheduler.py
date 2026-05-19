@@ -31,6 +31,15 @@ except Exception:
         logging.getLogger(__name__).info("fundamental updater unavailable; skipped")
 
 try:
+    from updaters.indexalpha_updater import update_indexalpha_data
+except ImportError:
+    try:
+        from backend.updaters.indexalpha_updater import update_indexalpha_data
+    except ImportError:
+        def update_indexalpha_data():
+            logging.getLogger(__name__).info("indexalpha updater unavailable; skipped")
+
+try:
     from jobs.idx_daily_sync import run_idx_daily_sync
 except Exception:
     try:
@@ -58,6 +67,7 @@ def init_scheduler():
     scheduler.add_job(update_signals, trigger=CronTrigger(day_of_week='mon-fri', hour='9-16', minute='*/30', timezone=jkt_tz), id="intraday_signal_update", replace_existing=True)
     scheduler.add_job(update_news, trigger=CronTrigger(hour='7-20', minute='*/30', timezone=jkt_tz), id="news_update", replace_existing=True)
     scheduler.add_job(update_fundamentals, trigger=CronTrigger(hour=2, minute=0, timezone=jkt_tz), id="fundamental_update", replace_existing=True)
+    scheduler.add_job(update_indexalpha_data, trigger=CronTrigger(day_of_week='mon-fri', hour=19, minute=30, timezone=jkt_tz), id="indexalpha_broker_summary", replace_existing=True)
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_swing", replace_existing=True, kwargs={'mode': 'swing'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_defensive", replace_existing=True, kwargs={'mode': 'defensive'})
     scheduler.add_job(generate_and_store_daily_ai_pick_report, trigger=CronTrigger(day_of_week='mon-fri', hour='8,12', minute=0, timezone=jkt_tz), id="daily_ai_picks_catalyst", replace_existing=True, kwargs={'mode': 'catalyst'})

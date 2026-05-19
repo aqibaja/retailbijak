@@ -390,11 +390,9 @@ export async function renderStockDetail(root, ticker) {
   renderStockNewsFeed(symbol, news);
   renderStockAnnouncements(symbol, announcements);
 
-  // Broker Activity (async, non-blocking)
-  apiFetch(`/stocks/${encodeURIComponent(symbol)}/broker-activity?limit=6`).then(brokerRes => {
-    if (brokerRes && brokerRes.source === 'db' && brokerRes.data?.length) {
-      renderBrokerActivity(brokerRes.data);
-    }
+  // Bandarmology Panel (async, non-blocking)
+  apiFetch(`/stocks/${encodeURIComponent(symbol)}/bandarmology?days=7`).then(res => {
+    if (res && res.has_data) renderBandarmologyPanel(res);
   }).catch(() => {});
 
   // Peer Comparison (async)
@@ -943,16 +941,199 @@ function renderStockAnnouncements(symbol, annPayload) {
   }).join('');
 }
 
-function renderBrokerActivity(data) {
+function renderBandarmologyPanel(res) {
   const el = document.getElementById('broker-activity-panel');
   if (!el) return;
+  el.classList.remove('hidden');
   el.style.display = '';
-  el.innerHTML = '<div class="text-xs text-dim uppercase strong mb-2">Aktivitas Broker (5 hari)</div>' + 
-    data.slice(0, 6).map(r => {
-      const net = Number(r.net_volume || 0);
-      const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
-      return `<div class="flex justify-between items-center gap-2 peer-row-divider"><span class="mono broker-name">${r.broker || '—'}</span><span class="mono ${cls} broker-net">${net > 0 ? '+' : ''}${nf(Math.abs(net),0)}</span></div>`;
-    }).join('');
+
+  const phase = res.phase || {};
+  const flow = res.foreign_domestic_flow || {};
+  const spike = res.volume_spike || {};
+  const brokers = res.broker_streaks || [];
+  const isReal = res.source === 'real';
+
+  // Phase config
+  const phaseMap = {
+    accumulation: { label: 'AKUMULASI', cls: 'text-up', icon: '🟢', bg: 'bm-phase-acc' },
+    distribution: { label: 'DISTRIBUSI', cls: 'text-down', icon: '🔴', bg: 'bm-phase-dist' },
+    neutral:       { label: 'NETRAL',    cls: 'text-dim',  icon: '🟡', bg: 'bm-phase-neutral' },
+  };
+  const ph = phaseMap[phase.phase] || phaseMap.neutral;
+
+  // Spike config
+  const spikeMap = {
+    extreme: { icon: '🚨', cls: 'text-down' },
+    alert:   { icon: '⚠️', cls: 'text-warn' },
+    watch:   { icon: '👁️', cls: 'text-dim' },
+    normal:  { icon: '',   cls: 'text-dim' },
+  };
+  const sp = spikeMap[spike.level] || spikeMap.normal;
+
+  // Flow bar helper (0-100%)
+  function flowBar(netVal, maxVal) {
+    const pct = maxVal > 0 ? Math.min(Math.abs(netVal) / maxVal * 100, 100) : 0;
+    const cls = netVal > 0 ? 'bm-bar-buy' : netVal < 0 ? 'bm-bar-sell' : 'bm-bar-neutral';
+    return `<div class="bm-bar-track"><div class="bm-bar-fill ${cls}" style="width:${pct.toFixed(1)}%"></div></div>`;
+  }
+
+  // Max flow for scaling bars
+  const maxFlow = Math.max(Math.abs(flow.foreign_net_value || 0), Math.abs(flow.domestic_net_value || 0), 1);
+
+  // Confluence badge
+  const confMap = {
+    bullish:    '<span class="badge badge-up">✅ Asing & Lokal searah — Bullish</span>',
+    bearish:    '<span class="badge badge-down">⚠️ Asing & Lokal searah — Bearish</span>',
+    divergence: '<span class="badge badge-neutral">↔️ Divergence — Hati-hati</span>',
+  };
+  const confBadge = confMap[flow.confluence_type] || '';
+
+  // Direction arrow
+  const dirArrow = v => v > 0 ? '↑' : v < 0 ? '↓' : '→';
+  const fmtVal = v => {
+    const abs = Math.abs(v);
+    if (abs >= 1e12) return (v/1e12).toFixed(1) + 'T';
+    if (abs >= 1e9)  return (v/1e9).toFixed(1) + 'M';
+    if (abs >= 1e6)  return (v/1e6).toFixed(1) + 'jt';
+    return nf(abs, 0);
+  };
+
+  // Broker rows (top 8)
+  const maxBrokerVal = Math.max(...brokers.map(b => Math.abs(b.total_net_value || 0)), 1);
+  const brokerRows = brokers.slice(0, 8).map(b => {
+    const net = b.total_net_value || 0;
+    const cls = net > 0 ? 'text-up' : net < 0 ? 'text-down' : 'text-dim';
+    const pct = Math.min(Math.abs(net) / maxBrokerVal * 100, 100).toFixed(1);
+    const streakBadge = b.streak_days >= 2
+      ? `<span class="bm-streak ${b.direction === 'buy' ? 'bm-streak-buy' : 'bm-streak-sell'}">${b.direction === 'buy' ? '↑' : '↓'}${b.streak_days}h</span>`
+      : '';
+    const bandarBadge = b.is_bandar ? '<span class="bm-bandar-dot" title="Broker bandar">★</span>' : '';
+    return `
+      <div class="bm-broker-row">
+        <div class="bm-broker-left">
+          <span class="bm-broker-code">${b.broker_code}${bandarBadge}</span>
+          <span class="bm-broker-name text-dim">${b.broker_name}</span>
+        </div>
+        <div class="bm-broker-bar-wrap">
+          <div class="bm-bar-track"><div class="bm-bar-fill ${net > 0 ? 'bm-bar-buy' : 'bm-bar-sell'}" style="width:${pct}%"></div></div>
+        </div>
+        <div class="bm-broker-right">
+          <span class="mono ${cls}">${net > 0 ? '+' : ''}${fmtVal(net)}</span>
+          ${streakBadge}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Source badge
+  const srcBadge = isReal
+    ? '<span class="badge badge-up bm-src-badge">● Data Real</span>'
+    : '<span class="badge badge-neutral bm-src-badge">○ Data Simulasi</span>';
+
+  el.innerHTML = `
+    <div class="bm-panel">
+      <div class="bm-header">
+        <h3 class="stock-side-panel-title mb-0">🏦 Bandarmology</h3>
+        <div class="flex items-center gap-2">
+          ${srcBadge}
+          <button class="bm-help-btn" onclick="showBandarmologyHelp()" title="Cara membaca">?</button>
+        </div>
+      </div>
+
+      <!-- Fase -->
+      <div class="bm-phase-card ${ph.bg}">
+        <div class="bm-phase-main">
+          <span class="bm-phase-icon">${ph.icon}</span>
+          <div>
+            <div class="bm-phase-label ${ph.cls}">${ph.label}</div>
+            ${phase.streak_days >= 2 ? `<div class="bm-phase-streak text-dim">${phase.streak_days} hari berturut-turut</div>` : ''}
+          </div>
+        </div>
+        <div class="bm-phase-confidence">
+          <div class="bm-conf-bar-track"><div class="bm-conf-bar-fill" style="width:${phase.confidence || 0}%"></div></div>
+          <span class="text-dim text-xs">${phase.confidence || 0}% keyakinan</span>
+        </div>
+        <div class="bm-phase-desc text-dim text-xs mt-1">${phase.description || ''}</div>
+      </div>
+
+      <!-- Arus Modal -->
+      <div class="bm-section-title">Arus Modal</div>
+      <div class="bm-flow-row">
+        <span class="bm-flow-label">Asing</span>
+        ${flowBar(flow.foreign_net_value, maxFlow)}
+        <span class="mono ${flow.foreign_net_value > 0 ? 'text-up' : flow.foreign_net_value < 0 ? 'text-down' : 'text-dim'} bm-flow-val">
+          ${dirArrow(flow.foreign_net_value)} ${fmtVal(flow.foreign_net_value || 0)}
+        </span>
+      </div>
+      <div class="bm-flow-row">
+        <span class="bm-flow-label">Lokal</span>
+        ${flowBar(flow.domestic_net_value, maxFlow)}
+        <span class="mono ${flow.domestic_net_value > 0 ? 'text-up' : flow.domestic_net_value < 0 ? 'text-down' : 'text-dim'} bm-flow-val">
+          ${dirArrow(flow.domestic_net_value)} ${fmtVal(flow.domestic_net_value || 0)}
+        </span>
+      </div>
+      ${confBadge ? `<div class="mt-2">${confBadge}</div>` : ''}
+
+      <!-- Volume Spike -->
+      ${spike.spike_ratio ? `
+      <div class="bm-section-title mt-3">Volume Spike</div>
+      <div class="bm-spike-row">
+        <span class="${sp.cls} strong">${sp.icon} ${spike.spike_ratio}x rata-rata 20 hari</span>
+        <span class="text-dim text-xs">${spike.description || ''}</span>
+      </div>` : ''}
+
+      <!-- Top Broker -->
+      <div class="bm-section-title mt-3">Top Broker (7 hari) <span class="text-dim text-xs">★ = broker bandar</span></div>
+      <div class="bm-broker-list">${brokerRows || '<div class="text-dim text-xs">Tidak ada data broker.</div>'}</div>
+
+      <!-- Disclaimer -->
+      <div class="bm-disclaimer">⚠️ Bukan saran investasi. Gunakan sebagai pelengkap analisis.</div>
+    </div>`;
+}
+
+function showBandarmologyHelp() {
+  const existing = document.getElementById('bm-help-overlay');
+  if (existing) { existing.remove(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'bm-help-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box bm-help-modal">
+      <div class="modal-header">
+        <h3>📖 Cara Membaca Bandarmology</h3>
+        <button onclick="document.getElementById('bm-help-overlay').remove()" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body bm-help-body">
+        <div class="bm-help-section">
+          <h4>🟢 Fase Akumulasi</h4>
+          <p>Broker dominan <strong>net buy konsisten 3+ hari</strong>. Bandar sedang mengumpulkan saham secara diam-diam. Harga biasanya masih stagnan atau naik pelan.</p>
+        </div>
+        <div class="bm-help-section">
+          <h4>🔴 Fase Distribusi</h4>
+          <p>Broker dominan <strong>net sell konsisten 3+ hari</strong>. Bandar sedang melepas saham ke pasar. Harga bisa masih naik (tipu-tipu) tapi akan turun.</p>
+        </div>
+        <div class="bm-help-section">
+          <h4>🟡 Netral</h4>
+          <p>Aktivitas broker tidak konsisten. Belum ada sinyal jelas dari bandar.</p>
+        </div>
+        <div class="bm-help-section">
+          <h4>Arus Modal Asing vs Lokal</h4>
+          <p><strong>Asing & Lokal searah (Bullish)</strong> → sinyal kuat, modal besar masuk bersamaan.<br>
+          <strong>Divergence</strong> → asing dan lokal berlawanan, perlu hati-hati.</p>
+        </div>
+        <div class="bm-help-section">
+          <h4>Volume Spike</h4>
+          <p>Perbandingan volume hari ini vs rata-rata 20 hari.<br>
+          <strong>&gt;2x</strong> = perhatian ⚠️ &nbsp; <strong>&gt;5x</strong> = bandar sangat aktif 🚨</p>
+        </div>
+        <div class="bm-help-section">
+          <h4>★ Broker Bandar</h4>
+          <p>Broker yang sering diasosiasikan dengan smart money: UBS (AK), JP Morgan (YB), Mirae (YP), Maybank (ZP), CLSA (KZ), BCA Sekuritas (SQ), dll.</p>
+        </div>
+        <div class="bm-help-disclaimer">⚠️ Bandarmology bukan saran investasi. Selalu kombinasikan dengan analisis teknikal dan fundamental.</div>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 // ─── Alert Modal ────────────────────────

@@ -7,6 +7,7 @@ import { renderNews } from './views/news.js?v=20260518Q';
 import { renderSettings } from './views/settings.js?v=20260518Q';
 import { renderHelp } from './views/help.js?v=20260518Q';
 import { renderAiPicks } from './views/ai_picks.js?v=20260518Q';
+import { renderBandarmology } from './views/bandarmology.js?v=20260519A';
 import { clearViewTimers } from './main.js?v=20260518Q';
 import { t } from './i18n.js?v=20260518Q';
 
@@ -70,6 +71,7 @@ export function handleRoute(hash) {
             else if (baseRoute === 'portfolio' || baseRoute === 'watchlist') renderPortfolio(root, baseRoute);
             else if (baseRoute === 'news') renderNews(root);
             else if (baseRoute === 'ai-picks') renderAiPicks(root);
+            else if (baseRoute === 'bandarmology') renderBandarmology(root);
             else if (baseRoute === 'settings') renderSettings(root);
             else if (baseRoute === 'help') renderHelp(root);
             else renderDashboard(root); // Fallback

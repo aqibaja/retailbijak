@@ -91,6 +91,11 @@ class BrokerSummary(Base):
     buy_value = Column(Float)
     sell_value = Column(Float)
     net_value = Column(Float)
+    buy_freq = Column(Integer, nullable=True)
+    sell_freq = Column(Integer, nullable=True)
+    buy_avg = Column(Float, nullable=True)
+    sell_avg = Column(Float, nullable=True)
+    source = Column(String, default='synthetic')  # 'real' | 'synthetic'
 
 
 class News(Base):

@@ -28,10 +28,10 @@
  <meta name="twitter:card" content="summary_large_image">
  <meta name="twitter:title" content="RetailBijak — IDX Stock Intelligence">
  <meta name="twitter:description" content="Platform analisis saham IDX profesional: stock scanner, market dashboard, portfolio tracker, technical & fundamental analysis real-time.">
- <link rel="icon" href="assets/favicon.svg?v=20260518S" type="image/svg+xml">
+ <link rel="icon" href="assets/favicon.svg?v=20260519A" type="image/svg+xml">
  <link rel="apple-touch-icon" href="assets/site-logo.png">
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" crossorigin>
-  <link rel="stylesheet" href="style.css?v=20260518S">
+  <link rel="stylesheet" href="style.css?v=20260519A">
  <style>html{background:var(--bg-base,#0b1220);color:var(--text-main,#e5edf8);}body{margin:0;font-family:Inter,sans-serif;position:relative;}html::before{content:'';position:fixed;inset:0;background-image:radial-gradient(var(--dot-color, rgba(255,255,255,0.025)) var(--dot-size,1px),transparent var(--dot-size,1px));background-size:var(--dot-spacing,24px) var(--dot-spacing,24px);pointer-events:none;z-index:0;}body>*{position:relative;z-index:1;}</style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer crossorigin="anonymous"></script>
@@ -74,6 +74,7 @@
     <a href="#portfolio" class="nav-item" data-view="portfolio" data-tooltip="Aset" data-i18n-title="sidebar.portfolio_tooltip"><i data-lucide="briefcase" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#news" class="nav-item" data-view="news" data-tooltip="Berita" data-i18n-title="sidebar.news_tooltip"><i data-lucide="newspaper" style="width:20px;" aria-hidden="true"></i></a>
     <a href="#ai-picks" class="nav-item" data-view="ai-picks" data-tooltip="AI Picks" data-i18n-title="sidebar.ai_picks_tooltip"><i data-lucide="sparkles" style="width:20px;" aria-hidden="true"></i></a>
+    <a href="#bandarmology" class="nav-item" data-view="bandarmology" data-tooltip="Bandarmology"><i data-lucide="activity" style="width:20px;" aria-hidden="true"></i></a>
   </nav>
 </aside>
 <main class="main-content" id="app-root" role="main">
@@ -93,6 +94,7 @@
   <a href="#news" class="bottom-nav-item" data-view="news"><i data-lucide="newspaper" aria-hidden="true"></i><span data-i18n="news">Berita</span></a>
   <a href="#portfolio" class="bottom-nav-item" data-view="portfolio"><i data-lucide="briefcase" aria-hidden="true"></i><span data-i18n="portfolio">Aset</span></a>
   <a href="#ai-picks" class="bottom-nav-item" data-view="ai-picks"><i data-lucide="sparkles" style="width:18px;" aria-hidden="true"></i><span data-i18n="sidebar.ai_picks_tooltip">AI</span></a>
+  <a href="#bandarmology" class="bottom-nav-item" data-view="bandarmology"><i data-lucide="activity" style="width:18px;" aria-hidden="true"></i><span>Bandar</span></a>
 </nav>
  <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Cari saham" data-i18n-title="search.search_dialog_label">
   <div class="search-modal">
@@ -137,7 +139,7 @@
    if (el) el.classList.remove('page-loading');
   }, 5000);
  </script>
- <script type="module" src="js/main.js?v=20260518S"></script>
+ <script type="module" src="js/main.js?v=20260519A"></script>
  <script nomodule>
   // Fallback untuk browser tanpa ES module support
   import('./js/i18n.js').then(module => {
