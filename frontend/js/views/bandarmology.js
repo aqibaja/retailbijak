@@ -276,13 +276,13 @@ function renderBmTable(data) {
     <table class="bm-screener-table">
       <thead>
         <tr>
-          <th data-sort="ticker" onclick="window._bmSort('ticker')" style="${thStyle}">Saham ${sortIcon('ticker')}</th>
-          <th data-sort="phase_confidence" onclick="window._bmSort('phase_confidence')" style="${thStyle}">Fase ${sortIcon('phase_confidence')}</th>
-          <th data-sort="foreign_net_value" onclick="window._bmSort('foreign_net_value')" style="${thStyle}">Asing Flow ${sortIcon('foreign_net_value')}</th>
-          <th data-sort="volume_spike_ratio" onclick="window._bmSort('volume_spike_ratio')" style="${thStyle}">Vol Spike ${sortIcon('volume_spike_ratio')}</th>
-          <th data-sort="phase_streak_days" onclick="window._bmSort('phase_streak_days')" style="${thStyle}">Streak ${sortIcon('phase_streak_days')}</th>
+          <th><button class="bm-sort-btn" onclick="window._bmSort('ticker')">Saham ${sortIcon('ticker')}</button></th>
+          <th><button class="bm-sort-btn" onclick="window._bmSort('phase_confidence')">Fase ${sortIcon('phase_confidence')}</button></th>
+          <th><button class="bm-sort-btn" onclick="window._bmSort('foreign_net_value')">Asing Flow ${sortIcon('foreign_net_value')}</button></th>
+          <th><button class="bm-sort-btn" onclick="window._bmSort('volume_spike_ratio')">Vol Spike ${sortIcon('volume_spike_ratio')}</button></th>
+          <th><button class="bm-sort-btn" onclick="window._bmSort('phase_streak_days')">Streak ${sortIcon('phase_streak_days')}</button></th>
           <th>Top Broker</th>
-          <th data-sort="last_price" onclick="window._bmSort('last_price')" style="${thStyle}">Harga ${sortIcon('last_price')}</th>
+          <th><button class="bm-sort-btn" onclick="window._bmSort('last_price')">Harga ${sortIcon('last_price')}</button></th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

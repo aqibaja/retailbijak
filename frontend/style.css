@@ -5831,3 +5831,24 @@ input:focus-visible, select:focus-visible, button:focus-visible {
   .bm-screener-table th:nth-child(n+5),
   .bm-screener-table td:nth-child(n+5) { display: none; }
 }
+
+/* Sort button di header tabel bandarmology */
+.bm-sort-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  padding: 0;
+  user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bm-sort-btn:hover { color: var(--text-primary); }
