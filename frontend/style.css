@@ -1615,7 +1615,7 @@ a.btn-icon:active, button.btn-icon:active { transform: scale(0.94); }
 .view-content > *:nth-child(6) { animation-delay: 150ms; }
 @keyframes viewFadeIn {
   from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ================= MODAL EXIT ANIMATION ================= */
