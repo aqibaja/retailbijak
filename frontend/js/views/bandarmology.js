@@ -79,11 +79,13 @@ export async function renderBandarmology(params) {
       <div id="bm-quota-bar" class="text-dim text-xs mb-3" style="display:none"></div>
 
       <!-- Screener table -->
-      <div class="card" style="overflow-x:auto">
-        <div id="bm-screener-wrap">
-          <div class="bm-screener-empty">
-            <div class="spinner" style="margin:0 auto 8px"></div>
-            <div class="text-dim text-xs">Memuat data...</div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <div id="bm-screener-wrap">
+            <div class="bm-screener-empty">
+              <div class="spinner" style="margin:0 auto 8px"></div>
+              <div class="text-dim text-xs">Memuat data...</div>
+            </div>
           </div>
         </div>
       </div>
