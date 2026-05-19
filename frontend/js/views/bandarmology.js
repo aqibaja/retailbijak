@@ -194,6 +194,8 @@ function renderBmTable(data) {
     return 0;
   });
 
+  const thStyle = 'cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:rgba(0,0,0,0)';
+
   const sortIcon = (c) => {
     if (_bmCurrentSort.col !== c) return '<span class="text-dim">⇅</span>';
     return _bmCurrentSort.dir === 'asc' ? '↑' : '↓';
@@ -272,13 +274,13 @@ function renderBmTable(data) {
     <table class="bm-screener-table">
       <thead>
         <tr>
-          <th data-sort="ticker" onclick="window._bmSort('ticker')" style="cursor:pointer">Saham ${sortIcon('ticker')}</th>
-          <th data-sort="phase_confidence" onclick="window._bmSort('phase_confidence')" style="cursor:pointer">Fase ${sortIcon('phase_confidence')}</th>
-          <th data-sort="foreign_net_value" onclick="window._bmSort('foreign_net_value')" style="cursor:pointer">Asing Flow ${sortIcon('foreign_net_value')}</th>
-          <th data-sort="volume_spike_ratio" onclick="window._bmSort('volume_spike_ratio')" style="cursor:pointer">Vol Spike ${sortIcon('volume_spike_ratio')}</th>
-          <th data-sort="phase_streak_days" onclick="window._bmSort('phase_streak_days')" style="cursor:pointer">Streak ${sortIcon('phase_streak_days')}</th>
+          <th data-sort="ticker" onclick="window._bmSort('ticker')" style="${thStyle}">Saham ${sortIcon('ticker')}</th>
+          <th data-sort="phase_confidence" onclick="window._bmSort('phase_confidence')" style="${thStyle}">Fase ${sortIcon('phase_confidence')}</th>
+          <th data-sort="foreign_net_value" onclick="window._bmSort('foreign_net_value')" style="${thStyle}">Asing Flow ${sortIcon('foreign_net_value')}</th>
+          <th data-sort="volume_spike_ratio" onclick="window._bmSort('volume_spike_ratio')" style="${thStyle}">Vol Spike ${sortIcon('volume_spike_ratio')}</th>
+          <th data-sort="phase_streak_days" onclick="window._bmSort('phase_streak_days')" style="${thStyle}">Streak ${sortIcon('phase_streak_days')}</th>
           <th>Top Broker</th>
-          <th data-sort="last_price" onclick="window._bmSort('last_price')" style="cursor:pointer">Harga ${sortIcon('last_price')}</th>
+          <th data-sort="last_price" onclick="window._bmSort('last_price')" style="${thStyle}">Harga ${sortIcon('last_price')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
