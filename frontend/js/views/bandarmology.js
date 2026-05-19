@@ -90,6 +90,19 @@ export async function renderBandarmology(params) {
       </div>
     </section>`;
 
+  // Event: sort header — delegasi ke wrap supaya tidak perlu re-attach setiap render
+  document.getElementById('bm-screener-wrap').addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    const col = th.dataset.sort;
+    if (_bmCurrentSort.col === col) {
+      _bmCurrentSort.dir = _bmCurrentSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      _bmCurrentSort = { col, dir: 'desc' };
+    }
+    renderBmTable(_bmData);
+  });
+
   // Event: filter tabs
   document.getElementById('bm-filter-tabs').addEventListener('click', e => {
     const btn = e.target.closest('.bm-filter-tab');
@@ -266,16 +279,5 @@ function renderBmTable(data) {
     </table>
     <div class="text-dim text-xs p-3">${filtered.length} saham ditampilkan</div>`;
 
-  // Sort on header click
-  wrap.querySelectorAll('th[data-sort]').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.dataset.sort;
-      if (_bmCurrentSort.col === col) {
-        _bmCurrentSort.dir = _bmCurrentSort.dir === 'asc' ? 'desc' : 'asc';
-      } else {
-        _bmCurrentSort = { col, dir: 'desc' };
-      }
-      renderBmTable(_bmData);
-    });
-  });
+
 }
