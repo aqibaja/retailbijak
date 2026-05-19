@@ -173,6 +173,10 @@ function renderBmTable(data) {
   const wrap = document.getElementById('bm-screener-wrap');
   if (!wrap) return;
 
+  // Simpan scroll position card
+  const card = wrap.closest('.card');
+  const scrollLeft = card ? card.scrollLeft : 0;
+
   // Filter by phase
   let filtered = _bmCurrentPhase === 'all'
     ? data
@@ -286,6 +290,9 @@ function renderBmTable(data) {
       <tbody>${rows}</tbody>
     </table>
     <div class="text-dim text-xs p-3">${filtered.length} saham ditampilkan</div>`;
+
+  // Restore scroll position
+  if (card) card.scrollLeft = scrollLeft;
 
 
 }
