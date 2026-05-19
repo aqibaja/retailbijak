@@ -1,4 +1,4 @@
-import { handleRoute } from './router.js?v=20260519G';
+import { handleRoute } from './router.js?v=20260519H';
 import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260519A';
 import { initTheme } from './theme.js?v=20260519A';
 import { initI18n, t } from './i18n.js?v=20260519A';
