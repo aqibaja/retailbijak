@@ -1,7 +1,7 @@
-import { handleRoute } from './router.js?v=20260518S';
-import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260518S';
-import { initTheme } from './theme.js?v=20260518S';
-import { initI18n, t } from './i18n.js?v=20260518S';
+import { handleRoute } from './router.js?v=20260519C';
+import { fetchMarketSummary, searchStocks, fetchTopMovers, initTVThemeSync } from './api.js?v=20260519A';
+import { initTheme } from './theme.js?v=20260519A';
+import { initI18n, t } from './i18n.js?v=20260519A';
 // ================= ANIMATION ENGINE =================
 // View lifecycle: cleanup timers when navigating away
 window.__viewTimers = [];
@@ -12,6 +12,13 @@ export function clearViewTimers() {
     else clearTimeout(parseInt(id));
   });
   window.__viewTimers = [];
+  // Reset body scroll lock yang mungkin tertinggal dari modal/overlay
+  document.body.style.overflow = '';
+  // Hapus overlay/modal yang mungkin masih nempel di body
+  ['bm-help-overlay', 'alert-modal-overlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
 }
 export function observeElements(selector = '.stagger-reveal') {
    const observer = new IntersectionObserver((entries) => {
