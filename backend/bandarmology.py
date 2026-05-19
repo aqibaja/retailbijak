@@ -30,6 +30,16 @@ FOREIGN_BROKERS = {
     'MG': 'Semesta Indovest',
     'XL': 'Mahakarya Artha',
     'XA': 'NH Korindo',
+    # Tambahan dari data real
+    'YO': 'Nomura Sekuritas',
+    'BF': 'Morgan Stanley',
+    'FO': 'Deutsche Bank',
+    'CP': 'Citigroup Sekuritas',
+    'AD': 'Pinebridge Investments',
+    'BS': 'Merrill Lynch',
+    'RG': 'Goldman Sachs',
+    'SS': 'Societe Generale',
+    'TF': 'Macquarie Capital',
 }
 
 LOCAL_BIG_BROKERS = {
@@ -49,6 +59,46 @@ LOCAL_BIG_BROKERS = {
     'EP': 'MNC Sekuritas',
     'RF': 'Buana Capital',
     'ZR': 'Bumiputera Sekuritas',
+    # Tambahan dari data real
+    'BB': 'Phintraco Sekuritas',
+    'BK': 'JP Morgan Sekuritas (lokal)',
+    'AG': 'Erdikha Elit Sekuritas',
+    'AO': 'Astronacci Sekuritas',
+    'AR': 'Artha Sekuritas',
+    'AT': 'Andalan Artha Advisindo',
+    'BR': 'Batavia Prosperindo',
+    'CD': 'Mega Capital Sekuritas',
+    'DD': 'Danareksa Sekuritas',
+    'DU': 'Duta Intidaya Finance',
+    'EL': 'Elang Mahkota Teknologi',
+    'ES': 'Equity Sekuritas',
+    'FZ': 'Finan Sekuritas',
+    'GI': 'Girard Sekuritas',
+    'HD': 'HD Capital',
+    'HP': 'Henan Putihrai',
+    'IC': 'Investindo Nusantara',
+    'ID': 'Inti Fikasa Sekuritas',
+    'IH': 'Indosurya Bersinar',
+    'II': 'Indomitra Sekuritas',
+    'IN': 'Investindo Nusantara',
+    'IT': 'Ithaca Resources',
+    'IU': 'Inovasi Utama Sekuritas',
+    'KI': 'Kresna Sekuritas',
+    'LS': 'Lautandhana Securindo',
+    'MI': 'Minna Padi Investama',
+    'MU': 'Mitra Utama Sekuritas',
+    'PC': 'Pacific Sekuritas',
+    'PF': 'Profindo Sekuritas',
+    'PG': 'Paramitra Alfa Sekuritas',
+    'PI': 'Pratama Interdana',
+    'PP': 'Pratama Prima Sekuritas',
+    'QA': 'Quant Capital',
+    'RO': 'Reliance Sekuritas',
+    'RS': 'Recapital Sekuritas',
+    'SA': 'Semesta Artha Sekuritas',
+    'SF': 'Surya Fajar Sekuritas',
+    'SH': 'Sinarmas Hana Sekuritas',
+    'TS': 'Tiga Sekuritas',
 }
 
 RETAIL_BROKERS = {
@@ -61,7 +111,8 @@ RETAIL_BROKERS = {
 ALL_KNOWN_BROKERS = {**FOREIGN_BROKERS, **LOCAL_BIG_BROKERS, **RETAIL_BROKERS}
 
 # Broker yang sering diasosiasikan dengan "bandar" (smart money)
-BANDAR_BROKERS = {'AK', 'YB', 'YP', 'ZP', 'YU', 'KZ', 'CS', 'DP', 'GW', 'RX', 'CC', 'SQ', 'OD'}
+BANDAR_BROKERS = {'AK', 'YB', 'YP', 'ZP', 'YU', 'KZ', 'CS', 'DP', 'GW', 'RX', 'CC', 'SQ', 'OD',
+                  'BF', 'RG', 'FO', 'CP', 'BS', 'YO', 'SS', 'LG', 'DX', 'BB', 'BK'}
 
 
 def get_broker_name(code: str) -> str:
