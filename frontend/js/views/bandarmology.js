@@ -8,6 +8,9 @@ let _bmCurrentPhase = 'all';
 let _bmCurrentSort = { col: 'phase_confidence', dir: 'desc' };
 let _bmData = [];
 
+// Expose state ke window agar window._bmSort bisa akses
+window._bmState = { get data() { return _bmData; }, get phase() { return _bmCurrentPhase; }, get sort() { return _bmCurrentSort; } };
+
 // Helper fetch langsung ke backend API
 async function _apiFetch(path) {
   const url = path.startsWith('/api/') ? path : '/api/' + path.replace(/^\//, '');
@@ -136,6 +139,12 @@ window._bmSort = function(col) {
   } else {
     _bmCurrentSort = { col, dir: 'desc' };
   }
+  renderBmTable(_bmData);
+};
+
+// Filter function juga expose ke window
+window._bmFilter = function(phase) {
+  _bmCurrentPhase = phase;
   renderBmTable(_bmData);
 };
 
