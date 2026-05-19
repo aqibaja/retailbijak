@@ -129,6 +129,16 @@ export async function renderBandarmology(params) {
   loadBmQuota();
 }
 
+// Expose sort function ke window untuk onclick handler di th
+window._bmSort = function(col) {
+  if (_bmCurrentSort.col === col) {
+    _bmCurrentSort.dir = _bmCurrentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    _bmCurrentSort = { col, dir: 'desc' };
+  }
+  renderBmTable(_bmData);
+};
+
 async function loadBmData() {
   const wrap = document.getElementById('bm-screener-wrap');
   if (!wrap) return;
@@ -266,13 +276,13 @@ function renderBmTable(data) {
     <table class="bm-screener-table">
       <thead>
         <tr>
-          <th data-sort="ticker">Saham ${sortIcon('ticker')}</th>
-          <th data-sort="phase_confidence">Fase ${sortIcon('phase_confidence')}</th>
-          <th data-sort="foreign_net_value">Asing Flow ${sortIcon('foreign_net_value')}</th>
-          <th data-sort="volume_spike_ratio">Vol Spike ${sortIcon('volume_spike_ratio')}</th>
-          <th data-sort="phase_streak_days">Streak ${sortIcon('phase_streak_days')}</th>
+          <th data-sort="ticker" onclick="window._bmSort('ticker')" style="cursor:pointer">Saham ${sortIcon('ticker')}</th>
+          <th data-sort="phase_confidence" onclick="window._bmSort('phase_confidence')" style="cursor:pointer">Fase ${sortIcon('phase_confidence')}</th>
+          <th data-sort="foreign_net_value" onclick="window._bmSort('foreign_net_value')" style="cursor:pointer">Asing Flow ${sortIcon('foreign_net_value')}</th>
+          <th data-sort="volume_spike_ratio" onclick="window._bmSort('volume_spike_ratio')" style="cursor:pointer">Vol Spike ${sortIcon('volume_spike_ratio')}</th>
+          <th data-sort="phase_streak_days" onclick="window._bmSort('phase_streak_days')" style="cursor:pointer">Streak ${sortIcon('phase_streak_days')}</th>
           <th>Top Broker</th>
-          <th data-sort="last_price">Harga ${sortIcon('last_price')}</th>
+          <th data-sort="last_price" onclick="window._bmSort('last_price')" style="cursor:pointer">Harga ${sortIcon('last_price')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
