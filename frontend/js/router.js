@@ -8,7 +8,7 @@ import { renderSettings } from './views/settings.js?v=20260519A';
 import { renderHelp } from './views/help.js?v=20260519A';
 import { renderAiPicks } from './views/ai_picks.js?v=20260519A';
 import { renderBandarmology } from './views/bandarmology.js?v=20260519D';
-import { clearViewTimers } from './main.js?v=20260519A';
+import { clearViewTimers } from './main.js?v=20260519D';
 import { t } from './i18n.js?v=20260519A';
 
 let routeToken = 0;
