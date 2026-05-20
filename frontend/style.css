@@ -5695,7 +5695,7 @@ input:focus-visible, select:focus-visible, button:focus-visible {
 }
 
 /* ── Bandarmology Page (halaman #bandarmology) ── */
-.bm-page { padding: 0 0 40px; }
+.bm-page { padding: 0 0 40px; transform: none !important; animation: none !important; }
 .bm-page-header {
   display: flex;
   align-items: center;

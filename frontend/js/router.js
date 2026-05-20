@@ -7,7 +7,7 @@ import { renderNews } from './views/news.js?v=20260519A';
 import { renderSettings } from './views/settings.js?v=20260519A';
 import { renderHelp } from './views/help.js?v=20260519A';
 import { renderAiPicks } from './views/ai_picks.js?v=20260519A';
-import { renderBandarmology } from './views/bandarmology.js?v=20260519M';
+import { renderBandarmology } from './views/bandarmology.js?v=20260519Q';
 import { clearViewTimers } from './main.js?v=20260519M';
 import { t } from './i18n.js?v=20260519A';
 
